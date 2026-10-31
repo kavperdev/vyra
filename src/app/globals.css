@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/*
+  VYRA design tokens — derived from the brand materials:
+  · black ground and white geometric wordmark (primary look is dark, monochrome)
+  · neon red from the "ELITE IS STANDARD" poster (#F03339) as the single accent
+  · tracked uppercase monospace captions (poster typography) for labels and data
+  Status colours are semantic and used only for training status.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f1f1f3;
+  --border: #e3e3e7;
+  --border-strong: #cfcfd5;
+  --foreground: #09090b;
+  --muted: #5f5f67;
+  --subtle: #9b9ba3;
+  --primary: #09090b;
+  --primary-foreground: #ffffff;
+  --accent: #d92b31;
+  --accent-foreground: #ffffff;
+  --ring: #d92b31;
+  --status-done: #15803d;
+  --status-planned: #2563eb;
+  --status-warning: #b45309;
+  --status-problem: #d92b31;
+  --status-neutral: #71717a;
+  --chart-1: #09090b;
+  --chart-2: #d92b31;
+  --chart-3: #9b9ba3;
+  --chart-grid: #e3e3e7;
+}
+
+.dark {
+  --background: #000000;
+  --surface: #0c0c0d;
+  --surface-2: #151517;
+  --border: #232327;
+  --border-strong: #34343a;
+  --foreground: #f4f4f5;
+  --muted: #9a9aa2;
+  --subtle: #5f5f67;
+  --primary: #f4f4f5;
+  --primary-foreground: #000000;
+  --accent: #f03339;
+  --accent-foreground: #ffffff;
+  --ring: #f03339;
+  --status-done: #3fcf8e;
+  --status-planned: #6b9bff;
+  --status-warning: #f5a524;
+  --status-problem: #ff4d52;
+  --status-neutral: #8e8e95;
+  --chart-1: #f4f4f5;
+  --chart-2: #f03339;
+  --chart-3: #5f5f67;
+  --chart-grid: #232327;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-done: var(--status-done);
+  --color-planned: var(--status-planned);
+  --color-warning: var(--status-warning);
+  --color-problem: var(--status-problem);
+  --color-neutral: var(--status-neutral);
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: var(--date-icon-filter, none);
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+}
+
+@layer components {
+  /* Tracked uppercase caption, as on the brand posters. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .display {
+    font-stretch: 115%;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+  }
+  .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%239a9aa2' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

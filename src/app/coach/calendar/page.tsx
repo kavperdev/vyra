@@ -1,0 +1,50 @@
+import type { Metadata } from "next";
+import { PageHeader } from "@/components/ui/misc";
+import { TrainingCalendar } from "@/components/calendar/training-calendar";
+import { requireRole } from "@/lib/auth";
+import { calendarRange, parseDate, parseView } from "@/lib/calendar";
+import { todayISO } from "@/lib/dates";
+import { listAthletes } from "@/lib/data/people";
+import { listSessions } from "@/lib/data/sessions";
+import { createClient } from "@/lib/supabase/server";
+import type { SessionKind } from "@/lib/types";
+
+export const metadata: Metadata = { title: "Kalendarz" };
+
+export default async function CoachCalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; date?: string; athlete?: string; kind?: string; status?: string }>;
+}) {
+  const sp = await searchParams;
+  const user = await requireRole("coach");
+  const supabase = await createClient();
+  const today = todayISO(user.profile.timezone);
+  const view = parseView(sp.view);
+  const date = parseDate(sp.date, today);
+  const { from, to } = calendarRange(view, date);
+  const athletes = await listAthletes(supabase, user.id);
+  const athleteFilter = sp.athlete && athletes.some((a) => a.id === sp.athlete) ? sp.athlete : "";
+  const kind = (["running", "strength", "mobility", "other"] as const).find((k) => k === sp.kind) as SessionKind | undefined;
+  const sessions = await listSessions(supabase, {
+    from,
+    to,
+    athleteIds: athleteFilter ? [athleteFilter] : undefined,
+    kinds: kind ? [kind] : undefined,
+  });
+
+  return (
+    <div className="grid gap-6">
+      <PageHeader eyebrow="Planowanie" title="Kalendarz treningowy" description="Treningi wszystkich zawodników. Kliknij dzień, aby zobaczyć szczegóły, albo + aby zaplanować trening." />
+      <TrainingCalendar
+        role="coach"
+        sessions={sessions}
+        view={view}
+        date={date}
+        today={today}
+        athletes={athletes.map((a) => ({ id: a.id, full_name: a.full_name }))}
+        filters={{ athlete: athleteFilter, kind: kind ?? "", status: sp.status ?? "" }}
+      />
+    </div>
+  );
+}
