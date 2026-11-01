@@ -35,6 +35,9 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // App-like: no pinch zoom (form fields are 16 px on phones, so nothing needs zooming).
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 

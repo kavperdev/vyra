@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Keep visited screens in the client cache for a moment, so switching tabs back and forth is instant.
+  // Every save still refreshes the data (revalidatePath / router.refresh).
+  experimental: {
+    staleTimes: { dynamic: 30, static: 180 },
+  },
   // PDF reports read the brand font and logo from disk at runtime.
   outputFileTracingIncludes: {
     "/api/reports/**": ["./src/assets/fonts/**", "./public/branding/vyra-logo-black.png"],
