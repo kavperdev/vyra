@@ -183,6 +183,14 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes vyra-drift {
+  from { transform: scale(1.08) translate3d(-2%, -1%, 0); }
+  to { transform: scale(1.18) translate3d(2%, 1%, 0); }
+}
+@keyframes vyra-parallax {
+  from { transform: scale(1.12) translateY(-4%); }
+  to { transform: scale(1.12) translateY(4%); }
+}
 @keyframes vyra-line {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -194,6 +202,20 @@
   .site-zoom { animation: vyra-zoom 2.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .site-line { transform-origin: left; animation: vyra-line 1.2s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .site-marquee { animation: vyra-marquee 60s linear infinite; }
+  .site-drift { animation: vyra-drift 24s ease-in-out infinite alternate; }
+  .site-grain {
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  /* Photo bands drift a little while scrolling (browsers with scroll-driven animations only). */
+  @supports (animation-timeline: view()) {
+    .site-parallax {
+      animation: vyra-parallax linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
 
   /* Scroll reveal: [data-reveal] starts hidden only when JS is running (html.js), then gets .is-in. */
   .js [data-reveal] {

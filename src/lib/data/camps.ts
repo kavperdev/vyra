@@ -1,5 +1,5 @@
 import "server-only";
-import type { Article, Camp, CampParticipant, CampTest, SiteTeamCard } from "@/lib/camps";
+import type { Article, Camp, CampParticipant, CampTest, CoachingPlan, SiteTeamCard } from "@/lib/camps";
 import type { ServerSupabase } from "@/lib/supabase/server";
 
 const num = (v: unknown): number | null => (v == null ? null : Number(v));
@@ -144,4 +144,9 @@ export async function getCampBudget(supabase: ServerSupabase, campId: string): P
     founders: row?.founders ?? 2,
     items: ((items ?? []) as BudgetItem[]).map((i) => ({ ...i, amount_pln: Number(i.amount_pln) })),
   };
+}
+
+export async function listCoachingPlans(supabase: ServerSupabase): Promise<CoachingPlan[]> {
+  const { data } = await supabase.from("coaching_plans").select("*").order("sort").order("created_at");
+  return (data ?? []) as CoachingPlan[];
 }

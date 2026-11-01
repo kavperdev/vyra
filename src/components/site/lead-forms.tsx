@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { submitApplication } from "@/lib/actions/applications";
 
 type Errors = Record<string, string[] | undefined>;
@@ -121,8 +121,23 @@ export function CampWaitlistForm({ campId, withPhone = false, submitLabel = "Zap
   );
 }
 
-export function CoachingInquiryForm() {
-  const [v, setV] = useState({ full_name: "", email: "", goal: "", records: "", message: "", consent: false, website: "" });
+/** Fired by the package cards on /prowadzenie, so the form preselects the chosen package. */
+export const CHOOSE_PLAN_EVENT = "vyra:choose-plan";
+
+export function CoachingInquiryForm({ plans = [] }: { plans?: string[] }) {
+  const [v, setV] = useState({ package: "", full_name: "", email: "", goal: "", records: "", message: "", consent: false, website: "" });
+  const planKey = plans.join("\n");
+  useEffect(() => {
+    const names = planKey ? planKey.split("\n") : [];
+    const fromUrl = new URLSearchParams(window.location.search).get("pakiet");
+    if (fromUrl && names.includes(fromUrl)) setV((s) => (s.package === fromUrl ? s : { ...s, package: fromUrl }));
+    const onChoose = (e: Event) => {
+      const name = (e as CustomEvent<string>).detail;
+      if (names.includes(name)) setV((s) => (s.package === name ? s : { ...s, package: name }));
+    };
+    window.addEventListener(CHOOSE_PLAN_EVENT, onChoose);
+    return () => window.removeEventListener(CHOOSE_PLAN_EVENT, onChoose);
+  }, [planKey]);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -170,6 +185,18 @@ export function CoachingInquiryForm() {
           />
         </Field>
       </div>
+      {plans.length ? (
+        <Field label="Pakiet" htmlFor="co-plan" hint="Możesz zmienić po rozmowie" error={err("package")}>
+          <Select id="co-plan" value={v.package} onChange={(e) => setV({ ...v, package: e.target.value })}>
+            <option value="">Nie wiem jeszcze, doradźcie</option>
+            {plans.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
       <Field
         label="Twój cel"
         htmlFor="co-goal"

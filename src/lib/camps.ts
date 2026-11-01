@@ -140,3 +140,24 @@ export function formatPLN(value: number | null | undefined): string | null {
 
 /** Statuses that take a place on the camp. */
 export const TAKES_PLACE: ParticipantStatus[] = ["registered", "paid", "attended"];
+
+export interface CoachingPlan {
+  id: string;
+  name: string;
+  tagline: string | null;
+  kind: "monthly" | "once";
+  price_pln: number;
+  commit_price_pln: number | null;
+  features: string | null;
+  badge: string | null;
+  highlighted: boolean;
+  visible: boolean;
+  sort: number;
+}
+
+export function planFeatures(p: Pick<CoachingPlan, "features">): string[] {
+  return (p.features ?? "")
+    .split("\n")
+    .map((l) => l.replace(/^[-*•]\s*/, "").trim())
+    .filter(Boolean);
+}

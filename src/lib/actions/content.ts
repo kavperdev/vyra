@@ -100,3 +100,54 @@ export async function deleteTeamCard(id: string): Promise<ActionResult> {
     return { ok: true };
   });
 }
+
+const planSchema = z.object({
+  name: z.string().trim().min(2, "Podaj nazwę pakietu").max(60),
+  tagline: optionalText(200),
+  kind: z.enum(["monthly", "once"]),
+  price_pln: z.string().trim().regex(/^\d{1,6}$/, "Podaj cenę w zł"),
+  commit_price_pln: z.string().trim().refine((v) => v === "" || /^\d{1,6}$/.test(v), "Podaj cenę w zł albo zostaw puste"),
+  features: optionalText(3000),
+  badge: optionalText(40),
+  highlighted: z.boolean(),
+  visible: z.boolean(),
+  sort: z.string().trim().refine((v) => v === "" || /^-?\d+$/.test(v), "Liczba"),
+});
+
+export type CoachingPlanInput = z.input<typeof planSchema>;
+
+export async function saveCoachingPlan(id: string | null, input: CoachingPlanInput): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Ofertą zarządzają założyciele." };
+    const parsed = planSchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+    const v = parsed.data;
+    const row = {
+      name: v.name,
+      tagline: toText(v.tagline),
+      kind: v.kind,
+      price_pln: Number(v.price_pln),
+      commit_price_pln: v.kind === "monthly" && v.commit_price_pln !== "" ? Number(v.commit_price_pln) : null,
+      features: toText(v.features),
+      badge: toText(v.badge),
+      highlighted: v.highlighted,
+      visible: v.visible,
+      sort: v.sort === "" ? 0 : Number(v.sort),
+    };
+    const { error } = id ? await supabase.from("coaching_plans").update(row).eq("id", id) : await supabase.from("coaching_plans").insert(row);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath("/prowadzenie");
+    return { ok: true, message: "Zapisano pakiet." };
+  });
+}
+
+export async function deleteCoachingPlan(id: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const { error } = await supabase.from("coaching_plans").delete().eq("id", id);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath("/prowadzenie");
+    return { ok: true };
+  });
+}

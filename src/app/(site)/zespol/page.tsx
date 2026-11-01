@@ -23,6 +23,7 @@ export default async function TeamPage() {
   return (
     <>
       <PageHero
+        image="/site/hero.jpg"
         eyebrow="Zespół VYRA"
         title="Specjaliści, którzy tworzą VYRA"
         lead="Trzy kompetencje: trening biegowy, przygotowanie siłowe i fizjoterapia. Każdy zawodnik i uczestnik obozu pracuje z całym zespołem, nie z jedną osobą."

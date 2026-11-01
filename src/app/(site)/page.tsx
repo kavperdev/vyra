@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { CtaBand, Eyebrow, GhostLink, Marquee, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, Marquee, PhotoBand, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
@@ -105,6 +106,8 @@ export default async function Home() {
 
       <Marquee words={["Elite is standard", "Performance culture", "Trening", "Regeneracja", "Diagnostyka", "Est. 2026"]} />
 
+      <Manifest />
+
       {/* ---------------------------------------------------------------- offer */}
       <section className={`${wrap} py-28 sm:py-36`}>
         <SectionHead eyebrow="Co robimy" title="Dwie drogi do jednego standardu">
@@ -167,6 +170,10 @@ export default async function Home() {
           </div>
         </section>
       ) : null}
+
+      <PhotoBand src="/site/night-city.jpg" eyebrow="Run. Train. Evolve." position="60% 40%">
+        Przed pracą, po pracy, w deszczu i po zmroku. <span className="text-white/50">Warunki się zmieniają, standard zostaje ten sam.</span>
+      </PhotoBand>
 
       {/* ---------------------------------------------------------------- principles */}
       <section className="border-t border-white/10 bg-[#070708]">
@@ -331,7 +338,17 @@ export default async function Home() {
         </section>
       ) : null}
 
+      <InstagramStrip
+        handle={SITE.instagram}
+        posts={[
+          { src: "/site/ig-standard.jpg", alt: "VYRA Standard Series: Elite is standard" },
+          { src: "/site/ig-neon.jpg", alt: "Neon VYRA: Elite is standard" },
+          { src: "/site/ig-evolve.jpg", alt: "VYRA Standard Series: Run. Train. Evolve." },
+        ]}
+      />
+
       <CtaBand
+        tone="warm"
         title="Zostań częścią VYRA"
         lead="Zapisz się na listę obozów albo zapytaj o prowadzenie indywidualne. Odpowiadamy osobiście."
         href="/kontakt"

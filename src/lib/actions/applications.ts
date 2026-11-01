@@ -32,6 +32,7 @@ const coachingSchema = z.object({
   kind: z.literal("coaching"),
   full_name: z.string().trim().min(2, "Podaj imię i nazwisko").max(120),
   email: emailField,
+  package: optional(80).optional(),
   goal: z.string().trim().min(3, "Napisz w kilku słowach, jaki masz cel").max(1000),
   records: optional(500),
   message: optional(2000),

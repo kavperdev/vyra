@@ -591,3 +591,13 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'staff without founder role do not see camp finances');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
 select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'participants do not see camp finances');
+
+-- ---------------------------------------------------------------- coaching plans
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.coaching_plans) = 5, 'visitors see published coaching plans');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+update public.coaching_plans set price_pln = 1 where name = 'Elite';
+select pg_temp.as_admin();
+select pg_temp.check((select price_pln from public.coaching_plans where name = 'Elite') = 949, 'non-founder staff cannot change prices');

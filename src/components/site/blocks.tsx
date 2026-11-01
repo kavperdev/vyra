@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,9 +34,52 @@ export function Eyebrow({ children, accent = false, className }: { children: Rea
 }
 
 /** Opening block of a sub page: eyebrow, large title, lead. */
-export function PageHero({ eyebrow, title, lead, children }: { eyebrow: string; title: React.ReactNode; lead?: React.ReactNode; children?: React.ReactNode }) {
+export type Tone = "warm" | "sky";
+
+const TONE_SRC: Record<Tone, string> = { warm: "/site/tone-warm.jpg", sky: "/site/tone-sky.jpg" };
+
+/** Soft colour field from the VYRA reel, used sparingly behind a few blocks. */
+export function ToneField({ tone, className }: { tone: Tone; className?: string }) {
   return (
-    <section className="relative overflow-hidden border-b border-white/10 pt-36 sm:pt-44">
+    <div aria-hidden className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}>
+      <Image src={TONE_SRC[tone]} alt="" fill sizes="100vw" className="site-drift object-cover" />
+      <div className="absolute inset-0 bg-black/55" />
+      <div className="site-grain absolute inset-0" />
+    </div>
+  );
+}
+
+export function PageHero({
+  eyebrow,
+  title,
+  lead,
+  image,
+  tone,
+  children,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  lead?: React.ReactNode;
+  /** Optional photo behind the title (public path). */
+  image?: string;
+  /** Optional colour field behind the title, instead of a photo. */
+  tone?: Tone;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section className="relative isolate overflow-hidden border-b border-white/10 pt-36 sm:pt-44">
+      {image ? (
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <Image src={image} alt="" fill priority sizes="100vw" className="site-zoom object-cover opacity-45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
+        </div>
+      ) : tone ? (
+        <>
+          <ToneField tone={tone} className="opacity-70" />
+          <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/30 to-transparent" />
+        </>
+      ) : null}
       <div className={cn(wrap, "pb-20 sm:pb-28")}>
         <div className="site-rise">
           <Eyebrow accent>{eyebrow}</Eyebrow>
@@ -126,9 +170,10 @@ export function Marquee({ words }: { words: string[] }) {
 }
 
 /** Closing call to action used at the bottom of pages. */
-export function CtaBand({ title, lead, href, label }: { title: string; lead: string; href: string; label: string }) {
+export function CtaBand({ title, lead, href, label, tone }: { title: string; lead: string; href: string; label: string; tone?: Tone }) {
   return (
-    <section className="border-t border-white/10">
+    <section className="relative isolate overflow-hidden border-t border-white/10">
+      {tone ? <ToneField tone={tone} /> : null}
       <div className={cn(wrap, "grid gap-10 py-24 sm:py-32 lg:grid-cols-[minmax(0,3fr)_auto] lg:items-end")}>
         <Reveal className="grid gap-5">
           <h2 className="display text-[clamp(2rem,5vw,4rem)] leading-[1.02] text-white">{title}</h2>
@@ -179,5 +224,132 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
         </Reveal>
       ))}
     </div>
+  );
+}
+
+/** Full-bleed photograph with a line of text over it. */
+export function PhotoBand({
+  src,
+  eyebrow,
+  children,
+  position = "center",
+}: {
+  src: string;
+  eyebrow?: string;
+  children: React.ReactNode;
+  position?: string;
+}) {
+  return (
+    <section className="relative isolate flex min-h-[78svh] items-end overflow-hidden border-t border-white/10">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <Image src={src} alt="" fill sizes="100vw" className="site-parallax object-cover opacity-80" style={{ objectPosition: position }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/10" />
+      </div>
+      <div className={cn(wrap, "pb-16 pt-40 sm:pb-24")}>
+        {eyebrow ? (
+          <Reveal>
+            <Eyebrow accent>{eyebrow}</Eyebrow>
+          </Reveal>
+        ) : null}
+        <Reveal delay={100} as="p" className="display mt-6 max-w-4xl text-[clamp(2rem,5.5vw,4.5rem)] leading-[1.02] text-white">
+          {children}
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/** The VYRA reel ("Not a level. A standard.") next to the brand statement. */
+export function Manifest() {
+  return (
+    <section className="relative isolate overflow-hidden border-t border-white/10">
+      <ToneField tone="sky" className="opacity-40" />
+      <div className={cn(wrap, "grid items-center gap-14 py-28 sm:py-36 lg:grid-cols-[minmax(0,6fr)_minmax(0,4fr)]")}>
+        <div className="grid gap-8">
+          <Reveal>
+            <Eyebrow accent>Manifest</Eyebrow>
+          </Reveal>
+          <Reveal delay={80} as="h2" className="display text-[clamp(2.5rem,7vw,5.5rem)] uppercase leading-[0.92] text-white">
+            Not a level.
+            <br />
+            <span className="text-white/45">A standard.</span>
+          </Reveal>
+          <Reveal delay={160} as="p" className="max-w-xl text-lg leading-relaxed text-white/65">
+            Standard VYRA nie zależy od tego, jak szybko biegasz. To sposób pracy: przemyślany plan, rzetelnie zapisany trening,
+            regeneracja traktowana poważnie i konsekwencja tydzień po tygodniu. Ten sam dla debiutanta i dla zawodnika walczącego o
+            rekord.
+          </Reveal>
+          <Reveal delay={240} className="flex flex-wrap gap-x-10 gap-y-4 border-t border-white/15 pt-6">
+            {[
+              ["Każdy poziom", "ten sam standard"],
+              ["Każdy trening", "zapisany i omówiony"],
+              ["Każdy sezon", "zaplanowany od startu"],
+            ].map(([a, b]) => (
+              <div key={a} className="grid gap-1">
+                <span className="text-sm font-semibold text-white">{a}</span>
+                <span className="text-sm text-white/50">{b}</span>
+              </div>
+            ))}
+          </Reveal>
+        </div>
+        <Reveal delay={120} className="mx-auto w-full max-w-[22rem]">
+          <div className="relative aspect-[9/16] overflow-hidden rounded-[1.75rem] border border-white/15 bg-black shadow-[0_40px_120px_-40px_rgba(240,51,57,0.45)]">
+            <video
+              className="absolute inset-0 size-full object-cover"
+              src="/site/manifest.mp4"
+              poster="/site/manifest-poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label="Film VYRA: Not a level. A standard."
+            />
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/** Three recent brand posts linking to Instagram. */
+export function InstagramStrip({ handle, posts }: { handle: string; posts: { src: string; alt: string }[] }) {
+  const url = `https://www.instagram.com/${handle.replace(/^@/, "")}/`;
+  return (
+    <section className="border-t border-white/10">
+      <div className={cn(wrap, "py-28 sm:py-36")}>
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <Reveal className="grid gap-4">
+            <Eyebrow>Instagram</Eyebrow>
+            <h2 className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">{handle}</h2>
+          </Reveal>
+          <Reveal delay={100}>
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-12 items-center rounded-full border border-white/20 px-7 text-sm font-semibold text-white transition-colors hover:border-white/60"
+            >
+              Obserwuj
+            </a>
+          </Reveal>
+        </div>
+        <div className="mt-14 grid grid-cols-3 gap-2 sm:gap-4">
+          {posts.map((p, i) => (
+            <Reveal key={p.src} delay={i * 100}>
+              <a href={url} target="_blank" rel="noreferrer" className="group relative block aspect-square overflow-hidden rounded-lg sm:rounded-2xl">
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, 33vw"
+                  className="object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-[1.05]"
+                />
+              </a>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

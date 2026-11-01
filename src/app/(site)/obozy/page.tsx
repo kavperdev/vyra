@@ -43,6 +43,7 @@ export default async function CampsPage() {
   return (
     <>
       <PageHero
+        tone="warm"
         eyebrow={hasCamps ? "Obozy VYRA" : "Obozy VYRA · Wkrótce"}
         title="Elitarne doświadczenie dla amatorów"
         lead="Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką zespołu specjalistów, w kameralnej grupie."

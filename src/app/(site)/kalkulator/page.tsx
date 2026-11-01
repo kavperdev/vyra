@@ -13,6 +13,7 @@ export default function CalculatorPage() {
   return (
     <>
       <PageHero
+        tone="sky"
         eyebrow="Narzędzia VYRA"
         title="Kalkulator tempa"
         lead="Wpisz wynik z ostatniego startu lub testu. Dostaniesz szacunkowe VO2max, prognozę czasów na 5 km, 10 km, półmaraton i maraton oraz tempa, w jakich warto trenować."

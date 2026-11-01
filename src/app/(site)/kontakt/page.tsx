@@ -13,6 +13,7 @@ export default function ContactPage() {
   return (
     <>
       <PageHero
+        tone="sky"
         eyebrow="Kontakt"
         title="Porozmawiajmy o Twoim treningu"
         lead="Wybierz, czego dotyczy zgłoszenie. Każde czytamy osobiście i odpowiadamy na podany adres e-mail."

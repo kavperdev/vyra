@@ -26,6 +26,7 @@ export default async function KnowledgePage() {
   return (
     <>
       <PageHero
+        image="/site/night-city.jpg"
         eyebrow="Wiedza VYRA"
         title="Trening tłumaczony konkretnie"
         lead={
