@@ -9,14 +9,19 @@ import { listAthletes } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Kalendarz" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Kalendarz", "Calendar") };
+}
 
 export default async function CoachCalendarPage({
   searchParams,
 }: {
   searchParams: Promise<{ view?: string; date?: string; athlete?: string; kind?: string; status?: string }>;
 }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
   const supabase = await createClient();

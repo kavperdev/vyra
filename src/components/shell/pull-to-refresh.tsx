@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const THRESHOLD = 72;
@@ -14,6 +15,7 @@ const MAX = 110;
  */
 export function PullToRefresh() {
   const router = useRouter();
+  const t = useT();
   const [pull, setPull] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [refreshing, start] = useTransition();
@@ -85,7 +87,7 @@ export function PullToRefresh() {
           className={cn("size-4 text-accent", refreshing && "animate-spin")}
           style={refreshing ? undefined : { transform: `rotate(${progress * 270}deg)`, opacity: 0.4 + progress * 0.6 }}
         />
-        {refreshing ? <span className="sr-only">Odświeżanie</span> : null}
+        {refreshing ? <span className="sr-only">{t("Odświeżanie", "Refreshing")}</span> : null}
       </span>
     </div>
   );

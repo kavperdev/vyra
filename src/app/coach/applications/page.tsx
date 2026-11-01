@@ -5,10 +5,15 @@ import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Zgłoszenia" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Zgłoszenia", "Requests") };
+}
 
 export default async function ApplicationsPage() {
+  await getLang();
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();

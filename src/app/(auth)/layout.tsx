@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { LangSwitch } from "@/components/shared/lang-switch";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -24,7 +25,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#F03339]">Performance culture</p>
       </aside>
 
-      <main className="flex flex-col px-5 pb-10 pt-[max(2rem,env(safe-area-inset-top))] sm:px-10">
+      <main className="relative flex flex-col px-5 pb-10 pt-[max(2rem,env(safe-area-inset-top))] sm:px-10">
+        <LangSwitch tone="app" className="absolute right-5 top-[max(1.5rem,env(safe-area-inset-top))] sm:right-10" />
         <Link href="/" aria-label="VYRA" className="mb-12 w-fit lg:hidden">
           <Logo className="h-4" />
         </Link>

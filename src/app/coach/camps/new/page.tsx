@@ -3,10 +3,15 @@ import { redirect } from "next/navigation";
 import { CampForm } from "@/components/camps/camp-form";
 import { PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Nowy obóz" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Nowy obóz", "New camp") };
+}
 
 export default async function NewCampPage() {
+  await getLang();
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach/camps");
   return (

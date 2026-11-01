@@ -2,6 +2,7 @@ import { format, parseISO } from "date-fns";
 import { enGB, pl } from "date-fns/locale";
 import type { ArticleCategory, Camp, CampFormat, ParticipantStatus } from "@/lib/camps";
 import { ARTICLE_CATEGORY_LABEL, CAMP_FORMAT_LABEL, PARTICIPANT_STATUS_LABEL } from "@/lib/camps";
+import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 import type { Lang, T } from "./shared";
 
 const ARTICLE_CATEGORY_EN: Record<ArticleCategory, string> = {
@@ -55,3 +56,11 @@ export function articlesFor<A extends { lang?: "pl" | "en" }>(articles: A[], lan
   const mine = articles.filter((a) => (a.lang ?? "pl") === lang);
   return mine.length || !articles.length ? { items: mine, fallback: false } : { items: articles, fallback: true };
 }
+
+const STAFF_ROLE_EN: Record<StaffRole, string> = {
+  founder: "Founder",
+  running_coach: "Running coach",
+  strength_coach: "Strength & conditioning coach",
+  physio: "Physiotherapist",
+};
+export const staffRoleLabel = (r: StaffRole, t: T) => (isEn(t) ? STAFF_ROLE_EN[r] : STAFF_ROLE_LABEL[r]);

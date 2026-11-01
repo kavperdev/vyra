@@ -10,10 +10,15 @@ import { requireRole } from "@/lib/auth";
 import { CAMP_STATUS_LABEL, campDates } from "@/lib/camps";
 import { getCamp, getCampPrivateInfo, listParticipants } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Obóz" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Obóz", "Camp") };
+}
 
 export default async function CampPage({ params }: { params: Promise<{ campId: string }> }) {
+  await getLang();
   const { campId } = await params;
   const user = await requireRole("coach");
   const founder = user.profile.staff_role === "founder";

@@ -15,13 +15,14 @@ import { formatDuration, formatKg, formatPace, paceFrom, parseDuration, parseKmT
 import type { ExecutionStatus, SessionKind, StrengthExercise } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { executionFormSchema, type ExecutionFormValues } from "@/lib/validation/execution";
+import { tl } from "@/lib/i18n/runtime";
 
-const FEELINGS = [
-  { v: "1", label: "Bardzo źle" },
-  { v: "2", label: "Słabo" },
-  { v: "3", label: "Normalnie" },
-  { v: "4", label: "Dobrze" },
-  { v: "5", label: "Świetnie" },
+const feelings = () => [
+  { v: "1", label: tl("Bardzo źle", "Very bad") },
+  { v: "2", label: tl("Słabo", "Poor") },
+  { v: "3", label: tl("Normalnie", "OK") },
+  { v: "4", label: tl("Dobrze", "Good") },
+  { v: "5", label: tl("Świetnie", "Great") },
 ] as const;
 
 export function ExecutionForm({
@@ -101,7 +102,7 @@ export function ExecutionForm({
           setConfirmSkip(false);
           router.refresh();
         }),
-      () => toast.error("Popraw zaznaczone pola."),
+      () => toast.error(tl("Popraw zaznaczone pola.", "Please fix the highlighted fields.")),
     )();
 
   const distanceM = parseKmToMeters(values.running?.distance_km ?? "");
@@ -113,7 +114,7 @@ export function ExecutionForm({
     <form onSubmit={(e) => e.preventDefault()} noValidate className="grid gap-5">
       {draft ? (
         <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-planned/40 bg-planned/10 px-4 py-3 text-sm">
-          <span>Masz niezapisane dane z tego urządzenia.</span>
+          <span>{tl("Masz niezapisane dane z tego urządzenia.", "You have unsaved data from this device.")}</span>
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -121,10 +122,10 @@ export function ExecutionForm({
               onClick={() => {
                 reset(draft, { keepDefaultValues: true });
                 setDraft(null);
-                toast.success("Przywrócono niezapisane dane.");
+                toast.success(tl("Przywrócono niezapisane dane.", "Unsaved data restored."));
               }}
             >
-              <RotateCcw className="size-3.5" /> Przywróć
+              <RotateCcw className="size-3.5" /> {tl("Przywróć", "Restore")}
             </Button>
             <Button
               size="sm"
@@ -138,7 +139,7 @@ export function ExecutionForm({
                 setDraft(null);
               }}
             >
-              Odrzuć
+              {tl("Odrzuć", "Discard")}
             </Button>
           </div>
         </div>
@@ -147,20 +148,20 @@ export function ExecutionForm({
       {kind === "running" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="eyebrow text-[11px]">Twój bieg</CardTitle>
+            <CardTitle className="eyebrow text-[11px]">{tl("Twój bieg", "Your run")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Field label="Dystans" unit="km" htmlFor="r-dist" error={errors.running?.distance_km?.message}>
+              <Field label={tl("Dystans", "Distance")} unit="km" htmlFor="r-dist" error={errors.running?.distance_km?.message}>
                 <Input id="r-dist" inputMode="decimal" placeholder="10,15" className="h-12 text-lg" {...register("running.distance_km")} />
               </Field>
-              <Field label="Czas" htmlFor="r-time" hint="mm:ss lub h:mm:ss" error={errors.running?.duration?.message}>
+              <Field label={tl("Czas", "Time")} htmlFor="r-time" hint={tl("mm:ss lub h:mm:ss", "mm:ss or h:mm:ss")} error={errors.running?.duration?.message}>
                 <Input id="r-time" inputMode="numeric" placeholder="49:08" className="h-12 text-lg" {...register("running.duration")} />
               </Field>
               <div className="col-span-2 grid gap-1.5 sm:col-span-1">
-                <span className="text-[13px] font-medium text-muted">Średnie tempo</span>
+                <span className="text-[13px] font-medium text-muted">{tl("Średnie tempo", "Avg pace")}</span>
                 {manualPace ? (
-                  <Input aria-label="Tempo wpisane ręcznie" inputMode="numeric" placeholder="4:50" className="h-12 text-lg" {...register("running.pace")} />
+                  <Input aria-label={tl("Tempo wpisane ręcznie", "Pace entered manually")} inputMode="numeric" placeholder="4:50" className="h-12 text-lg" {...register("running.pace")} />
                 ) : (
                   <p className="num flex h-12 items-center rounded-md border border-dashed border-border px-3 text-lg">
                     {autoPace ? `${formatPace(autoPace)} /km` : "—"}
@@ -174,26 +175,26 @@ export function ExecutionForm({
                       if (e.target.checked && autoPace && !values.running?.pace) setValue("running.pace", formatPace(autoPace));
                     }}
                   />
-                  Popraw tempo ręcznie (np. z zegarka)
+                  {tl("Popraw tempo ręcznie (np. z zegarka)", "Correct the pace manually (e.g. from your watch)")}
                 </label>
                 {errors.running?.pace?.message ? <p className="text-[13px] text-problem">{errors.running.pace.message}</p> : null}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Field label="Śr. tętno" unit="bpm" htmlFor="r-hr" error={errors.running?.avg_hr?.message}>
+              <Field label={tl("Śr. tętno", "Avg HR")} unit="bpm" htmlFor="r-hr" error={errors.running?.avg_hr?.message}>
                 <Input id="r-hr" inputMode="numeric" {...register("running.avg_hr")} />
               </Field>
-              <Field label="Maks. tętno" unit="bpm" htmlFor="r-max" error={errors.running?.max_hr?.message}>
+              <Field label={tl("Maks. tętno", "Max HR")} unit="bpm" htmlFor="r-max" error={errors.running?.max_hr?.message}>
                 <Input id="r-max" inputMode="numeric" {...register("running.max_hr")} />
               </Field>
-              <Field label="Przewyższenie" unit="m" htmlFor="r-elev" error={errors.running?.elevation_gain_m?.message}>
+              <Field label={tl("Przewyższenie", "Elevation gain")} unit="m" htmlFor="r-elev" error={errors.running?.elevation_gain_m?.message}>
                 <Input id="r-elev" inputMode="numeric" {...register("running.elevation_gain_m")} />
               </Field>
-              <Field label="Kadencja" unit="spm" htmlFor="r-cad" error={errors.running?.cadence_spm?.message}>
+              <Field label={tl("Kadencja", "Cadence")} unit="spm" htmlFor="r-cad" error={errors.running?.cadence_spm?.message}>
                 <Input id="r-cad" inputMode="numeric" {...register("running.cadence_spm")} />
               </Field>
             </div>
-            <Field label="Warunki" htmlFor="r-cond" hint="opcjonalnie: pogoda, nawierzchnia, wiatr">
+            <Field label={tl("Warunki", "Conditions")} htmlFor="r-cond" hint={tl("opcjonalnie: pogoda, nawierzchnia, wiatr", "optional: weather, surface, wind")}>
               <Input id="r-cond" {...register("running.conditions")} />
             </Field>
             {initial.laps.length ? <LapsEditor control={control} register={register} /> : null}
@@ -205,11 +206,11 @@ export function ExecutionForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="eyebrow text-[11px]">Odczucia</CardTitle>
+          <CardTitle className="eyebrow text-[11px]">{tl("Odczucia", "How it felt")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           <fieldset className="grid gap-2">
-            <legend className="text-[13px] font-medium text-muted">Intensywność RPE (1 = bardzo lekko, 10 = maksymalnie)</legend>
+            <legend className="text-[13px] font-medium text-muted">{tl("Intensywność RPE (1 = bardzo lekko, 10 = maksymalnie)", "Effort RPE (1 = very easy, 10 = maximal)")}</legend>
             <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
               {Array.from({ length: 10 }, (_, i) => String(i + 1)).map((v) => (
                 <button
@@ -228,9 +229,9 @@ export function ExecutionForm({
             </div>
           </fieldset>
           <fieldset className="grid gap-2">
-            <legend className="text-[13px] font-medium text-muted">Samopoczucie</legend>
+            <legend className="text-[13px] font-medium text-muted">{tl("Samopoczucie", "How you felt")}</legend>
             <div className="flex flex-wrap gap-1.5">
-              {FEELINGS.map((f) => (
+              {feelings().map((f) => (
                 <button
                   key={f.v}
                   type="button"
@@ -247,10 +248,10 @@ export function ExecutionForm({
             </div>
           </fieldset>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px]">
-            <Field label="Komentarz dla trenera" htmlFor="ex-comment" error={errors.comment?.message}>
-              <Textarea id="ex-comment" placeholder="Jak poszło? Co było trudne? Coś bolało?" {...register("comment")} />
+            <Field label={tl("Komentarz dla trenera", "Comment for your coach")} htmlFor="ex-comment" error={errors.comment?.message}>
+              <Textarea id="ex-comment" placeholder={tl("Jak poszło? Co było trudne? Coś bolało?", "How did it go? What was hard? Did anything hurt?")} {...register("comment")} />
             </Field>
-            <Field label="Data wykonania" htmlFor="ex-date" error={errors.performed_on?.message}>
+            <Field label={tl("Data wykonania", "Date done")} htmlFor="ex-date" error={errors.performed_on?.message}>
               <Input id="ex-date" type="date" {...register("performed_on")} />
             </Field>
           </div>
@@ -258,47 +259,47 @@ export function ExecutionForm({
       </Card>
 
       <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 grid gap-2 rounded-lg border border-border bg-background/95 p-3 backdrop-blur sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:bottom-4">
-        <div className="mr-auto hidden text-[12px] text-muted sm:block">{isDirty ? "Niezapisane zmiany" : hasExecution ? "Zapisano" : ""}</div>
+        <div className="mr-auto hidden text-[12px] text-muted sm:block">{isDirty ? tl("Niezapisane zmiany", "Unsaved changes") : hasExecution ? tl("Zapisano", "Saved") : ""}</div>
         <Button variant="ghost" disabled={pending} onClick={() => submit("in_progress")}>
-          Zapisz postęp
+          {tl("Zapisz postęp", "Save progress")}
         </Button>
         <Button variant="outline" disabled={pending} onClick={() => submit("partial")}>
-          Wykonany częściowo
+          {tl("Wykonany częściowo", "Partly done")}
         </Button>
         <Button variant="accent" size="lg" disabled={pending} onClick={() => submit("completed")}>
-          <Check className="size-4" /> {pending ? "Zapisywanie…" : "Zakończ trening"}
+          <Check className="size-4" /> {pending ? tl("Zapisywanie…", "Saving…") : tl("Zakończ trening", "Finish session")}
         </Button>
       </div>
 
       <div className="flex flex-wrap gap-4 text-sm">
         <button type="button" className="text-muted underline-offset-4 hover:text-foreground hover:underline" onClick={() => setConfirmSkip(true)}>
-          Nie zrobiłem(-am) tego treningu
+          {tl("Nie zrobiłem(-am) tego treningu", "I didn’t do this session")}
         </button>
         {hasExecution ? (
           <button type="button" className="text-muted underline-offset-4 hover:text-problem hover:underline" onClick={() => setConfirmDelete(true)}>
-            Usuń mój zapis
+            {tl("Usuń mój zapis", "Delete my result")}
           </button>
         ) : null}
       </div>
 
       <Dialog open={confirmSkip} onOpenChange={setConfirmSkip}>
-        <DialogContent title="Oznaczyć jako pominięty?" description="Trener zobaczy, że trening nie został wykonany. Dopisz w komentarzu powód, to pomoże dopasować plan.">
+        <DialogContent title={tl("Oznaczyć jako pominięty?", "Mark as skipped?")} description={tl("Trener zobaczy, że trening nie został wykonany. Dopisz w komentarzu powód, to pomoże dopasować plan.", "Your coach will see the session wasn’t done. Add the reason in a comment, it helps adjust the plan.")}>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmSkip(false)}>
-              Anuluj
+              {tl("Anuluj", "Cancel")}
             </Button>
             <Button variant="destructive" disabled={pending} onClick={() => submit("skipped")}>
-              Oznacz jako pominięty
+              {tl("Oznacz jako pominięty", "Mark as skipped")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent title="Usunąć zapis wykonania?" description="Wyniki tego treningu zostaną usunięte. Plan trenera zostaje bez zmian.">
+        <DialogContent title={tl("Usunąć zapis wykonania?", "Delete your result?")} description={tl("Wyniki tego treningu zostaną usunięte. Plan trenera zostaje bez zmian.", "The results of this session will be deleted. Your coach’s plan stays unchanged.")}>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              Anuluj
+              {tl("Anuluj", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -313,7 +314,7 @@ export function ExecutionForm({
                 })
               }
             >
-              Usuń zapis
+              {tl("Usuń zapis", "Delete result")}
             </Button>
           </div>
         </DialogContent>
@@ -328,17 +329,17 @@ function LapsEditor({ control, register }: { control: Control<ExecutionFormValue
   return (
     <details className="group rounded-md border border-border">
       <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium">
-        Wyniki odcinków <span className="text-muted">(opcjonalnie, {fields.length})</span>
+        {tl("Wyniki odcinków", "Rep results")} <span className="text-muted">(opcjonalnie, {fields.length})</span>
       </summary>
       <div className="overflow-x-auto border-t border-border p-3">
         <table className="w-full min-w-[420px] text-sm">
           <thead>
             <tr className="text-left text-[12px] text-muted">
-              <th className="pb-1.5 font-medium">Odcinek</th>
-              <th className="pb-1.5 font-medium">Dystans (m)</th>
-              <th className="pb-1.5 font-medium">Czas</th>
-              <th className="pb-1.5 font-medium">Tempo</th>
-              <th className="pb-1.5 font-medium">Tętno</th>
+              <th className="pb-1.5 font-medium">{tl("Odcinek", "Rep")}</th>
+              <th className="pb-1.5 font-medium">{tl("Dystans (m)", "Distance (m)")}</th>
+              <th className="pb-1.5 font-medium">{tl("Czas", "Time")}</th>
+              <th className="pb-1.5 font-medium">{tl("Tempo", "Pace")}</th>
+              <th className="pb-1.5 font-medium">{tl("Tętno", "HR")}</th>
             </tr>
           </thead>
           <tbody>
@@ -358,7 +359,7 @@ function LapsEditor({ control, register }: { control: Control<ExecutionFormValue
                   </td>
                   <td className="num py-1 pr-1.5 text-[13px]">{pace ? formatPace(pace) : "–"}</td>
                   <td className="py-1">
-                    <Input aria-label={`${f.label}: tętno`} inputMode="numeric" className="h-10" {...register(`laps.${i}.avg_hr`)} />
+                    <Input aria-label={`${f.label}: ${tl("tętno", "heart rate")}`} inputMode="numeric" className="h-10" {...register(`laps.${i}.avg_hr`)} />
                   </td>
                 </tr>
               );
@@ -399,10 +400,10 @@ function StrengthEntry({
                 </p>
               </div>
               <Select aria-label={`Status: ${r.exercise_name}`} className="h-9 w-40" {...register(`exercises.${i}.status`)}>
-                <option value="pending">Do uzupełnienia</option>
-                <option value="done">Wykonane</option>
-                <option value="partial">Częściowo</option>
-                <option value="skipped">Pominięte</option>
+                <option value="pending">{tl("Do uzupełnienia", "To update")}</option>
+                <option value="done">{tl("Wykonane", "Done")}</option>
+                <option value="partial">{tl("Częściowo", "Partly")}</option>
+                <option value="skipped">{tl("Pominięte", "Skipped")}</option>
               </Select>
             </CardHeader>
             <CardContent className="grid gap-3">
@@ -439,7 +440,7 @@ function StrengthEntry({
                             : "–"}
                         </p>
                         <div className="grid grid-cols-4 gap-1.5">
-                          <Input aria-label={`Seria ${j + 1}: powtórzenia`} placeholder="powt." inputMode="numeric" className="h-10" {...register(`exercises.${i}.sets.${j}.reps`)} />
+                          <Input aria-label={tl(`Seria ${j + 1}: powtórzenia`, `Set ${j + 1}: reps`)} placeholder="powt." inputMode="numeric" className="h-10" {...register(`exercises.${i}.sets.${j}.reps`)} />
                           <Input aria-label={`Seria ${j + 1}: kg`} placeholder="kg" inputMode="decimal" className="h-10" {...register(`exercises.${i}.sets.${j}.load_kg`)} />
                           <Input aria-label={`Seria ${j + 1}: czas`} placeholder="czas" inputMode="numeric" className="h-10" {...register(`exercises.${i}.sets.${j}.duration`)} />
                           <Input aria-label={`Seria ${j + 1}: RPE`} placeholder="RPE" inputMode="decimal" className="h-10" {...register(`exercises.${i}.sets.${j}.rpe`)} />
@@ -451,7 +452,7 @@ function StrengthEntry({
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[12px] text-muted">
-                  Wykonane serie: <span className="num text-foreground">{doneCount}</span> / {r.sets?.length ?? 0}
+                  {tl("Wykonane serie:", "Sets done:")} <span className="num text-foreground">{doneCount}</span> / {r.sets?.length ?? 0}
                 </p>
                 <Button
                   type="button"
@@ -462,17 +463,17 @@ function StrengthEntry({
                     setValue(`exercises.${i}.status`, "done", { shouldDirty: true });
                   }}
                 >
-                  <Check className="size-3.5" /> Wszystkie serie wykonane
+                  <Check className="size-3.5" /> {tl("Wszystkie serie wykonane", "All sets done")}
                 </Button>
               </div>
-              <Field label="Komentarz do ćwiczenia" htmlFor={`exr-${i}-c`}>
+              <Field label={tl("Komentarz do ćwiczenia", "Exercise comment")} htmlFor={`exr-${i}-c`}>
                 <Input id={`exr-${i}-c`} {...register(`exercises.${i}.comment`)} />
               </Field>
             </CardContent>
           </Card>
         );
       })}
-      {!results?.length ? <p className="text-sm text-muted">Ten trening nie ma rozpisanych ćwiczeń. Opisz wykonanie w komentarzu poniżej.</p> : null}
+      {!results?.length ? <p className="text-sm text-muted">{tl("Ten trening nie ma rozpisanych ćwiczeń. Opisz wykonanie w komentarzu poniżej.", "This session has no listed exercises. Describe what you did in the comment below.")}</p> : null}
     </div>
   );
 }

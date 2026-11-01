@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { Select } from "@/components/ui/form-controls";
 import { formatDate, formatNumber, formatPace } from "@/lib/format";
+import { tl } from "@/lib/i18n/runtime";
 
 /*
   Chart conventions (see README → Wykresy):
@@ -80,8 +81,8 @@ export function VolumeChart({ data }: { data: VolumePoint[] }) {
   const hasPlan = data.some((d) => d.plannedKm > 0);
   return (
     <div className="grid gap-3">
-      {hasPlan ? <Legend items={[{ label: "Wykonane km", swatch: "solid" }, { label: "Plan km", swatch: "dashed" }]} /> : null}
-      <ChartFrame label="Tygodniowa objętość biegowa w kilometrach">
+      {hasPlan ? <Legend items={[{ label: tl("Wykonane km", "Km done"), swatch: "solid" }, { label: tl("Plan km", "Planned km"), swatch: "dashed" }]} /> : null}
+      <ChartFrame label={tl("Tygodniowa objętość biegowa w kilometrach", "Weekly running volume in kilometres")}>
         <BarChart data={data} barGap={2} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
           <CartesianGrid {...GRID} />
           <XAxis dataKey="weekStart" tickFormatter={weekLabel} tickLine={false} axisLine={false} {...AXIS} />
@@ -91,10 +92,10 @@ export function VolumeChart({ data }: { data: VolumePoint[] }) {
             content={({ active, payload }: TooltipProps<number, string>) =>
               active && payload?.length ? (
                 <TipBox
-                  title={`Tydzień od ${formatDate(String(payload[0].payload.weekStart), "d MMM")}`}
+                  title={`${tl("Tydzień od", "Week of")} ${formatDate(String(payload[0].payload.weekStart), "d MMM")}`}
                   rows={[
-                    { label: "Wykonane", value: `${formatNumber(payload[0].payload.actualKm)} km`, swatch: "solid" },
-                    ...(hasPlan ? [{ label: "Plan", value: `${formatNumber(payload[0].payload.plannedKm)} km`, swatch: "dashed" as const }] : []),
+                    { label: tl("Wykonane", "Done"), value: `${formatNumber(payload[0].payload.actualKm)} km`, swatch: "solid" },
+                    ...(hasPlan ? [{ label: tl("Plan", "Plan"), value: `${formatNumber(payload[0].payload.plannedKm)} km`, swatch: "dashed" as const }] : []),
                   ]}
                 />
               ) : null
@@ -120,7 +121,7 @@ export interface CompletionPoint {
 export function CompletionChart({ data }: { data: CompletionPoint[] }) {
   const rows = data.map((d) => ({ ...d, value: d.completion ?? 0 }));
   return (
-    <ChartFrame label="Realizacja planu w kolejnych tygodniach (procent)">
+    <ChartFrame label={tl("Realizacja planu w kolejnych tygodniach (procent)", "Plan completion by week (percent)")}>
       <BarChart data={rows} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
         <CartesianGrid {...GRID} />
         <XAxis dataKey="weekStart" tickFormatter={weekLabel} tickLine={false} axisLine={false} {...AXIS} />
@@ -133,10 +134,10 @@ export function CompletionChart({ data }: { data: CompletionPoint[] }) {
             const p = payload[0].payload as CompletionPoint;
             return (
               <TipBox
-                title={`Tydzień od ${formatDate(p.weekStart, "d MMM")}`}
+                title={`${tl("Tydzień od", "Week of")} ${formatDate(p.weekStart, "d MMM")}`}
                 rows={[
-                  { label: "Realizacja", value: p.completion == null ? "brak treningów do oceny" : `${p.completion}%` },
-                  { label: "Wykonane / do wykonania", value: `${p.doneSessions} / ${p.dueSessions}` },
+                  { label: tl("Realizacja", "Completion"), value: p.completion == null ? tl("brak treningów do oceny", "no sessions to assess") : `${p.completion}%` },
+                  { label: tl("Wykonane / do wykonania", "Done / due"), value: `${p.doneSessions} / ${p.dueSessions}` },
                 ]}
               />
             );
@@ -159,12 +160,12 @@ export interface RunPoint {
 
 export function PaceTrendChart({ data }: { data: RunPoint[] }) {
   const rows = data.filter((d) => d.pace);
-  if (rows.length < 2) return <p className="text-sm text-muted">Za mało biegów z dystansem i czasem, by pokazać trend tempa.</p>;
+  if (rows.length < 2) return <p className="text-sm text-muted">{tl("Za mało biegów z dystansem i czasem, by pokazać trend tempa.", "Not enough runs with distance and time to show a pace trend.")}</p>;
   const paces = rows.map((r) => r.pace as number);
   const min = Math.floor(Math.min(...paces) / 15) * 15;
   const max = Math.ceil(Math.max(...paces) / 15) * 15;
   return (
-    <ChartFrame label="Średnie tempo kolejnych biegów; wyżej znaczy szybciej" height={200}>
+    <ChartFrame label={tl("Średnie tempo kolejnych biegów; wyżej znaczy szybciej", "Average pace of consecutive runs; higher means faster")} height={200}>
       <LineChart data={rows} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid {...GRID} />
         <XAxis dataKey="date" tickFormatter={weekLabel} tickLine={false} axisLine={false} minTickGap={24} {...AXIS} />
@@ -174,7 +175,7 @@ export function PaceTrendChart({ data }: { data: RunPoint[] }) {
           content={({ active, payload }: TooltipProps<number, string>) => {
             if (!active || !payload?.length) return null;
             const p = payload[0].payload as RunPoint;
-            return <TipBox title={`${formatDate(p.date, "d MMM")} · ${p.title}`} rows={[{ label: "Tempo", value: `${formatPace(p.pace)} /km` }]} />;
+            return <TipBox title={`${formatDate(p.date, "d MMM")} · ${p.title}`} rows={[{ label: tl("Tempo", "Pace"), value: `${formatPace(p.pace)} /km` }]} />;
           }}
         />
         <Line type="monotone" dataKey="pace" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3, fill: "var(--chart-1)", stroke: "var(--surface)", strokeWidth: 2 }} activeDot={{ r: 5 }} />
@@ -185,9 +186,9 @@ export function PaceTrendChart({ data }: { data: RunPoint[] }) {
 
 export function HeartRateTrendChart({ data }: { data: RunPoint[] }) {
   const rows = data.filter((d) => d.hr);
-  if (rows.length < 2) return <p className="text-sm text-muted">Za mało biegów z tętnem, by pokazać trend.</p>;
+  if (rows.length < 2) return <p className="text-sm text-muted">{tl("Za mało biegów z tętnem, by pokazać trend.", "Not enough runs with heart rate to show a trend.")}</p>;
   return (
-    <ChartFrame label="Średnie tętno kolejnych biegów" height={200}>
+    <ChartFrame label={tl("Średnie tętno kolejnych biegów", "Average heart rate of consecutive runs")} height={200}>
       <LineChart data={rows} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
         <CartesianGrid {...GRID} />
         <XAxis dataKey="date" tickFormatter={weekLabel} tickLine={false} axisLine={false} minTickGap={24} {...AXIS} />
@@ -197,7 +198,7 @@ export function HeartRateTrendChart({ data }: { data: RunPoint[] }) {
           content={({ active, payload }: TooltipProps<number, string>) => {
             if (!active || !payload?.length) return null;
             const p = payload[0].payload as RunPoint;
-            return <TipBox title={`${formatDate(p.date, "d MMM")} · ${p.title}`} rows={[{ label: "Śr. tętno", value: `${p.hr} bpm` }]} />;
+            return <TipBox title={`${formatDate(p.date, "d MMM")} · ${p.title}`} rows={[{ label: tl("Śr. tętno", "Avg HR"), value: `${p.hr} bpm` }]} />;
           }}
         />
         <Line type="monotone" dataKey="hr" stroke="var(--chart-2)" strokeWidth={2} dot={{ r: 3, fill: "var(--chart-2)", stroke: "var(--surface)", strokeWidth: 2 }} activeDot={{ r: 5 }} />
@@ -225,27 +226,27 @@ export function StrengthProgressChart({ data }: { data: StrengthPoint[] }) {
   const [exercise, setExercise] = useState(exercises[0] ?? "");
   const [metric, setMetric] = useState<"e1rm" | "bestLoad" | "volume">("e1rm");
   const rows = data.filter((d) => d.exercise === exercise && d[metric] != null).sort((a, b) => a.date.localeCompare(b.date));
-  const metricLabel = { e1rm: "Szacowane 1RM (kg)", bestLoad: "Najcięższa seria (kg)", volume: "Objętość (kg × powt.)" }[metric];
+  const metricLabel = { e1rm: tl("Szacowane 1RM (kg)", "Estimated 1RM (kg)"), bestLoad: tl("Najcięższa seria (kg)", "Heaviest set (kg)"), volume: tl("Objętość (kg × powt.)", "Volume (kg × reps)") }[metric];
 
-  if (!exercises.length) return <p className="text-sm text-muted">Brak zapisanych wyników siłowych.</p>;
+  if (!exercises.length) return <p className="text-sm text-muted">{tl("Brak zapisanych wyników siłowych.", "No strength results logged.")}</p>;
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap gap-2">
-        <Select aria-label="Ćwiczenie" className="h-9 w-auto min-w-48" value={exercise} onChange={(e) => setExercise(e.target.value)}>
+        <Select aria-label={tl("Ćwiczenie", "Exercise")} className="h-9 w-auto min-w-48" value={exercise} onChange={(e) => setExercise(e.target.value)}>
           {exercises.map((e) => (
             <option key={e} value={e}>
               {e}
             </option>
           ))}
         </Select>
-        <Select aria-label="Miara" className="h-9 w-auto" value={metric} onChange={(e) => setMetric(e.target.value as typeof metric)}>
-          <option value="e1rm">Szacowane 1RM</option>
-          <option value="bestLoad">Najcięższa seria</option>
-          <option value="volume">Objętość</option>
+        <Select aria-label={tl("Miara", "Metric")} className="h-9 w-auto" value={metric} onChange={(e) => setMetric(e.target.value as typeof metric)}>
+          <option value="e1rm">{tl("Szacowane 1RM", "Estimated 1RM")}</option>
+          <option value="bestLoad">{tl("Najcięższa seria", "Heaviest set")}</option>
+          <option value="volume">{tl("Objętość", "Volume")}</option>
         </Select>
       </div>
       {rows.length < 2 ? (
-        <p className="text-sm text-muted">Potrzebne są co najmniej dwa treningi z tym ćwiczeniem.</p>
+        <p className="text-sm text-muted">{tl("Potrzebne są co najmniej dwa treningi z tym ćwiczeniem.", "At least two sessions with this exercise are needed.")}</p>
       ) : (
         <ChartFrame label={`${exercise}: ${metricLabel}`} height={220}>
           <LineChart data={rows} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -261,9 +262,9 @@ export function StrengthProgressChart({ data }: { data: StrengthPoint[] }) {
                   <TipBox
                     title={formatDate(p.date, "d MMM yyyy")}
                     rows={[
-                      { label: "Najcięższa seria", value: p.bestLoad != null ? `${formatNumber(p.bestLoad)} kg` : "–" },
-                      { label: "Szac. 1RM", value: p.e1rm != null ? `${formatNumber(p.e1rm)} kg` : "–" },
-                      { label: "Objętość", value: `${formatNumber(p.volume, 0)} kg` },
+                      { label: tl("Najcięższa seria", "Heaviest set"), value: p.bestLoad != null ? `${formatNumber(p.bestLoad)} kg` : "–" },
+                      { label: tl("Szac. 1RM", "Est. 1RM"), value: p.e1rm != null ? `${formatNumber(p.e1rm)} kg` : "–" },
+                      { label: tl("Objętość", "Volume"), value: `${formatNumber(p.volume, 0)} kg` },
                     ]}
                   />
                 );
@@ -273,7 +274,7 @@ export function StrengthProgressChart({ data }: { data: StrengthPoint[] }) {
           </LineChart>
         </ChartFrame>
       )}
-      {metric === "e1rm" ? <p className="text-[12px] text-subtle">1RM to wartość szacowana (wzór Epleya, serie do 12 powtórzeń), nie zmierzony wynik.</p> : null}
+      {metric === "e1rm" ? <p className="text-[12px] text-subtle">{tl("1RM to wartość szacowana (wzór Epleya, serie do 12 powtórzeń), nie zmierzony wynik.", "1RM is an estimate (Epley formula, sets of up to 12 reps), not a measured result.")}</p> : null}
     </div>
   );
 }

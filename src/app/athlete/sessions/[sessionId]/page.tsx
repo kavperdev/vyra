@@ -14,10 +14,16 @@ import { getSessionDetail, listComments } from "@/lib/data/sessions";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { executionDefaults } from "@/lib/validation/execution";
+import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
-export const metadata: Metadata = { title: "Trening" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Trening", "Session") };
+}
 
 export default async function AthleteSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  await getLang();
   const { sessionId } = await params;
   const user = await requireRole("athlete");
   const supabase = await createClient();
@@ -30,7 +36,7 @@ export default async function AthleteSessionPage({ params }: { params: Promise<{
   return (
     <div className="grid gap-6">
       <Link href="/athlete/calendar" className="flex w-fit items-center gap-1 text-sm text-muted hover:text-foreground">
-        <ChevronLeft className="size-4" /> Kalendarz
+        <ChevronLeft className="size-4" /> {tl("Kalendarz", "Calendar")}
       </Link>
       <PageHeader
         eyebrow={formatDate(session.scheduled_date, "EEEE, d MMMM") + (session.scheduled_time ? ` · ${session.scheduled_time.slice(0, 5)}` : "")}
@@ -42,10 +48,10 @@ export default async function AthleteSessionPage({ params }: { params: Promise<{
           <PlanDetails session={session} />
           <Card>
             <CardHeader>
-              <CardTitle className="eyebrow text-[11px]">Komentarze</CardTitle>
+              <CardTitle className="eyebrow text-[11px]">{tl("Komentarze", "Comments")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder="Napisz do trenera…" />
+              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder={tl("Napisz do trenera…", "Write to your coach…")} />
             </CardContent>
           </Card>
         </div>
@@ -53,7 +59,7 @@ export default async function AthleteSessionPage({ params }: { params: Promise<{
           {done ? <PlanVsActual session={session} /> : null}
           <section className="grid gap-3" aria-labelledby="log-title">
             <h2 id="log-title" className="eyebrow">
-              {session.execution ? "Twoje wykonanie" : "Zapisz wykonanie"}
+              {session.execution ? tl("Twoje wykonanie", "Your result") : tl("Zapisz wykonanie", "Log result")}
             </h2>
             <ExecutionForm
               kind={session.kind}

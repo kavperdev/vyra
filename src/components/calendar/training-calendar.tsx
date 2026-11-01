@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { addDays, addMonths, format, parseISO } from "date-fns";
-import { pl } from "date-fns/locale";
+import { addDays, addMonths, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-controls";
 import { EmptyState } from "@/components/ui/misc";
 import { KindIcon, SessionList, StatusBadge } from "@/components/training/session-bits";
 import { eachDay, monthGridRange, toISODate, weekEndISO, weekStartISO } from "@/lib/dates";
-import { initials } from "@/lib/format";
+import { formatDate, initials } from "@/lib/format";
+import { activeLang, localized, tl } from "@/lib/i18n/runtime";
 import { ALL_DISPLAY_STATUSES, displayStatus, STATUS_META } from "@/lib/training/status";
 import { KIND_LABEL } from "@/lib/training/categories";
 import type { DisplayStatus, SessionKind, SessionSummary } from "@/lib/types";
@@ -20,7 +20,7 @@ import type { CalendarView } from "@/lib/calendar";
 
 export type { CalendarView };
 
-const VIEW_LABEL: Record<CalendarView, string> = { month: "Miesiąc", week: "Tydzień", day: "Dzień", list: "Lista" };
+const VIEW_LABEL: Record<CalendarView, string> = localized<CalendarView>({ month: "Miesiąc", week: "Tydzień", day: "Dzień", list: "Lista" }, { month: "Month", week: "Week", day: "Day", list: "List" });
 
 const DOT: Record<string, string> = {
   planned: "bg-planned",
@@ -89,28 +89,28 @@ export function TrainingCalendar({
 
   const title =
     view === "month" || view === "list"
-      ? format(parseISO(date), "LLLL yyyy", { locale: pl })
+      ? formatDate(date, "LLLL yyyy")
       : view === "week"
-        ? `${format(parseISO(weekStartISO(date)), "d MMM", { locale: pl })} – ${format(parseISO(weekEndISO(date)), "d MMM yyyy", { locale: pl })}`
-        : format(parseISO(date), "EEEE, d MMMM yyyy", { locale: pl });
+        ? `${formatDate(weekStartISO(date), "d MMM")} – ${formatDate(weekEndISO(date), "d MMM yyyy")}`
+        : formatDate(date, "EEEE, d MMMM yyyy");
 
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon-sm" aria-label="Poprzedni okres" onClick={() => shift(-1)}>
+          <Button variant="outline" size="icon-sm" aria-label={tl("Poprzedni okres", "Previous period")} onClick={() => shift(-1)}>
             <ChevronLeft className="size-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => go({ date: today })}>
-            Dziś
+            {tl("Dziś", "Today")}
           </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Następny okres" onClick={() => shift(1)}>
+          <Button variant="outline" size="icon-sm" aria-label={tl("Następny okres", "Next period")} onClick={() => shift(1)}>
             <ChevronRight className="size-4" />
           </Button>
           <h2 className="ml-2 text-base font-semibold capitalize">{title}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="tablist" aria-label="Widok kalendarza" className="flex rounded-md border border-border p-0.5">
+          <div role="tablist" aria-label={tl("Widok kalendarza", "Calendar view")} className="flex rounded-md border border-border p-0.5">
             {(Object.keys(VIEW_LABEL) as CalendarView[]).map((v) => (
               <button
                 key={v}
@@ -126,7 +126,7 @@ export function TrainingCalendar({
           {role === "coach" ? (
             <Button asChild size="sm">
               <Link href={newHref(view === "day" ? date : today >= date ? today : date)}>
-                <Plus className="size-4" /> Trening
+                <Plus className="size-4" /> {tl("Trening", "Session")}
               </Link>
             </Button>
           ) : null}
@@ -135,8 +135,8 @@ export function TrainingCalendar({
 
       <div className="flex flex-wrap gap-2">
         {role === "coach" && !lockedAthleteId && athletes ? (
-          <Select aria-label="Zawodnik" className="h-9 w-auto min-w-44" value={filters.athlete} onChange={(e) => go({ athlete: e.target.value || null })}>
-            <option value="">Wszyscy zawodnicy</option>
+          <Select aria-label={tl("Zawodnik", "Athlete")} className="h-9 w-auto min-w-44" value={filters.athlete} onChange={(e) => go({ athlete: e.target.value || null })}>
+            <option value="">{tl("Wszyscy zawodnicy", "All athletes")}</option>
             {athletes.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.full_name}
@@ -144,16 +144,16 @@ export function TrainingCalendar({
             ))}
           </Select>
         ) : null}
-        <Select aria-label="Typ treningu" className="h-9 w-auto min-w-36" value={filters.kind} onChange={(e) => go({ kind: e.target.value || null })}>
-          <option value="">Wszystkie typy</option>
+        <Select aria-label={tl("Typ treningu", "Session type")} className="h-9 w-auto min-w-36" value={filters.kind} onChange={(e) => go({ kind: e.target.value || null })}>
+          <option value="">{tl("Wszystkie typy", "All types")}</option>
           {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
             <option key={k} value={k}>
               {KIND_LABEL[k]}
             </option>
           ))}
         </Select>
-        <Select aria-label="Status" className="h-9 w-auto min-w-40" value={filters.status} onChange={(e) => go({ status: e.target.value || null })}>
-          <option value="">Każdy status</option>
+        <Select aria-label={tl("Status", tl("Status", "Status"))} className="h-9 w-auto min-w-40" value={filters.status} onChange={(e) => go({ status: e.target.value || null })}>
+          <option value="">{tl("Każdy status", "Any status")}</option>
           {ALL_DISPLAY_STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_META[s].label}
@@ -174,13 +174,13 @@ export function TrainingCalendar({
           showAthlete={role === "coach" && !lockedAthleteId}
           empty={
             <EmptyState
-              title="Brak treningów tego dnia"
-              description={role === "coach" ? "Dodaj trening na ten dzień albo przejdź do innego dnia." : "Dzień bez zaplanowanego treningu."}
+              title={tl("Brak treningów tego dnia", "No sessions on this day")}
+              description={role === "coach" ? tl("Dodaj trening na ten dzień albo przejdź do innego dnia.", "Add a session for this day or go to another day.") : tl("Dzień bez zaplanowanego treningu.", "No session planned on this day.")}
               action={
                 role === "coach" ? (
                   <Button asChild size="sm" variant="outline">
                     <Link href={newHref(date)}>
-                      <Plus className="size-4" /> Dodaj trening
+                      <Plus className="size-4" /> {tl("Dodaj trening", "Add session")}
                     </Link>
                   </Button>
                 ) : null
@@ -234,7 +234,7 @@ function MonthGrid({
   const { from, to } = monthGridRange(date);
   const days = eachDay(from, to);
   const month = date.slice(0, 7);
-  const weekdays = ["pn", "wt", "śr", "cz", "pt", "sb", "nd"];
+  const weekdays = activeLang() === "en" ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["pn", "wt", "śr", "cz", "pt", "sb", "nd"];
   return (
     <div className="overflow-hidden rounded-lg border border-border">
       <div className="grid grid-cols-7 border-b border-border bg-surface text-center">
@@ -258,12 +258,12 @@ function MonthGrid({
                     "num flex size-7 items-center justify-center rounded-full text-[12px]",
                     d === today ? "bg-accent font-semibold text-accent-foreground" : inMonth ? "text-foreground hover:bg-surface-2" : "text-subtle",
                   )}
-                  aria-label={`Pokaż ${format(parseISO(d), "d MMMM", { locale: pl })}`}
+                  aria-label={tl(`Pokaż ${formatDate(d, "d MMMM")}`, `Show ${formatDate(d, "d MMMM")}`)}
                 >
                   {Number(d.slice(8))}
                 </button>
                 {role === "coach" ? (
-                  <Link href={newHref(d)} aria-label="Dodaj trening tego dnia" className="hidden rounded p-1 text-muted hover:bg-surface-2 hover:text-foreground sm:group-hover:block">
+                  <Link href={newHref(d)} aria-label={tl("Dodaj trening tego dnia", "Add a session on this day")} className="hidden rounded p-1 text-muted hover:bg-surface-2 hover:text-foreground sm:group-hover:block">
                     <Plus className="size-3.5" />
                   </Link>
                 ) : null}
@@ -280,7 +280,7 @@ function MonthGrid({
                 ))}
                 {items.length > 3 ? (
                   <button type="button" onClick={() => onDay(d)} className="text-left text-[11px] text-muted hover:text-foreground">
-                    +{items.length - 3} więcej
+                    +{items.length - 3} {tl("więcej", "more")}
                   </button>
                 ) : null}
               </div>
@@ -315,9 +315,9 @@ function WeekGrid({
         return (
           <div key={d} className={cn("grid content-start gap-2 rounded-lg border border-border bg-surface p-2.5 lg:min-h-64", d === today && "border-accent/60")}>
             <div className="flex items-center justify-between">
-              <p className={cn("text-[13px] font-semibold capitalize", d === today && "text-accent")}>{format(parseISO(d), "EEE d.MM", { locale: pl })}</p>
+              <p className={cn("text-[13px] font-semibold capitalize", d === today && "text-accent")}>{formatDate(d, "EEE d.MM")}</p>
               {role === "coach" ? (
-                <Link href={newHref(d)} aria-label="Dodaj trening tego dnia" className="rounded p-1 text-muted hover:bg-surface-2 hover:text-foreground">
+                <Link href={newHref(d)} aria-label={tl("Dodaj trening tego dnia", "Add a session on this day")} className="rounded p-1 text-muted hover:bg-surface-2 hover:text-foreground">
                   <Plus className="size-3.5" />
                 </Link>
               ) : null}
@@ -350,14 +350,14 @@ function ListView({ sessions, hrefFor, today, showAthlete }: { sessions: Session
       hrefFor={hrefFor}
       today={today}
       showAthlete={showAthlete}
-      empty={<EmptyState title="Brak treningów w tym miesiącu" description="Zmień miesiąc albo filtry." />}
+      empty={<EmptyState title={tl("Brak treningów w tym miesiącu", "No sessions this month")} description={tl("Zmień miesiąc albo filtry.", "Change the month or filters.")} />}
     />
   );
 }
 
 function Legend() {
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted" aria-label="Legenda statusów">
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted" aria-label={tl("Legenda statusów", "Status legend")}>
       {ALL_DISPLAY_STATUSES.filter((s) => s !== "in_progress").map((s) => (
         <li key={s} className="flex items-center gap-1.5">
           <span aria-hidden className={cn("size-2 rounded-full", DOT[STATUS_META[s].tone])} />

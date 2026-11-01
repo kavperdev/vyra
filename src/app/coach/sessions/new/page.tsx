@@ -9,14 +9,19 @@ import { listAthletes, listTemplates } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind, type TrainingPlan } from "@/lib/types";
 import { emptySessionForm, payloadToForm } from "@/lib/validation/session";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Nowy trening" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Nowy trening", "New session") };
+}
 
 export default async function NewSessionPage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string; athlete?: string; template?: string; kind?: string; plan?: string }>;
 }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
   if (!canPlan(user.profile.staff_role)) {

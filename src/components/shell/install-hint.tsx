@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/client";
 
 type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -14,6 +15,7 @@ const KEY = "vyra.installHint.dismissed";
  * Hidden when already installed or once dismissed (remembered on this device).
  */
 export function InstallHint() {
+  const t = useT();
   const [mode, setMode] = useState<"android" | "ios" | null>(null);
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
 
@@ -55,15 +57,16 @@ export function InstallHint() {
   return (
     <div className="mb-6 flex items-start gap-3 rounded-lg border border-border bg-surface p-4 lg:hidden">
       <div className="grid flex-1 gap-1.5">
-        <p className="text-sm font-semibold">Dodaj VYRA do ekranu głównego</p>
+        <p className="text-sm font-semibold">{t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")}</p>
         {mode === "ios" ? (
           <p className="text-[13px] text-muted">
-            Kliknij <Share className="inline size-3.5 align-[-2px]" /> <b>Udostępnij</b> na dole Safari, a potem{" "}
-            <b>Do ekranu początkowego</b>. VYRA otworzy się jak aplikacja.
+            {t("Kliknij", "Tap")} <Share className="inline size-3.5 align-[-2px]" /> <b>{t("Udostępnij", "Share")}</b>{" "}
+            {t("na dole Safari, a potem", "at the bottom of Safari, then")} <b>{t("Do ekranu początkowego", "Add to Home Screen")}</b>.{" "}
+            {t("VYRA otworzy się jak aplikacja.", "VYRA will open like an app.")}
           </p>
         ) : (
           <>
-            <p className="text-[13px] text-muted">Otwieraj VYRA jednym kliknięciem, na pełnym ekranie, jak aplikację.</p>
+            <p className="text-[13px] text-muted">{t("Otwieraj VYRA jednym kliknięciem, na pełnym ekranie, jak aplikację.", "Open VYRA with one tap, full screen, like an app.")}</p>
             <Button
               size="sm"
               className="w-fit"
@@ -74,12 +77,12 @@ export function InstallHint() {
                 close();
               }}
             >
-              <Download className="size-4" /> Zainstaluj
+              <Download className="size-4" /> {t("Zainstaluj", "Install")}
             </Button>
           </>
         )}
       </div>
-      <button type="button" aria-label="Zamknij" className="rounded-md p-1 text-muted hover:text-foreground" onClick={close}>
+      <button type="button" aria-label={t("Zamknij", "Close")} className="rounded-md p-1 text-muted hover:text-foreground" onClick={close}>
         <X className="size-4" />
       </button>
     </div>

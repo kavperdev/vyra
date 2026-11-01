@@ -4,10 +4,15 @@ import { NotificationList } from "@/components/shared/notification-list";
 import { requireRole } from "@/lib/auth";
 import { listNotifications } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Powiadomienia" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Powiadomienia", "Notifications") };
+}
 
 export default async function NotificationsPage() {
+  await getLang();
   await requireRole("coach");
   const supabase = await createClient();
   const items = await listNotifications(supabase);

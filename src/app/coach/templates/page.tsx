@@ -11,8 +11,12 @@ import { formatDate } from "@/lib/format";
 import { categoryLabel, KIND_LABEL } from "@/lib/training/categories";
 import { createClient } from "@/lib/supabase/server";
 import type { TrainingTemplate } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Szablony" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Szablony", "Templates") };
+}
 
 function summary(t: TrainingTemplate): string {
   const p = t.payload;
@@ -26,6 +30,7 @@ function summary(t: TrainingTemplate): string {
 }
 
 export default async function TemplatesPage() {
+  await getLang();
   await requireRole("coach");
   const supabase = await createClient();
   const templates = await listTemplates(supabase);

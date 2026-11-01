@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/ui/misc";
 import type { StrengthHistoryEntry } from "@/lib/data/people";
 import { formatDate, formatKg, formatNumber } from "@/lib/format";
 import { bestSet, estimateOneRepMax, exerciseKey, totalReps, volumeLoad } from "@/lib/training/strength";
+import { tl } from "@/lib/i18n/runtime";
 
 interface ExerciseSummary {
   name: string;
@@ -40,19 +41,19 @@ export function summarizeExercises(entries: StrengthHistoryEntry[]): ExerciseSum
 
 export function StrengthHistory({ entries, sessionHref }: { entries: StrengthHistoryEntry[]; sessionHref: (id: string) => string }) {
   const exercises = summarizeExercises(entries);
-  if (!exercises.length) return <EmptyState title="Brak historii siłowej" description="Historia pojawi się po zapisaniu pierwszego treningu siłowego." />;
+  if (!exercises.length) return <EmptyState title={tl("Brak historii siłowej", "No strength history")} description={tl("Historia pojawi się po zapisaniu pierwszego treningu siłowego.", "History appears after your first strength session is logged.")} />;
   return (
     <div className="grid gap-4">
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-surface text-left text-[12px] text-muted">
             <tr>
-              <th className="px-3 py-2.5 font-medium">Ćwiczenie</th>
-              <th className="px-3 py-2.5 font-medium">Treningi</th>
-              <th className="px-3 py-2.5 font-medium">Ostatnio</th>
-              <th className="px-3 py-2.5 font-medium">Najcięższa seria</th>
-              <th className="px-3 py-2.5 font-medium">Szac. 1RM</th>
-              <th className="px-3 py-2.5 font-medium">Ostatnia objętość</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Ćwiczenie", "Exercise")}</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Treningi", "Sessions")}</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Ostatnio", "Last")}</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Najcięższa seria", "Heaviest set")}</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Szac. 1RM", "Est. 1RM")}</th>
+              <th className="px-3 py-2.5 font-medium">{tl("Ostatnia objętość", "Latest volume")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -69,9 +70,9 @@ export function StrengthHistory({ entries, sessionHref }: { entries: StrengthHis
           </tbody>
         </table>
       </div>
-      <p className="text-[12px] text-subtle">Szacowane 1RM liczone wzorem Epleya z serii do 12 powtórzeń. Warianty ćwiczeń o różnych nazwach nie są łączone.</p>
+      <p className="text-[12px] text-subtle">{tl("Szacowane 1RM liczone wzorem Epleya z serii do 12 powtórzeń. Warianty ćwiczeń o różnych nazwach nie są łączone.", "Estimated 1RM uses the Epley formula from sets of up to 12 reps. Exercise variants with different names aren’t combined.")}</p>
       <details className="rounded-lg border border-border">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm">Wszystkie zapisane serie</summary>
+        <summary className="cursor-pointer px-4 py-2.5 text-sm">{tl("Wszystkie zapisane serie", "All logged sets")}</summary>
         <ul className="divide-y divide-border border-t border-border">
           {entries.map((e, i) => (
             <li key={`${e.session_id}-${e.exercise_name}-${i}`} className="grid gap-1 px-4 py-2.5 text-sm">

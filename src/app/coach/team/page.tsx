@@ -7,10 +7,15 @@ import { siteUrl } from "@/lib/env";
 import { listAthletes } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import type { Invitation, StaffRole } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Zespół VYRA" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Zespół VYRA", "VYRA team") };
+}
 
 export default async function TeamPage() {
+  await getLang();
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();

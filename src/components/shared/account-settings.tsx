@@ -9,6 +9,7 @@ import { PushSettings } from "@/components/shell/push-toggle";
 import { Field, Input, Select } from "@/components/ui/form-controls";
 import { updateOwnProfile } from "@/lib/actions/athletes";
 import { updatePassword } from "@/lib/actions/auth";
+import { tl } from "@/lib/i18n/runtime";
 
 export function AccountSettings({ fullName, email }: { fullName: string; email: string | null }) {
   const [name, setName] = useState(fullName);
@@ -21,7 +22,7 @@ export function AccountSettings({ fullName, email }: { fullName: string; email: 
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Profil</CardTitle>
+          <CardTitle>{tl("Profil", "Profile")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -36,27 +37,27 @@ export function AccountSettings({ fullName, email }: { fullName: string; email: 
               });
             }}
           >
-            <Field label="Imię i nazwisko" htmlFor="acc-name">
+            <Field label={tl("Imię i nazwisko", "Full name")} htmlFor="acc-name">
               <Input id="acc-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
             </Field>
-            <Field label="E-mail" htmlFor="acc-email" hint="Adres logowania.">
+            <Field label={tl("E-mail", "Email")} htmlFor="acc-email" hint={tl("Adres logowania.", "Your sign-in address.")}>
               <Input id="acc-email" value={email ?? ""} readOnly disabled />
             </Field>
-            <Field label="Motyw" htmlFor="acc-theme">
+            <Field label={tl("Motyw", "Theme")} htmlFor="acc-theme">
               <Select id="acc-theme" value={theme ?? "dark"} onChange={(e) => setTheme(e.target.value)}>
-                <option value="dark">Ciemny (domyślny VYRA)</option>
-                <option value="light">Jasny</option>
-                <option value="system">Jak w systemie</option>
+                <option value="dark">{tl("Ciemny (domyślny VYRA)", "Dark (VYRA default)")}</option>
+                <option value="light">{tl("Jasny", "Light")}</option>
+                <option value="system">{tl("Jak w systemie", "System")}</option>
               </Select>
             </Field>
-            <Button type="submit" className="w-fit" disabled={pending}>Zapisz profil</Button>
+            <Button type="submit" className="w-fit" disabled={pending}>{tl("Zapisz profil", "Save profile")}</Button>
           </form>
         </CardContent>
       </Card>
       <PushSettings />
       <Card>
         <CardHeader>
-          <CardTitle>Zmiana hasła</CardTitle>
+          <CardTitle>{tl("Zmiana hasła", "Change password")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -77,13 +78,13 @@ export function AccountSettings({ fullName, email }: { fullName: string; email: 
               });
             }}
           >
-            <Field label="Nowe hasło" htmlFor="acc-pw" error={errors.password?.[0]} hint="Co najmniej 8 znaków, litera i cyfra.">
+            <Field label={tl("Nowe hasło", "New password")} htmlFor="acc-pw" error={errors.password?.[0]} hint={tl("Co najmniej 8 znaków, litera i cyfra.", "At least 8 characters, a letter and a number.")}>
               <Input id="acc-pw" type="password" autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} />
             </Field>
-            <Field label="Powtórz hasło" htmlFor="acc-pw2" error={errors.confirm?.[0]}>
+            <Field label={tl("Powtórz hasło", "Repeat password")} htmlFor="acc-pw2" error={errors.confirm?.[0]}>
               <Input id="acc-pw2" type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
             </Field>
-            <Button type="submit" className="w-fit" disabled={pending}>Zmień hasło</Button>
+            <Button type="submit" className="w-fit" disabled={pending}>{tl("Zmień hasło", "Change password")}</Button>
           </form>
         </CardContent>
       </Card>

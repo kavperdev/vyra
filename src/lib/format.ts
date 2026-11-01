@@ -1,5 +1,7 @@
 import { format, parseISO } from "date-fns";
-import { pl } from "date-fns/locale";
+import { enGB, pl } from "date-fns/locale";
+import { activeLang } from "@/lib/i18n/runtime";
+import type { Lang } from "@/lib/i18n/shared";
 
 /** 270 → "4:30". Returns "–" for empty values. */
 export function formatPace(secondsPerKm: number | null | undefined): string {
@@ -96,17 +98,18 @@ export function formatKg(value: number | null | undefined): string {
   return `${formatNumber(value, 1)} kg`;
 }
 
-export function formatDate(iso: string | Date, pattern = "d MMM yyyy"): string {
+// Dates follow the active language (see lib/i18n/runtime); `lang` overrides it.
+export function formatDate(iso: string | Date, pattern = "d MMM yyyy", lang?: Lang): string {
   const d = typeof iso === "string" ? parseISO(iso) : iso;
-  return format(d, pattern, { locale: pl });
+  return format(d, pattern, { locale: (lang ?? activeLang()) === "en" ? enGB : pl });
 }
 
-export function formatDayLabel(iso: string): string {
-  return formatDate(iso, "EEE, d MMM");
+export function formatDayLabel(iso: string, lang?: Lang): string {
+  return formatDate(iso, "EEE, d MMM", lang);
 }
 
-export function formatDateTime(iso: string): string {
-  return formatDate(iso, "d MMM yyyy, HH:mm");
+export function formatDateTime(iso: string, lang?: Lang): string {
+  return formatDate(iso, "d MMM yyyy, HH:mm", lang);
 }
 
 export function initials(name: string | null | undefined): string {

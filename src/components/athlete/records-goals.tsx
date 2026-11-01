@@ -13,8 +13,9 @@ import { deleteGoal, deleteRecord, saveGoal, saveRecord } from "@/lib/actions/fe
 import { formatDate, formatDuration, formatNumber } from "@/lib/format";
 import { bestRecords, formatRecordValue, goalProgress, STANDARD_DISTANCES, type RecordSuggestion } from "@/lib/training/records";
 import type { AthleteGoal, PersonalRecord } from "@/lib/types";
+import { localized, tl } from "@/lib/i18n/runtime";
 
-const SOURCE_LABEL: Record<string, string> = { manual: "wpis ręczny", execution: "z treningu", race: "zawody", test: "test" };
+const SOURCE_LABEL: Record<string, string> = localized<string>({ manual: "wpis ręczny", execution: "z treningu", race: "zawody", test: "test" }, { manual: "manual entry", execution: "from a session", race: "race", test: "test" });
 
 
 const emptyRecord = (athleteId: string, today: string) => ({
@@ -59,16 +60,16 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Rekordy osobiste</CardTitle>
+        <CardTitle>{tl("Rekordy osobiste", "Personal records")}</CardTitle>
         <Button size="sm" variant="outline" onClick={() => open()}>
-          <Plus className="size-4" /> Dodaj rekord
+          <Plus className="size-4" /> {tl("Dodaj rekord", "Add record")}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-5">
         {suggestions.length ? (
           <div className="grid gap-2 rounded-md border border-accent/30 bg-accent/5 p-3">
-            <p className="text-sm font-semibold">Możliwe nowe rekordy</p>
-            <p className="text-[12px] text-muted">Wyniki z treningów nie są automatycznie rekordami. Potwierdź, jeśli to oficjalny wynik.</p>
+            <p className="text-sm font-semibold">{tl("Możliwe nowe rekordy", "Possible new records")}</p>
+            <p className="text-[12px] text-muted">{tl("Wyniki z treningów nie są automatycznie rekordami. Potwierdź, jeśli to oficjalny wynik.", "Session results aren’t records automatically. Confirm if it’s an official result.")}</p>
             <ul className="grid gap-2">
               {suggestions.map((s) => (
                 <li key={s.session_id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -95,12 +96,12 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
                           session_id: s.session_id,
                           comment: "",
                         });
-                        if (res.ok) toast.success("Rekord potwierdzony");
+                        if (res.ok) toast.success(tl("Rekord potwierdzony", "Record confirmed"));
                         else toast.error(res.error);
                       })
                     }
                   >
-                    Potwierdź rekord
+                    {tl("Potwierdź rekord", "Confirm record")}
                   </Button>
                 </li>
               ))}
@@ -123,7 +124,7 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
             ))}
           </div>
         ) : (
-          <EmptyState title="Brak rekordów" description="Dodaj rekordy z zawodów i testów, aby śledzić postęp na dystansach 1 km – maraton i w ćwiczeniach siłowych." />
+          <EmptyState title={tl("Brak rekordów", "No records")} description={tl("Dodaj rekordy z zawodów i testów, aby śledzić postęp na dystansach 1 km – maraton i w ćwiczeniach siłowych.", "Add records from races and tests to track progress from 1 km to the marathon and in strength exercises.")} />
         )}
 
         {records.length ? (
@@ -137,13 +138,13 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
                     {r.comment ? <span className="text-muted"> · {r.comment}</span> : null}
                   </span>
                   <span className="flex gap-1">
-                    <Button size="icon-sm" variant="ghost" aria-label="Edytuj rekord" onClick={() => open(r)}>
+                    <Button size="icon-sm" variant="ghost" aria-label={tl("Edytuj rekord", "Edit record")} onClick={() => open(r)}>
                       <Pencil className="size-3.5" />
                     </Button>
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label="Usuń rekord"
+                      aria-label={tl("Usuń rekord", "Delete record")}
                       disabled={pending}
                       onClick={() =>
                         start(async () => {
@@ -165,7 +166,7 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
 
       <Dialog open={!!editing} onOpenChange={(o: boolean) => !o && setEditing(null)}>
         {editing ? (
-          <DialogContent title={editing.id ? "Edytuj rekord" : "Nowy rekord"}>
+          <DialogContent title={editing.id ? tl("Edytuj rekord", "Edit record") : tl("Nowy rekord", "New record")}>
             <RecordForm
               value={editing}
               onChange={setEditing}
@@ -192,7 +193,7 @@ function RecordForm({ value: v, onChange, onSubmit, pending }: { value: Record<s
   return (
     <form className="grid gap-4" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Rodzaj" htmlFor="rec-kind">
+        <Field label={tl("Rodzaj", "Type")} htmlFor="rec-kind">
           <Select
             id="rec-kind"
             value={v.kind}
@@ -200,13 +201,13 @@ function RecordForm({ value: v, onChange, onSubmit, pending }: { value: Record<s
               set(e.target.value === "strength" ? { kind: "strength", unit: "kg", label: "", distance_km: "" } : e.target.value === "running" ? { kind: "running", unit: "s", label: "5 km", distance_km: "5" } : { kind: "other" })
             }
           >
-            <option value="running">Bieg</option>
-            <option value="strength">Siła</option>
-            <option value="other">Inny</option>
+            <option value="running">{tl("Bieg", "Running")}</option>
+            <option value="strength">{tl("Siła", "Strength")}</option>
+            <option value="other">{tl("Inny", "Other")}</option>
           </Select>
         </Field>
         {v.kind === "running" ? (
-          <Field label="Dystans" htmlFor="rec-dist">
+          <Field label={tl("Dystans", "Distance")} htmlFor="rec-dist">
             <Select
               id="rec-dist"
               value={STANDARD_DISTANCES.find((d) => d.label === v.label) ? v.label : "custom"}
@@ -218,52 +219,52 @@ function RecordForm({ value: v, onChange, onSubmit, pending }: { value: Record<s
               {STANDARD_DISTANCES.map((d) => (
                 <option key={d.label} value={d.label}>{d.label}</option>
               ))}
-              <option value="custom">Inny dystans…</option>
+              <option value="custom">{tl("Inny dystans…", "Other distance…")}</option>
             </Select>
           </Field>
         ) : (
-          <Field label="Jednostka" htmlFor="rec-unit">
+          <Field label={tl("Jednostka", "Unit")} htmlFor="rec-unit">
             <Select id="rec-unit" value={v.unit} onChange={(e) => set({ unit: e.target.value })}>
               <option value="kg">kg</option>
-              <option value="reps">powtórzenia</option>
-              <option value="s">czas</option>
-              <option value="m">metry</option>
+              <option value="reps">{tl("powtórzenia", "reps")}</option>
+              <option value="s">{tl("czas", "time")}</option>
+              <option value="m">{tl("metry", "metres")}</option>
             </Select>
           </Field>
         )}
       </div>
       {v.kind !== "running" || !STANDARD_DISTANCES.find((d) => d.label === v.label) ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={v.kind === "strength" ? "Ćwiczenie / nazwa rekordu" : "Nazwa"} htmlFor="rec-label">
-            <Input id="rec-label" value={v.label} onChange={(e) => set({ label: e.target.value, exercise_name: v.kind === "strength" ? e.target.value : v.exercise_name })} placeholder={v.kind === "strength" ? "np. Przysiad 1RM" : "np. 15 km"} />
+          <Field label={v.kind === "strength" ? tl("Ćwiczenie / nazwa rekordu", "Exercise / record name") : tl("Nazwa", "Name")} htmlFor="rec-label">
+            <Input id="rec-label" value={v.label} onChange={(e) => set({ label: e.target.value, exercise_name: v.kind === "strength" ? e.target.value : v.exercise_name })} placeholder={v.kind === "strength" ? tl("np. Przysiad 1RM", "e.g. Back squat 1RM") : tl("np. 15 km", "e.g. 15 km")} />
           </Field>
           {v.kind === "running" ? (
-            <Field label="Dystans" unit="km" htmlFor="rec-km">
+            <Field label={tl("Dystans", "Distance")} unit="km" htmlFor="rec-km">
               <Input id="rec-km" inputMode="decimal" value={v.distance_km} onChange={(e) => set({ distance_km: e.target.value })} />
             </Field>
           ) : null}
         </div>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Wynik" htmlFor="rec-value" hint={v.unit === "s" ? "mm:ss lub h:mm:ss" : undefined}>
+        <Field label={tl("Wynik", "Result")} htmlFor="rec-value" hint={v.unit === "s" ? tl("mm:ss lub h:mm:ss", "mm:ss or h:mm:ss") : undefined}>
           <Input id="rec-value" inputMode={v.unit === "s" ? "numeric" : "decimal"} value={v.value} onChange={(e) => set({ value: e.target.value })} placeholder={v.unit === "s" ? "17:45" : "100"} />
         </Field>
-        <Field label="Data" htmlFor="rec-date">
+        <Field label={tl("Data", "Date")} htmlFor="rec-date">
           <Input id="rec-date" type="date" value={v.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} />
         </Field>
-        <Field label="Źródło" htmlFor="rec-source">
+        <Field label={tl("Źródło", "Source")} htmlFor="rec-source">
           <Select id="rec-source" value={v.source} onChange={(e) => set({ source: e.target.value })}>
-            <option value="manual">Wpis ręczny</option>
-            <option value="race">Zawody</option>
-            <option value="test">Test</option>
-            <option value="execution">Trening</option>
+            <option value="manual">{tl("Wpis ręczny", "Manual entry")}</option>
+            <option value="race">{tl("Zawody", "Race")}</option>
+            <option value="test">{tl("Test", "Test")}</option>
+            <option value="execution">{tl("Trening", "Session")}</option>
           </Select>
         </Field>
       </div>
-      <Field label="Komentarz" htmlFor="rec-comment">
+      <Field label={tl("Komentarz", "Comment")} htmlFor="rec-comment">
         <Input id="rec-comment" value={v.comment} onChange={(e) => set({ comment: e.target.value })} />
       </Field>
-      <Button type="submit" disabled={pending}>{pending ? "Zapisywanie…" : "Zapisz rekord"}</Button>
+      <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : tl("Zapisz rekord", "Save record")}</Button>
     </form>
   );
 }
@@ -299,9 +300,9 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cele</CardTitle>
+        <CardTitle>{tl("Cele", "Goals")}</CardTitle>
         <Button size="sm" variant="outline" onClick={() => setEditing(emptyGoal(athleteId))}>
-          <Plus className="size-4" /> Dodaj cel
+          <Plus className="size-4" /> {tl("Dodaj cel", "Add goal")}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-3">
@@ -317,12 +318,12 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
                   </div>
                   <div className="flex items-center gap-1">
                     <Badge tone={g.status === "achieved" ? "done" : g.status === "abandoned" ? "neutral" : "planned"}>
-                      {g.status === "achieved" ? "osiągnięty" : g.status === "abandoned" ? "porzucony" : "aktywny"}
+                      {g.status === "achieved" ? tl("osiągnięty", "achieved") : g.status === "abandoned" ? tl("porzucony", "abandoned") : tl("aktywny", "active")}
                     </Badge>
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label="Edytuj cel"
+                      aria-label={tl("Edytuj cel", "Edit goal")}
                       onClick={() =>
                         setEditing({
                           id: g.id,
@@ -344,7 +345,7 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label="Usuń cel"
+                      aria-label={tl("Usuń cel", "Delete goal")}
                       disabled={pending}
                       onClick={() =>
                         start(async () => {
@@ -363,20 +364,20 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
                   <p className="num text-[12px] text-muted">
                     start {show(g.start_value, g.unit)} · teraz {show(g.current_value, g.unit)} · cel {show(g.target_value, g.unit)}
                     {g.deadline ? ` · termin ${formatDate(g.deadline)}` : ""}
-                    {p != null ? ` · ${p}%` : " · postęp: brak danych do obliczenia"}
+                    {p != null ? ` · ${p}%` : ` · ${tl("postęp: brak danych do obliczenia", "progress: not enough data")}`}
                   </p>
                 </div>
               </div>
             );
           })
         ) : (
-          <EmptyState title="Brak celów" description="Dodaj cel z wartością docelową i terminem, np. 5 km poniżej 17:00 do kwietnia." />
+          <EmptyState title={tl("Brak celów", "No goals")} description={tl("Dodaj cel z wartością docelową i terminem, np. 5 km poniżej 17:00 do kwietnia.", "Add a goal with a target value and a deadline, e.g. 5K under 17:00 by April.")} />
         )}
       </CardContent>
 
       <Dialog open={!!editing} onOpenChange={(o: boolean) => !o && setEditing(null)}>
         {editing ? (
-          <DialogContent title={editing.id ? "Edytuj cel" : "Nowy cel"} description="Wartości czasowe wpisz jako mm:ss i ustaw jednostkę „s”.">
+          <DialogContent title={editing.id ? tl("Edytuj cel", "Edit goal") : tl("Nowy cel", "New goal")} description={tl("Wartości czasowe wpisz jako mm:ss i ustaw jednostkę „s”.", "Enter time values as mm:ss and set the unit to “s”.")}>
             <form
               className="grid gap-4"
               noValidate
@@ -391,43 +392,43 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
                 });
               }}
             >
-              <Field label="Nazwa" htmlFor="goal-name">
-                <Input id="goal-name" value={String(editing.name)} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="np. 5 km poniżej 17:00" />
+              <Field label={tl("Nazwa", "Name")} htmlFor="goal-name">
+                <Input id="goal-name" value={String(editing.name)} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder={tl("np. 5 km poniżej 17:00", "e.g. 5K under 17:00")} />
               </Field>
-              <Field label="Opis" htmlFor="goal-desc">
+              <Field label={tl("Opis", "Description")} htmlFor="goal-desc">
                 <Textarea id="goal-desc" className="min-h-16" value={String(editing.description)} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
               </Field>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Field label="Start" htmlFor="goal-start">
+                <Field label={tl("Start", tl("Start", "Start"))} htmlFor="goal-start">
                   <Input id="goal-start" value={String(editing.start_value)} onChange={(e) => setEditing({ ...editing, start_value: e.target.value })} />
                 </Field>
-                <Field label="Teraz" htmlFor="goal-cur">
+                <Field label={tl("Teraz", "Now")} htmlFor="goal-cur">
                   <Input id="goal-cur" value={String(editing.current_value)} onChange={(e) => setEditing({ ...editing, current_value: e.target.value })} />
                 </Field>
-                <Field label="Cel" htmlFor="goal-target">
+                <Field label={tl("Cel", "Goal")} htmlFor="goal-target">
                   <Input id="goal-target" value={String(editing.target_value)} onChange={(e) => setEditing({ ...editing, target_value: e.target.value })} />
                 </Field>
-                <Field label="Jednostka" htmlFor="goal-unit">
+                <Field label={tl("Jednostka", "Unit")} htmlFor="goal-unit">
                   <Input id="goal-unit" value={String(editing.unit)} onChange={(e) => setEditing({ ...editing, unit: e.target.value })} placeholder="s, kg, km" />
                 </Field>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Termin" htmlFor="goal-deadline">
+                <Field label={tl("Termin", "Deadline")} htmlFor="goal-deadline">
                   <Input id="goal-deadline" type="date" value={String(editing.deadline)} onChange={(e) => setEditing({ ...editing, deadline: e.target.value })} />
                 </Field>
-                <Field label="Status" htmlFor="goal-status">
+                <Field label={tl("Status", tl("Status", "Status"))} htmlFor="goal-status">
                   <Select id="goal-status" value={String(editing.status)} onChange={(e) => setEditing({ ...editing, status: e.target.value })}>
-                    <option value="active">Aktywny</option>
-                    <option value="achieved">Osiągnięty</option>
-                    <option value="abandoned">Porzucony</option>
+                    <option value="active">{tl("Aktywny", "Active")}</option>
+                    <option value="achieved">{tl("Osiągnięty", "Achieved")}</option>
+                    <option value="abandoned">{tl("Porzucony", "Abandoned")}</option>
                   </Select>
                 </Field>
               </div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={Boolean(editing.lower_is_better)} onChange={(e) => setEditing({ ...editing, lower_is_better: e.target.checked })} />
-                Mniejsza wartość jest lepsza (np. czas)
+                {tl("Mniejsza wartość jest lepsza (np. czas)", "Lower is better (e.g. time)")}
               </label>
-              <Button type="submit" disabled={pending}>{pending ? "Zapisywanie…" : "Zapisz cel"}</Button>
+              <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : tl("Zapisz cel", "Save goal")}</Button>
             </form>
           </DialogContent>
         ) : null}

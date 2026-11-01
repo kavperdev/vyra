@@ -11,6 +11,8 @@ import { markNotificationsRead } from "@/lib/actions/feedback";
 import { formatDateTime } from "@/lib/format";
 import type { AppNotification } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { translateNotification } from "@/lib/i18n/messages";
+import { activeLang, tl } from "@/lib/i18n/runtime";
 
 const ICON: Record<string, typeof Bell> = {
   session_assigned: CalendarClock,
@@ -34,13 +36,13 @@ export function NotificationList({ items }: { items: AppNotification[] }) {
   };
 
   if (!items.length) {
-    return <EmptyState icon={<Bell />} title="Brak powiadomień" description="Tu pojawią się nowe treningi, zmiany terminów, komentarze i zapisane wyniki." />;
+    return <EmptyState icon={<Bell />} title={tl("Brak powiadomień", "No notifications")} description={tl("Tu pojawią się nowe treningi, zmiany terminów, komentarze i zapisane wyniki.", "New sessions, date changes, comments and logged results will appear here.")} />;
   }
 
   return (
     <div className="grid gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted">{unread ? `${unread} nieprzeczytanych` : "Wszystko przeczytane"}</p>
+        <p className="text-sm text-muted">{unread ? tl(`${unread} nieprzeczytanych`, `${unread} unread`) : tl("Wszystko przeczytane", "All read")}</p>
         {unread ? (
           <Button
             variant="ghost"
@@ -65,8 +67,8 @@ export function NotificationList({ items }: { items: AppNotification[] }) {
             <div className="flex gap-3 px-4 py-3">
               <Icon aria-hidden className={cn("mt-0.5 size-4 shrink-0", n.read_at ? "text-subtle" : "text-accent")} />
               <div className="grid min-w-0 gap-0.5">
-                <p className={cn("text-sm", !n.read_at && "font-semibold")}>{n.title}</p>
-                {n.body ? <p className="truncate text-[13px] text-muted">{n.body}</p> : null}
+                <p className={cn("text-sm", !n.read_at && "font-semibold")}>{translateNotification(n.title, activeLang())}</p>
+                {n.body ? <p className="truncate text-[13px] text-muted">{translateNotification(n.body, activeLang())}</p> : null}
                 <p className="text-[12px] text-subtle">{formatDateTime(n.created_at)}</p>
               </div>
               {!n.read_at ? <span className="ml-auto mt-1.5 size-2 shrink-0 rounded-full bg-accent" aria-label="nieprzeczytane" /> : null}

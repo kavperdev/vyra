@@ -10,10 +10,15 @@ import { siteUrl } from "@/lib/env";
 import { PARTICIPANT_STATUS_LABEL } from "@/lib/camps";
 import { getCamp, getParticipant, listTests } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Uczestnik obozu" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Uczestnik obozu", "Camp participant") };
+}
 
 export default async function ParticipantPage({ params }: { params: Promise<{ campId: string; participantId: string }> }) {
+  await getLang();
   const { campId, participantId } = await params;
   const user = await requireRole("coach");
   const supabase = await createClient();

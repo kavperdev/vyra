@@ -14,10 +14,15 @@ import { listAthletes } from "@/lib/data/people";
 import { getSessionDetail, listComments } from "@/lib/data/sessions";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Trening" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Trening", "Session") };
+}
 
 export default async function CoachSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  await getLang();
   const { sessionId } = await params;
   const user = await requireRole("coach");
   const supabase = await createClient();

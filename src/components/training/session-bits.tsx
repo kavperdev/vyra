@@ -5,6 +5,7 @@ import { formatDayLabel, formatDistance, formatDuration, formatMinutes, formatPa
 import { categoryLabel, INTENSITY_LABEL, RECOVERY_LABEL, SEGMENT_TYPE_LABEL } from "@/lib/training/categories";
 import { displayStatus, STATUS_META } from "@/lib/training/status";
 import type { RunningSegment, SessionKind, SessionStatus, SessionSummary } from "@/lib/types";
+import { tl } from "@/lib/i18n/runtime";
 import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status, date, today, className }: { status: SessionStatus; date: string; today: string; className?: string }) {
@@ -47,7 +48,7 @@ export function describeSegment(s: Pick<RunningSegment, "repeats" | "distance_m"
   if (s.intensity) parts.push(INTENSITY_LABEL[s.intensity] ?? s.intensity);
   if (s.recovery_duration_s || s.recovery_distance_m) {
     const r = s.recovery_duration_s ? formatDuration(s.recovery_duration_s) : formatDistance(s.recovery_distance_m);
-    parts.push(`przerwa ${r}${s.recovery_type ? ` ${RECOVERY_LABEL[s.recovery_type] ?? ""}` : ""}`);
+    parts.push(`${tl("przerwa", "recovery")} ${r}${s.recovery_type ? ` ${RECOVERY_LABEL[s.recovery_type] ?? ""}` : ""}`);
   }
   return parts.filter(Boolean).join(" · ");
 }

@@ -6,10 +6,15 @@ import { requireRole } from "@/lib/auth";
 import { getTemplate } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import { payloadToForm } from "@/lib/validation/session";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Edycja szablonu" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Edycja szablonu", "Edit template") };
+}
 
 export default async function EditTemplatePage({ params }: { params: Promise<{ templateId: string }> }) {
+  await getLang();
   const { templateId } = await params;
   await requireRole("coach");
   const supabase = await createClient();

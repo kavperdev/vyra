@@ -8,6 +8,7 @@ import { bestSet, estimateOneRepMax, totalReps, volumeLoad } from "@/lib/trainin
 import type { StrengthHistoryEntry } from "@/lib/data/people";
 import type { SessionSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { tl } from "@/lib/i18n/runtime";
 
 export const PERIODS = [4, 8, 12, 26] as const;
 
@@ -24,7 +25,7 @@ export function PeriodFilter({ weeks, basePath, extra = {} }: { weeks: number; b
     return `${basePath}?${p.toString()}`;
   };
   return (
-    <nav aria-label="Okres analizy" className="flex rounded-md border border-border p-0.5">
+    <nav aria-label={tl("Okres analizy", "Analysis period")} className="flex rounded-md border border-border p-0.5">
       {PERIODS.map((w) => (
         <Link
           key={w}
@@ -89,32 +90,32 @@ export function AthleteAnalytics({
   const strengthVolume = strengthInPeriod.reduce((n, e) => n + volumeLoad(e.sets), 0);
 
   if (!sessions.length) {
-    return <EmptyState title="Brak danych do analizy" description="Analityka pojawi się, gdy w planie będą treningi, a zawodnik zacznie zapisywać wykonania." />;
+    return <EmptyState title={tl("Brak danych do analizy", "No data to analyse")} description={tl("Analityka pojawi się, gdy w planie będą treningi, a zawodnik zacznie zapisywać wykonania.", "Analytics will appear once there are sessions in the plan and results are being logged.")} />;
   }
 
   return (
     <div className="grid gap-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Realizacja planu" value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done} z ${comp.due} treningów · pominięte ${comp.skipped} · brak wpisu ${comp.missing}`} tone={comp.rate != null && comp.rate < 60 ? "warning" : "default"} />
-        <Stat label="Regularność" value={reg == null ? "–" : `${reg}%`} hint="tygodnie z realizacją ≥ 80%" />
+        <Stat label={tl("Realizacja planu", "Plan completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={tl(`${comp.done} z ${comp.due} treningów · pominięte ${comp.skipped} · brak wpisu ${comp.missing}`, `${comp.done} of ${comp.due} sessions · skipped ${comp.skipped} · not logged ${comp.missing}`)} tone={comp.rate != null && comp.rate < 60 ? "warning" : "default"} />
+        <Stat label={tl("Regularność", "Consistency")} value={reg == null ? "–" : `${reg}%`} hint="tygodnie z realizacją ≥ 80%" />
         {kind !== "strength" ? (
           <>
             <Stat
-              label="Dystans"
+              label={tl("Dystans", "Distance")}
               value={formatNumber(run.distanceM / 1000)}
               unit="km"
-              hint={distDelta == null ? `${run.sessions} biegów` : `${run.sessions} biegów · ${distDelta >= 0 ? "+" : ""}${distDelta}% wobec poprzedniego okresu`}
+              hint={distDelta == null ? tl(`${run.sessions} biegów`, `${run.sessions} runs`) : tl(`${run.sessions} biegów · ${distDelta >= 0 ? "+" : ""}${distDelta}% wobec poprzedniego okresu`, `${run.sessions} runs · ${distDelta >= 0 ? "+" : ""}${distDelta}% vs previous period`)}
             />
             <Stat
-              label="Czas biegania"
+              label={tl("Czas biegania", "Running time")}
               value={formatDuration(run.durationS)}
-              hint={run.avgPaceS ? `śr. tempo ${formatPace(run.avgPaceS)} /km${run.avgHr ? ` · śr. tętno ${run.avgHr}` : ""}` : "brak biegów z czasem"}
+              hint={run.avgPaceS ? `${tl("śr. tempo", "avg pace")} ${formatPace(run.avgPaceS)} /km${run.avgHr ? ` · ${tl("śr. tętno", "avg HR")} ${run.avgHr}` : ""}` : tl("brak biegów z czasem", "no runs with time")}
             />
           </>
         ) : (
           <>
-            <Stat label="Serie siłowe" value={strengthSets} hint={`${strengthReps} powtórzeń`} />
-            <Stat label="Objętość siłowa" value={formatNumber(strengthVolume, 0)} unit="kg" hint="kg × powtórzenia" />
+            <Stat label={tl("Serie siłowe", "Strength sets")} value={strengthSets} hint={tl(`${strengthReps} powtórzeń`, `${strengthReps} reps`)} />
+            <Stat label={tl("Objętość siłowa", "Strength volume")} value={formatNumber(strengthVolume, 0)} unit="kg" hint={tl("kg × powtórzenia", "kg × reps")} />
           </>
         )}
       </div>
@@ -123,11 +124,11 @@ export function AthleteAnalytics({
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Objętość tygodniowa</CardTitle>
+              <CardTitle>{tl("Objętość tygodniowa", "Weekly volume")}</CardTitle>
               {change != null ? (
                 <span className={cn("num text-[12px]", Math.abs(change) > 15 ? "text-warning" : "text-muted")}>
                   {change >= 0 ? "+" : ""}
-                  {change}% tydzień do tygodnia
+                  {change}% {tl("tydzień do tygodnia", "week on week")}
                 </span>
               ) : null}
             </CardHeader>
@@ -137,8 +138,8 @@ export function AthleteAnalytics({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Realizacja planu</CardTitle>
-              <span className="text-[12px] text-muted">linia: 80%</span>
+              <CardTitle>{tl("Realizacja planu", "Plan completion")}</CardTitle>
+              <span className="text-[12px] text-muted">{tl("linia: 80%", "line: 80%")}</span>
             </CardHeader>
             <CardContent>
               <CompletionChart data={buckets.map((b) => ({ weekStart: b.weekStart, completion: b.completion, doneSessions: b.doneSessions, dueSessions: b.dueSessions }))} />
@@ -146,8 +147,8 @@ export function AthleteAnalytics({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Tempo biegów</CardTitle>
-              <span className="text-[12px] text-muted">wyżej = szybciej</span>
+              <CardTitle>{tl("Tempo biegów", "Running pace")}</CardTitle>
+              <span className="text-[12px] text-muted">{tl("wyżej = szybciej", "higher = faster")}</span>
             </CardHeader>
             <CardContent>
               <PaceTrendChart data={runs} />
@@ -155,7 +156,7 @@ export function AthleteAnalytics({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Tętno w biegach</CardTitle>
+              <CardTitle>{tl("Tętno w biegach", "Running heart rate")}</CardTitle>
             </CardHeader>
             <CardContent>
               <HeartRateTrendChart data={runs} />
@@ -167,9 +168,9 @@ export function AthleteAnalytics({
       {kind !== "running" ? (
         <Card>
           <CardHeader>
-            <CardTitle>Postęp siłowy</CardTitle>
+            <CardTitle>{tl("Postęp siłowy", "Strength progress")}</CardTitle>
             <span className="text-[12px] text-muted">
-              {strengthSets} serii · {formatNumber(strengthVolume, 0)} kg objętości
+              {strengthSets} {tl("serii", "sets")} · {formatNumber(strengthVolume, 0)} {tl("kg objętości", "kg volume")}
             </span>
           </CardHeader>
           <CardContent>
@@ -179,8 +180,10 @@ export function AthleteAnalytics({
       ) : null}
 
       <p className="text-[12px] text-subtle">
-        Okres: ostatnie {weeks} tyg. Realizacja liczy treningi z terminem do dziś: wykonane i częściowo wykonane wobec wszystkich zaplanowanych. Dystans to
-        suma wpisanych przez zawodnika wyników ({formatDistance(run.distanceM)}).
+        {tl(
+          `Okres: ostatnie ${weeks} tyg. Realizacja liczy treningi z terminem do dziś: wykonane i częściowo wykonane wobec wszystkich zaplanowanych. Dystans to suma wpisanych przez zawodnika wyników (${formatDistance(run.distanceM)}).`,
+          `Period: last ${weeks} weeks. Completion counts sessions due up to today: completed and partly completed against all planned. Distance is the sum of results logged by the athlete (${formatDistance(run.distanceM)}).`,
+        )}
       </p>
     </div>
   );

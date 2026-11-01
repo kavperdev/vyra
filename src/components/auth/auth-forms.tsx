@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form-controls";
 import { acceptInvitation, requestPasswordReset, signIn, signUpCoach, signUpWithInvite, updatePassword } from "@/lib/actions/auth";
+import { useT } from "@/lib/i18n/client";
 import type { ActionResult } from "@/lib/types";
 
 type Errors = Record<string, string[] | undefined>;
@@ -42,9 +43,10 @@ function FormError({ message }: { message: string | null }) {
 }
 
 function Done({ message }: { message: string }) {
+  const t = useT();
   return (
     <div role="status" className="grid gap-2 rounded-lg border border-border bg-surface p-5">
-      <p className="font-semibold">Gotowe</p>
+      <p className="font-semibold">{t("Gotowe", "Done")}</p>
       <p className="text-sm text-muted">{message}</p>
     </div>
   );
@@ -53,6 +55,7 @@ function Done({ message }: { message: string }) {
 const err = (e: Errors, k: string) => e[k]?.[0];
 
 export function LoginForm() {
+  const t = useT();
   const params = useSearchParams();
   const { pending, errors, formError, run } = useSubmit();
   const [email, setEmail] = useState("");
@@ -66,22 +69,22 @@ export function LoginForm() {
       }}
       noValidate
     >
-      <Field label="E-mail" htmlFor="email" error={err(errors, "email")}>
+      <Field label={t("E-mail", "Email")} htmlFor="email" error={err(errors, "email")}>
         <Input id="email" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!err(errors, "email")} required />
       </Field>
-      <Field label="Hasło" htmlFor="password" error={err(errors, "password")}>
+      <Field label={t("Hasło", "Password")} htmlFor="password" error={err(errors, "password")}>
         <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!err(errors, "password")} required />
       </Field>
       <FormError message={formError} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Logowanie…" : "Zaloguj się"}
+        {pending ? t("Logowanie…", "Signing in…") : t("Zaloguj się", "Sign in")}
       </Button>
       <div className="flex flex-wrap justify-between gap-2 text-sm">
         <Link href="/forgot-password" className="text-muted underline-offset-4 hover:text-foreground hover:underline">
-          Nie pamiętasz hasła?
+          {t("Nie pamiętasz hasła?", "Forgot your password?")}
         </Link>
         <Link href="/signup" className="text-muted underline-offset-4 hover:text-foreground hover:underline">
-          Konto trenera
+          {t("Konto trenera", "Coach account")}
         </Link>
       </div>
     </form>
@@ -89,28 +92,29 @@ export function LoginForm() {
 }
 
 export function CoachSignupForm() {
+  const t = useT();
   const { pending, errors, formError, done, run } = useSubmit();
   const [v, setV] = useState({ full_name: "", email: "", password: "" });
   if (done) return <Done message={done} />;
   return (
     <form className="grid gap-4" noValidate onSubmit={(e) => { e.preventDefault(); run(() => signUpCoach(v)); }}>
-      <Field label="Imię i nazwisko" htmlFor="full_name" error={err(errors, "full_name")}>
+      <Field label={t("Imię i nazwisko", "Full name")} htmlFor="full_name" error={err(errors, "full_name")}>
         <Input id="full_name" autoComplete="name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
       </Field>
-      <Field label="E-mail" htmlFor="email" error={err(errors, "email")}>
+      <Field label={t("E-mail", "Email")} htmlFor="email" error={err(errors, "email")}>
         <Input id="email" type="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
       </Field>
-      <Field label="Hasło" htmlFor="password" error={err(errors, "password")} hint="Co najmniej 8 znaków, w tym litera i cyfra.">
+      <Field label={t("Hasło", "Password")} htmlFor="password" error={err(errors, "password")} hint={t("Co najmniej 8 znaków, w tym litera i cyfra.", "At least 8 characters, including a letter and a number.")}>
         <Input id="password" type="password" autoComplete="new-password" value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />
       </Field>
       <FormError message={formError} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Tworzenie konta…" : "Utwórz konto trenera"}
+        {pending ? t("Tworzenie konta…", "Creating account…") : t("Utwórz konto trenera", "Create coach account")}
       </Button>
       <p className="text-sm text-muted">
-        Masz już konto?{" "}
+        {t("Masz już konto?", "Already have an account?")}{" "}
         <Link href="/login" className="text-foreground underline underline-offset-4">
-          Zaloguj się
+          {t("Zaloguj się", "Sign in")}
         </Link>
       </p>
     </form>
@@ -118,28 +122,29 @@ export function CoachSignupForm() {
 }
 
 export function InviteSignupForm({ token, email, fullName }: { token: string; email: string; fullName: string }) {
+  const t = useT();
   const { pending, errors, formError, done, run } = useSubmit();
   const [v, setV] = useState({ full_name: fullName, password: "" });
   if (done) return <Done message={done} />;
   return (
     <form className="grid gap-4" noValidate onSubmit={(e) => { e.preventDefault(); run(() => signUpWithInvite({ token, email, ...v })); }}>
-      <Field label="E-mail" htmlFor="email" hint="Adres przypisany do zaproszenia.">
+      <Field label={t("E-mail", "Email")} htmlFor="email" hint={t("Adres przypisany do zaproszenia.", "The address the invitation was sent to.")}>
         <Input id="email" type="email" value={email} readOnly disabled />
       </Field>
-      <Field label="Imię i nazwisko" htmlFor="full_name" error={err(errors, "full_name")}>
+      <Field label={t("Imię i nazwisko", "Full name")} htmlFor="full_name" error={err(errors, "full_name")}>
         <Input id="full_name" autoComplete="name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
       </Field>
-      <Field label="Hasło" htmlFor="password" error={err(errors, "password")} hint="Co najmniej 8 znaków, w tym litera i cyfra.">
+      <Field label={t("Hasło", "Password")} htmlFor="password" error={err(errors, "password")} hint={t("Co najmniej 8 znaków, w tym litera i cyfra.", "At least 8 characters, including a letter and a number.")}>
         <Input id="password" type="password" autoComplete="new-password" value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />
       </Field>
       <FormError message={formError} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Zakładanie konta…" : "Dołącz do zespołu"}
+        {pending ? t("Zakładanie konta…", "Creating account…") : t("Dołącz do zespołu", "Join the team")}
       </Button>
       <p className="text-sm text-muted">
-        Masz już konto zawodnika?{" "}
+        {t("Masz już konto zawodnika?", "Already have an athlete account?")}{" "}
         <Link href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`} className="text-foreground underline underline-offset-4">
-          Zaloguj się i dołącz
+          {t("Zaloguj się i dołącz", "Sign in and join")}
         </Link>
       </p>
     </form>
@@ -147,38 +152,41 @@ export function InviteSignupForm({ token, email, fullName }: { token: string; em
 }
 
 export function AcceptInviteButton({ token }: { token: string }) {
+  const t = useT();
   const { pending, formError, run } = useSubmit();
   return (
     <div className="grid gap-3">
       <FormError message={formError} />
       <Button size="lg" disabled={pending} onClick={() => run(() => acceptInvitation(token))}>
-        {pending ? "Dołączanie…" : "Dołącz do zespołu"}
+        {pending ? t("Dołączanie…", "Joining…") : t("Dołącz do zespołu", "Join the team")}
       </Button>
     </div>
   );
 }
 
 export function ForgotPasswordForm() {
+  const t = useT();
   const { pending, errors, formError, done, run } = useSubmit();
   const [email, setEmail] = useState("");
   if (done) return <Done message={done} />;
   return (
     <form className="grid gap-4" noValidate onSubmit={(e) => { e.preventDefault(); run(() => requestPasswordReset({ email })); }}>
-      <Field label="E-mail" htmlFor="email" error={err(errors, "email")}>
+      <Field label={t("E-mail", "Email")} htmlFor="email" error={err(errors, "email")}>
         <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       </Field>
       <FormError message={formError} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Wysyłanie…" : "Wyślij link"}
+        {pending ? t("Wysyłanie…", "Sending…") : t("Wyślij link", "Send link")}
       </Button>
       <Link href="/login" className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline">
-        Wróć do logowania
+        {t("Wróć do logowania", "Back to sign in")}
       </Link>
     </form>
   );
 }
 
 export function NewPasswordForm({ redirectTo }: { redirectTo?: string }) {
+  const t = useT();
   const { pending, errors, formError, done, run } = useSubmit();
   const [v, setV] = useState({ password: "", confirm: "" });
   if (done) {
@@ -187,7 +195,7 @@ export function NewPasswordForm({ redirectTo }: { redirectTo?: string }) {
         <Done message={done} />
         {redirectTo ? (
           <Button asChild size="lg">
-            <Link href={redirectTo}>Przejdź do aplikacji</Link>
+            <Link href={redirectTo}>{t("Przejdź do aplikacji", "Go to the app")}</Link>
           </Button>
         ) : null}
       </div>
@@ -201,20 +209,20 @@ export function NewPasswordForm({ redirectTo }: { redirectTo?: string }) {
         e.preventDefault();
         run(async () => {
           const res = await updatePassword(v);
-          if (res.ok) toast.success("Hasło zmienione");
+          if (res.ok) toast.success(t("Hasło zmienione", "Password changed"));
           return res;
         });
       }}
     >
-      <Field label="Nowe hasło" htmlFor="password" error={err(errors, "password")} hint="Co najmniej 8 znaków, w tym litera i cyfra.">
+      <Field label={t("Nowe hasło", "New password")} htmlFor="password" error={err(errors, "password")} hint={t("Co najmniej 8 znaków, w tym litera i cyfra.", "At least 8 characters, including a letter and a number.")}>
         <Input id="password" type="password" autoComplete="new-password" value={v.password} onChange={(e) => setV({ ...v, password: e.target.value })} />
       </Field>
-      <Field label="Powtórz hasło" htmlFor="confirm" error={err(errors, "confirm")}>
+      <Field label={t("Powtórz hasło", "Repeat password")} htmlFor="confirm" error={err(errors, "confirm")}>
         <Input id="confirm" type="password" autoComplete="new-password" value={v.confirm} onChange={(e) => setV({ ...v, confirm: e.target.value })} />
       </Field>
       <FormError message={formError} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Zapisywanie…" : "Ustaw hasło"}
+        {pending ? t("Zapisywanie…", "Saving…") : t("Ustaw hasło", "Set password")}
       </Button>
     </form>
   );

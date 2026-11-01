@@ -1,5 +1,6 @@
 // Shared types and labels for camps and brand-site content (safe on server and client).
 import { formatDate } from "@/lib/format";
+import { activeLang, localized } from "@/lib/i18n/runtime";
 
 export type CampFormat = "weekend" | "week" | "other";
 export type CampStatus = "draft" | "published" | "closed" | "archived";
@@ -89,35 +90,35 @@ export interface SiteTeamCard {
   areas_en?: string | null;
 }
 
-export const CAMP_FORMAT_LABEL: Record<CampFormat, string> = {
+export const CAMP_FORMAT_LABEL: Record<CampFormat, string> = localized<CampFormat>({
   weekend: "Weekend",
   week: "Tydzień",
   other: "Inny",
-};
+}, { weekend: "Weekend", week: "Week", other: "Other" });
 
-export const CAMP_STATUS_LABEL: Record<CampStatus, string> = {
+export const CAMP_STATUS_LABEL: Record<CampStatus, string> = localized<CampStatus>({
   draft: "Szkic",
   published: "Opublikowany · zapisy otwarte",
   closed: "Zapisy zamknięte",
   archived: "Archiwum",
-};
+}, { draft: "Draft", published: "Published · sign-up open", closed: "Sign-up closed", archived: "Archived" });
 
-export const PARTICIPANT_STATUS_LABEL: Record<ParticipantStatus, string> = {
+export const PARTICIPANT_STATUS_LABEL: Record<ParticipantStatus, string> = localized<ParticipantStatus>({
   interested: "Zainteresowany",
   registered: "Zapisany",
   paid: "Opłacony",
   attended: "Uczestniczył",
   cancelled: "Zrezygnował",
-};
+}, { interested: "Interested", registered: "Registered", paid: "Paid", attended: "Attended", cancelled: "Cancelled" });
 
-export const ARTICLE_CATEGORY_LABEL: Record<ArticleCategory, string> = {
+export const ARTICLE_CATEGORY_LABEL: Record<ArticleCategory, string> = localized<ArticleCategory>({
   trening: "Trening biegowy",
   sila: "Przygotowanie siłowe",
   regeneracja: "Regeneracja",
   starty: "Starty",
   zywienie: "Żywienie",
   obozy: "Obozy",
-};
+}, { trening: "Running", sila: "Strength", regeneracja: "Recovery", starty: "Racing", zywienie: "Nutrition", obozy: "Camps" });
 
 /** "Zimowy obóz w Tatrach" → "zimowy-oboz-w-tatrach" */
 export function slugify(text: string): string {
@@ -144,7 +145,7 @@ export function campDates(c: Pick<Camp, "starts_on" | "ends_on">): string | null
 
 export function formatPLN(value: number | null | undefined): string | null {
   if (value == null) return null;
-  return `${value.toLocaleString("pl-PL")} zł`;
+  return activeLang() === "en" ? `PLN ${value.toLocaleString("en-GB")}` : `${value.toLocaleString("pl-PL")} zł`;
 }
 
 /** Statuses that take a place on the camp. */

@@ -10,10 +10,15 @@ import { listAthletes, listInvitations } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { completionStats } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Zawodnicy" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Zawodnicy", "Athletes") };
+}
 
 export default async function AthletesPage({ searchParams }: { searchParams: Promise<{ invite?: string }> }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
   const supabase = await createClient();

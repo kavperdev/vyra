@@ -13,10 +13,15 @@ import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Strona VYRA" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Strona VYRA", "VYRA website") };
+}
 
 export default async function SiteContentPage() {
+  await getLang();
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();

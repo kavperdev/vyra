@@ -26,8 +26,12 @@ import { suggestRunningRecords } from "@/lib/training/records";
 import { isDone } from "@/lib/training/status";
 import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Zawodnik" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Zawodnik", "Athlete") };
+}
 
 const TABS = [
   ["overview", "Przegląd"],
@@ -50,6 +54,7 @@ export default async function AthleteProfilePage({
   params: Promise<{ athleteId: string }>;
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  await getLang();
   const { athleteId } = await params;
   const sp = await searchParams;
   const user = await requireRole("coach");

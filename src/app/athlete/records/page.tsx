@@ -7,10 +7,16 @@ import { listGoals, listRecords } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { suggestRunningRecords } from "@/lib/training/records";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
-export const metadata: Metadata = { title: "Rekordy i cele" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Rekordy i cele", "Records & goals") };
+}
 
 export default async function AthleteRecordsPage() {
+  await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
@@ -27,7 +33,7 @@ export default async function AthleteRecordsPage() {
   );
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Postęp" title="Rekordy i cele" />
+      <PageHeader eyebrow={tl("Postęp", "Progress")} title={tl("Rekordy i cele", "Records & goals")} />
       <RecordsSection athleteId={user.id} records={records} suggestions={suggestions} today={today} />
       <GoalsSection athleteId={user.id} goals={goals} />
     </div>

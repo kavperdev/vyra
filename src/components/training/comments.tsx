@@ -8,6 +8,7 @@ import { Initials } from "@/components/ui/misc";
 import { addComment, deleteComment } from "@/lib/actions/feedback";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { tl } from "@/lib/i18n/runtime";
 
 export interface CommentItem {
   id: string;
@@ -27,7 +28,7 @@ export function Comments({ sessionId, comments, currentUserId, placeholder }: { 
       const res = await addComment({ session_id: sessionId, body });
       if (res.ok) {
         setBody("");
-        toast.success("Komentarz dodany");
+        toast.success(tl("Komentarz dodany", "Comment added"));
       } else toast.error(res.error);
     });
 
@@ -59,7 +60,7 @@ export function Comments({ sessionId, comments, currentUserId, placeholder }: { 
                       })
                     }
                   >
-                    Usuń
+                    {tl("Usuń", "Delete")}
                   </button>
                 ) : null}
               </div>
@@ -67,7 +68,7 @@ export function Comments({ sessionId, comments, currentUserId, placeholder }: { 
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted">Brak komentarzy do tego treningu.</p>
+        <p className="text-sm text-muted">{tl("Brak komentarzy do tego treningu.", "No comments on this session yet.")}</p>
       )}
       <form
         className="grid gap-2"
@@ -77,12 +78,12 @@ export function Comments({ sessionId, comments, currentUserId, placeholder }: { 
         }}
       >
         <label htmlFor={`comment-${sessionId}`} className="sr-only">
-          Komentarz
+          {tl("Komentarz", "Comment")}
         </label>
         <Textarea id={`comment-${sessionId}`} value={body} onChange={(e) => setBody(e.target.value)} placeholder={placeholder} maxLength={4000} className="min-h-20" />
         <div className="flex justify-end">
           <Button type="submit" size="sm" disabled={pending || !body.trim()}>
-            {pending ? "Wysyłanie…" : "Dodaj komentarz"}
+            {pending ? tl("Wysyłanie…", "Sending…") : tl("Dodaj komentarz", "Add comment")}
           </Button>
         </div>
       </form>

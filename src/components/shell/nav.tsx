@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity, BarChart3, Bell, CalendarDays, ClipboardList, Globe, History, Home, Inbox, LayoutDashboard, MoreHorizontal, Settings, ShieldCheck, Tent, Trophy, Users,
 } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -73,6 +74,7 @@ export function SidebarNav({ items, root }: { items: NavItem[]; root: string }) 
 }
 
 export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
+  const t = useT();
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const primary = items.filter((i) => i.mobile);
@@ -89,8 +91,8 @@ export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
   return (
     <>
       {moreOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Więcej">
-          <button type="button" aria-label="Zamknij" className="app-backdrop absolute inset-0 bg-black/60" onClick={() => setMoreOpen(false)} />
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t("Więcej", "More")}>
+          <button type="button" aria-label={t("Zamknij", "Close")} className="app-backdrop absolute inset-0 bg-black/60" onClick={() => setMoreOpen(false)} />
           <div className="app-sheet absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-border bg-background px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong" aria-hidden />
             <ul className="grid gap-1">
@@ -121,7 +123,7 @@ export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
         </div>
       ) : null}
       <nav
-        aria-label="Nawigacja główna"
+        aria-label={t("Nawigacja główna", "Main navigation")}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
         <ul className="grid" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
@@ -140,7 +142,7 @@ export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
                 >
                   <span className="relative">
                     <Icon key={active ? "on" : "off"} className={cn("size-5", active && "app-tab-icon-active")} />
-                    {item.badge ? <span className="absolute -right-1.5 -top-1 size-2 rounded-full bg-accent" aria-label={`${item.badge} nowych`} /> : null}
+                    {item.badge ? <span className="absolute -right-1.5 -top-1 size-2 rounded-full bg-accent" aria-label={t(`${item.badge} nowych`, `${item.badge} new`)} /> : null}
                   </span>
                   {item.label}
                   {active ? <span aria-hidden className="app-tab-indicator absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" /> : null}
@@ -161,9 +163,9 @@ export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
               >
                 <span className="relative">
                   <MoreHorizontal className="size-5" />
-                  {moreBadge ? <span className="absolute -right-1.5 -top-1 size-2 rounded-full bg-accent" aria-label={`${moreBadge} nowych`} /> : null}
+                  {moreBadge ? <span className="absolute -right-1.5 -top-1 size-2 rounded-full bg-accent" aria-label={t(`${moreBadge} nowych`, `${moreBadge} new`)} /> : null}
                 </span>
-                Więcej
+                {t("Więcej", "More")}
                 {moreActive ? <span aria-hidden className="app-tab-indicator absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" /> : null}
               </button>
             </li>

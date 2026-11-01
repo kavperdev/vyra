@@ -1,5 +1,7 @@
 "use server";
 
+import { localizeResult } from "@/lib/i18n/messages";
+import { getLang } from "@/lib/i18n/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentUser, homeFor } from "@/lib/auth";
@@ -21,7 +23,7 @@ function safeNext(next: unknown): string | null {
   return typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : null;
 }
 
-export async function signIn(input: { email: string; password: string; next?: string }): Promise<ActionResult> {
+async function signInImpl(input: { email: string; password: string; next?: string }): Promise<ActionResult> {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
@@ -36,7 +38,7 @@ export async function signIn(input: { email: string; password: string; next?: st
   redirect(safeNext(input.next) ?? (user ? homeFor(user.profile.role) : "/panel"));
 }
 
-export async function signUpCoach(input: { full_name: string; email: string; password: string }): Promise<ActionResult> {
+async function signUpCoachImpl(input: { full_name: string; email: string; password: string }): Promise<ActionResult> {
   const parsed = signupSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
@@ -50,7 +52,7 @@ export async function signUpCoach(input: { full_name: string; email: string; pas
   return { ok: true, message: "Sprawdź skrzynkę i potwierdź adres e-mail, aby się zalogować." };
 }
 
-export async function signUpWithInvite(input: { token: string; full_name: string; email: string; password: string }): Promise<ActionResult> {
+async function signUpWithInviteImpl(input: { token: string; full_name: string; email: string; password: string }): Promise<ActionResult> {
   const parsed = inviteSignupSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
@@ -73,14 +75,14 @@ export async function signUpWithInvite(input: { token: string; full_name: string
   return { ok: true, message: "Konto utworzone. Potwierdź adres e-mail linkiem z wiadomości, a potem zaloguj się." };
 }
 
-export async function acceptInvitation(token: string): Promise<ActionResult> {
+async function acceptInvitationImpl(token: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("accept_invitation", { p_token: token });
   if (error) return { ok: false, error: friendlyDbError(error.message) };
   redirect("/athlete");
 }
 
-export async function requestPasswordReset(input: { email: string }): Promise<ActionResult> {
+async function requestPasswordResetImpl(input: { email: string }): Promise<ActionResult> {
   const parsed = forgotSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
@@ -91,7 +93,7 @@ export async function requestPasswordReset(input: { email: string }): Promise<Ac
   return { ok: true, message: "Jeśli konto istnieje, wysłaliśmy link do ustawienia nowego hasła." };
 }
 
-export async function updatePassword(input: { password: string; confirm: string }): Promise<ActionResult> {
+async function updatePasswordImpl(input: { password: string; confirm: string }): Promise<ActionResult> {
   const parsed = newPasswordSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
@@ -106,4 +108,28 @@ function signupMessage(message: string): string {
   if (message.toLowerCase().includes("already registered")) return "Konto z tym adresem już istnieje. Zaloguj się.";
   if (message.toLowerCase().includes("password")) return "Hasło nie spełnia wymagań bezpieczeństwa.";
   return "Nie udało się utworzyć konta. Spróbuj ponownie.";
+}
+
+export async function signIn(input: { email: string; password: string; next?: string }): Promise<ActionResult> {
+  return localizeResult(await signInImpl(input), await getLang());
+}
+
+export async function signUpCoach(input: { full_name: string; email: string; password: string }): Promise<ActionResult> {
+  return localizeResult(await signUpCoachImpl(input), await getLang());
+}
+
+export async function signUpWithInvite(input: { token: string; full_name: string; email: string; password: string }): Promise<ActionResult> {
+  return localizeResult(await signUpWithInviteImpl(input), await getLang());
+}
+
+export async function acceptInvitation(token: string): Promise<ActionResult> {
+  return localizeResult(await acceptInvitationImpl(token), await getLang());
+}
+
+export async function requestPasswordReset(input: { email: string }): Promise<ActionResult> {
+  return localizeResult(await requestPasswordResetImpl(input), await getLang());
+}
+
+export async function updatePassword(input: { password: string; confirm: string }): Promise<ActionResult> {
+  return localizeResult(await updatePasswordImpl(input), await getLang());
 }

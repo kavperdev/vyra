@@ -13,10 +13,15 @@ import { completionStats, periodStart, runningTotals, weeklyBuckets } from "@/li
 import { KIND_LABEL } from "@/lib/training/categories";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionKind } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Analityka" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Analityka", "Analytics") };
+}
 
 export default async function CoachAnalyticsPage({ searchParams }: { searchParams: Promise<{ weeks?: string; athlete?: string; kind?: string }> }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
   const supabase = await createClient();

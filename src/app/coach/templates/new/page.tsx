@@ -4,10 +4,15 @@ import { SessionForm } from "@/components/training/session-form";
 import { requireRole } from "@/lib/auth";
 import type { SessionKind } from "@/lib/types";
 import { emptySessionForm } from "@/lib/validation/session";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Nowy szablon" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Nowy szablon", "New template") };
+}
 
 export default async function NewTemplatePage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
+  await getLang();
   const sp = await searchParams;
   await requireRole("coach");
   const kind: SessionKind = sp.kind === "strength" || sp.kind === "mobility" || sp.kind === "other" ? sp.kind : "running";

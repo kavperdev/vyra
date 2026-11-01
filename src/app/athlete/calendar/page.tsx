@@ -7,14 +7,20 @@ import { todayISO } from "@/lib/dates";
 import { listSessions } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionKind } from "@/lib/types";
+import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
-export const metadata: Metadata = { title: "Kalendarz" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Kalendarz", "Calendar") };
+}
 
 export default async function AthleteCalendarPage({
   searchParams,
 }: {
   searchParams: Promise<{ view?: string; date?: string; kind?: string; status?: string }>;
 }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("athlete");
   const supabase = await createClient();
@@ -27,7 +33,7 @@ export default async function AthleteCalendarPage({
 
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Twój plan" title="Kalendarz" />
+      <PageHeader eyebrow={tl("Twój plan", "Your plan")} title={tl("Kalendarz", "Calendar")} />
       <TrainingCalendar
         role="athlete"
         sessions={sessions}

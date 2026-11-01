@@ -6,10 +6,15 @@ import { PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { getArticle } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Artykuł" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Artykuł", "Article") };
+}
 
 export default async function ArticlePage({ params }: { params: Promise<{ articleId: string }> }) {
+  await getLang();
   const { articleId } = await params;
   await requireRole("coach");
   const supabase = await createClient();

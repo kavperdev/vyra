@@ -3,6 +3,8 @@ import type { ZodError } from "zod";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth";
 import { createClient, type ServerSupabase } from "@/lib/supabase/server";
 import type { ActionResult, UserRole } from "@/lib/types";
+import { localizeResult } from "@/lib/i18n/messages";
+import { getLang } from "@/lib/i18n/server";
 import { friendlyDbError } from "@/lib/utils";
 
 export type ActionFailure = Extract<ActionResult, { ok: false }>;
@@ -28,6 +30,11 @@ type Ctx = { supabase: ServerSupabase; user: CurrentUser };
  * The role check is a fast path for clear messages; RLS enforces access regardless.
  */
 export async function withUser<T>(role: UserRole | null, fn: (ctx: Ctx) => Promise<ActionResult<T>>): Promise<ActionResult<T>> {
+  // Replies are written in Polish and translated here for English users.
+  return localizeResult(await runForUser(role, fn), await getLang());
+}
+
+async function runForUser<T>(role: UserRole | null, fn: (ctx: Ctx) => Promise<ActionResult<T>>): Promise<ActionResult<T>> {
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Sesja wygasła. Zaloguj się ponownie." };
   if (role && user.profile.role !== role) return { ok: false, error: "Ta operacja jest dostępna tylko dla roli: " + (role === "coach" ? "trener" : "zawodnik") + "." };

@@ -7,9 +7,10 @@ import { PageTransition } from "@/components/shell/page-transition";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
 import { PushPrompt } from "@/components/shell/push-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
+import { getT } from "@/lib/i18n/server";
 import type { UserRole } from "@/lib/types";
 
-export function AppShell({
+export async function AppShell({
   role,
   name,
   items,
@@ -26,7 +27,8 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const root = role === "coach" ? "/coach" : "/athlete";
-  const roleLabel = roleLabelProp ?? (role === "coach" ? "Trener" : "Zawodnik");
+  const { t } = await getT();
+  const roleLabel = roleLabelProp ?? (role === "coach" ? t("Trener", "Coach") : t("Zawodnik", "Athlete"));
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       {/* desktop sidebar */}
@@ -37,7 +39,7 @@ export function AppShell({
           </Link>
           <span className="eyebrow text-[10px]">{roleLabel}</span>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3" aria-label="Nawigacja główna">
+        <nav className="flex-1 overflow-y-auto px-3" aria-label={t("Nawigacja główna", "Main navigation")}>
           <SidebarNav items={items} root={root} />
         </nav>
         <div className="border-t border-border p-3">
@@ -55,7 +57,7 @@ export function AppShell({
             <Link
               href={`${root}/notifications`}
               className="relative rounded-md p-2 text-muted hover:text-foreground"
-              aria-label={unread ? `Powiadomienia, ${unread} nowych` : "Powiadomienia"}
+              aria-label={unread ? t(`Powiadomienia, ${unread} nowych`, `Notifications, ${unread} new`) : t("Powiadomienia", "Notifications")}
             >
               <Bell className="size-5" />
               {unread ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-accent" /> : null}

@@ -8,10 +8,15 @@ import { requireRole } from "@/lib/auth";
 import { CAMP_FORMAT_LABEL, CAMP_STATUS_LABEL, campDates, formatPLN } from "@/lib/camps";
 import { listCamps, takenPlaces } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Obozy" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Obozy", "Camps") };
+}
 
 export default async function CampsPage() {
+  await getLang();
   const user = await requireRole("coach");
   const founder = user.profile.staff_role === "founder";
   const supabase = await createClient();

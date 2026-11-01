@@ -7,10 +7,15 @@ import { listPlans } from "@/lib/data/people";
 import { getSessionDetail } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import { payloadToForm, sessionToPayload } from "@/lib/validation/session";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Edycja treningu" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Edycja treningu", "Edit session") };
+}
 
 export default async function EditSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  await getLang();
   const { sessionId } = await params;
   await requireRole("coach");
   const supabase = await createClient();

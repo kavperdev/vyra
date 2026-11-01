@@ -10,22 +10,28 @@ import { listSessions } from "@/lib/data/sessions";
 import { periodStart } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { tl } from "@/lib/i18n/runtime";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Postępy" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Postępy", "Progress") };
+}
 
-const VIEWS = [
-  ["all", "Wszystko"],
-  ["running", "Bieganie"],
-  ["strength", "Siła"],
+const views = () => [
+  ["all", tl("Wszystko", "All")],
+  ["running", tl("Bieganie", "Running")],
+  ["strength", tl("Siła", "Strength")],
 ] as const;
 
 export default async function AthleteProgressPage({ searchParams }: { searchParams: Promise<{ weeks?: string; view?: string }> }) {
+  await getLang();
   const sp = await searchParams;
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weeks = parsePeriod(sp.weeks);
-  const view = (VIEWS.find(([k]) => k === sp.view)?.[0] ?? "all") as "all" | "running" | "strength";
+  const view = (views().find(([k]) => k === sp.view)?.[0] ?? "all") as "all" | "running" | "strength";
   const [sessions, strength] = await Promise.all([
     listSessions(supabase, {
       athleteIds: [user.id],
@@ -38,9 +44,9 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
 
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Analiza" title="Postępy" actions={<PeriodFilter weeks={weeks} basePath="/athlete/progress" extra={{ view }} />} />
-      <nav aria-label="Zakres" className="flex gap-1">
-        {VIEWS.map(([k, label]) => (
+      <PageHeader eyebrow={tl("Analiza", "Analysis")} title={tl("Postępy", "Progress")} actions={<PeriodFilter weeks={weeks} basePath="/athlete/progress" extra={{ view }} />} />
+      <nav aria-label={tl("Zakres", "Range")} className="flex gap-1">
+        {views().map(([k, label]) => (
           <Link key={k} href={`/athlete/progress?view=${k}&weeks=${weeks}`} className={cn("rounded-md px-3 py-1.5 text-sm", view === k ? "bg-surface-2 text-foreground" : "text-muted hover:text-foreground")}>
             {label}
           </Link>
@@ -49,7 +55,7 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
       <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={view} />
       {view !== "running" ? (
         <section className="grid gap-3">
-          <SectionTitle>Historia ćwiczeń</SectionTitle>
+          <SectionTitle>{tl("Historia ćwiczeń", "Exercise history")}</SectionTitle>
           <StrengthHistory entries={strength} sessionHref={(id) => `/athlete/sessions/${id}`} />
         </section>
       ) : null}

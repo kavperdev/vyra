@@ -2,10 +2,12 @@ import { AppShell } from "@/components/shell/app-shell";
 import type { NavItem } from "@/components/shell/nav";
 import { requireRole } from "@/lib/auth";
 import { unreadCount } from "@/lib/data/people";
+import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AthleteLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("athlete");
+  const { t } = await getT();
   const supabase = await createClient();
   const [unread, campCount] = await Promise.all([
     unreadCount(supabase),
@@ -18,14 +20,14 @@ export default async function AthleteLayout({ children }: { children: React.Reac
   ]);
   const hasCamp = campCount > 0;
   const items: NavItem[] = [
-    { href: "/athlete", label: "Dziś", icon: "home", mobile: true },
-    ...(hasCamp ? [{ href: "/athlete/camp", label: "Mój obóz", icon: "camps", mobile: true } as NavItem] : []),
-    { href: "/athlete/calendar", label: "Kalendarz", icon: "calendar", mobile: true },
-    { href: "/athlete/history", label: "Historia", icon: "history", mobile: !hasCamp },
-    { href: "/athlete/progress", label: "Postępy", icon: "progress", mobile: true },
-    { href: "/athlete/records", label: "Rekordy i cele", icon: "records", mobile: true },
-    { href: "/athlete/notifications", label: "Powiadomienia", icon: "bell", badge: unread },
-    { href: "/athlete/settings", label: "Ustawienia", icon: "settings" },
+    { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
+    ...(hasCamp ? [{ href: "/athlete/camp", label: t("Mój obóz", "My camp"), icon: "camps", mobile: true } as NavItem] : []),
+    { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+    { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },
+    { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress", mobile: true },
+    { href: "/athlete/records", label: t("Rekordy i cele", "Records & goals"), icon: "records", mobile: true },
+    { href: "/athlete/notifications", label: t("Powiadomienia", "Notifications"), icon: "bell", badge: unread },
+    { href: "/athlete/settings", label: t("Ustawienia", "Settings"), icon: "settings" },
   ];
   return (
     <AppShell role="athlete" name={user.profile.full_name} items={items} unread={unread}>

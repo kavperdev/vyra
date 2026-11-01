@@ -1,13 +1,14 @@
 import { formatDuration, formatNumber } from "@/lib/format";
 import type { PersonalRecord } from "@/lib/types";
+import { tl } from "@/lib/i18n/runtime";
 
 export const STANDARD_DISTANCES: { label: string; meters: number }[] = [
   { label: "1 km", meters: 1000 },
   { label: "3 km", meters: 3000 },
   { label: "5 km", meters: 5000 },
   { label: "10 km", meters: 10000 },
-  { label: "Półmaraton", meters: 21097 },
-  { label: "Maraton", meters: 42195 },
+  { get label() { return tl("Półmaraton", "Half marathon"); }, meters: 21097 },
+  { get label() { return tl("Maraton", "Marathon"); }, meters: 42195 },
 ];
 
 /** Distance band accepted as "this distance": the run may be up to 2 % longer, never shorter. */

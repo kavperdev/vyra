@@ -1,4 +1,5 @@
 import { formatDistance, formatDuration, formatPace, paceFrom } from "@/lib/format";
+import { tl } from "@/lib/i18n/runtime";
 
 export interface PlannedRunning {
   planned_distance_m?: number | null;
@@ -55,7 +56,7 @@ export function compareRunning(
       verdict = Math.abs(pct(ac, pl)) <= 0.03 ? "on_target" : d > 0 ? "above" : "below";
       if (d === 0) difference = "0";
     }
-    rows.push({ key: "distance", label: "Dystans", planned: formatDistance(pl), actual: formatDistance(ac), difference, verdict });
+    rows.push({ key: "distance", label: tl("Dystans", "Distance"), planned: formatDistance(pl), actual: formatDistance(ac), difference, verdict });
   }
 
   // duration
@@ -69,7 +70,7 @@ export function compareRunning(
       difference = d === 0 ? "0" : `${d > 0 ? "+" : "−"}${formatDuration(Math.abs(d))}`;
       verdict = Math.abs(pct(ac, pl)) <= 0.03 ? "on_target" : d > 0 ? "above" : "below";
     }
-    rows.push({ key: "duration", label: "Czas", planned: formatDuration(pl), actual: formatDuration(ac), difference, verdict });
+    rows.push({ key: "duration", label: tl("Czas", "Time"), planned: formatDuration(pl), actual: formatDuration(ac), difference, verdict });
   }
 
   // pace (target is a range: min = faster bound, max = slower bound)
@@ -90,10 +91,10 @@ export function compareRunning(
         difference = `${ac - upper} s/km wolniej`;
       } else {
         verdict = "on_target";
-        difference = "w zakresie";
+        difference = tl("w zakresie", "on target");
       }
     }
-    rows.push({ key: "pace", label: "Tempo", planned, actual: ac ? `${formatPace(ac)} /km` : "–", difference, verdict });
+    rows.push({ key: "pace", label: tl("Tempo", "Pace"), planned, actual: ac ? `${formatPace(ac)} /km` : "–", difference, verdict });
   }
 
   // heart rate
@@ -107,16 +108,16 @@ export function compareRunning(
     if (ac && (lo || hi)) {
       if (hi && ac > hi) {
         verdict = "above";
-        difference = `+${ac - hi} bpm ponad zakres`;
+        difference = tl(`+${ac - hi} bpm ponad zakres`, `+${ac - hi} bpm above range`);
       } else if (lo && ac < lo) {
         verdict = "below";
-        difference = `${lo - ac} bpm poniżej zakresu`;
+        difference = tl(`${lo - ac} bpm poniżej zakresu`, `${lo - ac} bpm below range`);
       } else {
         verdict = "on_target";
-        difference = "w zakresie";
+        difference = tl("w zakresie", "on target");
       }
     }
-    rows.push({ key: "hr", label: "Śr. tętno", planned, actual: ac ? `${ac} bpm` : "–", difference, verdict });
+    rows.push({ key: "hr", label: tl("Śr. tętno", "Avg HR"), planned, actual: ac ? `${ac} bpm` : "–", difference, verdict });
   }
 
   if (rpe) {
@@ -129,7 +130,7 @@ export function compareRunning(
       difference = d === 0 ? "0" : `${d > 0 ? "+" : "−"}${Math.abs(d)}`;
       verdict = Math.abs(d) <= 1 ? "on_target" : d > 0 ? "above" : "below";
     }
-    rows.push({ key: "rpe", label: "Intensywność (RPE)", planned: pl != null ? String(pl) : "–", actual: ac != null ? String(ac) : "–", difference, verdict });
+    rows.push({ key: "rpe", label: tl("Intensywność (RPE)", "Effort (RPE)"), planned: pl != null ? String(pl) : "–", actual: ac != null ? String(ac) : "–", difference, verdict });
   }
 
   return rows;

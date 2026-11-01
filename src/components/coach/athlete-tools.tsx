@@ -13,6 +13,7 @@ import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus } f
 import { deletePlan, savePlan } from "@/lib/actions/sessions";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { STAFF_ROLE_LABEL, type AthleteProfile, type CoachNote, type TrainingPlan } from "@/lib/types";
+import { tl } from "@/lib/i18n/runtime";
 
 // ------------------------------------------------------------------ plans
 
@@ -125,7 +126,7 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
               <Field label="Opis" htmlFor="plan-desc">
                 <Textarea id="plan-desc" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
               </Field>
-              <Button type="submit" disabled={pending}>{pending ? "Zapisywanie…" : "Zapisz plan"}</Button>
+              <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : "Zapisz plan"}</Button>
             </form>
           </DialogContent>
         ) : null}
@@ -206,7 +207,7 @@ export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: str
 
 const str = (v: number | string | null | undefined) => (v == null ? "" : String(v).replace(".", ","));
 
-export function AthleteProfileForm({ athleteId, profile, title = "Dane zawodnika" }: { athleteId: string; profile: AthleteProfile | null; title?: string }) {
+export function AthleteProfileForm({ athleteId, profile, title = tl("Dane zawodnika", "Athlete details") }: { athleteId: string; profile: AthleteProfile | null; title?: string }) {
   const [v, setV] = useState<Record<string, string>>({
     athlete_id: athleteId,
     sport_goal: profile?.sport_goal ?? "",
@@ -249,22 +250,22 @@ export function AthleteProfileForm({ athleteId, profile, title = "Dane zawodnika
             });
           }}
         >
-          <Field label="Cel sportowy" htmlFor="ap-goal" error={errors.sport_goal?.[0]}>
-            <Input id="ap-goal" value={v.sport_goal} onChange={(e) => setV({ ...v, sport_goal: e.target.value })} placeholder="np. 5 km poniżej 17:00 w kwietniu" />
+          <Field label={tl("Cel sportowy", "Sporting goal")} htmlFor="ap-goal" error={errors.sport_goal?.[0]}>
+            <Input id="ap-goal" value={v.sport_goal} onChange={(e) => setV({ ...v, sport_goal: e.target.value })} placeholder={tl("np. 5 km poniżej 17:00 w kwietniu", "e.g. 5K under 17:00 in April")} />
           </Field>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {field("birth_year", "Rok urodzenia")}
-            {field("height_cm", "Wzrost", "cm", "decimal")}
-            {field("weight_kg", "Masa", "kg", "decimal")}
-            {field("resting_hr", "Tętno spocz.", "bpm")}
-            {field("max_hr", "Tętno maks.", "bpm")}
+            {field("birth_year", tl("Rok urodzenia", "Year of birth"))}
+            {field("height_cm", tl("Wzrost", "Height"), "cm", "decimal")}
+            {field("weight_kg", tl("Masa", "Weight"), "kg", "decimal")}
+            {field("resting_hr", tl("Tętno spocz.", "Resting HR"), "bpm")}
+            {field("max_hr", tl("Tętno maks.", "Max HR"), "bpm")}
             {field("lthr", "LTHR", "bpm")}
-            {field("easy_hr_max", "Easy do", "bpm")}
+            {field("easy_hr_max", tl("Easy do", "Easy up to"), "bpm")}
           </div>
-          <Field label="Informacje od zawodnika" htmlFor="ap-notes" hint="np. kontuzje, dostępność, sprzęt">
+          <Field label={tl("Informacje od zawodnika", "Notes from the athlete")} htmlFor="ap-notes" hint={tl("np. kontuzje, dostępność, sprzęt", "e.g. injuries, availability, equipment")}>
             <Textarea id="ap-notes" value={v.athlete_notes} onChange={(e) => setV({ ...v, athlete_notes: e.target.value })} />
           </Field>
-          <Button type="submit" className="w-fit" disabled={pending}>{pending ? "Zapisywanie…" : "Zapisz"}</Button>
+          <Button type="submit" className="w-fit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : "Zapisz"}</Button>
         </form>
       </CardContent>
     </Card>
@@ -280,11 +281,11 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Raporty i konto</CardTitle>
+        <CardTitle>{tl("Raporty i konto", "Reports and account")}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-5">
         <div className="grid gap-3">
-          <p className="text-sm text-muted">Raport obejmuje plan, wykonanie i podstawowe statystyki w wybranym okresie.</p>
+          <p className="text-sm text-muted">{tl("Raport obejmuje plan, wykonanie i podstawowe statystyki w wybranym okresie.", "The report covers the plan, results and key statistics for the chosen period.")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Od" htmlFor="rep-from">
               <Input id="rep-from" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} />
@@ -296,7 +297,7 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
               <a href={`/api/reports/${athleteId}/pdf?${qs}`}>
-                <FileDown className="size-4" /> Raport PDF
+                <FileDown className="size-4" /> {tl("Raport PDF", "PDF report")}
               </a>
             </Button>
             <Button asChild variant="outline" size="sm">

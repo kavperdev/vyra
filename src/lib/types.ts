@@ -1,3 +1,4 @@
+import { localized } from "@/lib/i18n/runtime";
 // Domain types mirroring the database schema (supabase/migrations).
 // Run `npm run db:types` to generate the full Supabase types if you need them.
 
@@ -11,12 +12,12 @@ export type GoalStatus = "active" | "achieved" | "abandoned";
 export type InviteStatus = "pending" | "accepted" | "revoked";
 export type StaffRole = "founder" | "running_coach" | "strength_coach" | "physio";
 
-export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
+export const STAFF_ROLE_LABEL: Record<StaffRole, string> = localized<StaffRole>({
   founder: "Założyciel",
   running_coach: "Trener biegowy",
   strength_coach: "Trener przygotowania siłowego",
   physio: "Fizjoterapeuta",
-};
+}, { founder: "Founder", running_coach: "Running coach", strength_coach: "Strength & conditioning coach", physio: "Physiotherapist" });
 
 /** Staff who plan training. A physiotherapist reads and writes notes but does not plan. */
 export function canPlan(role: StaffRole | null | undefined): boolean {

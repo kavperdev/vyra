@@ -15,8 +15,12 @@ import { completionStats, periodStart, weeklyBuckets } from "@/lib/training/anal
 import { displayStatus } from "@/lib/training/status";
 import { canPlan, type SessionSummary } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { getLang, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Pulpit trenera" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t("Pulpit trenera", "Coach dashboard") };
+}
 
 interface Attention {
   athleteId: string;
@@ -50,6 +54,7 @@ function attentionFor(athletes: { id: string; full_name: string }[], sessions: S
 }
 
 export default async function CoachDashboard() {
+  await getLang();
   const user = await requireRole("coach");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
