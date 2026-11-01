@@ -81,6 +81,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 8. `20261101000500_push_and_camp_app.sql` — powiadomienia push, uczestnicy obozu w aplikacji
 9. `20261101000600_camp_budget.sql` — finanse obozu dla założycieli
 10. `20261101000700_coaching_plans.sql` — pakiety prowadzenia na stronie (edycja w panelu)
+11. `20261101000800_copy_week.sql` — kopiowanie tygodnia treningów z jednym powiadomieniem
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 

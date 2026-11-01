@@ -4,6 +4,7 @@ import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
 import { InstallHint } from "@/components/shell/install-hint";
 import { PageTransition } from "@/components/shell/page-transition";
+import { PullToRefresh } from "@/components/shell/pull-to-refresh";
 import { PushPrompt } from "@/components/shell/push-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { UserRole } from "@/lib/types";
@@ -73,6 +74,7 @@ export function AppShell({
       </div>
 
       <BottomNav items={items} root={root} />
+      <PullToRefresh />
     </div>
   );
 }

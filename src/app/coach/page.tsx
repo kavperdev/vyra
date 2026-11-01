@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AlertTriangle, MessageSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState, Initials, PageHeader, SectionTitle, Stat } from "@/components/ui/misc";
+import { EmptyState, HelloCard, Initials, PageHeader, SectionTitle, Stat } from "@/components/ui/misc";
 import { CompletionChart, VolumeChart } from "@/components/charts/charts";
 import { SessionList } from "@/components/training/session-bits";
 import { requireRole } from "@/lib/auth";
@@ -96,12 +96,13 @@ export default async function CoachDashboard() {
 
   return (
     <div className="grid gap-8">
-      <PageHeader
+      <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={`Cześć, ${user.profile.full_name.split(" ")[0]}`}
+        line={`Dziś ${todays.length ? `${todays.length} ${todays.length === 1 ? "trening" : todays.length < 5 ? "treningi" : "treningów"} w planie` : "brak treningów w planie"}${awaiting.length ? ` · ${awaiting.length} do uzupełnienia` : ""}${attention.length ? ` · ${attention.length} ${attention.length === 1 ? "zawodnik wymaga" : "zawodników wymaga"} uwagi` : ""}.`}
         actions={
           canPlan(user.profile.staff_role) ? (
-            <Button asChild>
+            <Button asChild variant="accent">
               <Link href="/coach/sessions/new">
                 <Plus className="size-4" /> Nowy trening
               </Link>

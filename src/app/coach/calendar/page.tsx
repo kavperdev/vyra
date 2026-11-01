@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
+import { CopyWeekButton } from "@/components/calendar/copy-week";
 import { TrainingCalendar } from "@/components/calendar/training-calendar";
 import { requireRole } from "@/lib/auth";
 import { calendarRange, parseDate, parseView } from "@/lib/calendar";
@@ -7,7 +8,7 @@ import { todayISO } from "@/lib/dates";
 import { listAthletes } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
-import type { SessionKind } from "@/lib/types";
+import { canPlan, type SessionKind } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Kalendarz" };
 
@@ -35,7 +36,20 @@ export default async function CoachCalendarPage({
 
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Planowanie" title="Kalendarz treningowy" description="Treningi wszystkich zawodników. Kliknij dzień, aby zobaczyć szczegóły, albo + aby zaplanować trening." />
+      <PageHeader
+        eyebrow="Planowanie"
+        title="Kalendarz treningowy"
+        description="Treningi wszystkich zawodników. Kliknij dzień, aby zobaczyć szczegóły, albo + aby zaplanować trening."
+        actions={
+          canPlan(user.profile.staff_role) ? (
+            <CopyWeekButton
+              athletes={athletes.filter((a) => a.link_status === "active").map((a) => ({ id: a.id, full_name: a.full_name }))}
+              athleteId={athleteFilter || undefined}
+              week={date}
+            />
+          ) : undefined
+        }
+      />
       <TrainingCalendar
         role="coach"
         sessions={sessions}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, MessageSquare, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
+import { EmptyState, HelloCard, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
 import { describeSegment, KindIcon, plannedVolume, SessionList, StatusBadge } from "@/components/training/session-bits";
 import { requireRole } from "@/lib/auth";
 import { addDaysISO, eachDay, todayISO, weekEndISO, weekStartISO } from "@/lib/dates";
@@ -48,10 +48,20 @@ export default async function AthleteDashboard() {
 
   return (
     <div className="grid gap-8">
-      <div className="grid gap-1">
-        <p className="eyebrow">{formatDate(today, "EEEE, d MMMM")}</p>
-        <h1 className="display text-2xl sm:text-[28px]">Cześć, {firstName}</h1>
-      </div>
+      <HelloCard
+        eyebrow={formatDate(today, "EEEE, d MMMM")}
+        title={`Cześć, ${firstName}`}
+        tone={featured && featured.status === "planned" ? "warm" : "sky"}
+        line={
+          featured
+            ? featured.status === "planned" || featured.status === "in_progress"
+              ? `Dziś: ${featured.title}. ${weekDone}/${weekSessions.length} treningów w tym tygodniu za Tobą.`
+              : `Dzisiejszy trening zapisany. ${weekDone}/${weekSessions.length} w tym tygodniu.`
+            : weekSessions.length
+              ? `Dziś wolne. ${weekDone}/${weekSessions.length} treningów w tym tygodniu za Tobą.`
+              : "Dziś wolne."
+        }
+      />
 
       <section aria-labelledby="today-title" className="grid gap-3">
         <h2 id="today-title" className="eyebrow">Dzisiejszy trening</h2>

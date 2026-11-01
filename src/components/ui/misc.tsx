@@ -170,3 +170,41 @@ export function KeyValue({ items, className }: { items: { label: string; value: 
     </dl>
   );
 }
+
+/**
+ * Greeting at the top of a dashboard: a dark card with a soft colour field from the VYRA reel.
+ * Always dark, so it reads the same in the light and dark theme.
+ */
+export function HelloCard({
+  eyebrow,
+  title,
+  line,
+  tone = "sky",
+  actions,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  line?: React.ReactNode;
+  tone?: "sky" | "warm";
+  actions?: React.ReactNode;
+}) {
+  return (
+    <section className="relative isolate overflow-hidden rounded-xl border border-white/10 bg-black text-white">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <div
+          className="site-drift absolute inset-0 bg-cover bg-center opacity-60"
+          style={{ backgroundImage: `url(/site/tone-${tone}.jpg)` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/20" />
+      </div>
+      <div className="flex flex-wrap items-end justify-between gap-5 p-5 sm:p-7">
+        <div className="grid min-w-0 gap-1.5">
+          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">{eyebrow}</p>
+          <h1 className="display text-2xl sm:text-[30px]">{title}</h1>
+          {line ? <p className="max-w-xl text-sm text-white/70">{line}</p> : null}
+        </div>
+        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      </div>
+    </section>
+  );
+}

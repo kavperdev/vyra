@@ -345,6 +345,29 @@ select pg_temp.check(array_length(public.create_sessions(public.session_payload(
   'create_sessions assigns one plan to several athletes');
 select pg_temp.check(public.copy_session((select v from t_ids where k = 'st'), current_date + 10) is not null, 'copy_session duplicates a plan');
 
+-- copy_week: whole week to a later week, one summary notification instead of one per session
+select pg_temp.as_admin();
+create temp table t_week as select date_trunc('week', current_date + 1)::date as mon,
+  (select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-0000000000a1') as notes_before;
+grant all on t_week to authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check(public.copy_week('00000000-0000-0000-0000-0000000000a1', (select mon from t_week), (select mon + 35 from t_week))
+  = (select count(*) from public.training_sessions where athlete_id = '00000000-0000-0000-0000-0000000000a1'
+       and scheduled_date between (select mon from t_week) and (select mon + 6 from t_week)),
+  'copy_week copies every session of the week');
+select pg_temp.as_admin();
+select pg_temp.check((select count(*) from public.notifications where user_id = '00000000-0000-0000-0000-0000000000a1')
+  = (select notes_before from t_week) + 1, 'copy_week sends one summary notification');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+do $$ begin
+  perform public.copy_week('00000000-0000-0000-0000-0000000000a1', (select mon from t_week), (select mon + 42 from t_week));
+exception when others then null;
+end $$;
+select pg_temp.as_admin();
+select pg_temp.check((select count(*) from public.training_sessions where scheduled_date >= (select mon + 42 from t_week)) = 0,
+  'foreign coach cannot copy another coach''s athlete week');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+
 -- athlete logs strength execution through save_execution
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
 select public.save_execution(jsonb_build_object('session_id', (select v from t_ids where k = 'st'), 'status', 'completed', 'rpe', 7,

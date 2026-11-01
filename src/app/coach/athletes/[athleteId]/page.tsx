@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, Initials, KeyValue, LinkTabs, PageHeader, SectionTitle, Stat } from "@/components/ui/misc";
 import { AthleteAnalytics, PeriodFilter, parsePeriod } from "@/components/charts/analytics-panel";
 import { VolumeChart } from "@/components/charts/charts";
+import { CopyWeekButton } from "@/components/calendar/copy-week";
 import { TrainingCalendar } from "@/components/calendar/training-calendar";
 import { HistoryTable } from "@/components/athlete/history-table";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
@@ -17,7 +18,7 @@ import { StrengthHistory } from "@/components/training/strength-history";
 import { requireRole } from "@/lib/auth";
 import { calendarRange, parseDate, parseView } from "@/lib/calendar";
 import { addDaysISO, todayISO, weekStartISO } from "@/lib/dates";
-import { getAthlete, listCoachNotes, listGoals, listPlans, listRecords, strengthHistory } from "@/lib/data/people";
+import { getAthlete, listAthletes, listCoachNotes, listGoals, listPlans, listRecords, strengthHistory } from "@/lib/data/people";
 import { listRecentComments, listSessions } from "@/lib/data/sessions";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { completionStats, periodStart, weeklyBuckets } from "@/lib/training/analytics";
@@ -74,11 +75,21 @@ export default async function AthleteProfilePage({
         actions={
           athlete.link_status === "active" ? (
             planner ? (
-              <Button asChild>
-                <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
-                  <Plus className="size-4" /> Trening
-                </Link>
-              </Button>
+              <>
+                <CopyWeekButton
+                  athletes={(await listAthletes(supabase, user.id))
+                    .filter((a) => a.link_status === "active")
+                    .map((a) => ({ id: a.id, full_name: a.full_name }))}
+                  athleteId={athleteId}
+                  week={today}
+                  size="default"
+                />
+                <Button asChild>
+                  <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
+                    <Plus className="size-4" /> Trening
+                  </Link>
+                </Button>
+              </>
             ) : null
           ) : (
             <Badge>zarchiwizowany</Badge>

@@ -1,6 +1,54 @@
-/* VYRA service worker: shows push notifications and opens the right screen on tap. */
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+/* VYRA service worker: push notifications, a friendly offline screen, and cached brand assets. */
+const CACHE = "vyra-v1";
+const PRECACHE = ["/offline.html", "/branding/vyra-icon-192.png", "/branding/vyra-logo-white.svg"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(PRECACHE))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Pages: always from the network (data must be fresh); offline screen when there is no connection.
+  if (req.mode === "navigate") {
+    event.respondWith(fetch(req).catch(() => caches.match("/offline.html")));
+    return;
+  }
+
+  // Build assets and brand images never change under the same URL: serve from cache after the first load.
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/branding/") || url.pathname.startsWith("/site/")) {
+    event.respondWith(
+      caches.open(CACHE).then((c) =>
+        c.match(req).then(
+          (hit) =>
+            hit ||
+            fetch(req).then((res) => {
+              if (res.ok && res.type === "basic" && !url.pathname.endsWith(".mp4")) c.put(req, res.clone());
+              return res;
+            }),
+        ),
+      ),
+    );
+  }
+});
 
 self.addEventListener("push", (event) => {
   let data = {};

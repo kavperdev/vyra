@@ -66,6 +66,27 @@ export async function copySession(input: { id: string; date: string; athlete_id?
   });
 }
 
+export async function copyWeek(input: { athlete_id: string; from: string; to: string; target_id?: string }): Promise<ActionResult<{ count: number }>> {
+  return withUser("coach", async ({ supabase }) => {
+    if (!isISODate(input.from) || !isISODate(input.to)) return { ok: false, error: "Wybierz tydzień." };
+    if (!input.athlete_id) return { ok: false, error: "Wybierz zawodnika." };
+    const { data, error } = await supabase.rpc("copy_week", {
+      p_athlete: input.athlete_id,
+      p_from: input.from,
+      p_to: input.to,
+      p_target: input.target_id || null,
+    });
+    if (error) {
+      if (error.message?.includes("SAME_WEEK")) return { ok: false, error: "Wybierz inny tydzień albo innego zawodnika." };
+      return dbError(error);
+    }
+    const count = Number(data ?? 0);
+    revalidateTraining([input.athlete_id, input.target_id ?? ""].filter(Boolean));
+    if (!count) return { ok: false, error: "W wybranym tygodniu nie ma treningów do skopiowania." };
+    return { ok: true, data: { count }, message: `Skopiowano ${count} ${count === 1 ? "trening" : count < 5 ? "treningi" : "treningów"}. Zawodnik dostał jedno powiadomienie.` };
+  });
+}
+
 export async function rescheduleSession(input: { id: string; date: string }): Promise<ActionResult> {
   return withUser("coach", async ({ supabase }) => {
     if (!isISODate(input.date)) return { ok: false, error: "Wybierz datę." };

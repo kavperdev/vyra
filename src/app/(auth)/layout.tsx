@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 
@@ -5,7 +6,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* Brand panel: black ground, wordmark and tagline exactly as on the brand materials. */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-black p-12 text-white lg:flex">
+      <aside className="relative isolate hidden flex-col justify-between overflow-hidden bg-black p-12 text-white lg:flex">
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <Image src="/site/hero.jpg" alt="" fill priority sizes="50vw" className="site-zoom object-cover opacity-45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/40" />
+        </div>
         <Link href="/" aria-label="VYRA" className="w-fit">
           <Logo className="h-4 text-white" />
         </Link>
