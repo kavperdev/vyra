@@ -44,13 +44,19 @@ export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { n
           <LangSwitch tone="app" />
         </div>
         <DropdownMenuSeparator />
-        <form action="/auth/signout" method="post">
-          <DropdownMenuItem asChild>
-            <button type="submit" className="w-full">
-              <LogOut /> {t("Wyloguj się", "Sign out")}
-            </button>
-          </DropdownMenuItem>
-        </form>
+        {/* The menu unmounts on select, so a <form> inside it never submits: sign out with a request instead. */}
+        <DropdownMenuItem
+          onSelect={async () => {
+            try {
+              await fetch("/auth/signout", { method: "POST" });
+            } finally {
+              // Full reload clears cached screens of the signed-out account.
+              window.location.assign("/login");
+            }
+          }}
+        >
+          <LogOut /> {t("Wyloguj się", "Sign out")}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
