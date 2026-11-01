@@ -26,6 +26,18 @@ const TARGETS = [
 const EXP = 1.06;
 const predict = (t1: number, d1: number, d2: number) => t1 * Math.pow(d2 / d1, EXP);
 
+/**
+ * Running VO2max estimate (VDOT, Daniels & Gilbert): oxygen cost of the race speed divided by
+ * the fraction of VO2max that can be held for the race duration.
+ */
+function vdot(distanceM: number, timeS: number) {
+  const t = timeS / 60;
+  const v = distanceM / t;
+  const vo2 = -4.6 + 0.182258 * v + 0.000104 * v * v;
+  const pct = 0.8 + 0.1894393 * Math.exp(-0.012778 * t) + 0.2989558 * Math.exp(-0.1932605 * t);
+  return vo2 / pct;
+}
+
 function compute(distanceM: number, timeS: number) {
   const predictions = TARGETS.map((t) => ({ ...t, time: predict(timeS, distanceM, t.m) })).map((p) => ({
     ...p,
@@ -43,7 +55,7 @@ function compute(distanceM: number, timeS: number) {
     { name: "Interwały VO2max", from: p5k, to: p5k * 0.97, use: "odcinki 3–5 min, np. 5 × 1000 m" },
     { name: "Rytmy i szybkość", from: p5k * 0.94, to: p5k * 0.9, use: "krótkie odcinki 200–400 m z pełną przerwą" },
   ];
-  return { predictions, zones };
+  return { predictions, zones, vo2: vdot(distanceM, timeS) };
 }
 
 export function PaceCalculator() {
@@ -84,6 +96,24 @@ export function PaceCalculator() {
 
       {result ? (
         <div className="site-fade grid gap-12">
+          <div className="grid gap-6 rounded-2xl border border-white/10 p-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-10 sm:p-10">
+            <div className="grid gap-1">
+              <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-[var(--accent)]">Szacunkowe VO2max</span>
+              <span className="display num text-6xl text-white">{Math.round(result.vo2)}</span>
+              <span className="text-sm text-white/45">ml/kg/min</span>
+            </div>
+            <div className="grid gap-3 text-white/60">
+              <p>
+                VO2max to maksymalna ilość tlenu, jaką organizm wykorzystuje w wysiłku. To główny wskaźnik wydolności biegacza, a w
+                dużych badaniach wyższa wydolność wiąże się też z mniejszym ryzykiem przedwczesnej śmierci.
+              </p>
+              <p className="text-[13px] text-white/40">
+                Wynik oszacowany z czasu biegu (metoda VDOT). Dokładny pomiar daje test na bieżni z analizą gazów, który wykonujemy na
+                obozach VYRA.
+              </p>
+            </div>
+          </div>
+
           <div className="grid gap-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">Prognoza wyników</p>
             <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-4">

@@ -3,6 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { CtaBand, Eyebrow, GhostLink, Marquee, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { CampCards } from "@/components/site/camp-cards";
+import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
+import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: { absolute: "VYRA · Elite is standard" },
@@ -36,7 +40,15 @@ const SAMPLE_LAPS = [
   { rep: "1200 m · 4", time: "4:03", pace: "3:23", hr: 184 },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const [camps, taken, articles] = await Promise.all([
+    listCamps(supabase, { publicOnly: true })
+      .then((c) => c.filter((x) => x.status === "published"))
+      .catch(() => []),
+    takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
+    listArticles(supabase, { publishedOnly: true }).catch(() => []),
+  ]);
   return (
     <>
       {/* ---------------------------------------------------------------- hero */}
@@ -143,6 +155,19 @@ export default function Home() {
         </div>
       </section>
 
+      {camps.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow="Obozy VYRA" title="Najbliższe terminy">
+              Kameralne grupy i ograniczona liczba miejsc. Zapisy przez stronę obozu.
+            </SectionHead>
+            <div className="mt-16">
+              <CampCards camps={camps.slice(0, 2)} taken={taken} />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* ---------------------------------------------------------------- principles */}
       <section className="border-t border-white/10 bg-[#070708]">
         <div className={`${wrap} py-28 sm:py-36`}>
@@ -241,6 +266,70 @@ export default function Home() {
           </Reveal>
         </div>
       </section>
+
+      {/* ---------------------------------------------------------------- calculator */}
+      <section className="border-t border-white/10">
+        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
+          <div className="grid gap-6">
+            <Reveal>
+              <Eyebrow accent>Narzędzia VYRA · za darmo</Eyebrow>
+            </Reveal>
+            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
+              Sprawdź swoje VO2max i tempa treningowe
+            </Reveal>
+            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
+              Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i
+              maraton oraz poda tempa, w jakich warto trenować.
+            </Reveal>
+            <Reveal delay={240}>
+              <PrimaryLink href="/kalkulator">Otwórz kalkulator</PrimaryLink>
+            </Reveal>
+          </div>
+          <Reveal delay={150}>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+              {[
+                ["VO2max", "45"],
+                ["5 km", "21:49"],
+                ["Półmaraton", "1:40:23"],
+                ["Tempo progowe", "4:32–4:43"],
+              ].map(([k, v]) => (
+                <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
+                  <span className="text-sm text-white/45">{k}</span>
+                  <span className="display num text-3xl text-white">{v}</span>
+                </div>
+              ))}
+              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">Przykład dla wyniku 10 km w 45:30</p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {articles.length ? (
+        <section className="border-t border-white/10 bg-[#070708]">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow="Wiedza" title="Najnowsze artykuły" />
+            <div className="mt-14 grid gap-5 md:grid-cols-3">
+              {articles.slice(0, 3).map((a, i) => (
+                <Reveal key={a.id} delay={i * 100}>
+                  <Link
+                    href={`/wiedza/${a.slug}`}
+                    className="group grid h-full content-between gap-8 rounded-2xl border border-white/10 bg-black p-7 transition-colors hover:border-white/30"
+                  >
+                    <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/40">{ARTICLE_CATEGORY_LABEL[a.category]}</span>
+                    <span className="grid gap-3">
+                      <span className="display text-2xl text-white">{a.title}</span>
+                      {a.excerpt ? <span className="text-sm leading-relaxed text-white/55">{a.excerpt}</span> : null}
+                    </span>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 group-hover:text-white">
+                      Czytaj <ArrowUpRight className="size-4" />
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <CtaBand
         title="Zostań częścią VYRA"
