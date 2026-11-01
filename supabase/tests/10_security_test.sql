@@ -582,3 +582,12 @@ select pg_temp.check((select count(*) from public.camp_private_info) = 0, 'other
 select pg_temp.as_admin();
 set role anon;
 select pg_temp.check((select count(*) from public.camps where id = '30000000-0000-0000-0000-000000000001') = 0, 'visitors do not see archived camps');
+
+-- ---------------------------------------------------------------- camp budget (founders only)
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.camp_budget_items (camp_id, label, kind, amount_pln)
+  values ('30000000-0000-0000-0000-000000000001', 'Nocleg', 'per_person', 1600);
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'staff without founder role do not see camp finances');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'participants do not see camp finances');

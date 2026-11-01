@@ -79,6 +79,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 6. `20261101000300_team_roles.sql` — role zespołu: założyciel, trener biegowy, trener siłowy, fizjoterapeuta
 7. `20261101000400_camps_and_content.sql` — obozy, uczestnicy, testy, artykuły i zespół na stronie
 8. `20261101000500_push_and_camp_app.sql` — powiadomienia push, uczestnicy obozu w aplikacji
+9. `20261101000600_camp_budget.sql` — finanse obozu dla założycieli
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 

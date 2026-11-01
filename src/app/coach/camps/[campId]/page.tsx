@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CampForm } from "@/components/camps/camp-form";
 import { ParticipantsPanel } from "@/components/camps/participants";
 import { CampPrivateInfo } from "@/components/camps/private-info";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { CAMP_STATUS_LABEL, campDates } from "@/lib/camps";
@@ -30,6 +31,13 @@ export default async function CampPage({ params }: { params: Promise<{ campId: s
         eyebrow={CAMP_STATUS_LABEL[camp.status]}
         title={camp.title}
         description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || "Termin i miejsce do ustalenia"}
+        actions={
+          founder ? (
+            <Button asChild variant="outline">
+              <Link href={`/coach/camps/${camp.id}/finance`}>Finanse</Link>
+            </Button>
+          ) : undefined
+        }
       />
       <ParticipantsPanel campId={camp.id} participants={participants} capacity={camp.capacity} canManage={founder} />
       <CampPrivateInfo campId={camp.id} initial={info} canEdit={founder} />

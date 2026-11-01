@@ -115,3 +115,33 @@ export async function getCampPrivateInfo(supabase: ServerSupabase, campId: strin
   const { data } = await supabase.from("camp_private_info").select("body").eq("camp_id", campId).maybeSingle();
   return (data as { body: string } | null)?.body ?? "";
 }
+
+export interface BudgetItem {
+  id?: string;
+  label: string;
+  kind: "per_person" | "fixed";
+  amount_pln: number;
+  note: string | null;
+}
+
+export interface CampBudget {
+  planned_participants: number;
+  reserve_pct: number;
+  founders: number;
+  items: BudgetItem[];
+}
+
+export async function getCampBudget(supabase: ServerSupabase, campId: string): Promise<CampBudget | null> {
+  const [{ data: b }, { data: items }] = await Promise.all([
+    supabase.from("camp_budget").select("*").eq("camp_id", campId).maybeSingle(),
+    supabase.from("camp_budget_items").select("*").eq("camp_id", campId).order("sort"),
+  ]);
+  if (!b && !(items ?? []).length) return null;
+  const row = b as { planned_participants: number; reserve_pct: number; founders: number } | null;
+  return {
+    planned_participants: row?.planned_participants ?? 12,
+    reserve_pct: Number(row?.reserve_pct ?? 10),
+    founders: row?.founders ?? 2,
+    items: ((items ?? []) as BudgetItem[]).map((i) => ({ ...i, amount_pln: Number(i.amount_pln) })),
+  };
+}

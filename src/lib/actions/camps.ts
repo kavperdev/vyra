@@ -201,3 +201,45 @@ export async function saveCampPrivateInfo(campId: string, body: string): Promise
     return { ok: true, message: "Zapisano. Uczestnicy z kontem dostali powiadomienie." };
   });
 }
+
+const budgetSchema = z.object({
+  planned_participants: z.number().int().min(1).max(500),
+  reserve_pct: z.number().min(0).max(100),
+  founders: z.number().int().min(1).max(10),
+  items: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1, "Podaj nazwę kosztu").max(160),
+        kind: z.enum(["per_person", "fixed"]),
+        amount_pln: z.number().min(0).max(10000000),
+        note: z.string().trim().max(300).nullable(),
+      }),
+    )
+    .max(100),
+});
+
+export type BudgetInput = z.input<typeof budgetSchema>;
+
+export async function saveCampBudget(campId: string, input: BudgetInput): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Finanse obozu widzą tylko założyciele." };
+    const parsed = budgetSchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+    const v = parsed.data;
+    const up = await supabase.from("camp_budget").upsert(
+      { camp_id: campId, planned_participants: v.planned_participants, reserve_pct: v.reserve_pct, founders: v.founders },
+      { onConflict: "camp_id" },
+    );
+    if (up.error) return dbError(up.error);
+    const del = await supabase.from("camp_budget_items").delete().eq("camp_id", campId);
+    if (del.error) return dbError(del.error);
+    if (v.items.length) {
+      const ins = await supabase
+        .from("camp_budget_items")
+        .insert(v.items.map((i, sort) => ({ ...i, note: i.note || null, camp_id: campId, sort })));
+      if (ins.error) return dbError(ins.error);
+    }
+    revalidatePath(`/coach/camps/${campId}/finance`);
+    return { ok: true, message: "Zapisano budżet obozu." };
+  });
+}
