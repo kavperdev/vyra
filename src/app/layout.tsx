@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppToaster, ThemeProvider } from "@/components/theme-provider";
+import { publicOrigin } from "@/lib/env";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -17,6 +19,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(publicOrigin()),
   title: { default: "VYRA", template: "%s · VYRA" },
   description: "VYRA — platforma treningowa dla trenera i zawodników. Elite is standard.",
   applicationName: "VYRA",
@@ -26,6 +29,7 @@ export const metadata: Metadata = {
   },
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: "VYRA", statusBarStyle: "black-translucent" },
+  openGraph: { siteName: "VYRA", locale: "pl_PL", type: "website" },
 };
 
 export const viewport: Viewport = {
@@ -49,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <AppToaster />
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

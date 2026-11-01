@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   // PDF reports read the brand font and logo from disk at runtime.
   outputFileTracingIncludes: {
     "/api/reports/**": ["./src/assets/fonts/**", "./public/branding/vyra-logo-black.png"],
+    // Link preview images (opengraph-image) draw with the brand font over the hero photo.
+    "/opengraph-image": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
+    "/**/opengraph-image": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
+    "/**/opengraph-image*": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
   },
   async headers() {
     return [

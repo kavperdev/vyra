@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import { RevealObserver } from "@/components/site/reveal";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -16,6 +17,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <main>{children}</main>
       <SiteFooter panel={panel} />
       <RevealObserver />
+      {/* Cookie-free visit statistics (Vercel Web Analytics). */}
+      <Analytics />
     </div>
   );
 }

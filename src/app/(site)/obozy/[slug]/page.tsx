@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/site/json-ld";
+import { publicOrigin } from "@/lib/env";
 import { notFound } from "next/navigation";
 import { CtaBand, Eyebrow, PageHero, Reveal, wrap } from "@/components/site/blocks";
 import { CampWaitlistForm } from "@/components/site/lead-forms";
@@ -12,7 +14,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const supabase = await createClient();
   const camp = await getCamp(supabase, { slug });
   if (!camp) return { title: "Obóz" };
-  return { title: camp.title, description: camp.summary ?? undefined, robots: { index: true, follow: true } };
+  return {
+    title: camp.title,
+    description: camp.summary ?? undefined,
+    robots: camp.status === "published" || camp.status === "closed" ? { index: true, follow: true } : { index: false, follow: false },
+    alternates: { canonical: `/obozy/${camp.slug}` },
+    openGraph: { title: camp.title, description: camp.summary ?? undefined, url: `/obozy/${camp.slug}` },
+  };
 }
 
 export default async function CampDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -37,8 +45,41 @@ export default async function CampDetailPage({ params }: { params: Promise<{ slu
     ["Miejsca", camp.capacity == null ? "grupa kameralna" : `${left} z ${camp.capacity} wolnych`],
   ];
 
+  const origin = publicOrigin();
+  const event: Record<string, unknown> | null = camp.starts_on
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: camp.title,
+        description: camp.summary ?? undefined,
+        startDate: camp.starts_on,
+        endDate: camp.ends_on ?? camp.starts_on,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        url: `${origin}/obozy/${camp.slug}`,
+        image: [`${origin}/obozy/${camp.slug}/opengraph-image`],
+        location: {
+          "@type": "Place",
+          name: camp.venue ?? camp.location ?? "Polska",
+          address: { "@type": "PostalAddress", addressLocality: camp.location ?? undefined, addressCountry: "PL" },
+        },
+        organizer: { "@type": "Organization", name: "VYRA", url: origin },
+        offers:
+          camp.price_pln != null
+            ? {
+                "@type": "Offer",
+                price: camp.price_pln,
+                priceCurrency: "PLN",
+                availability: open ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+                url: `${origin}/obozy/${camp.slug}#zapisy`,
+              }
+            : undefined,
+      }
+    : null;
+
   return (
     <>
+      {event && camp.status === "published" ? <JsonLd data={event} /> : null}
       {camp.status === "draft" || camp.status === "archived" ? (
         <div className="fixed inset-x-0 bottom-0 z-50 bg-[var(--accent)] py-2 text-center text-sm font-semibold text-white">
           Podgląd: ten obóz nie jest opublikowany i odwiedzający go nie widzą.

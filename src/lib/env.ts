@@ -21,3 +21,15 @@ export function siteUrl(fallbackOrigin?: string): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   return fromEnv || fallbackOrigin || "http://localhost:3000";
 }
+
+/**
+ * Public address of the site for search engines and link previews: NEXT_PUBLIC_SITE_URL,
+ * otherwise the production domain Vercel provides.
+ */
+export function publicOrigin(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (fromEnv && !fromEnv.includes("localhost")) return fromEnv;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+  return fromEnv || "http://localhost:3000";
+}

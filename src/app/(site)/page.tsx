@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, Marquee, PhotoBand, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { JsonLd } from "@/components/site/json-ld";
+import { publicOrigin } from "@/lib/env";
 import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
@@ -17,8 +19,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "VYRA · Elite is standard",
     description: "Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe.",
-    images: ["/branding/source/vyra-neon-poster.png"],
   },
+  alternates: { canonical: "/" },
 };
 
 const PRINCIPLES = [
@@ -50,8 +52,23 @@ export default async function Home() {
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
     listArticles(supabase, { publishedOnly: true }).catch(() => []),
   ]);
+  const origin = publicOrigin();
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "SportsOrganization",
+          name: "VYRA",
+          alternateName: "VYRA.ATHL",
+          slogan: "Elite is standard",
+          url: origin,
+          logo: `${origin}/branding/vyra-icon-512.png`,
+          sport: "Running",
+          founder: { "@type": "Person", name: "Kacper Adamczyk" },
+          sameAs: [`https://www.instagram.com/${SITE.instagram.replace(/^@/, "")}/`],
+        }}
+      />
       {/* ---------------------------------------------------------------- hero */}
       <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden">
         <div className="absolute inset-0 -z-20 overflow-hidden">
