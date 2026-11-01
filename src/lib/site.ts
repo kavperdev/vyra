@@ -20,13 +20,19 @@ export const SITE: SiteSettings = {
   instagram: "@vyra.athl",
 };
 
+/** Main navigation, ordered like the visitor's decision: buy, try for free, join, explore. */
 export const SITE_NAV = [
-  { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
+  { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
   { href: "/run-club", label: "Run Club", en: "Run Club" },
-  { href: "/zespol", label: "Zespół", en: "Team" },
-  { href: "/wiedza", label: "Wiedza", en: "Journal" },
+  { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
+  { href: "/wiedza", label: "Wiedza", en: "Journal" },
+] as const;
+
+/** Secondary links: in the mobile menu and the footer, not in the desktop bar. */
+export const SITE_NAV_MORE = [
+  { href: "/zespol", label: "Zespół", en: "Team" },
   { href: "/dla-firm", label: "Dla firm", en: "For companies" },
   { href: "/kontakt", label: "Kontakt", en: "Contact" },
 ] as const;

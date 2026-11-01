@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, Marquee, PhotoBand, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, PhotoBand, PrimaryLink, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { JsonLd } from "@/components/site/json-ld";
 import { publicOrigin } from "@/lib/env";
 import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
-import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
+import { listArticles, listCamps, listCoachingPlans, takenPlaces } from "@/lib/data/camps";
+import { PlanCards } from "@/components/site/plan-cards";
+import { stripeConfigured } from "@/lib/stripe";
 import { listTestimonials } from "@/lib/data/club";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
@@ -19,8 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { absolute: "VYRA · Elite is standard" },
     description: t(
-      "VYRA łączy trening biegowy, przygotowanie siłowe i fizjoterapię. Indywidualne prowadzenie zawodników i obozy, które dają amatorom elitarne doświadczenie treningowe.",
-      "VYRA brings together running, strength training and physiotherapy. Individual coaching and camps that give amateur athletes an elite training experience.",
+      "Indywidualne prowadzenie biegowe online: plan od trenera co do odcinka, trening siłowy, analiza każdego treningu i aplikacja VYRA. Darmowy plan dla początkujących i Run Club.",
+      "Individual online running coaching: a coach-built plan down to the rep, strength work, analysis of every session and the VYRA app. A free beginner plan and Run Club.",
     ),
     robots: { index: true, follow: true },
     openGraph: {
@@ -49,11 +51,6 @@ const principles = (t: T) => [
   },
 ];
 
-const disciplines = (t: T) => [
-  { title: t("Trening biegowy", "Running"), body: t("Periodyzacja, strefy tempa i tętna, przygotowanie do startu docelowego.", "Periodisation, pace and heart-rate zones, preparation for your goal race.") },
-  { title: t("Przygotowanie siłowe", "Strength & conditioning"), body: t("Siła, moc i stabilizacja, które przekładają się na ekonomię biegu.", "Strength, power and stability that carry over to running economy.") },
-  { title: t("Fizjoterapia", "Physiotherapy"), body: t("Diagnostyka, profilaktyka urazów i regeneracja jako część planu.", "Assessment, injury prevention and recovery as part of the plan.") },
-];
 
 /** Illustrative example of the athlete view (not real data). */
 const SAMPLE_LAPS = [
@@ -66,14 +63,20 @@ const SAMPLE_LAPS = [
 export default async function Home() {
   const { lang, t } = await getT();
   const supabase = await createClient();
-  const [camps, taken, allArticles, testimonials] = await Promise.all([
+  const [camps, taken, allArticles, testimonials, allPlans] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
     listArticles(supabase, { publishedOnly: true }).catch(() => []),
-    listTestimonials(supabase).then((x) => x.filter((t) => t.visible)),
+    listTestimonials(supabase)
+      .then((x) => x.filter((t) => t.visible))
+      .catch(() => []),
+    listCoachingPlans(supabase).catch(() => []),
   ]);
+  const plans = allPlans.filter((p) => p.visible);
+  const monthly = plans.filter((p) => p.kind === "monthly");
+  const minPrice = plans.length ? Math.min(...plans.map((p) => p.price_pln)) : null;
   const articles = articlesFor(allArticles, lang).items;
   const origin = publicOrigin();
   return (
@@ -92,7 +95,7 @@ export default async function Home() {
           sameAs: [`https://www.instagram.com/${SITE.instagram.replace(/^@/, "")}/`],
         }}
       />
-      {/* ---------------------------------------------------------------- hero */}
+      {/* 1. HERO: who we are, what you get, from what price. One primary action. */}
       <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden">
         <div className="absolute inset-0 -z-20 overflow-hidden">
           <Image src="/site/hero.jpg" alt="" fill priority sizes="100vw" className="site-zoom object-cover opacity-50 grayscale" />
@@ -100,7 +103,7 @@ export default async function Home() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className={`${wrap} pb-14 pt-36 sm:pb-20`}>
           <div className="site-rise">
-            <Eyebrow accent>Performance culture</Eyebrow>
+            <Eyebrow accent>{t("Trening biegowy · prowadzenie online", "Running coaching · online")}</Eyebrow>
           </div>
           <h1 className="display mt-6 text-[clamp(3.25rem,11vw,9rem)] uppercase leading-[0.9] text-white">
             <span className="block overflow-hidden">
@@ -115,29 +118,35 @@ export default async function Home() {
             </span>
           </h1>
           <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <p className="site-rise max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl" style={{ animationDelay: "400ms" }}>
-              {t("Trening biegowy, przygotowanie siłowe i fizjoterapia w jednym zespole. Prowadzimy zawodników indywidualnie i tworzymy obozy, które dają amatorom elitarne doświadczenie treningowe.", "Running, strength training and physiotherapy in one team. We coach athletes individually and create camps that give amateurs an elite training experience.")}
-            </p>
-            <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href="/kalkulator">{t("Sprawdź swoje VO2max", "Check your VO2max")}</PrimaryLink>
-              <GhostLink href="/prowadzenie">{t("Prowadzenie indywidualne", "Individual coaching")}</GhostLink>
+            <div className="site-rise grid gap-4" style={{ animationDelay: "400ms" }}>
+              <p className="max-w-xl text-lg leading-relaxed text-white/75 sm:text-xl">
+                {t(
+                  "Biegaj jak zawodowiec, nawet jeśli dopiero zaczynasz. Plan od trenera rozpisany co do odcinka, analiza każdego treningu i aplikacja VYRA w telefonie.",
+                  "Run like a pro, even if you’re just starting. A coach-built plan down to every rep, analysis of every session and the VYRA app on your phone.",
+                )}
+              </p>
+              {minPrice != null ? (
+                <p className="text-sm text-white/50">
+                  {t(`Prowadzenie od ${minPrice.toLocaleString("pl-PL")} zł · płatność BLIK lub kartą`, `Coaching from PLN ${minPrice} · pay by BLIK or card`)}
+                </p>
+              ) : null}
             </div>
-          </div>
-          <div className="site-fade mt-16 flex items-center justify-between border-t border-white/15 pt-6" style={{ animationDelay: "800ms" }}>
-            <span className="font-mono text-[11px] uppercase tracking-[0.5em] text-white/45">Est. 2026</span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Przewiń", "Scroll")}</span>
+            <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
+              <PrimaryLink href={plans.length ? "/prowadzenie#pakiety" : "/prowadzenie"}>{t("Zobacz pakiety", "See packages")}</PrimaryLink>
+              <GhostLink href="/zacznij-biegac">{t("Darmowy plan na start", "Free starter plan")}</GhostLink>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- trust strip */}
+      {/* 2. PROOF AT A GLANCE */}
       <section aria-label={t("Dlaczego VYRA", "Why VYRA")} className="border-b border-white/10 bg-[#070708]">
         <ul className={`${wrap} grid grid-cols-2 gap-px py-0 md:grid-cols-4`}>
           {[
-            [t("3 specjalistów", "3 specialists"), t("trener biegowy, siłowy i fizjoterapeuta", "running, strength and physio")],
             [t("Plan co do odcinka", "Plan to the rep"), t("tempa i strefy z Twoich wyników", "paces and zones from your results")],
             [t("Każdy trening omówiony", "Every session reviewed"), t("analiza i komentarz trenera", "coach analysis and comments")],
-            [t("Własna platforma", "Own platform"), t("plan i postępy w aplikacji VYRA", "plan and progress in the VYRA app")],
+            [t("Siła w planie", "Strength included"), t("trening siłowy pod bieganie", "strength work built for running")],
+            [t("Własna aplikacja", "Own app"), t("plan i postępy w telefonie", "plan and progress on your phone")],
           ].map(([a, b], i) => (
             <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
               <span className="font-semibold text-white">{a}</span>
@@ -147,214 +156,95 @@ export default async function Home() {
         </ul>
       </section>
 
-      {/* ---------------------------------------------------------------- statement */}
-      <section className={`${wrap} py-28 sm:py-40`}>
-        <Reveal>
-          <Eyebrow>{t("Filozofia", "Philosophy")}</Eyebrow>
-        </Reveal>
-        <Reveal delay={100} as="p" className="display mt-8 max-w-5xl text-[clamp(1.75rem,4vw,3.25rem)] leading-[1.12] text-white">
-          {t("Nie musisz być zawodowcem, żeby trenować jak zawodowiec.", "You don’t have to be a pro to train like one.")}{" "}
-          <span className="text-white/40">
-            {t("Elite is standard to poziom podejścia, a nie poziom wyników: planowanie, rzetelność, regeneracja i konsekwencja.", "Elite is standard is a level of approach, not a level of results: planning, diligence, recovery and consistency.")}
-          </span>
-        </Reveal>
-      </section>
-
-      <Marquee words={["Elite is standard", "Performance culture", t("Trening", "Training"), t("Regeneracja", "Recovery"), t("Diagnostyka", "Testing"), "Est. 2026"]} />
-
-      <Manifest t={t} />
-
-      {/* ---------------------------------------------------------------- offer */}
+      {/* 3. SELF-SELECTION: every visitor finds their own door in 3 seconds. */}
       <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow={t("Co robimy", "What we do")} title={t("Dwie drogi do jednego standardu", "Two paths to one standard")}>
-          {t("Obozy dla tych, którzy chcą przeżyć kilka dni treningu jak zawodowiec. Prowadzenie dla tych, którzy chcą budować formę przez cały sezon.", "Camps for those who want to spend a few days training like a pro. Coaching for those who want to build form over a whole season.")}
+        <SectionHead eyebrow={t("Od czego zacząć", "Where to start")} title={t("Gdzie jesteś teraz?", "Where are you right now?")}>
+          {t("Wybierz, co najlepiej Cię opisuje. Każda droga prowadzi do tego samego standardu.", "Pick what describes you best. Every path leads to the same standard.")}
         </SectionHead>
-        <div className="mt-16 grid gap-5 lg:grid-cols-2">
-          <Reveal>
-            <Link href="/obozy" className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[5/4]">
-              <Image
-                src="/branding/source/vyra-neon-poster.png"
-                alt=""
-                fill
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover opacity-70 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.04]"
-              />
-              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 grid gap-3 p-8">
-                <Eyebrow accent>{t("Wkrótce", "Coming soon")}</Eyebrow>
-                <h3 className="display text-3xl text-white sm:text-4xl">{t("Obozy VYRA", "VYRA camps")}</h3>
-                <p className="max-w-md text-white/70">{t("Elitarne doświadczenie dla amatorów: trening, żywienie, regeneracja i diagnostyka.", "An elite experience for amateurs: training, nutrition, recovery and testing.")}</p>
-                <span className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  {t("Poznaj obozy", "Discover the camps")} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        <div className="mt-16 grid gap-5 lg:grid-cols-3">
+          {[
+            {
+              href: "/zacznij-biegac",
+              img: "/site/tone-warm.jpg",
+              tag: t("Za darmo", "Free"),
+              title: t("Dopiero zaczynam", "I’m just starting"),
+              body: t("6-tygodniowy plan od zera do 25 minut biegu. Potem pakiet Start i pierwsze 5 km.", "A 6-week plan from zero to 25 minutes of running. Then the Start package and your first 5K."),
+              cta: t("Odbierz darmowy plan", "Get the free plan"),
+            },
+            {
+              href: plans.length ? "/prowadzenie#pakiety" : "/prowadzenie",
+              img: "/site/track.jpg",
+              tag: minPrice != null ? t(`Od ${minPrice} zł`, `From PLN ${minPrice}`) : t("Prowadzenie", "Coaching"),
+              title: t("Biegam i chcę być szybszy", "I run and want to get faster"),
+              body: t("Indywidualny plan pod Twój cel i kalendarz, analiza każdego treningu i stały kontakt z trenerem.", "An individual plan for your goal and schedule, analysis of every session and ongoing contact with your coach."),
+              cta: t("Zobacz pakiety", "See packages"),
+              highlight: true,
+            },
+            {
+              href: "/run-club",
+              img: "/site/night-city.jpg",
+              tag: t("Za darmo", "Free"),
+              title: t("Chcę biegać z ludźmi", "I want to run with people"),
+              body: t("VYRA Run Club: wspólne treningi dla każdego poziomu, z rozgrzewką i grupami tempowymi.", "VYRA Run Club: group runs for every level, with a warm-up and pace groups."),
+              cta: t("Najbliższy trening", "Next group run"),
+            },
+          ].map((c, i) => (
+            <Reveal key={c.href} delay={i * 110}>
+              <Link
+                href={c.href}
+                className={`group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border p-8 sm:aspect-[4/4.4] ${c.highlight ? "border-white/35" : "border-white/10"}`}
+              >
+                <Image src={c.img} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
+                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/60 to-black/10" />
+                <span className={`mb-auto w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.highlight ? "bg-[var(--accent)] text-white" : "border border-white/25 text-white/80"}`}>
+                  {c.tag}
                 </span>
-              </div>
-            </Link>
-          </Reveal>
-          <Reveal delay={120}>
-            <Link href="/prowadzenie" className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[5/4]">
-              <Image
-                src="/site/track.jpg"
-                alt=""
-                fill
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover opacity-60 grayscale transition-transform duration-[1.6s] ease-out group-hover:scale-[1.04]"
-              />
-              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 grid gap-3 p-8">
-                <Eyebrow>{t("Cały sezon", "Full season")}</Eyebrow>
-                <h3 className="display text-3xl text-white sm:text-4xl">{t("Prowadzenie indywidualne", "Individual coaching")}</h3>
-                <p className="max-w-md text-white/70">{t("Plan budowany pod Ciebie, analiza każdego treningu i stały kontakt z trenerem.", "A plan built around you, analysis of every session and ongoing contact with your coach.")}</p>
-                <span className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  {t("Jak pracujemy", "How we work")} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <h3 className="display text-3xl text-white">{c.title}</h3>
+                <p className="mt-3 text-white/70">{c.body}</p>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                  {c.cta} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </span>
-              </div>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- calculator */}
-      <section className="border-t border-white/10">
-        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
-          <div className="grid gap-6">
-            <Reveal>
-              <Eyebrow accent>{t("Narzędzia VYRA · za darmo", "VYRA tools · free")}</Eyebrow>
-            </Reveal>
-            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
-              {t("Sprawdź swoje VO2max i tempa treningowe", "Check your VO2max and training paces")}
-            </Reveal>
-            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
-              {t("Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i maraton oraz poda tempa, w jakich warto trenować.", "Enter a recent race result. The calculator estimates your VO2max, predicts your 5K, 10K, half marathon and marathon times, and gives the paces worth training at.")}
-            </Reveal>
-            <Reveal delay={240}>
-              <PrimaryLink href="/kalkulator">{t("Otwórz kalkulator", "Open the calculator")}</PrimaryLink>
-            </Reveal>
-          </div>
-          <Reveal delay={150}>
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
-              {[
-                ["VO2max", "45"],
-                ["5 km", "21:49"],
-                [t("Półmaraton", "Half marathon"), "1:40:23"],
-                [t("Tempo progowe", "Threshold pace"), "4:32–4:43"],
-              ].map(([k, v]) => (
-                <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
-                  <span className="text-sm text-white/45">{k}</span>
-                  <span className="display num text-3xl text-white">{v}</span>
-                </div>
-              ))}
-              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">{t("Przykład dla wyniku 10 km w 45:30", "Example for a 10K in 45:30")}</p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <CtaBand
-        tone="warm"
-        title={t("Nie biegasz? Zacznij od darmowego planu", "Not running yet? Start with a free plan")}
-        lead={t(
-          "6 tygodni, 18 treningów, od zera do 25 minut ciągłego biegu. Otwiera się od razu po podaniu e-maila.",
-          "6 weeks, 18 sessions, from zero to 25 minutes of continuous running. Opens instantly once you leave your e-mail.",
-        )}
-        href="/zacznij-biegac"
-        label={t("Odbierz darmowy plan", "Get the free plan")}
-      />
-
-      {camps.length ? (
-        <section className="border-t border-white/10">
-          <div className={`${wrap} py-28 sm:py-36`}>
-            <SectionHead eyebrow={t("Obozy VYRA", "VYRA camps")} title={t("Najbliższe terminy", "Upcoming dates")}>
-              {t("Kameralne grupy i ograniczona liczba miejsc. Zapisy przez stronę obozu.", "Small groups and limited places. Sign up on the camp page.")}
-            </SectionHead>
-            <div className="mt-16">
-              <CampCards camps={camps.slice(0, 2)} taken={taken} lang={lang} />
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {testimonials.length ? (
-        <section className="border-t border-white/10">
-          <div className={`${wrap} py-28 sm:py-36`}>
-            <SectionHead eyebrow={t("Zawodnicy VYRA", "VYRA athletes")} title={t("Wyniki mówią same za siebie", "The results speak for themselves")} />
-            <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {testimonials.slice(0, 6).map((x, i) => (
-                <Reveal key={x.id} delay={i * 90} className="grid content-between gap-8 rounded-2xl border border-white/10 bg-[#070708] p-8">
-                  <p className="text-lg leading-relaxed text-white/80">„{lang === "en" && x.quote_en ? x.quote_en : x.quote}”</p>
-                  <div className="grid gap-1 border-t border-white/10 pt-5">
-                    <span className="font-semibold text-white">{x.name}</span>
-                    {x.result ? <span className="num text-sm text-[var(--accent)]">{x.result}</span> : null}
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <PhotoBand src="/site/night-city.jpg" eyebrow="Run. Train. Evolve." position="60% 40%">
-        {t("Przed pracą, po pracy, w deszczu i po zmroku.", "Before work, after work, in the rain and after dark.")}{" "}
-        <span className="text-white/50">{t("Warunki się zmieniają, standard zostaje ten sam.", "Conditions change. The standard stays the same.")}</span>
-      </PhotoBand>
-
-      {/* ---------------------------------------------------------------- principles */}
-      <section className="border-t border-white/10 bg-[#070708]">
-        <div className={`${wrap} py-28 sm:py-36`}>
-          <SectionHead eyebrow={t("Zasady", "Principles")} title={t("Na czym opieramy pracę", "What our work is built on")} />
-          <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
-            {principles(t).map((p, i) => (
-              <Reveal key={p.title} delay={i * 100} className="grid min-h-72 content-between gap-12 bg-[#070708] p-8 sm:p-10">
-                <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
-                <div className="grid gap-4">
-                  <h3 className="display text-2xl text-white">{p.title}</h3>
-                  <p className="leading-relaxed text-white/55">{p.body}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- team */}
-      <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow={t("Zespół", "Team")} title={t("Trzy kompetencje, jeden zespół", "Three disciplines, one team")}>
-          {t("Każdy zawodnik i uczestnik obozu pracuje z całym zespołem: trenerem biegowym, trenerem przygotowania siłowego i fizjoterapeutą.", "Every athlete and camp participant works with the whole team: a running coach, a strength coach and a physiotherapist.")}
-        </SectionHead>
-        <div className="mt-16 grid gap-0 border-t border-white/10">
-          {disciplines(t).map((d, i) => (
-            <Reveal
-              key={d.title}
-              delay={i * 80}
-              className="grid gap-3 border-b border-white/10 py-8 sm:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-baseline sm:gap-8"
-            >
-              <span className="font-mono text-sm text-white/35">{String(i + 1).padStart(2, "0")}</span>
-              <h3 className="display text-2xl text-white sm:text-3xl">{d.title}</h3>
-              <p className="text-white/55">{d.body}</p>
+              </Link>
             </Reveal>
           ))}
         </div>
-        <Reveal className="mt-10">
-          <Link href="/zespol" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
-            {t("Poznaj zespół", "Meet the team")} <ArrowUpRight className="size-4" />
-          </Link>
-        </Reveal>
       </section>
 
-      {/* ---------------------------------------------------------------- platform */}
+      {/* 4. IDENTITY: what it means to be part of VYRA. */}
+      <Manifest t={t} />
+
+      {/* 5. HOW IT WORKS: removes uncertainty before the price. */}
+      <section className={`${wrap} py-28 sm:py-36`}>
+        <SectionHead eyebrow={t("Jak to działa", "How it works")} title={t("Od decyzji do pierwszego treningu w 4 krokach", "From decision to first session in 4 steps")}>
+          {t("Bez długich formularzy i czekania. Tak wygląda start z VYRA.", "No long forms, no waiting. This is how you start with VYRA.")}
+        </SectionHead>
+        <div className="mt-16">
+          <Steps
+            items={[
+              { title: t("Wybierasz pakiet", "Pick a package"), body: t("Płacisz online BLIK-iem lub kartą. Możesz też najpierw wysłać pytanie bez płacenia.", "Pay online by BLIK or card. Or send a question first without paying.") },
+              { title: t("Krótka rozmowa", "A short call"), body: t("Poznajemy Twój cel, historię treningów, kalendarz i kontuzje. Ustalamy punkt startu.", "We learn your goal, training history, schedule and injuries, and set your starting point.") },
+              { title: t("Plan w aplikacji", "Plan in the app"), body: t("Dostajesz dostęp do VYRA i pierwszy tydzień rozpisany co do odcinka i tempa.", "You get VYRA access and your first week written down to the rep and pace.") },
+              { title: t("Trening i korekty", "Train and adjust"), body: t("Zapisujesz treningi, trener je analizuje i co tydzień dopasowuje plan do Twojej formy.", "You log sessions, your coach reviews them and adjusts the plan to your form every week.") },
+            ]}
+          />
+        </div>
+      </section>
+
+      {/* 6. THE PRODUCT, SHOWN: what the platform looks like. */}
       <section className="border-t border-white/10 bg-[#070708]">
         <div className={`${wrap} grid gap-16 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
           <div className="grid gap-6">
             <Reveal>
-              <Eyebrow>{t("Platforma VYRA.ATHL", "The VYRA.ATHL platform")}</Eyebrow>
+              <Eyebrow>{t("Aplikacja VYRA", "The VYRA app")}</Eyebrow>
             </Reveal>
             <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
               {t("Każdy trening zapisany. Każda decyzja oparta na danych.", "Every session logged. Every decision based on data.")}
             </Reveal>
             <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
-              {t("Zawodnicy VYRA pracują w autorskiej platformie: plan tygodnia rozpisany co do odcinka, wynik każdego powtórzenia, porównanie z planem i komentarze trenera. Na telefonie i komputerze.", "VYRA athletes work in our own platform: a weekly plan broken down rep by rep, the result of every repetition, comparison with the plan and coach comments. On phone and desktop.")}
-            </Reveal>
-            <Reveal delay={240}>
-              <GhostLink href="/prowadzenie">{t("Jak wygląda prowadzenie", "How coaching works")}</GhostLink>
+              {t(
+                "Plan tygodnia co do odcinka, wynik każdego powtórzenia, porównanie z planem, poranna ocena gotowości i komentarze trenera. Na telefonie i komputerze.",
+                "Your weekly plan rep by rep, the result of every repetition, comparison with the plan, a morning readiness check and coach comments. On phone and desktop.",
+              )}
             </Reveal>
           </div>
           <Reveal delay={150}>
@@ -387,16 +277,147 @@ export default async function Home() {
                 </tbody>
               </table>
               <figcaption className="mt-6 border-t border-white/10 pt-4 text-[12px] text-white/35">
-                {t("Cel 3:25–3:30 /km · przykładowy widok z platformy", "Target 3:25–3:30 /km · sample view from the platform")}
+                {t("Cel 3:25–3:30 /km · przykładowy widok z aplikacji", "Target 3:25–3:30 /km · sample view from the app")}
               </figcaption>
             </figure>
           </Reveal>
         </div>
       </section>
 
+      {/* 7. SOCIAL PROOF right before the price. */}
+      {testimonials.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow={t("Zawodnicy VYRA", "VYRA athletes")} title={t("Wyniki mówią same za siebie", "The results speak for themselves")} />
+            <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {testimonials.slice(0, 6).map((x, i) => (
+                <Reveal key={x.id} delay={i * 90} className="grid content-between gap-8 rounded-2xl border border-white/10 bg-[#070708] p-8">
+                  <p className="text-lg leading-relaxed text-white/80">„{lang === "en" && x.quote_en ? x.quote_en : x.quote}”</p>
+                  <div className="grid gap-1 border-t border-white/10 pt-5">
+                    <span className="font-semibold text-white">{x.name}</span>
+                    {x.result ? <span className="num text-sm text-[var(--accent)]">{x.result}</span> : null}
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* 8. PRICE: the offer, after value and proof. */}
+      {monthly.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow={t("Pakiety", "Packages")} title={t("Wybierz, jak blisko mamy pracować", "Choose how closely we work together")}>
+              {t(
+                "Każdy pakiet to indywidualny plan i aplikacja VYRA. Zmieniasz lub kończysz z miesiąca na miesiąc.",
+                "Every package includes an individual plan and the VYRA app. Switch or cancel month to month.",
+              )}
+            </SectionHead>
+            <div className="mt-16">
+              <PlanCards plans={monthly} payments={stripeConfigured()} />
+            </div>
+            <Reveal className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8">
+              <p className="text-white/60">
+                {t("Zaczynasz od zera albo chcesz jednorazowy plan lub konsultację?", "Starting from zero, or want a one-off plan or a consultation?")}
+              </p>
+              <Link href="/prowadzenie#pakiety" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
+                {t("Pakiet Start i oferty jednorazowe", "Start package and one-off options")} <ArrowUpRight className="size-4" />
+              </Link>
+            </Reveal>
+          </div>
+        </section>
+      ) : null}
+
+      {/* 9. FREE TOOLS for those not ready to buy: keep them close to VYRA. */}
+      <section className="border-t border-white/10 bg-[#070708]">
+        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
+          <div className="grid gap-6">
+            <Reveal>
+              <Eyebrow accent>{t("Jeszcze się zastanawiasz? · za darmo", "Not ready yet? · free")}</Eyebrow>
+            </Reveal>
+            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
+              {t("Sprawdź, gdzie jesteś dziś", "See where you stand today")}
+            </Reveal>
+            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
+              {t(
+                "Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max na tle osób w Twoim wieku, przewidzi czasy na 5 km, 10 km, półmaraton i maraton oraz poda tempa treningowe.",
+                "Enter a recent race result. The calculator estimates your VO2max against people your age, predicts your 5K, 10K, half and full marathon times and gives your training paces.",
+              )}
+            </Reveal>
+            <Reveal delay={240} className="flex flex-wrap gap-3">
+              <PrimaryLink href="/kalkulator">{t("Sprawdź swoje VO2max", "Check your VO2max")}</PrimaryLink>
+              <GhostLink href="/zacznij-biegac">{t("Nie biegam jeszcze", "I don’t run yet")}</GhostLink>
+            </Reveal>
+          </div>
+          <Reveal delay={150}>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+              {[
+                ["VO2max", "45"],
+                ["5 km", "21:49"],
+                [t("Półmaraton", "Half marathon"), "1:40:23"],
+                [t("Tempo progowe", "Threshold pace"), "4:32–4:43"],
+              ].map(([k, v]) => (
+                <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
+                  <span className="text-sm text-white/45">{k}</span>
+                  <span className="display num text-3xl text-white">{v}</span>
+                </div>
+              ))}
+              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">{t("Przykład dla wyniku 10 km w 45:30", "Example for a 10K in 45:30")}</p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 10. BELONGING: the community and the brand world. */}
+      <PhotoBand src="/site/night-city.jpg" eyebrow="Run. Train. Evolve." position="60% 40%">
+        {t("Przed pracą, po pracy, w deszczu i po zmroku.", "Before work, after work, in the rain and after dark.")}{" "}
+        <span className="text-white/50">{t("Warunki się zmieniają, standard zostaje ten sam.", "Conditions change. The standard stays the same.")}</span>
+      </PhotoBand>
+
+      <section className="border-t border-white/10 bg-[#070708]">
+        <div className={`${wrap} py-28 sm:py-36`}>
+          <SectionHead eyebrow={t("Zasady", "Principles")} title={t("Na czym opieramy pracę", "What our work is built on")} />
+          <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
+            {principles(t).map((p, i) => (
+              <Reveal key={p.title} delay={i * 100} className="grid min-h-64 content-between gap-12 bg-[#070708] p-8 sm:p-10">
+                <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                <div className="grid gap-4">
+                  <h3 className="display text-2xl text-white">{p.title}</h3>
+                  <p className="leading-relaxed text-white/55">{p.body}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
+            <Link href="/zespol" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
+              {t("Poznaj zespół", "Meet the team")} <ArrowUpRight className="size-4" />
+            </Link>
+            <Link href="/run-club" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
+              VYRA Run Club <ArrowUpRight className="size-4" />
+            </Link>
+            <Link href="/dla-firm" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
+              {t("Dla firm", "For companies")} <ArrowUpRight className="size-4" />
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {camps.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow={t("Obozy VYRA", "VYRA camps")} title={t("Najbliższe terminy", "Upcoming dates")}>
+              {t("Kameralne grupy i ograniczona liczba miejsc. Zapisy przez stronę obozu.", "Small groups and limited places. Sign up on the camp page.")}
+            </SectionHead>
+            <div className="mt-16">
+              <CampCards camps={camps.slice(0, 2)} taken={taken} lang={lang} />
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {articles.length ? (
-        <section className="border-t border-white/10 bg-[#070708]">
+        <section className="border-t border-white/10">
           <div className={`${wrap} py-28 sm:py-36`}>
             <SectionHead eyebrow={t("Wiedza", "Journal")} title={t("Najnowsze artykuły", "Latest articles")} />
             <div className="mt-14 grid gap-5 md:grid-cols-3">
@@ -432,15 +453,16 @@ export default async function Home() {
         ]}
       />
 
+      {/* 11. FINAL ASK with risk reversal. */}
       <CtaBand
         tone="warm"
         title={t("Zostań częścią VYRA", "Become part of VYRA")}
         lead={t(
-          "Pierwsza rozmowa jest bez zobowiązań: poznamy Twój cel i powiemy szczerze, czy i jak możemy pomóc. Odpowiadamy osobiście w ciągu jednego dnia roboczego.",
-          "The first conversation comes with no commitment: we learn your goal and tell you honestly whether and how we can help. We reply personally within one working day.",
+          "Nie wiesz, który pakiet? Napisz. Poznamy Twój cel i powiemy szczerze, czy i jak możemy pomóc. Odpowiadamy osobiście w ciągu jednego dnia roboczego, bez zobowiązań.",
+          "Not sure which package? Write to us. We’ll learn your goal and tell you honestly whether and how we can help. We reply personally within one working day, no commitment.",
         )}
         href="/kontakt"
-        label={t("Skontaktuj się", "Get in touch")}
+        label={t("Porozmawiajmy", "Let’s talk")}
       />
     </>
   );

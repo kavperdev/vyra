@@ -94,8 +94,8 @@ const faq = (t: T) => [
   {
     q: t("Jak wygląda zakup pakietu?", "How do I buy a package?"),
     a: t(
-      "Wybierz pakiet i wyślij krótkie zgłoszenie. Odezwiemy się w ciągu jednego dnia roboczego, umówimy krótką rozmowę i prześlemy dane do płatności. Po opłaceniu dostajesz dostęp do platformy VYRA i pierwszy tydzień planu.",
-      "Choose a package and send a short request. We’ll get back to you within one working day, schedule a short call and send the payment details. Once paid, you get access to the VYRA platform and your first week of training.",
+      "Kliknij „Kup teraz” przy pakiecie i zapłać BLIK-iem, kartą lub Przelewy24. W ciągu jednego dnia roboczego odezwiemy się, umówimy krótką rozmowę i startujesz: dostajesz dostęp do platformy VYRA i pierwszy tydzień planu. Wolisz najpierw porozmawiać? Wyślij zgłoszenie bez płacenia.",
+      "Click “Buy now” on a package and pay by BLIK, card or Przelewy24. Within one working day we’ll get in touch, schedule a short call and get you started: you get access to the VYRA platform and your first week of training. Prefer to talk first? Send a request without paying.",
     ),
   },
   {

@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { LangSwitch } from "@/components/shared/lang-switch";
 import { useLang } from "@/lib/i18n/client";
-import { SITE_NAV } from "@/lib/site";
+import { SITE_NAV, SITE_NAV_MORE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader({ panel }: { panel: { href: string; label: string } }) {
@@ -65,9 +65,15 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
           <LangSwitch className="hidden sm:inline-flex" />
           <Link
             href={panel.href}
-            className="hidden h-10 items-center rounded-full border border-white/20 px-5 text-[13px] font-semibold text-white transition-colors hover:border-white/50 sm:inline-flex"
+            className="hidden h-10 items-center px-3 text-[13px] font-semibold text-white/70 transition-colors hover:text-white sm:inline-flex"
           >
             {panel.label}
+          </Link>
+          <Link
+            href="/prowadzenie#pakiety"
+            className="hidden h-10 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white sm:inline-flex"
+          >
+            {en ? "Join" : "Dołącz"}
           </Link>
           <button
             type="button"
@@ -95,10 +101,23 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
                 {en ? item.en : item.label}
               </Link>
             ))}
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+              {SITE_NAV_MORE.map((item) => (
+                <Link key={item.href} href={item.href} className="py-2 text-lg text-white/65 hover:text-white">
+                  {en ? item.en : item.label}
+                </Link>
+              ))}
+            </div>
             <LangSwitch className="mt-6 w-fit" />
             <Link
+              href="/prowadzenie#pakiety"
+              className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-white text-sm font-semibold text-black"
+            >
+              {en ? "See packages" : "Zobacz pakiety"}
+            </Link>
+            <Link
               href={panel.href}
-              className="mt-8 inline-flex h-12 items-center justify-center rounded-full border border-white/25 text-sm font-semibold text-white"
+              className="mt-3 inline-flex h-12 items-center justify-center rounded-full border border-white/25 text-sm font-semibold text-white"
             >
               {panel.label}
             </Link>
