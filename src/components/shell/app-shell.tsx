@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
+import { InstallHint } from "@/components/shell/install-hint";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { UserRole } from "@/lib/types";
 
@@ -62,7 +63,10 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
+          <InstallHint />
+          {children}
+        </main>
       </div>
 
       <BottomNav items={items} root={root} />

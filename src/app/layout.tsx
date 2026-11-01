@@ -25,6 +25,7 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: "VYRA", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

@@ -25,5 +25,6 @@ export const SITE_NAV = [
   { href: "/prowadzenie", label: "Prowadzenie" },
   { href: "/zespol", label: "Zespół" },
   { href: "/wiedza", label: "Wiedza" },
+  { href: "/kalkulator", label: "Kalkulator" },
   { href: "/kontakt", label: "Kontakt" },
 ] as const;
