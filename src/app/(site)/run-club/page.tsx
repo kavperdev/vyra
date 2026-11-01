@@ -84,10 +84,13 @@ export default async function RunClubPage() {
 
       <CtaBand
         tone="warm"
-        title={t("Chcesz trenować z planem?", "Want to train with a plan?")}
-        lead={t("Run Club to początek. Indywidualne prowadzenie to cały sezon pracy pod Twój cel.", "Run Club is the start. Individual coaching is a full season built around your goal.")}
-        href="/prowadzenie"
-        label={t("Prowadzenie indywidualne", "Individual coaching")}
+        title={t("Chcesz biegać z planem?", "Want to run with a plan?")}
+        lead={t(
+          "Run Club to początek. Pakiet Start to 8 tygodni z planem w aplikacji VYRA, od marszobiegu do 5 km, za 99 zł.",
+          "Run Club is the start. The Start package is 8 weeks with a plan in the VYRA app, from run-walk to 5K, for PLN 99.",
+        )}
+        href="/prowadzenie#pakiety"
+        label={t("Zobacz pakiet Start", "See the Start package")}
       />
     </>
   );
