@@ -3,22 +3,29 @@ import * as React from "react";
 /**
  * Renders the simple text format used in the panel editors, without HTML:
  *   ## heading, ### subheading, "- " bullets, "1. " numbered items,
- *   blank line = new paragraph, **bold**, [text](https://link).
+ *   blank line = new paragraph, **bold**, [text](https://link) or [text](/page).
  */
 function inline(text: string, keyBase: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index));
     if (m[1]) out.push(<strong key={`${keyBase}-b${i++}`}>{m[1]}</strong>);
-    else out.push(
-      <a key={`${keyBase}-a${i++}`} href={m[3]} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-        {m[2]}
-      </a>,
-    );
+    else if (m[3].startsWith("/"))
+      out.push(
+        <a key={`${keyBase}-a${i++}`} href={m[3]} className="underline underline-offset-4">
+          {m[2]}
+        </a>,
+      );
+    else
+      out.push(
+        <a key={`${keyBase}-a${i++}`} href={m[3]} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+          {m[2]}
+        </a>,
+      );
     last = m.index + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
