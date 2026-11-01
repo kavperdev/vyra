@@ -12,6 +12,7 @@ import { categoryLabel, KIND_LABEL } from "@/lib/training/categories";
 import { createClient } from "@/lib/supabase/server";
 import type { TrainingTemplate } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -26,7 +27,7 @@ function summary(t: TrainingTemplate): string {
     return p.running?.planned_distance_m ? `${(p.running.planned_distance_m / 1000).toString().replace(".", ",")} km` : "";
   }
   const ex = p.exercises ?? [];
-  return ex.length ? `${ex.length} ćwiczeń: ${ex.slice(0, 3).map((e) => e.name).join(", ")}${ex.length > 3 ? "…" : ""}` : "";
+  return ex.length ? `${ex.length} ${tl("ćwiczeń", "exercises")}: ${ex.slice(0, 3).map((e) => e.name).join(", ")}${ex.length > 3 ? "…" : ""}` : "";
 }
 
 export default async function TemplatesPage() {
@@ -37,13 +38,13 @@ export default async function TemplatesPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Biblioteka"
-        title="Szablony treningów"
-        description="Szablon to osobny wzór. Trening utworzony z szablonu jest niezależną kopią, więc zmiana szablonu nie zmienia zaplanowanych ani wykonanych treningów."
+        eyebrow={tl("Biblioteka", "Library")}
+        title={tl("Szablony treningów", "Session templates")}
+        description={tl("Szablon to osobny wzór. Trening utworzony z szablonu jest niezależną kopią, więc zmiana szablonu nie zmienia zaplanowanych ani wykonanych treningów.", "A template is a separate pattern. A session created from it is an independent copy, so changing the template doesn’t change planned or completed sessions.")}
         actions={
           <Button asChild>
             <Link href="/coach/templates/new">
-              <Plus className="size-4" /> Nowy szablon
+              <Plus className="size-4" /> {tl("Nowy szablon", "New template")}
             </Link>
           </Button>
         }
@@ -69,11 +70,11 @@ export default async function TemplatesPage() {
         </ul>
       ) : (
         <EmptyState
-          title="Nie masz jeszcze szablonów"
-          description="Utwórz szablon od zera albo zapisz istniejący trening jako szablon (menu „…” na stronie treningu)."
+          title={tl("Nie masz jeszcze szablonów", "You don’t have templates yet")}
+          description={tl("Utwórz szablon od zera albo zapisz istniejący trening jako szablon (menu „…” na stronie treningu).", "Create a template from scratch or save an existing session as a template (the “…” menu on the session page).")}
           action={
             <Button asChild variant="outline">
-              <Link href="/coach/templates/new">Utwórz szablon</Link>
+              <Link href="/coach/templates/new">{tl("Utwórz szablon", "Create template")}</Link>
             </Button>
           }
         />

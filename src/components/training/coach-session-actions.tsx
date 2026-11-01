@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { copySession, deleteSession, rescheduleSession, saveSessionAsTemplate } from "@/lib/actions/sessions";
+import { tl } from "@/lib/i18n/runtime";
 
 type Mode = null | "reschedule" | "copy" | "template" | "delete";
 
@@ -45,32 +46,32 @@ export function CoachSessionActions({
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="outline" size="sm">
           <Link href={`/coach/sessions/${sessionId}/edit`}>
-            <Pencil className="size-4" /> Edytuj
+            <Pencil className="size-4" /> {tl("Edytuj", "Edit")}
           </Link>
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon-sm" aria-label="Więcej akcji">
+            <Button variant="outline" size="icon-sm" aria-label={tl("Więcej akcji", "More actions")}>
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {!executed ? (
               <DropdownMenuItem onSelect={() => setMode("reschedule")}>
-                <CalendarClock /> Zmień datę
+                <CalendarClock /> {tl("Zmień datę", "Change date")}
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem onSelect={() => setMode("copy")}>
-              <Copy /> Kopiuj trening
+              <Copy /> {tl("Kopiuj trening", "Copy session")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setMode("template")}>
-              <Save /> Zapisz jako szablon
+              <Save /> {tl("Zapisz jako szablon", "Save as template")}
             </DropdownMenuItem>
             {!executed ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => setMode("delete")} className="text-problem">
-                  <Trash2 /> Usuń
+                  <Trash2 /> {tl("Usuń", "Delete")}
                 </DropdownMenuItem>
               </>
             ) : null}
@@ -79,8 +80,8 @@ export function CoachSessionActions({
       </div>
 
       <Dialog open={mode === "reschedule"} onOpenChange={(o: boolean) => !o && close()}>
-        <DialogContent title="Zmień datę treningu" description="Zawodnik dostanie powiadomienie o zmianie terminu.">
-          <Field label="Nowa data" htmlFor="reschedule-date">
+        <DialogContent title={tl("Zmień datę treningu", "Change session date")} description={tl("Zawodnik dostanie powiadomienie o zmianie terminu.", "The athlete will be notified of the date change.")}>
+          <Field label={tl("Nowa data", "New date")} htmlFor="reschedule-date">
             <Input id="reschedule-date" type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
           </Field>
           <Button
@@ -96,18 +97,18 @@ export function CoachSessionActions({
               })
             }
           >
-            Zapisz nową datę
+            {tl("Zapisz nową datę", "Save new date")}
           </Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={mode === "copy"} onOpenChange={(o: boolean) => !o && close()}>
-        <DialogContent title="Kopiuj trening" description="Tworzy nowy, niezależny trening z tym samym planem. Wyniki nie są kopiowane.">
+        <DialogContent title={tl("Kopiuj trening", "Copy session")} description={tl("Tworzy nowy, niezależny trening z tym samym planem. Wyniki nie są kopiowane.", "Creates a new, independent session with the same plan. Results aren’t copied.")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Data" htmlFor="copy-date">
+            <Field label={tl("Data", "Date")} htmlFor="copy-date">
               <Input id="copy-date" type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
             </Field>
-            <Field label="Zawodnik" htmlFor="copy-athlete">
+            <Field label={tl("Zawodnik", "Athlete")} htmlFor="copy-athlete">
               <Select id="copy-athlete" value={target} onChange={(e) => setTarget(e.target.value)}>
                 {athletes.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -130,17 +131,17 @@ export function CoachSessionActions({
               })
             }
           >
-            Utwórz kopię
+            {tl("Utwórz kopię", "Create copy")}
           </Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={mode === "template"} onOpenChange={(o: boolean) => !o && close()}>
-        <DialogContent title="Zapisz jako szablon" description="Szablon jest osobnym rekordem: późniejsze zmiany w nim nie wpływają na ten trening.">
-          <Field label="Nazwa szablonu" htmlFor="tpl-name">
+        <DialogContent title={tl("Zapisz jako szablon", "Save as template")} description={tl("Szablon jest osobnym rekordem: późniejsze zmiany w nim nie wpływają na ten trening.", "A template is a separate record: later changes to it don’t affect this session.")}>
+          <Field label={tl("Nazwa szablonu", "Template name")} htmlFor="tpl-name">
             <Input id="tpl-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={160} />
           </Field>
-          <Field label="Opis" htmlFor="tpl-desc">
+          <Field label={tl("Opis", "Description")} htmlFor="tpl-desc">
             <Textarea id="tpl-desc" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} />
           </Field>
           <Button
@@ -155,16 +156,16 @@ export function CoachSessionActions({
               })
             }
           >
-            Zapisz szablon
+            {tl("Zapisz szablon", "Save template")}
           </Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={mode === "delete"} onOpenChange={(o: boolean) => !o && close()}>
-        <DialogContent title="Usunąć trening?" description="Trening zniknie z planu i kalendarza zawodnika. Tej operacji nie można cofnąć.">
+        <DialogContent title={tl("Usunąć trening?", "Delete session?")} description={tl("Trening zniknie z planu i kalendarza zawodnika. Tej operacji nie można cofnąć.", "The session will disappear from the athlete’s plan and calendar. This can’t be undone.")}>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={close}>
-              Anuluj
+              {tl("Anuluj", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -179,7 +180,7 @@ export function CoachSessionActions({
                 })
               }
             >
-              Usuń trening
+              {tl("Usuń trening", "Delete session")}
             </Button>
           </div>
         </DialogContent>

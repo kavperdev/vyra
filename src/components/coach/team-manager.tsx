@@ -14,6 +14,7 @@ import { createStaffInvitation, setStaffAssignment, setStaffRole } from "@/lib/a
 import { formatDate } from "@/lib/format";
 import { STAFF_ROLE_LABEL, type Invitation, type StaffRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { tl } from "@/lib/i18n/runtime";
 
 export interface StaffMember {
   id: string;
@@ -27,29 +28,29 @@ export interface StaffMember {
 const ROLES = Object.entries(STAFF_ROLE_LABEL) as [StaffRole, string][];
 
 const ROLE_HINT: Record<StaffRole, string> = {
-  founder: "Pełny dostęp: wszyscy zawodnicy, zespół, zgłoszenia.",
-  running_coach: "Planuje i analizuje treningi przypisanych zawodników.",
-  strength_coach: "Planuje i analizuje treningi przypisanych zawodników.",
-  physio: "Widzi przypisanych zawodników i pisze notatki zespołu. Nie planuje treningów.",
+  get founder() { return tl("Pełny dostęp: wszyscy zawodnicy, zespół, zgłoszenia.", "Full access: all athletes, the team, requests."); },
+  get running_coach() { return tl("Planuje i analizuje treningi przypisanych zawodników.", "Plans and analyses sessions for assigned athletes."); },
+  get strength_coach() { return tl("Planuje i analizuje treningi przypisanych zawodników.", "Plans and analyses sessions for assigned athletes."); },
+  get physio() { return tl("Widzi przypisanych zawodników i pisze notatki zespołu. Nie planuje treningów.", "Sees assigned athletes and writes team notes. Doesn’t plan sessions."); },
 };
 
 function CopyLink({ link }: { link: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex gap-2">
-      <Input readOnly value={link} aria-label="Link zaproszenia" onFocus={(e) => e.currentTarget.select()} className="num text-[13px]" />
+      <Input readOnly value={link} aria-label={tl("Link zaproszenia", "Invitation link")} onFocus={(e) => e.currentTarget.select()} className="num text-[13px]" />
       <Button
         variant="outline"
         size="icon"
-        aria-label="Kopiuj link"
+        aria-label={tl("Kopiuj link", "Copy link")}
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(link);
             setCopied(true);
-            toast.success("Skopiowano link");
+            toast.success(tl("Skopiowano link", "Link copied"));
             setTimeout(() => setCopied(false), 1500);
           } catch {
-            toast.error("Nie udało się skopiować. Zaznacz link i skopiuj ręcznie.");
+            toast.error(tl("Nie udało się skopiować. Zaznacz link i skopiuj ręcznie.", "Couldn’t copy. Select the link and copy it manually."));
           }
         }}
       >
@@ -68,14 +69,17 @@ function InviteStaff({ siteUrl }: { siteUrl: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Zaproś do zespołu</CardTitle>
+        <CardTitle>{tl("Zaproś do zespołu", "Invite to the team")}</CardTitle>
       </CardHeader>
       <CardContent>
         {link ? (
           <div className="grid gap-3">
             <p className="text-sm text-muted">
-              Wyślij ten link osobie z adresem <b className="text-foreground">{v.email}</b>. Po założeniu konta dołączy do zespołu
-              jako: {STAFF_ROLE_LABEL[v.staff_role].toLowerCase()}. Link jest ważny 14 dni.
+              {tl("Wyślij ten link osobie z adresem", "Send this link to the person with the address")} <b className="text-foreground">{v.email}</b>.{" "}
+              {tl(
+                `Po założeniu konta dołączy do zespołu jako: ${STAFF_ROLE_LABEL[v.staff_role].toLowerCase()}. Link jest ważny 14 dni.`,
+                `After creating an account they’ll join the team as: ${STAFF_ROLE_LABEL[v.staff_role].toLowerCase()}. The link is valid for 14 days.`,
+              )}
             </p>
             <CopyLink link={link} />
             <Button
@@ -87,7 +91,7 @@ function InviteStaff({ siteUrl }: { siteUrl: string }) {
                 setV({ email: "", full_name: "", staff_role: "running_coach" });
               }}
             >
-              Zaproś kolejną osobę
+              {tl("Zaproś kolejną osobę", "Invite another person")}
             </Button>
           </div>
         ) : (
@@ -109,7 +113,7 @@ function InviteStaff({ siteUrl }: { siteUrl: string }) {
             }}
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Imię i nazwisko" htmlFor="st-name" error={errors.full_name?.[0]}>
+              <Field label={tl("Imię i nazwisko", "Full name")} htmlFor="st-name" error={errors.full_name?.[0]}>
                 <Input id="st-name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
               </Field>
               <Field label="E-mail" htmlFor="st-email" error={errors.email?.[0]}>
@@ -122,7 +126,7 @@ function InviteStaff({ siteUrl }: { siteUrl: string }) {
                 />
               </Field>
             </div>
-            <Field label="Rola" htmlFor="st-role" hint={ROLE_HINT[v.staff_role]} error={errors.staff_role?.[0]}>
+            <Field label={tl("Rola", "Role")} htmlFor="st-role" hint={ROLE_HINT[v.staff_role]} error={errors.staff_role?.[0]}>
               <Select id="st-role" value={v.staff_role} onChange={(e) => setV({ ...v, staff_role: e.target.value as StaffRole })}>
                 {ROLES.map(([k, l]) => (
                   <option key={k} value={k}>
@@ -132,7 +136,7 @@ function InviteStaff({ siteUrl }: { siteUrl: string }) {
               </Select>
             </Field>
             <Button type="submit" className="w-fit" disabled={pending}>
-              <UserPlus className="size-4" /> Utwórz zaproszenie
+              <UserPlus className="size-4" /> {tl("Utwórz zaproszenie", "Create invitation")}
             </Button>
           </form>
         )}
@@ -153,7 +157,7 @@ function StaffCard({ member }: { member: StaffMember }) {
           </p>
           <p className="truncate text-sm text-muted">
             {member.email}
-            {member.staff_role === "founder" ? " · wszyscy zawodnicy" : ` · zawodników: ${member.athleteIds.length}`}
+            {member.staff_role === "founder" ? ` · ${tl("wszyscy zawodnicy", "all athletes")}` : ` · ${tl("zawodników", "athletes")}: ${member.athleteIds.length}`}
           </p>
         </div>
       </div>
@@ -254,7 +258,7 @@ export function TeamManager({
   return (
     <div className="grid gap-8">
       <section className="grid gap-3">
-        <h2 className="eyebrow">Członkowie zespołu</h2>
+        <h2 className="eyebrow">{tl("Członkowie zespołu", "Team members")}</h2>
         <div className="grid gap-3">
           {staff.map((m) => (
             <StaffCard key={m.id} member={m} />
@@ -266,7 +270,7 @@ export function TeamManager({
         <InviteStaff siteUrl={siteUrl} />
         <Card>
           <CardHeader>
-            <CardTitle>Oczekujące zaproszenia</CardTitle>
+            <CardTitle>{tl("Oczekujące zaproszenia", "Pending invitations")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
             {invitations.length ? (
@@ -276,7 +280,7 @@ export function TeamManager({
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{i.full_name || i.email}</p>
                       <p className="truncate text-[13px] text-muted">
-                        {i.staff_role ? STAFF_ROLE_LABEL[i.staff_role] : ""} · ważne do {formatDate(i.expires_at)}
+                        {i.staff_role ? STAFF_ROLE_LABEL[i.staff_role] : ""} · {tl("ważne do", "valid until")} {formatDate(i.expires_at)}
                       </p>
                     </div>
                     <Button
@@ -287,21 +291,21 @@ export function TeamManager({
                         start(async () => {
                           const res = await revokeInvitation(i.id);
                           if (res.ok) {
-                            toast.success("Anulowano zaproszenie");
+                            toast.success(tl("Anulowano zaproszenie", "Invitation cancelled"));
                             router.refresh();
                           }
                           if (!res.ok) toast.error(res.error);
                         })
                       }
                     >
-                      <X className="size-4" /> Anuluj
+                      <X className="size-4" /> {tl("Anuluj", "Cancel")}
                     </Button>
                   </div>
                   <CopyLink link={`${siteUrl}/invite/${i.token}`} />
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted">Brak oczekujących zaproszeń.</p>
+              <p className="text-sm text-muted">{tl("Brak oczekujących zaproszeń.", "No pending invitations.")}</p>
             )}
           </CardContent>
         </Card>
@@ -309,18 +313,18 @@ export function TeamManager({
 
       <section className="grid gap-3">
         <div className="grid gap-1">
-          <h2 className="eyebrow">Przypisani zawodnicy</h2>
+          <h2 className="eyebrow">{tl("Przypisani zawodnicy", "Assigned athletes")}</h2>
           <p className="text-sm text-muted">
-            Kliknij zawodnika, żeby przypisać go do osoby z zespołu albo zdjąć przypisanie. Osoba widzi tylko swoich zawodników.
+            {tl("Kliknij zawodnika, żeby przypisać go do osoby z zespołu albo zdjąć przypisanie. Osoba widzi tylko swoich zawodników.", "Click an athlete to assign them to a team member or remove the assignment. Team members only see their own athletes.")}
           </p>
         </div>
         {!assignable.length ? (
           <EmptyState
-            title="Nie masz jeszcze trenerów ani fizjoterapeuty"
-            description="Zaproś ich powyżej. Po dołączeniu przypiszesz im zawodników tutaj."
+            title={tl("Nie masz jeszcze trenerów ani fizjoterapeuty", "You don’t have coaches or a physiotherapist yet")}
+            description={tl("Zaproś ich powyżej. Po dołączeniu przypiszesz im zawodników tutaj.", "Invite them above. Once they join, assign athletes to them here.")}
           />
         ) : !athletes.length ? (
-          <EmptyState title="Brak aktywnych zawodników" description="Zaproś zawodników w zakładce Zawodnicy." />
+          <EmptyState title={tl("Brak aktywnych zawodników", "No active athletes")} description={tl("Zaproś zawodników w zakładce Zawodnicy.", "Invite athletes in Athletes.")} />
         ) : (
           <div className="grid gap-3">
             {assignable.map((m) => (

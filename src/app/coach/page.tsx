@@ -16,6 +16,7 @@ import { displayStatus } from "@/lib/training/status";
 import { canPlan, type SessionSummary } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -40,14 +41,14 @@ function attentionFor(athletes: { id: string; full_name: string }[], sessions: S
     const missing = recent.filter((s) => displayStatus(s.status, s.scheduled_date, today) === "needs_update").length;
     const skipped = recent.filter((s) => s.status === "skipped").length;
     if (missing >= 2) reasons.push(`${missing} treningi bez wpisu (14 dni)`);
-    if (skipped >= 2) reasons.push(`${skipped} pominięte treningi (14 dni)`);
+    if (skipped >= 2) reasons.push(tl(`${skipped} pominięte treningi (14 dni)`, `${skipped} skipped sessions (14 days)`));
     const plannedWeek = mine.filter((s) => s.scheduled_date >= from7 && s.scheduled_date <= today).length;
     const loggedWeek = mine.filter((s) => s.execution && s.execution.performed_on >= from7).length;
-    if (plannedWeek >= 2 && loggedWeek === 0) reasons.push("brak zapisanych treningów od 7 dni");
+    if (plannedWeek >= 2 && loggedWeek === 0) reasons.push(tl("brak zapisanych treningów od 7 dni", "no sessions logged for 7 days"));
     const highRpe = recent.filter((s) => (s.execution?.rpe ?? 0) >= 9).length;
     if (highRpe >= 2) reasons.push(`${highRpe} treningi z RPE ≥ 9 (14 dni)`);
     const upcoming = mine.filter((s) => s.scheduled_date > today && s.scheduled_date <= addDaysISO(today, 7)).length;
-    if (upcoming === 0) reasons.push("brak treningów na najbliższy tydzień");
+    if (upcoming === 0) reasons.push(tl("brak treningów na najbliższy tydzień", "no sessions planned for next week"));
     if (reasons.length) out.push({ athleteId: a.id, name: a.full_name, reasons });
   }
   return out.sort((x, y) => y.reasons.length - x.reasons.length);
@@ -63,13 +64,13 @@ export default async function CoachDashboard() {
   if (!athletes.length) {
     return (
       <div className="grid gap-8">
-        <PageHeader eyebrow="Pulpit" title={`Cześć, ${user.profile.full_name.split(" ")[0]}`} />
+        <PageHeader eyebrow={tl("Pulpit", "Dashboard")} title={`Cześć, ${user.profile.full_name.split(" ")[0]}`} />
         <EmptyState
-          title="Zacznij od zaproszenia zawodnika"
-          description="Wyślij zaproszenie, a po dołączeniu zawodnika zaplanujesz mu pierwszy trening. Pulpit pokaże wtedy treningi na dziś, realizację planów i zawodników, którzy wymagają uwagi."
+          title={tl("Zacznij od zaproszenia zawodnika", "Start by inviting an athlete")}
+          description={tl("Wyślij zaproszenie, a po dołączeniu zawodnika zaplanujesz mu pierwszy trening. Pulpit pokaże wtedy treningi na dziś, realizację planów i zawodników, którzy wymagają uwagi.", "Send an invitation and once the athlete joins, plan their first session. The dashboard will then show today’s sessions, plan completion and athletes who need attention.")}
           action={
             <Button asChild>
-              <Link href="/coach/athletes?invite=1">Zaproś zawodnika</Link>
+              <Link href="/coach/athletes?invite=1">{tl("Zaproś zawodnika", "Invite athlete")}</Link>
             </Button>
           }
         />
@@ -104,62 +105,62 @@ export default async function CoachDashboard() {
       <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={`Cześć, ${user.profile.full_name.split(" ")[0]}`}
-        line={`Dziś ${todays.length ? `${todays.length} ${todays.length === 1 ? "trening" : todays.length < 5 ? "treningi" : "treningów"} w planie` : "brak treningów w planie"}${awaiting.length ? ` · ${awaiting.length} do uzupełnienia` : ""}${attention.length ? ` · ${attention.length} ${attention.length === 1 ? "zawodnik wymaga" : "zawodników wymaga"} uwagi` : ""}.`}
+        line={`Dziś ${todays.length ? `${todays.length} ${todays.length === 1 ? "trening" : todays.length < 5 ? "treningi" : "treningów"} w planie` : tl("brak treningów w planie", "no sessions planned")}${awaiting.length ? ` · ${awaiting.length} do uzupełnienia` : ""}${attention.length ? ` · ${attention.length} ${attention.length === 1 ? "zawodnik wymaga" : "zawodników wymaga"} uwagi` : ""}.`}
         actions={
           canPlan(user.profile.staff_role) ? (
             <Button asChild variant="accent">
               <Link href="/coach/sessions/new">
-                <Plus className="size-4" /> Nowy trening
+                <Plus className="size-4" /> {tl("Nowy trening", "New session")}
               </Link>
             </Button>
           ) : undefined
         }
       />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" aria-label="Najważniejsze statystyki">
-        <Stat label="Aktywni zawodnicy" value={athletes.length} href="/coach/athletes" />
-        <Stat label="Treningi dziś" value={todays.length} href={`/coach/calendar?view=day&date=${today}`} />
-        <Stat label="Wykonane w tym tygodniu" value={doneWeek} hint={`z ${thisWeek.length} zaplanowanych`} />
-        <Stat label="Do uzupełnienia" value={awaiting.length} tone={awaiting.length ? "warning" : "default"} hint="ostatnie 14 dni" href="/coach/calendar?status=needs_update&view=list" />
-        <Stat label="Realizacja 4 tyg." value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} treningów`} />
-        <Stat label="Kilometry w tym tyg." value={formatNumber(weekKm)} unit="km" hint="wszyscy zawodnicy" />
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" aria-label={tl("Najważniejsze statystyki", "Key statistics")}>
+        <Stat label={tl("Aktywni zawodnicy", "Active athletes")} value={athletes.length} href="/coach/athletes" />
+        <Stat label={tl("Treningi dziś", "Sessions today")} value={todays.length} href={`/coach/calendar?view=day&date=${today}`} />
+        <Stat label={tl("Wykonane w tym tygodniu", "Done this week")} value={doneWeek} hint={`z ${thisWeek.length} zaplanowanych`} />
+        <Stat label={tl("Do uzupełnienia", "To update")} value={awaiting.length} tone={awaiting.length ? "warning" : "default"} hint={tl("ostatnie 14 dni", "last 14 days")} href="/coach/calendar?status=needs_update&view=list" />
+        <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} treningów`} />
+        <Stat label={tl("Kilometry w tym tyg.", "Km this week")} value={formatNumber(weekKm)} unit="km" hint={tl("wszyscy zawodnicy", "all athletes")} />
       </section>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="grid content-start gap-8">
           <section className="grid gap-3">
-            <SectionTitle action={<Link href={`/coach/calendar?view=day&date=${today}`} className="text-[13px] text-muted hover:text-foreground">Kalendarz</Link>}>
-              Dzisiaj
+            <SectionTitle action={<Link href={`/coach/calendar?view=day&date=${today}`} className="text-[13px] text-muted hover:text-foreground">{tl("Kalendarz", "Calendar")}</Link>}>
+              {tl("Dzisiaj", "Today")}
             </SectionTitle>
             <SessionList
               sessions={todays}
               hrefFor={(s) => `/coach/sessions/${s.id}`}
               today={today}
               showAthlete
-              empty={<EmptyState title="Na dziś nic nie zaplanowano" description="Zawodnicy mają dzień wolny albo plan jeszcze nie jest rozpisany." />}
+              empty={<EmptyState title={tl("Na dziś nic nie zaplanowano", "Nothing planned for today")} description={tl("Zawodnicy mają dzień wolny albo plan jeszcze nie jest rozpisany.", "Athletes have a rest day or the plan isn’t written yet.")} />}
             />
           </section>
 
           <section className="grid gap-3">
-            <SectionTitle>Ostatnio wykonane</SectionTitle>
+            <SectionTitle>{tl("Ostatnio wykonane", "Recently completed")}</SectionTitle>
             <SessionList
               sessions={recentDone}
               hrefFor={(s) => `/coach/sessions/${s.id}`}
               today={today}
               showAthlete
-              empty={<EmptyState title="Brak zapisanych wyników" description="Gdy zawodnicy uzupełnią treningi, zobaczysz tu ich wyniki." />}
+              empty={<EmptyState title={tl("Brak zapisanych wyników", "No logged results")} description={tl("Gdy zawodnicy uzupełnią treningi, zobaczysz tu ich wyniki.", "When athletes log their sessions, you’ll see their results here.")} />}
             />
           </section>
 
           <section className="grid gap-3">
-            <SectionTitle>Najbliższe treningi</SectionTitle>
-            <SessionList sessions={upcoming} hrefFor={(s) => `/coach/sessions/${s.id}`} today={today} showAthlete empty={<EmptyState title="Brak zaplanowanych treningów" description="Zaplanuj treningi na najbliższe dni." />} />
+            <SectionTitle>{tl("Najbliższe treningi", "Upcoming sessions")}</SectionTitle>
+            <SessionList sessions={upcoming} hrefFor={(s) => `/coach/sessions/${s.id}`} today={today} showAthlete empty={<EmptyState title={tl("Brak zaplanowanych treningów", "No planned sessions")} description={tl("Zaplanuj treningi na najbliższe dni.", "Plan sessions for the coming days.")} />} />
           </section>
         </div>
 
         <div className="grid content-start gap-8">
           <section className="grid gap-3">
-            <SectionTitle>Wymagają uwagi</SectionTitle>
+            <SectionTitle>{tl("Wymagają uwagi", "Need attention")}</SectionTitle>
             {attention.length ? (
               <ul className="grid gap-2">
                 {attention.map((a) => (
@@ -181,12 +182,12 @@ export default async function CoachDashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">Wszyscy zawodnicy realizują plan bez sygnałów ostrzegawczych.</p>
+              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">{tl("Wszyscy zawodnicy realizują plan bez sygnałów ostrzegawczych.", "All athletes are following their plan with no warning signs.")}</p>
             )}
           </section>
 
           <section className="grid gap-3">
-            <SectionTitle>Komentarze zawodników</SectionTitle>
+            <SectionTitle>{tl("Komentarze zawodników", "Athlete comments")}</SectionTitle>
             {comments.length ? (
               <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
                 {comments.map((c) => (
@@ -202,28 +203,28 @@ export default async function CoachDashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">Brak nowych komentarzy.</p>
+              <p className="text-sm text-muted">{tl("Brak nowych komentarzy.", "No new comments.")}</p>
             )}
           </section>
 
           <section className="grid gap-3">
-            <SectionTitle>Brakujące wpisy</SectionTitle>
+            <SectionTitle>{tl("Brakujące wpisy", "Missing entries")}</SectionTitle>
             <SessionList
               sessions={awaiting.slice(0, 6)}
               hrefFor={(s) => `/coach/sessions/${s.id}`}
               today={today}
               showAthlete
-              empty={<p className="text-sm text-muted">Wszystkie minione treningi są uzupełnione.</p>}
+              empty={<p className="text-sm text-muted">{tl("Wszystkie minione treningi są uzupełnione.", "All past sessions are logged.")}</p>}
             />
           </section>
         </div>
       </div>
 
-      <section className="grid gap-6 lg:grid-cols-2" aria-label="Analityka zespołu">
+      <section className="grid gap-6 lg:grid-cols-2" aria-label={tl("Analityka zespołu", "Team analytics")}>
         <Card>
           <CardHeader>
-            <CardTitle>Realizacja planów zespołu</CardTitle>
-            <span className="text-[12px] text-muted">8 tygodni</span>
+            <CardTitle>{tl("Realizacja planów zespołu", "Team plan completion")}</CardTitle>
+            <span className="text-[12px] text-muted">{tl("8 tygodni", "8 weeks")}</span>
           </CardHeader>
           <CardContent>
             <CompletionChart data={buckets.map((b) => ({ weekStart: b.weekStart, completion: b.completion, doneSessions: b.doneSessions, dueSessions: b.dueSessions }))} />
@@ -231,9 +232,9 @@ export default async function CoachDashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Objętość biegowa zespołu</CardTitle>
+            <CardTitle>{tl("Objętość biegowa zespołu", "Team running volume")}</CardTitle>
             <Link href="/coach/analytics" className="text-[12px] text-muted hover:text-foreground">
-              Pełna analityka
+              {tl("Pełna analityka", "Full analytics")}
             </Link>
           </CardHeader>
           <CardContent>

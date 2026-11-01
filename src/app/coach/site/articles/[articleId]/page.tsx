@@ -7,6 +7,7 @@ import { requireRole } from "@/lib/auth";
 import { getArticle } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -23,9 +24,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ articl
   return (
     <div className="grid gap-6">
       <Link href="/coach/site" className="w-fit text-sm text-muted underline-offset-4 hover:underline">
-        ← Strona VYRA
+        {tl("← Strona VYRA", "← VYRA website")}
       </Link>
-      <PageHeader eyebrow="Wiedza" title={article.title} />
+      <PageHeader eyebrow={tl("Wiedza", "Journal")} title={article.title} />
       <ArticleEditor article={article} />
     </div>
   );

@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form-controls";
 import { saveCampBudget } from "@/lib/actions/camps";
-import type { CampFormat } from "@/lib/camps";
+import { formatPLN, type CampFormat } from "@/lib/camps";
 import type { BudgetItem, CampBudget } from "@/lib/data/camps";
 import { cn } from "@/lib/utils";
+import { tl } from "@/lib/i18n/runtime";
 
 type Row = { key: string; label: string; kind: "per_person" | "fixed"; amount: string; note: string };
 
-const pln = (v: number) => `${Math.round(v).toLocaleString("pl-PL")} zł`;
+const pln = (v: number) => formatPLN(Math.round(v)) ?? "–";
 const num = (s: string) => {
   const n = Number(s.replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -111,12 +112,12 @@ export function CampBudgetEditor({
           .filter((x) => x.label.trim())
           .map((x) => ({ label: x.label.trim(), kind: x.kind, amount_pln: num(x.amount), note: x.note.trim() || null })),
       });
-      if (res.ok) toast.success(res.message ?? "Zapisano");
+      if (res.ok) toast.success(res.message ?? tl("Zapisano", "Saved"));
       else toast.error(res.error);
     });
 
   const loadTemplate = (t: "weekend" | "week") => {
-    if (rows.length && !window.confirm("Zastąpić obecne koszty szablonem?")) return;
+    if (rows.length && !window.confirm(tl("Zastąpić obecne koszty szablonem?", "Replace the current costs with the template?"))) return;
     setRows(TEMPLATES[t].map((x) => ({ ...x, key: key() })));
     if (!priceStr) setPriceStr(t === "weekend" ? "5990" : "14900");
   };
@@ -127,17 +128,17 @@ export function CampBudgetEditor({
         {title} <span className="num font-normal text-muted">· {r.n} os.</span>
       </p>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <dt className="text-muted">Przychód</dt>
+        <dt className="text-muted">{tl("Przychód", "Revenue")}</dt>
         <dd className="num text-right">{pln(r.revenue)}</dd>
-        <dt className="text-muted">Koszty z rezerwą</dt>
+        <dt className="text-muted">{tl("Koszty z rezerwą", "Costs with reserve")}</dt>
         <dd className="num text-right">{pln(r.costs)}</dd>
-        <dt className="text-muted">Koszt na uczestnika</dt>
+        <dt className="text-muted">{tl("Koszt na uczestnika", "Cost per participant")}</dt>
         <dd className="num text-right">{r.n ? pln(r.costPerPerson) : "–"}</dd>
-        <dt className="font-semibold">Nadwyżka</dt>
+        <dt className="font-semibold">{tl("Nadwyżka", "Surplus")}</dt>
         <dd className={cn("num text-right text-base font-semibold", r.surplus >= 0 ? "text-done" : "text-problem")}>{pln(r.surplus)}</dd>
-        <dt className="text-muted">Na założyciela ({calc.f})</dt>
+        <dt className="text-muted">{tl("Na założyciela", "Per founder")} ({calc.f})</dt>
         <dd className="num text-right">{pln(r.perFounder)}</dd>
-        <dt className="text-muted">Marża</dt>
+        <dt className="text-muted">{tl("Marża", "Margin")}</dt>
         <dd className="num text-right">{r.revenue ? `${Math.round(r.margin * 100)}%` : "–"}</dd>
       </dl>
     </div>
@@ -147,41 +148,41 @@ export function CampBudgetEditor({
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Wynik</CardTitle>
+          <CardTitle>{tl("Wynik", "Result")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-4">
-            <Field label="Cena za osobę" unit="zł" htmlFor="b-price" hint="Do kalkulacji; cenę na stronie zmieniasz w opisie obozu">
+            <Field label={tl("Cena za osobę", "Price per person")} unit="zł" htmlFor="b-price" hint={tl("Do kalkulacji; cenę na stronie zmieniasz w opisie obozu", "For the calculation; the price on the site is set in the camp details")}>
               <Input id="b-price" inputMode="numeric" value={priceStr} onChange={(e) => setPriceStr(e.target.value)} />
             </Field>
-            <Field label="Planowani uczestnicy" htmlFor="b-planned">
+            <Field label={tl("Planowani uczestnicy", "Planned participants")} htmlFor="b-planned">
               <Input id="b-planned" inputMode="numeric" value={planned} onChange={(e) => setPlanned(e.target.value)} />
             </Field>
-            <Field label="Rezerwa" unit="%" htmlFor="b-reserve">
+            <Field label={tl("Rezerwa", "Reserve")} unit="%" htmlFor="b-reserve">
               <Input id="b-reserve" inputMode="decimal" value={reserve} onChange={(e) => setReserve(e.target.value)} />
             </Field>
-            <Field label="Założyciele" htmlFor="b-founders" hint="Podział nadwyżki">
+            <Field label={tl("Założyciele", "Founders")} htmlFor="b-founders" hint={tl("Podział nadwyżki", "Surplus split")}>
               <Input id="b-founders" inputMode="numeric" value={founders} onChange={(e) => setFounders(e.target.value)} />
             </Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Result title="Plan" r={calc.planned} />
-            <Result title="Teraz (zapisani i opłaceni)" r={calc.actual} />
+            <Result title={tl("Teraz (zapisani i opłaceni)", "Now (registered and paid)")} r={calc.actual} />
           </div>
           <p className="text-sm">
             {calc.breakEven != null ? (
               <>
-                <b>Próg opłacalności: {calc.breakEven} os.</b> <span className="text-muted">Od tylu uczestników obóz pokrywa wszystkie koszty.</span>
+                <b>Próg opłacalności: {calc.breakEven} os.</b> <span className="text-muted">{tl("Od tylu uczestników obóz pokrywa wszystkie koszty.", "From this many participants the camp covers all costs.")}</span>
               </>
             ) : calc.p ? (
-              <span className="text-problem">Cena nie pokrywa kosztów na osobę. Podnieś cenę albo obniż koszty na uczestnika.</span>
+              <span className="text-problem">{tl("Cena nie pokrywa kosztów na osobę. Podnieś cenę albo obniż koszty na uczestnika.", "The price doesn’t cover the per-person costs. Raise the price or lower the per-participant costs.")}</span>
             ) : (
-              <span className="text-muted">Wpisz cenę, żeby policzyć próg opłacalności.</span>
+              <span className="text-muted">{tl("Wpisz cenę, żeby policzyć próg opłacalności.", "Enter a price to calculate the break-even point.")}</span>
             )}
           </p>
           {calc.p ? (
             <div className="grid gap-2">
-              <p className="text-[13px] text-muted">Nadwyżka przy różnej liczbie uczestników</p>
+              <p className="text-[13px] text-muted">{tl("Nadwyżka przy różnej liczbie uczestników", "Surplus by number of participants")}</p>
               <div className="grid gap-1">
                 {scenarios.map((s) => (
                   <div key={s.n} className="grid grid-cols-[3rem_minmax(0,1fr)_6.5rem] items-center gap-3 text-sm">
@@ -204,10 +205,10 @@ export function CampBudgetEditor({
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle>Koszty</CardTitle>
+            <CardTitle>{tl("Koszty", "Costs")}</CardTitle>
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" size="sm" onClick={() => loadTemplate(format === "week" ? "week" : "weekend")}>
-                Wczytaj szablon ({format === "week" ? "tydzień" : "weekend"})
+                {tl("Wczytaj szablon", "Load template")} ({format === "week" ? tl("tydzień", "week") : "weekend"})
               </Button>
             </div>
           </div>
@@ -218,7 +219,7 @@ export function CampBudgetEditor({
               <Input
                 aria-label={`Koszt ${i + 1}: nazwa`}
                 value={r.label}
-                placeholder="np. Nocleg"
+                placeholder={tl("np. Nocleg", "e.g. Accommodation")}
                 onChange={(e) => setRows(rows.map((x) => (x.key === r.key ? { ...x, label: e.target.value } : x)))}
               />
               <Select
@@ -226,17 +227,17 @@ export function CampBudgetEditor({
                 value={r.kind}
                 onChange={(e) => setRows(rows.map((x) => (x.key === r.key ? { ...x, kind: e.target.value as Row["kind"] } : x)))}
               >
-                <option value="per_person">na osobę</option>
-                <option value="fixed">stały</option>
+                <option value="per_person">{tl("na osobę", "per person")}</option>
+                <option value="fixed">{tl("stały", "fixed")}</option>
               </Select>
               <Input
-                aria-label={`Koszt ${i + 1}: kwota w zł`}
+                aria-label={tl(`Koszt ${i + 1}: kwota w zł`, `Cost ${i + 1}: amount in PLN`)}
                 inputMode="decimal"
                 value={r.amount}
                 placeholder="zł"
                 onChange={(e) => setRows(rows.map((x) => (x.key === r.key ? { ...x, amount: e.target.value } : x)))}
               />
-              <Button variant="ghost" size="icon-sm" aria-label={`Usuń koszt ${i + 1}`} onClick={() => setRows(rows.filter((x) => x.key !== r.key))}>
+              <Button variant="ghost" size="icon-sm" aria-label={tl(`Usuń koszt ${i + 1}`, `Delete cost ${i + 1}`)} onClick={() => setRows(rows.filter((x) => x.key !== r.key))}>
                 <Trash2 className="size-4" />
               </Button>
               {r.note ? <p className="text-[12px] text-subtle sm:col-span-4">{r.note}</p> : null}
@@ -244,18 +245,18 @@ export function CampBudgetEditor({
           ))}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setRows([...rows, { key: key(), label: "", kind: "per_person", amount: "", note: "" }])}>
-              <Plus className="size-4" /> Koszt na osobę
+              <Plus className="size-4" /> {tl("Koszt na osobę", "Per-person cost")}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setRows([...rows, { key: key(), label: "", kind: "fixed", amount: "", note: "" }])}>
-              <Plus className="size-4" /> Koszt stały
+              <Plus className="size-4" /> {tl("Koszt stały", "Fixed cost")}
             </Button>
           </div>
           <div className="grid gap-1 border-t border-border pt-3 text-sm">
             <p>
-              Koszty na osobę (z rezerwą): <b className="num">{pln(calc.perPerson)}</b>
+              {tl("Koszty na osobę (z rezerwą):", "Per-person costs (with reserve):")} <b className="num">{pln(calc.perPerson)}</b>
             </p>
             <p>
-              Koszty stałe (z rezerwą): <b className="num">{pln(calc.fixed)}</b>
+              {tl("Koszty stałe (z rezerwą):", "Fixed costs (with reserve):")} <b className="num">{pln(calc.fixed)}</b>
             </p>
           </div>
         </CardContent>
@@ -263,9 +264,9 @@ export function CampBudgetEditor({
 
       <div className="sticky bottom-20 z-10 flex items-center gap-3 rounded-lg border border-border bg-background/95 p-3 backdrop-blur lg:bottom-4">
         <Button disabled={pending} onClick={save}>
-          Zapisz budżet
+          {tl("Zapisz budżet", "Save budget")}
         </Button>
-        <p className="text-[12px] text-muted">Widzą to tylko założyciele. Kwoty brutto, przed podatkami.</p>
+        <p className="text-[12px] text-muted">{tl("Widzą to tylko założyciele. Kwoty brutto, przed podatkami.", "Only founders see this. Gross amounts, before tax.")}</p>
       </div>
     </div>
   );

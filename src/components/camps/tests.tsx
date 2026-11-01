@@ -10,6 +10,7 @@ import { Field, Input, Textarea } from "@/components/ui/form-controls";
 import { saveCampTest, type TestInput } from "@/lib/actions/camps";
 import type { CampTest } from "@/lib/camps";
 import { formatPace } from "@/lib/format";
+import { tl } from "@/lib/i18n/runtime";
 
 const s = (v: number | null | undefined) => (v == null ? "" : String(v).replace(".", ","));
 
@@ -31,18 +32,18 @@ function toForm(t: CampTest | undefined): TestInput {
   };
 }
 
-const FIELDS: { key: keyof TestInput; label: string; unit?: string; placeholder?: string }[] = [
+const fields = (): { key: keyof TestInput; label: string; unit?: string; placeholder?: string }[] => [
   { key: "vo2max", label: "VO2max", unit: "ml/kg/min", placeholder: "48,5" },
-  { key: "hr_max", label: "Tętno maks.", unit: "bpm" },
-  { key: "hr_rest", label: "Tętno spoczynkowe", unit: "bpm" },
-  { key: "lt1_hr", label: "Próg tlenowy (LT1) tętno", unit: "bpm" },
-  { key: "lt1_pace", label: "Próg tlenowy (LT1) tempo", unit: "min/km", placeholder: "5:20" },
-  { key: "lt2_hr", label: "Próg beztlenowy (LT2) tętno", unit: "bpm" },
-  { key: "lt2_pace", label: "Próg beztlenowy (LT2) tempo", unit: "min/km", placeholder: "4:15" },
-  { key: "weight_kg", label: "Masa ciała", unit: "kg" },
-  { key: "body_fat_pct", label: "Tkanka tłuszczowa", unit: "%" },
-  { key: "muscle_kg", label: "Masa mięśniowa", unit: "kg" },
-  { key: "cmj_cm", label: "Skok CMJ", unit: "cm" },
+  { key: "hr_max", label: tl("Tętno maks.", "Max HR"), unit: "bpm" },
+  { key: "hr_rest", label: tl("Tętno spoczynkowe", "Resting HR"), unit: "bpm" },
+  { key: "lt1_hr", label: tl("Próg tlenowy (LT1) tętno", "Aerobic threshold (LT1) HR"), unit: "bpm" },
+  { key: "lt1_pace", label: tl("Próg tlenowy (LT1) tempo", "Aerobic threshold (LT1) pace"), unit: "min/km", placeholder: "5:20" },
+  { key: "lt2_hr", label: tl("Próg beztlenowy (LT2) tętno", "Anaerobic threshold (LT2) HR"), unit: "bpm" },
+  { key: "lt2_pace", label: tl("Próg beztlenowy (LT2) tempo", "Anaerobic threshold (LT2) pace"), unit: "min/km", placeholder: "4:15" },
+  { key: "weight_kg", label: tl("Masa ciała", "Body weight"), unit: "kg" },
+  { key: "body_fat_pct", label: tl("Tkanka tłuszczowa", "Body fat"), unit: "%" },
+  { key: "muscle_kg", label: tl("Masa mięśniowa", "Muscle mass"), unit: "kg" },
+  { key: "cmj_cm", label: tl("Skok CMJ", "CMJ jump"), unit: "cm" },
 ];
 
 function TestForm({ campId, participantId, phase, test }: { campId: string; participantId: string; phase: "start" | "end"; test?: CampTest }) {
@@ -55,7 +56,7 @@ function TestForm({ campId, participantId, phase, test }: { campId: string; part
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{phase === "start" ? "Test na starcie" : "Test na końcu"}</CardTitle>
+        <CardTitle>{phase === "start" ? tl("Test na starcie", "Baseline test") : tl("Test na końcu", "Final test")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form
@@ -71,16 +72,16 @@ function TestForm({ campId, participantId, phase, test }: { campId: string; part
                 return;
               }
               setErrors({});
-              toast.success(res.message ?? "Zapisano");
+              toast.success(res.message ?? tl("Zapisano", "Saved"));
               router.refresh();
             });
           }}
         >
-          <Field label="Data testu" htmlFor={id("date")} error={errors.tested_on?.[0]}>
+          <Field label={tl("Data testu", "Test date")} htmlFor={id("date")} error={errors.tested_on?.[0]}>
             <Input id={id("date")} type="date" value={v.tested_on} onChange={(e) => setV({ ...v, tested_on: e.target.value })} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            {FIELDS.map((f) => (
+            {fields().map((f) => (
               <Field key={f.key} label={f.label} unit={f.unit} htmlFor={id(f.key)} error={errors[f.key]?.[0]}>
                 <Input
                   id={id(f.key)}
@@ -93,11 +94,11 @@ function TestForm({ campId, participantId, phase, test }: { campId: string; part
               </Field>
             ))}
           </div>
-          <Field label="Uwagi i zalecenia" htmlFor={id("notes")} error={errors.notes?.[0]}>
+          <Field label={tl("Uwagi i zalecenia", "Notes and recommendations")} htmlFor={id("notes")} error={errors.notes?.[0]}>
             <Textarea id={id("notes")} rows={3} value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
           </Field>
           <Button type="submit" className="w-fit" disabled={pending}>
-            Zapisz wyniki
+            {tl("Zapisz wyniki", "Save results")}
           </Button>
         </form>
       </CardContent>
@@ -117,7 +118,7 @@ export function CampTests({ campId, participantId, tests }: { campId: string; pa
 export function PrintButton() {
   return (
     <Button variant="outline" size="sm" onClick={() => window.print()} className="print:hidden">
-      <Printer className="size-4" /> Drukuj / PDF
+      <Printer className="size-4" /> {tl("Drukuj / PDF", "Print / PDF")}
     </Button>
   );
 }

@@ -11,6 +11,7 @@ import { listSessions } from "@/lib/data/sessions";
 import { completionStats } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -56,9 +57,9 @@ export default async function AthletesPage({ searchParams }: { searchParams: Pro
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Zespół"
-        title="Zawodnicy"
-        description="Każdy zawodnik ma własny plan i widzi wyłącznie swoje dane."
+        eyebrow={tl("Zespół", "Team")}
+        title={tl("Zawodnicy", "Athletes")}
+        description={tl("Każdy zawodnik ma własny plan i widzi wyłącznie swoje dane.", "Every athlete has their own plan and sees only their own data.")}
         actions={<InviteButton siteUrl={site} coachName={user.profile.full_name} defaultOpen={sp.invite === "1"} />}
       />
       <PendingInvitations invitations={invitations} siteUrl={site} />
@@ -66,8 +67,8 @@ export default async function AthletesPage({ searchParams }: { searchParams: Pro
         <AthletesTable athletes={items} />
       ) : (
         <EmptyState
-          title="Nie masz jeszcze zawodników"
-          description="Kliknij „Zaproś zawodnika”, wpisz jego e-mail i wyślij mu link. Po założeniu konta zawodnik pojawi się na tej liście."
+          title={tl("Nie masz jeszcze zawodników", "You don’t have athletes yet")}
+          description={tl("Kliknij „Zaproś zawodnika”, wpisz jego e-mail i wyślij mu link. Po założeniu konta zawodnik pojawi się na tej liście.", "Click “Invite athlete”, enter their email and send them the link. Once they create an account, they’ll appear in this list.")}
         />
       )}
     </div>

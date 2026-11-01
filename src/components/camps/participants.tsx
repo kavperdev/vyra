@@ -11,6 +11,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { EmptyState } from "@/components/ui/misc";
 import { deleteParticipant, saveParticipant, setParticipantStatus, type ParticipantInput } from "@/lib/actions/camps";
 import { PARTICIPANT_STATUS_LABEL, type CampParticipant, type ParticipantStatus } from "@/lib/camps";
+import { tl } from "@/lib/i18n/runtime";
 
 const EMPTY: ParticipantInput = { full_name: "", email: "", phone: "", status: "registered", notes: "" };
 
@@ -24,7 +25,7 @@ function AddParticipant({ campId }: { campId: string }) {
   if (!open) {
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Plus className="size-4" /> Dodaj uczestnika
+        <Plus className="size-4" /> {tl("Dodaj uczestnika", "Add participant")}
       </Button>
     );
   }
@@ -41,7 +42,7 @@ function AddParticipant({ campId }: { campId: string }) {
             toast.error(res.error);
             return;
           }
-          toast.success("Dodano uczestnika");
+          toast.success(tl("Dodano uczestnika", "Participant added"));
           setV(EMPTY);
           setErrors({});
           setOpen(false);
@@ -50,16 +51,16 @@ function AddParticipant({ campId }: { campId: string }) {
       }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Imię i nazwisko" htmlFor="p-name" error={errors.full_name?.[0]}>
+        <Field label={tl("Imię i nazwisko", "Full name")} htmlFor="p-name" error={errors.full_name?.[0]}>
           <Input id="p-name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
         </Field>
         <Field label="E-mail" htmlFor="p-email" error={errors.email?.[0]}>
           <Input id="p-email" type="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
         </Field>
-        <Field label="Telefon" htmlFor="p-phone" error={errors.phone?.[0]}>
+        <Field label={tl("Telefon", "Phone")} htmlFor="p-phone" error={errors.phone?.[0]}>
           <Input id="p-phone" type="tel" value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} />
         </Field>
-        <Field label="Status" htmlFor="p-status">
+        <Field label={tl("Status", tl("Status", "Status"))} htmlFor="p-status">
           <Select id="p-status" value={v.status} onChange={(e) => setV({ ...v, status: e.target.value as ParticipantStatus })}>
             {Object.entries(PARTICIPANT_STATUS_LABEL).map(([k, l]) => (
               <option key={k} value={k}>
@@ -69,7 +70,7 @@ function AddParticipant({ campId }: { campId: string }) {
           </Select>
         </Field>
       </div>
-      <Field label="Notatki" htmlFor="p-notes" hint="np. zaliczka wpłacona, dieta, pokój" error={errors.notes?.[0]}>
+      <Field label={tl("Notatki", "Notes")} htmlFor="p-notes" hint={tl("np. zaliczka wpłacona, dieta, pokój", "e.g. deposit paid, diet, room")} error={errors.notes?.[0]}>
         <Textarea id="p-notes" rows={2} value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
       </Field>
       <div className="flex gap-2">
@@ -77,7 +78,7 @@ function AddParticipant({ campId }: { campId: string }) {
           Dodaj
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-          Anuluj
+          {tl("Anuluj", "Cancel")}
         </Button>
       </div>
     </form>
@@ -92,7 +93,7 @@ function Row({ campId, p, canManage }: { campId: string; p: CampParticipant; can
       <Link href={`/coach/camps/${campId}/participants/${p.id}`} className="group min-w-0 flex-1">
         <p className="truncate font-semibold group-hover:underline">{p.full_name}</p>
         <p className="truncate text-[13px] text-muted">
-          {[p.email, p.phone].filter(Boolean).join(" · ") || "brak kontaktu"}
+          {[p.email, p.phone].filter(Boolean).join(" · ") || tl("brak kontaktu", "no contact")}
           {p.application_id ? " · zapis ze strony" : ""}
         </p>
       </Link>
@@ -125,10 +126,10 @@ function Row({ campId, p, canManage }: { campId: string; p: CampParticipant; can
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Usuń: ${p.full_name}`}
+            aria-label={tl(`Usuń: ${p.full_name}`, `Remove: ${p.full_name}`)}
             disabled={pending}
             onClick={() => {
-              if (!window.confirm(`Usunąć ${p.full_name} z listy obozu?`)) return;
+              if (!window.confirm(tl(`Usunąć ${p.full_name} z listy obozu?`, `Remove ${p.full_name} from the camp list?`))) return;
               start(async () => {
                 const res = await deleteParticipant(campId, p.id);
                 if (res.ok) router.refresh();
@@ -164,17 +165,17 @@ export function ParticipantsPanel({
     <Card>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>Uczestnicy</CardTitle>
+          <CardTitle>{tl("Uczestnicy", "Participants")}</CardTitle>
           {canManage ? <AddParticipant campId={campId} /> : null}
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            ["Zainteresowani", count("interested")],
-            ["Zapisani", count("registered")],
-            ["Opłaceni", count("paid") + count("attended")],
-            ["Wolne miejsca", capacity == null ? "–" : Math.max(capacity - taken, 0)],
+            [tl("Zainteresowani", "Interested"), count("interested")],
+            [tl("Zapisani", "Registered"), count("registered")],
+            [tl("Opłaceni", "Paid"), count("paid") + count("attended")],
+            [tl("Wolne miejsca", "Places left"), capacity == null ? "–" : Math.max(capacity - taken, 0)],
           ].map(([label, value]) => (
             <div key={label as string} className="rounded-lg border border-border p-3">
               <dt className="text-[12px] text-muted">{label}</dt>
@@ -190,8 +191,8 @@ export function ParticipantsPanel({
           </div>
         ) : (
           <EmptyState
-            title="Brak uczestników"
-            description="Zapisy ze strony pojawią się tu automatycznie, gdy obóz będzie opublikowany. Możesz też dodać kogoś ręcznie."
+            title={tl("Brak uczestników", "No participants")}
+            description={tl("Zapisy ze strony pojawią się tu automatycznie, gdy obóz będzie opublikowany. Możesz też dodać kogoś ręcznie.", "Sign-ups from the website appear here automatically once the camp is published. You can also add someone manually.")}
           />
         )}
       </CardContent>

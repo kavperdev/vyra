@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-controls";
 import { deleteApplication, setApplicationStatus } from "@/lib/actions/applications";
 import { formatDateTime } from "@/lib/format";
+import { tl } from "@/lib/i18n/runtime";
 
 export interface ApplicationRow {
   id: string;
@@ -29,24 +30,24 @@ const PACKAGE_LABEL: Record<string, string> = {
   plan: "VYRA Plan",
   coaching: "VYRA Coaching",
   elite: "VYRA Elite",
-  unsure: "Nie wie jeszcze",
+  get unsure() { return tl("Nie wie jeszcze", "Not sure yet"); },
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  new: "Nowe",
-  contacted: "Kontakt nawiązany",
-  invited: "Zaproszony",
-  rejected: "Odrzucone",
+  get new() { return tl("Nowe", "New"); },
+  get contacted() { return tl("Kontakt nawiązany", "Contacted"); },
+  get invited() { return tl("Zaproszony", "Invited"); },
+  get rejected() { return tl("Odrzucone", "Rejected"); },
 };
 
 function ApplicationCard({ a }: { a: ApplicationRow }) {
   const [pending, start] = useTransition();
   const rows: [string, string | null][] = [
-    ["Cel", a.goal],
-    ["Rekordy i kilometraż", a.records],
-    ["Kilometraż", a.weekly_km ? `${a.weekly_km} km / tydz.` : null],
-    ["Kontuzje", a.injuries],
-    ["Wiadomość", a.message],
+    [tl("Cel", "Goal"), a.goal],
+    [tl("Rekordy i kilometraż", "Records and mileage"), a.records],
+    [tl("Kilometraż", "Mileage"), a.weekly_km ? `${a.weekly_km} ${tl("km / tydz.", "km / week")}` : null],
+    [tl("Kontuzje", "Injuries"), a.injuries],
+    [tl("Wiadomość", "Message"), a.message],
   ];
   return (
     <article className="grid gap-4 rounded-lg border border-border bg-surface p-5">
@@ -54,15 +55,15 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
         <div className="grid gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold">{a.full_name}</h2>
-            {a.status === "new" ? <Badge tone="accent" dot>Nowe</Badge> : null}
+            {a.status === "new" ? <Badge tone="accent" dot>{tl("Nowe", "New")}</Badge> : null}
           </div>
           <p className="text-sm text-muted">
-            {formatDateTime(a.created_at)} · {a.kind === "camp" ? "Lista obozów" : "Prowadzenie"}
+            {formatDateTime(a.created_at)} · {a.kind === "camp" ? tl("Lista obozów", "Camp list") : tl("Prowadzenie", "Coaching")}
             {a.package ? ` · ${PACKAGE_LABEL[a.package] ?? a.package}` : ""}
           </p>
         </div>
         <Select
-          aria-label={`Status zgłoszenia: ${a.full_name}`}
+          aria-label={tl(`Status zgłoszenia: ${a.full_name}`, `Request status: ${a.full_name}`)}
           value={a.status}
           disabled={pending}
           className="w-auto min-w-48"
@@ -70,7 +71,7 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
             const status = e.target.value;
             start(async () => {
               const res = await setApplicationStatus(a.id, status);
-              if (res.ok) toast.success("Zapisano status");
+              if (res.ok) toast.success(tl("Zapisano status", "Status saved"));
               else toast.error(res.error);
             });
           }}
@@ -113,15 +114,15 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
           className="ml-auto text-muted"
           disabled={pending}
           onClick={() => {
-            if (!window.confirm(`Usunąć zgłoszenie: ${a.full_name}?`)) return;
+            if (!window.confirm(tl(`Usunąć zgłoszenie: ${a.full_name}?`, `Delete request: ${a.full_name}?`))) return;
             start(async () => {
               const res = await deleteApplication(a.id);
-              if (res.ok) toast.success("Usunięto zgłoszenie");
+              if (res.ok) toast.success(tl("Usunięto zgłoszenie", "Request deleted"));
               else toast.error(res.error);
             });
           }}
         >
-          <Trash2 className="size-4" /> Usuń
+          <Trash2 className="size-4" /> {tl("Usuń", "Delete")}
         </Button>
       </div>
     </article>

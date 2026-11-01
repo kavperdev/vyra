@@ -8,6 +8,7 @@ import { campDates } from "@/lib/camps";
 import { getCamp, getCampBudget, listParticipants } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -31,9 +32,9 @@ export default async function CampFinancePage({ params }: { params: Promise<{ ca
         ← {camp.title}
       </Link>
       <PageHeader
-        eyebrow="Finanse obozu · tylko założyciele"
+        eyebrow={tl("Finanse obozu · tylko założyciele", "Camp finances · founders only")}
         title={camp.title}
-        description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || "Wpisz koszty, a zobaczysz nadwyżkę i próg opłacalności."}
+        description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || tl("Wpisz koszty, a zobaczysz nadwyżkę i próg opłacalności.", "Enter the costs to see the surplus and break-even point.")}
       />
       <CampBudgetEditor campId={camp.id} format={camp.format} price={camp.price_pln} enrolled={enrolled} initial={budget} />
     </div>

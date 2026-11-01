@@ -3,6 +3,7 @@ import { ArticleEditor } from "@/components/content/article-editor";
 import { PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -14,7 +15,7 @@ export default async function NewArticlePage() {
   await requireRole("coach");
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Wiedza" title="Nowy artykuł" />
+      <PageHeader eyebrow={tl("Wiedza", "Journal")} title={tl("Nowy artykuł", "New article")} />
       <ArticleEditor article={null} />
     </div>
   );

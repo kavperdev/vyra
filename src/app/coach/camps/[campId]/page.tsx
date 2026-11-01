@@ -11,6 +11,7 @@ import { CAMP_STATUS_LABEL, campDates } from "@/lib/camps";
 import { getCamp, getCampPrivateInfo, listParticipants } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -30,16 +31,16 @@ export default async function CampPage({ params }: { params: Promise<{ campId: s
   return (
     <div className="grid gap-6">
       <Link href="/coach/camps" className="w-fit text-sm text-muted underline-offset-4 hover:underline">
-        ← Obozy
+        {tl("← Obozy", "← Camps")}
       </Link>
       <PageHeader
         eyebrow={CAMP_STATUS_LABEL[camp.status]}
         title={camp.title}
-        description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || "Termin i miejsce do ustalenia"}
+        description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || tl("Termin i miejsce do ustalenia", "Dates and venue to be confirmed")}
         actions={
           founder ? (
             <Button asChild variant="outline">
-              <Link href={`/coach/camps/${camp.id}/finance`}>Finanse</Link>
+              <Link href={`/coach/camps/${camp.id}/finance`}>{tl("Finanse", "Finances")}</Link>
             </Button>
           ) : undefined
         }

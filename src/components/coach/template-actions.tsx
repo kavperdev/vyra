@@ -6,15 +6,16 @@ import { Copy, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { deleteTemplate, duplicateTemplate } from "@/lib/actions/sessions";
+import { tl } from "@/lib/i18n/runtime";
 
 export function TemplateActions({ id }: { id: string }) {
   const [pending, start] = useTransition();
   return (
     <div className="flex flex-wrap gap-1">
       <Button asChild size="sm">
-        <Link href={`/coach/sessions/new?template=${id}`}>Użyj</Link>
+        <Link href={`/coach/sessions/new?template=${id}`}>{tl("Użyj", "Use")}</Link>
       </Button>
-      <Button asChild size="icon-sm" variant="ghost" aria-label="Edytuj szablon">
+      <Button asChild size="icon-sm" variant="ghost" aria-label={tl("Edytuj szablon", "Edit template")}>
         <Link href={`/coach/templates/${id}`}>
           <Pencil className="size-4" />
         </Link>
@@ -22,7 +23,7 @@ export function TemplateActions({ id }: { id: string }) {
       <Button
         size="icon-sm"
         variant="ghost"
-        aria-label="Kopiuj szablon"
+        aria-label={tl("Kopiuj szablon", "Copy template")}
         disabled={pending}
         onClick={() =>
           start(async () => {
@@ -37,7 +38,7 @@ export function TemplateActions({ id }: { id: string }) {
       <Button
         size="icon-sm"
         variant="ghost"
-        aria-label="Usuń szablon"
+        aria-label={tl("Usuń szablon", "Delete template")}
         disabled={pending}
         onClick={() =>
           start(async () => {

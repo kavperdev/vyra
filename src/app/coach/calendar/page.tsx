@@ -10,6 +10,7 @@ import { listSessions } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -42,9 +43,9 @@ export default async function CoachCalendarPage({
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Planowanie"
-        title="Kalendarz treningowy"
-        description="Treningi wszystkich zawodników. Kliknij dzień, aby zobaczyć szczegóły, albo + aby zaplanować trening."
+        eyebrow={tl("Planowanie", "Planning")}
+        title={tl("Kalendarz treningowy", "Training calendar")}
+        description={tl("Treningi wszystkich zawodników. Kliknij dzień, aby zobaczyć szczegóły, albo + aby zaplanować trening.", "All athletes’ sessions. Click a day to see details, or + to plan a session.")}
         actions={
           canPlan(user.profile.staff_role) ? (
             <CopyWeekButton

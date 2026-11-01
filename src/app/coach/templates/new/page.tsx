@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import type { SessionKind } from "@/lib/types";
 import { emptySessionForm } from "@/lib/validation/session";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -18,7 +19,7 @@ export default async function NewTemplatePage({ searchParams }: { searchParams: 
   const kind: SessionKind = sp.kind === "strength" || sp.kind === "mobility" || sp.kind === "other" ? sp.kind : "running";
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Biblioteka" title="Nowy szablon" />
+      <PageHeader eyebrow={tl("Biblioteka", "Library")} title={tl("Nowy szablon", "New template")} />
       <SessionForm mode="template" initial={emptySessionForm(kind)} templateMeta={{ name: "", description: "" }} cancelHref="/coach/templates" />
     </div>
   );

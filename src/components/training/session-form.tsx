@@ -18,6 +18,7 @@ import {
   emptyExercise, emptySegment, emptySet, payloadToForm, SEGMENT_TYPES, sessionFormSchema, STRUCTURES,
   type SegmentFormValues, type SessionFormValues,
 } from "@/lib/validation/session";
+import { tl } from "@/lib/i18n/runtime";
 
 export interface AthleteOption {
   id: string;
@@ -113,7 +114,7 @@ export function SessionForm({
       }),
       { keepDefaultValues: true },
     );
-    toast.success(`Wczytano szablon „${t.name}”. Możesz go dowolnie zmienić.`);
+    toast.success(tl(`Wczytano szablon „${t.name}”. Możesz go dowolnie zmienić.`, `Loaded template “${t.name}”. You can change it freely.`));
   };
 
   const onSubmit = handleSubmit(
@@ -140,7 +141,7 @@ export function SessionForm({
         else router.push(`/coach/calendar?date=${values.scheduled_date}&view=week`);
         router.refresh();
       }),
-    () => toast.error("Popraw zaznaczone pola."),
+    () => toast.error(tl("Popraw zaznaczone pola.", "Please fix the highlighted fields.")),
   );
 
   const athletePlans = plans.filter((p) => athleteIds.length === 1 && p.athlete_id === athleteIds[0]);
@@ -149,20 +150,20 @@ export function SessionForm({
     <form onSubmit={onSubmit} noValidate className="grid gap-5">
       {executed ? (
         <p role="status" className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
-          Ten trening ma już zapisane wykonanie. Zmiana planu nie zmieni wyników zawodnika: porównanie pokaże plan z dnia wykonania.
+          {tl("Ten trening ma już zapisane wykonanie. Zmiana planu nie zmieni wyników zawodnika: porównanie pokaże plan z dnia wykonania.", "This session already has a logged result. Changing the plan won’t change the athlete’s results: the comparison shows the plan from the day it was done.")}
         </p>
       ) : null}
 
       {mode === "template" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="eyebrow text-[11px]">Szablon</CardTitle>
+            <CardTitle className="eyebrow text-[11px]">{tl("Szablon", "Template")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nazwa szablonu" htmlFor="tpl-name">
+            <Field label={tl("Nazwa szablonu", "Template name")} htmlFor="tpl-name">
               <Input id="tpl-name" value={meta.name} onChange={(e) => setMeta({ ...meta, name: e.target.value })} maxLength={160} required />
             </Field>
-            <Field label="Opis" htmlFor="tpl-description">
+            <Field label={tl("Opis", "Description")} htmlFor="tpl-description">
               <Input id="tpl-description" value={meta.description} onChange={(e) => setMeta({ ...meta, description: e.target.value })} maxLength={2000} />
             </Field>
           </CardContent>
@@ -172,14 +173,14 @@ export function SessionForm({
       {mode !== "template" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="eyebrow text-[11px]">Dla kogo i kiedy</CardTitle>
+            <CardTitle className="eyebrow text-[11px]">{tl("Dla kogo i kiedy", "Who and when")}</CardTitle>
             {mode === "create" && templates.length ? (
               <div className="w-full sm:w-64">
                 <label htmlFor="load-template" className="sr-only">
-                  Wczytaj szablon
+                  {tl("Wczytaj szablon", "Load template")}
                 </label>
                 <Select id="load-template" defaultValue="" onChange={(e) => e.target.value && loadTemplate(e.target.value)}>
-                  <option value="">Wczytaj z szablonu…</option>
+                  <option value="">{tl("Wczytaj z szablonu…", "Load from template…")}</option>
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name} · {KIND_LABEL[t.kind]}
@@ -192,7 +193,7 @@ export function SessionForm({
           <CardContent className="grid gap-4">
             {mode === "create" ? (
               <fieldset className="grid gap-2">
-                <legend className="mb-1 text-[13px] font-medium text-muted">Zawodnicy</legend>
+                <legend className="mb-1 text-[13px] font-medium text-muted">{tl("Zawodnicy", "Athletes")}</legend>
                 {athletes.length ? (
                   <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
                     {athletes.map((a) => (
@@ -203,26 +204,26 @@ export function SessionForm({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted">Nie masz jeszcze aktywnych zawodników. Najpierw wyślij zaproszenie.</p>
+                  <p className="text-sm text-muted">{tl("Nie masz jeszcze aktywnych zawodników. Najpierw wyślij zaproszenie.", "You don’t have active athletes yet. Send an invitation first.")}</p>
                 )}
                 {errors.athlete_ids?.message ? <p className="text-[13px] text-problem">{errors.athlete_ids.message}</p> : null}
                 {athleteIds.length > 1 ? (
-                  <p className="text-[12px] text-muted">Każdy zawodnik dostanie własną kopię treningu. Zmiana jednej kopii nie zmieni pozostałych.</p>
+                  <p className="text-[12px] text-muted">{tl("Każdy zawodnik dostanie własną kopię treningu. Zmiana jednej kopii nie zmieni pozostałych.", "Each athlete gets their own copy of the session. Changing one copy doesn’t change the others.")}</p>
                 ) : null}
               </fieldset>
             ) : null}
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Data" htmlFor="scheduled_date" error={errors.scheduled_date?.message}>
+              <Field label={tl("Data", "Date")} htmlFor="scheduled_date" error={errors.scheduled_date?.message}>
                 <Input id="scheduled_date" type="date" {...register("scheduled_date")} aria-invalid={!!errors.scheduled_date} />
               </Field>
-              <Field label="Godzina" htmlFor="scheduled_time" hint="opcjonalnie" error={errors.scheduled_time?.message}>
+              <Field label={tl("Godzina", "Time")} htmlFor="scheduled_time" hint="opcjonalnie" error={errors.scheduled_time?.message}>
                 <Input id="scheduled_time" type="time" {...register("scheduled_time")} />
               </Field>
               {athletePlans.length ? (
                 <Field label="Plan" htmlFor="plan_id">
                   <Select id="plan_id" {...register("plan_id")}>
-                    <option value="">Bez planu</option>
+                    <option value="">{tl("Bez planu", "No plan")}</option>
                     {athletePlans.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -238,10 +239,10 @@ export function SessionForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="eyebrow text-[11px]">Trening</CardTitle>
+          <CardTitle className="eyebrow text-[11px]">{tl("Trening", "Session")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div role="radiogroup" aria-label="Typ treningu" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+          <div role="radiogroup" aria-label={tl("Typ treningu", "Session type")} className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
               <button
                 key={k}
@@ -260,7 +261,7 @@ export function SessionForm({
             ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-            <Field label="Rodzaj" htmlFor="category" error={errors.category?.message}>
+            <Field label={tl("Rodzaj", "Category")} htmlFor="category" error={errors.category?.message}>
               <Select id="category" value={watch("category")} onChange={(e) => onCategoryChange(e.target.value)}>
                 {categoriesFor(kind).map((c) => (
                   <option key={c.key} value={c.key}>
@@ -269,27 +270,27 @@ export function SessionForm({
                 ))}
               </Select>
             </Field>
-            <Field label="Nazwa" htmlFor="title" error={errors.title?.message}>
-              <Input id="title" placeholder={kind === "running" ? "np. 6 × 800 m w tempie 5 km" : "np. Siła A — dół ciała"} {...register("title")} aria-invalid={!!errors.title} />
+            <Field label={tl("Nazwa", "Name")} htmlFor="title" error={errors.title?.message}>
+              <Input id="title" placeholder={kind === "running" ? tl("np. 6 × 800 m w tempie 5 km", "e.g. 6 × 800 m at 5K pace") : tl("np. Siła A — dół ciała", "e.g. Strength A — lower body")} {...register("title")} aria-invalid={!!errors.title} />
             </Field>
           </div>
-          <Field label="Cel treningu" htmlFor="goal" error={errors.goal?.message}>
-            <Input id="goal" placeholder="np. VO2max, utrzymanie tempa na zmęczeniu" {...register("goal")} />
+          <Field label={tl("Cel treningu", "Session goal")} htmlFor="goal" error={errors.goal?.message}>
+            <Input id="goal" placeholder={tl("np. VO2max, utrzymanie tempa na zmęczeniu", "e.g. VO2max, holding pace when tired")} {...register("goal")} />
           </Field>
-          <Field label="Instrukcje dla zawodnika" htmlFor="instructions" error={errors.instructions?.message}>
-            <Textarea id="instructions" placeholder="Rozgrzewka, technika, na co uważać…" {...register("instructions")} />
+          <Field label={tl("Instrukcje dla zawodnika", "Instructions for the athlete")} htmlFor="instructions" error={errors.instructions?.message}>
+            <Textarea id="instructions" placeholder={tl("Rozgrzewka, technika, na co uważać…", "Warm-up, technique, what to watch out for…")} {...register("instructions")} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Planowane RPE" htmlFor="planned_rpe" hint="1–10" error={errors.planned_rpe?.message}>
+            <Field label={tl("Planowane RPE", "Planned RPE")} htmlFor="planned_rpe" hint="1–10" error={errors.planned_rpe?.message}>
               <Input id="planned_rpe" inputMode="decimal" {...register("planned_rpe")} />
             </Field>
             {kind !== "running" ? (
-              <Field label="Planowany czas" htmlFor="planned_duration" hint="np. 45 lub 1:00:00" error={errors.planned_duration?.message}>
+              <Field label={tl("Planowany czas", "Planned time")} htmlFor="planned_duration" hint={tl("np. 45 lub 1:00:00", "e.g. 45 or 1:00:00")} error={errors.planned_duration?.message}>
                 <Input id="planned_duration" inputMode="numeric" {...register("planned_duration")} />
               </Field>
             ) : null}
           </div>
-          <Field label="Notatki (widoczne dla zawodnika)" htmlFor="notes" error={errors.notes?.message}>
+          <Field label={tl("Notatki (widoczne dla zawodnika)", "Notes (visible to the athlete)")} htmlFor="notes" error={errors.notes?.message}>
             <Textarea id="notes" className="min-h-16" {...register("notes")} />
           </Field>
         </CardContent>
@@ -299,10 +300,10 @@ export function SessionForm({
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="eyebrow text-[11px]">Parametry biegu</CardTitle>
+              <CardTitle className="eyebrow text-[11px]">{tl("Parametry biegu", "Run details")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Struktura" htmlFor="running.structure">
+              <Field label={tl("Struktura", "Structure")} htmlFor="running.structure">
                 <Select id="running.structure" {...register("running.structure")}>
                   {STRUCTURES.map((s) => (
                     <option key={s} value={s}>
@@ -311,13 +312,13 @@ export function SessionForm({
                   ))}
                 </Select>
               </Field>
-              <Field label="Dystans" unit="km" htmlFor="running.distance_km" error={errors.running?.distance_km?.message}>
+              <Field label={tl("Dystans", "Distance")} unit="km" htmlFor="running.distance_km" error={errors.running?.distance_km?.message}>
                 <Input id="running.distance_km" inputMode="decimal" placeholder="10" {...register("running.distance_km")} />
               </Field>
-              <Field label="Czas" htmlFor="running.duration" hint="np. 50:00" error={errors.running?.duration?.message}>
+              <Field label={tl("Czas", "Time")} htmlFor="running.duration" hint={tl("np. 50:00", "e.g. 50:00")} error={errors.running?.duration?.message}>
                 <Input id="running.duration" inputMode="numeric" placeholder="50:00" {...register("running.duration")} />
               </Field>
-              <Field label="Strefa" htmlFor="running.zone">
+              <Field label={tl("Strefa", "Zone")} htmlFor="running.zone">
                 <Select id="running.zone" {...register("running.zone")}>
                   <option value="">—</option>
                   {ZONES.map((z) => (
@@ -327,16 +328,16 @@ export function SessionForm({
                   ))}
                 </Select>
               </Field>
-              <Field label="Tempo od" unit="min/km" htmlFor="running.pace_from" error={errors.running?.pace_from?.message} hint="szybsza granica">
+              <Field label={tl("Tempo od", "Pace from")} unit="min/km" htmlFor="running.pace_from" error={errors.running?.pace_from?.message} hint={tl("szybsza granica", "faster limit")}>
                 <Input id="running.pace_from" inputMode="numeric" placeholder="4:50" {...register("running.pace_from")} />
               </Field>
-              <Field label="Tempo do" unit="min/km" htmlFor="running.pace_to" error={errors.running?.pace_to?.message} hint="wolniejsza granica">
+              <Field label={tl("Tempo do", "Pace to")} unit="min/km" htmlFor="running.pace_to" error={errors.running?.pace_to?.message} hint={tl("wolniejsza granica", "slower limit")}>
                 <Input id="running.pace_to" inputMode="numeric" placeholder="5:10" {...register("running.pace_to")} />
               </Field>
-              <Field label="Tętno od" unit="bpm" htmlFor="running.hr_min" error={errors.running?.hr_min?.message}>
+              <Field label={tl("Tętno od", "HR from")} unit="bpm" htmlFor="running.hr_min" error={errors.running?.hr_min?.message}>
                 <Input id="running.hr_min" inputMode="numeric" {...register("running.hr_min")} />
               </Field>
-              <Field label="Tętno do" unit="bpm" htmlFor="running.hr_max" error={errors.running?.hr_max?.message}>
+              <Field label={tl("Tętno do", "HR to")} unit="bpm" htmlFor="running.hr_max" error={errors.running?.hr_max?.message}>
                 <Input id="running.hr_max" inputMode="numeric" placeholder="150" {...register("running.hr_max")} />
               </Field>
             </CardContent>
@@ -349,10 +350,10 @@ export function SessionForm({
 
       <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center justify-end gap-2 rounded-lg border border-border bg-background/95 p-3 backdrop-blur lg:bottom-4">
         <Button asChild variant="ghost">
-          <Link href={cancelHref}>Anuluj</Link>
+          <Link href={cancelHref}>{tl("Anuluj", "Cancel")}</Link>
         </Button>
         <Button type="submit" disabled={pending}>
-          {pending ? "Zapisywanie…" : mode === "template" ? "Zapisz szablon" : mode === "edit" ? "Zapisz zmiany" : athleteIds.length > 1 ? `Przypisz ${athleteIds.length} zawodnikom` : "Dodaj trening"}
+          {pending ? tl("Zapisywanie…", "Saving…") : mode === "template" ? tl("Zapisz szablon", "Save template") : mode === "edit" ? tl("Zapisz zmiany", "Save changes") : athleteIds.length > 1 ? `Przypisz ${athleteIds.length} zawodnikom` : tl("Dodaj trening", "Add session")}
         </Button>
       </div>
     </form>
@@ -361,14 +362,14 @@ export function SessionForm({
 
 // ------------------------------------------------------------------ segments
 
-const PRESETS: { label: string; build: () => SegmentFormValues }[] = [
-  { label: "Rozgrzewka", build: () => ({ ...emptySegment("warmup"), distance_m: "3000", intensity: "easy" }) },
-  { label: "Odcinek", build: () => ({ ...emptySegment("work"), distance_m: "800", recovery_type: "jog", recovery_duration: "2:00" }) },
-  { label: "Odcinek na czas", build: () => ({ ...emptySegment("work"), duration: "2:00", recovery_type: "jog", recovery_duration: "1:00" }) },
-  { label: "Przerwa", build: () => ({ ...emptySegment("recovery"), duration: "2:00", intensity: "very_easy" }) },
-  { label: "Bieg ciągły", build: () => ({ ...emptySegment("steady"), distance_m: "5000" }) },
-  { label: "Przebieżki", build: () => ({ ...emptySegment("strides"), repeats: "6", distance_m: "100", recovery_type: "walk" }) },
-  { label: "Schłodzenie", build: () => ({ ...emptySegment("cooldown"), distance_m: "2000", intensity: "very_easy" }) },
+const presets = (): { label: string; build: () => SegmentFormValues }[] => [
+  { label: tl("Rozgrzewka", "Warm-up"), build: () => ({ ...emptySegment("warmup"), distance_m: "3000", intensity: "easy" }) },
+  { label: tl("Odcinek", "Rep"), build: () => ({ ...emptySegment("work"), distance_m: "800", recovery_type: "jog", recovery_duration: "2:00" }) },
+  { label: tl("Odcinek na czas", "Timed rep"), build: () => ({ ...emptySegment("work"), duration: "2:00", recovery_type: "jog", recovery_duration: "1:00" }) },
+  { label: tl("Przerwa", "Recovery"), build: () => ({ ...emptySegment("recovery"), duration: "2:00", intensity: "very_easy" }) },
+  { label: tl("Bieg ciągły", "Continuous run"), build: () => ({ ...emptySegment("steady"), distance_m: "5000" }) },
+  { label: tl("Przebieżki", "Strides"), build: () => ({ ...emptySegment("strides"), repeats: "6", distance_m: "100", recovery_type: "walk" }) },
+  { label: tl("Schłodzenie", "Cool-down"), build: () => ({ ...emptySegment("cooldown"), distance_m: "2000", intensity: "very_easy" }) },
 ];
 
 function SegmentsEditor({
@@ -390,11 +391,11 @@ function SegmentsEditor({
     <Card>
       <CardHeader>
         <div className="grid gap-1">
-          <CardTitle className="eyebrow text-[11px]">Odcinki</CardTitle>
+          <CardTitle className="eyebrow text-[11px]">{tl("Odcinki", "Reps")}</CardTitle>
           <p className="text-[13px] text-muted">
             {structure === "continuous"
-              ? "Opcjonalnie: rozpisz rozgrzewkę, część główną i schłodzenie."
-              : "Dodaj dowolną liczbę odcinków: różne dystanse, czasy, tempa i przerwy (np. 400–800–1000–400–200)."}
+              ? tl("Opcjonalnie: rozpisz rozgrzewkę, część główną i schłodzenie.", "Optional: describe the warm-up, main set and cool-down.")
+              : tl("Dodaj dowolną liczbę odcinków: różne dystanse, czasy, tempa i przerwy (np. 400–800–1000–400–200).", "Add any number of reps: different distances, times, paces and recoveries (e.g. 400–800–1000–400–200).")}
           </p>
         </div>
       </CardHeader>
@@ -402,19 +403,19 @@ function SegmentsEditor({
         {fields.map((f, i) => (
           <div key={f.id} className="grid gap-3 rounded-md border border-border p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="num text-[12px] text-subtle">Odcinek {String(i + 1).padStart(2, "0")}</p>
+              <p className="num text-[12px] text-subtle">{tl("Odcinek", "Rep")} {String(i + 1).padStart(2, "0")}</p>
               <div className="flex gap-1">
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Przesuń wyżej" disabled={i === 0} onClick={() => move(i, i - 1)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Przesuń wyżej", "Move up")} disabled={i === 0} onClick={() => move(i, i - 1)}>
                   <ArrowUp className="size-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Przesuń niżej" disabled={i === fields.length - 1} onClick={() => move(i, i + 1)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Przesuń niżej", "Move down")} disabled={i === fields.length - 1} onClick={() => move(i, i + 1)}>
                   <ArrowDown className="size-4" />
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Duplikuj odcinek"
+                  aria-label={tl("Duplikuj odcinek", "Duplicate rep")}
                   onClick={() => {
                     const { id: _id, ...rest } = getValues(`segments.${i}`);
                     insert(i + 1, rest);
@@ -422,13 +423,13 @@ function SegmentsEditor({
                 >
                   <Copy className="size-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Usuń odcinek" onClick={() => remove(i)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Usuń odcinek", "Delete rep")} onClick={() => remove(i)}>
                   <Trash2 className="size-4" />
                 </Button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-              <Field label="Typ" htmlFor={`seg-${i}-type`}>
+              <Field label={tl("Typ", "Type")} htmlFor={`seg-${i}-type`}>
                 <Select id={`seg-${i}-type`} {...register(`segments.${i}.segment_type`)}>
                   {SEGMENT_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -437,22 +438,22 @@ function SegmentsEditor({
                   ))}
                 </Select>
               </Field>
-              <Field label="Powt." htmlFor={`seg-${i}-rep`} error={segErr(i)?.repeats?.message}>
+              <Field label={tl("Powt.", "Reps")} htmlFor={`seg-${i}-rep`} error={segErr(i)?.repeats?.message}>
                 <Input id={`seg-${i}-rep`} inputMode="numeric" {...register(`segments.${i}.repeats`)} />
               </Field>
-              <Field label="Dystans" unit="m" htmlFor={`seg-${i}-dist`} error={segErr(i)?.distance_m?.message}>
+              <Field label={tl("Dystans", "Distance")} unit="m" htmlFor={`seg-${i}-dist`} error={segErr(i)?.distance_m?.message}>
                 <Input id={`seg-${i}-dist`} inputMode="numeric" placeholder="800" {...register(`segments.${i}.distance_m`)} />
               </Field>
-              <Field label="lub czas" htmlFor={`seg-${i}-dur`} error={segErr(i)?.duration?.message}>
+              <Field label={tl("lub czas", "or time")} htmlFor={`seg-${i}-dur`} error={segErr(i)?.duration?.message}>
                 <Input id={`seg-${i}-dur`} inputMode="numeric" placeholder="2:00" {...register(`segments.${i}.duration`)} />
               </Field>
-              <Field label="Tempo od" htmlFor={`seg-${i}-pf`} error={segErr(i)?.pace_from?.message}>
+              <Field label={tl("Tempo od", "Pace from")} htmlFor={`seg-${i}-pf`} error={segErr(i)?.pace_from?.message}>
                 <Input id={`seg-${i}-pf`} inputMode="numeric" placeholder="3:20" {...register(`segments.${i}.pace_from`)} />
               </Field>
-              <Field label="Tempo do" htmlFor={`seg-${i}-pt`} error={segErr(i)?.pace_to?.message}>
+              <Field label={tl("Tempo do", "Pace to")} htmlFor={`seg-${i}-pt`} error={segErr(i)?.pace_to?.message}>
                 <Input id={`seg-${i}-pt`} inputMode="numeric" placeholder="3:24" {...register(`segments.${i}.pace_to`)} />
               </Field>
-              <Field label="Intensywność" htmlFor={`seg-${i}-int`}>
+              <Field label={tl("Intensywność", "Intensity")} htmlFor={`seg-${i}-int`}>
                 <Select id={`seg-${i}-int`} {...register(`segments.${i}.intensity`)}>
                   <option value="">—</option>
                   {Object.entries(INTENSITY_LABEL).map(([k, v]) => (
@@ -462,15 +463,15 @@ function SegmentsEditor({
                   ))}
                 </Select>
               </Field>
-              <Field label="Tętno od–do" htmlFor={`seg-${i}-hr`} error={segErr(i)?.hr_max?.message ?? segErr(i)?.hr_min?.message}>
+              <Field label={tl("Tętno od–do", "HR from–to")} htmlFor={`seg-${i}-hr`} error={segErr(i)?.hr_max?.message ?? segErr(i)?.hr_min?.message}>
                 <div className="flex gap-1.5">
-                  <Input id={`seg-${i}-hr`} inputMode="numeric" aria-label="Tętno od" {...register(`segments.${i}.hr_min`)} />
-                  <Input inputMode="numeric" aria-label="Tętno do" {...register(`segments.${i}.hr_max`)} />
+                  <Input id={`seg-${i}-hr`} inputMode="numeric" aria-label={tl("Tętno od", "HR from")} {...register(`segments.${i}.hr_min`)} />
+                  <Input inputMode="numeric" aria-label={tl("Tętno do", "HR to")} {...register(`segments.${i}.hr_max`)} />
                 </div>
               </Field>
-              <Field label="Przerwa" htmlFor={`seg-${i}-rt`}>
+              <Field label={tl("Przerwa", "Recovery")} htmlFor={`seg-${i}-rt`}>
                 <Select id={`seg-${i}-rt`} {...register(`segments.${i}.recovery_type`)}>
-                  <option value="">brak</option>
+                  <option value="">{tl("brak", "none")}</option>
                   {Object.entries(RECOVERY_LABEL).map(([k, v]) => (
                     <option key={k} value={k}>
                       {v}
@@ -478,23 +479,23 @@ function SegmentsEditor({
                   ))}
                 </Select>
               </Field>
-              <Field label="Czas przerwy" htmlFor={`seg-${i}-rd`} error={segErr(i)?.recovery_duration?.message}>
+              <Field label={tl("Czas przerwy", "Recovery time")} htmlFor={`seg-${i}-rd`} error={segErr(i)?.recovery_duration?.message}>
                 <Input id={`seg-${i}-rd`} inputMode="numeric" placeholder="1:30" {...register(`segments.${i}.recovery_duration`)} />
               </Field>
-              <Field label="lub dystans" unit="m" htmlFor={`seg-${i}-rdist`} error={segErr(i)?.recovery_distance_m?.message}>
+              <Field label={tl("lub dystans", "or distance")} unit="m" htmlFor={`seg-${i}-rdist`} error={segErr(i)?.recovery_distance_m?.message}>
                 <Input id={`seg-${i}-rdist`} inputMode="numeric" placeholder="200" {...register(`segments.${i}.recovery_distance_m`)} />
               </Field>
-              <Field label="Nazwa (opcjonalnie)" htmlFor={`seg-${i}-label`}>
+              <Field label={tl("Nazwa (opcjonalnie)", "Name (optional)")} htmlFor={`seg-${i}-label`}>
                 <Input id={`seg-${i}-label`} {...register(`segments.${i}.label`)} />
               </Field>
             </div>
-            <Field label="Instrukcja odcinka" htmlFor={`seg-${i}-notes`}>
-              <Input id={`seg-${i}-notes`} placeholder="np. ostatnie 100 m mocniej" {...register(`segments.${i}.notes`)} />
+            <Field label={tl("Instrukcja odcinka", "Rep instructions")} htmlFor={`seg-${i}-notes`}>
+              <Input id={`seg-${i}-notes`} placeholder={tl("np. ostatnie 100 m mocniej", "e.g. last 100 m faster")} {...register(`segments.${i}.notes`)} />
             </Field>
           </div>
         ))}
         <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
+          {presets().map((p) => (
             <Button key={p.label} type="button" variant="outline" size="sm" onClick={() => append(p.build())}>
               <Plus className="size-3.5" /> {p.label}
             </Button>
@@ -523,8 +524,8 @@ function ExercisesEditor({
     <Card>
       <CardHeader>
         <div className="grid gap-1">
-          <CardTitle className="eyebrow text-[11px]">Ćwiczenia</CardTitle>
-          <p className="text-[13px] text-muted">Każda seria ma własne powtórzenia i obciążenie, np. 10 × 40 kg, 8 × 45 kg, 6 × 50 kg.</p>
+          <CardTitle className="eyebrow text-[11px]">{tl("Ćwiczenia", "Exercises")}</CardTitle>
+          <p className="text-[13px] text-muted">{tl("Każda seria ma własne powtórzenia i obciążenie, np. 10 × 40 kg, 8 × 45 kg, 6 × 50 kg.", "Each set has its own reps and load, e.g. 10 × 40 kg, 8 × 45 kg, 6 × 50 kg.")}</p>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -532,44 +533,44 @@ function ExercisesEditor({
         {fields.map((f, i) => (
           <div key={f.id} className="grid gap-3 rounded-md border border-border p-3">
             <div className="flex items-center justify-between gap-2">
-              <p className="num text-[12px] text-subtle">Ćwiczenie {i + 1}</p>
+              <p className="num text-[12px] text-subtle">{tl("Ćwiczenie", "Exercise")} {i + 1}</p>
               <div className="flex gap-1">
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Przesuń wyżej" disabled={i === 0} onClick={() => move(i, i - 1)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Przesuń wyżej", "Move up")} disabled={i === 0} onClick={() => move(i, i - 1)}>
                   <ArrowUp className="size-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Przesuń niżej" disabled={i === fields.length - 1} onClick={() => move(i, i + 1)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Przesuń niżej", "Move down")} disabled={i === fields.length - 1} onClick={() => move(i, i + 1)}>
                   <ArrowDown className="size-4" />
                 </Button>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label="Usuń ćwiczenie" onClick={() => remove(i)}>
+                <Button type="button" variant="ghost" size="icon-sm" aria-label={tl("Usuń ćwiczenie", "Delete exercise")} onClick={() => remove(i)}>
                   <Trash2 className="size-4" />
                 </Button>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label="Nazwa" htmlFor={`ex-${i}-name`} error={errors.exercises?.[i]?.name?.message} className="sm:col-span-2">
-                <Input id={`ex-${i}-name`} placeholder="np. Przysiad ze sztangą" {...register(`exercises.${i}.name`)} />
+              <Field label={tl("Nazwa", "Name")} htmlFor={`ex-${i}-name`} error={errors.exercises?.[i]?.name?.message} className="sm:col-span-2">
+                <Input id={`ex-${i}-name`} placeholder={tl("np. Przysiad ze sztangą", "e.g. Barbell squat")} {...register(`exercises.${i}.name`)} />
               </Field>
-              <Field label="Grupa mięśniowa" htmlFor={`ex-${i}-mg`}>
-                <Input id={`ex-${i}-mg`} placeholder="np. nogi" {...register(`exercises.${i}.muscle_group`)} />
+              <Field label={tl("Grupa mięśniowa", "Muscle group")} htmlFor={`ex-${i}-mg`}>
+                <Input id={`ex-${i}-mg`} placeholder={tl("np. nogi", "e.g. legs")} {...register(`exercises.${i}.muscle_group`)} />
               </Field>
-              <Field label="Odpoczynek" htmlFor={`ex-${i}-rest`} hint="np. 2:00" error={errors.exercises?.[i]?.rest?.message}>
+              <Field label={tl("Odpoczynek", "Rest")} htmlFor={`ex-${i}-rest`} hint={tl("np. 2:00", "e.g. 2:00")} error={errors.exercises?.[i]?.rest?.message}>
                 <Input id={`ex-${i}-rest`} inputMode="numeric" {...register(`exercises.${i}.rest`)} />
               </Field>
-              <Field label="Tempo wykonania" htmlFor={`ex-${i}-tempo`} hint="np. 3-1-1-0">
+              <Field label={tl("Tempo wykonania", "Lifting tempo")} htmlFor={`ex-${i}-tempo`} hint={tl("np. 3-1-1-0", "e.g. 3-1-1-0")}>
                 <Input id={`ex-${i}-tempo`} {...register(`exercises.${i}.tempo`)} />
               </Field>
-              <Field label="Opis" htmlFor={`ex-${i}-desc`} className="sm:col-span-2 lg:col-span-3">
+              <Field label={tl("Opis", "Description")} htmlFor={`ex-${i}-desc`} className="sm:col-span-2 lg:col-span-3">
                 <Input id={`ex-${i}-desc`} {...register(`exercises.${i}.description`)} />
               </Field>
             </div>
             <SetsEditor control={control} register={register} errors={errors} exerciseIndex={i} watch={watch} />
-            <Field label="Uwagi techniczne" htmlFor={`ex-${i}-notes`}>
+            <Field label={tl("Uwagi techniczne", "Technique notes")} htmlFor={`ex-${i}-notes`}>
               <Input id={`ex-${i}-notes`} {...register(`exercises.${i}.notes`)} />
             </Field>
           </div>
         ))}
         <Button type="button" variant="outline" onClick={() => append(emptyExercise())} className="w-fit">
-          <Plus className="size-4" /> Dodaj ćwiczenie
+          <Plus className="size-4" /> {tl("Dodaj ćwiczenie", "Add exercise")}
         </Button>
       </CardContent>
     </Card>
@@ -604,10 +605,10 @@ function SetsEditor({
         <table className="w-full min-w-[520px] text-sm">
           <thead>
             <tr className="text-left text-[12px] text-muted">
-              <th className="w-10 pb-1.5 font-medium">Seria</th>
-              <th className="pb-1.5 font-medium">Powt.</th>
+              <th className="w-10 pb-1.5 font-medium">{tl("Seria", "Set")}</th>
+              <th className="pb-1.5 font-medium">{tl("Powt.", "Reps")}</th>
               <th className="pb-1.5 font-medium">Kg</th>
-              <th className="pb-1.5 font-medium">Czas</th>
+              <th className="pb-1.5 font-medium">{tl("Czas", "Time")}</th>
               <th className="pb-1.5 font-medium">RPE</th>
               <th className="pb-1.5 font-medium">RIR</th>
               <th className="w-10" />
@@ -618,10 +619,10 @@ function SetsEditor({
               <tr key={f.id}>
                 <td className="num pr-2 text-subtle">{j + 1}</td>
                 <td className="py-1 pr-1.5">
-                  <Input aria-label={`Seria ${j + 1}: powtórzenia`} inputMode="numeric" className="h-10" aria-invalid={!!setErr(j)?.planned_reps} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_reps`)} />
+                  <Input aria-label={tl(`Seria ${j + 1}: powtórzenia`, `Set ${j + 1}: reps`)} inputMode="numeric" className="h-10" aria-invalid={!!setErr(j)?.planned_reps} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_reps`)} />
                 </td>
                 <td className="py-1 pr-1.5">
-                  <Input aria-label={`Seria ${j + 1}: obciążenie kg`} inputMode="decimal" className="h-10" aria-invalid={!!setErr(j)?.planned_load_kg} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_load_kg`)} />
+                  <Input aria-label={tl(`Seria ${j + 1}: obciążenie kg`, `Set ${j + 1}: load kg`)} inputMode="decimal" className="h-10" aria-invalid={!!setErr(j)?.planned_load_kg} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_load_kg`)} />
                 </td>
                 <td className="py-1 pr-1.5">
                   <Input aria-label={`Seria ${j + 1}: czas`} inputMode="numeric" placeholder="0:40" className="h-10" aria-invalid={!!setErr(j)?.planned_duration} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_duration`)} />
@@ -633,7 +634,7 @@ function SetsEditor({
                   <Input aria-label={`Seria ${j + 1}: RIR`} inputMode="numeric" className="h-10" aria-invalid={!!setErr(j)?.planned_rir} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_rir`)} />
                 </td>
                 <td className="py-1">
-                  <Button type="button" variant="ghost" size="icon-sm" aria-label={`Usuń serię ${j + 1}`} onClick={() => remove(j)} disabled={fields.length === 1}>
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label={tl(`Usuń serię ${j + 1}`, `Delete set ${j + 1}`)} onClick={() => remove(j)} disabled={fields.length === 1}>
                     <Trash2 className="size-4" />
                   </Button>
                 </td>
@@ -647,10 +648,10 @@ function SetsEditor({
       ) : null}
       <div className="flex gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={() => append(last())}>
-          <Copy className="size-3.5" /> Powtórz ostatnią serię
+          <Copy className="size-3.5" /> {tl("Powtórz ostatnią serię", "Repeat last set")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => append(emptySet())}>
-          <Plus className="size-3.5" /> Pusta seria
+          <Plus className="size-3.5" /> {tl("Pusta seria", "Empty set")}
         </Button>
       </div>
     </div>

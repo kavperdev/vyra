@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -27,23 +28,23 @@ export default async function ApplicationsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Strona VYRA"
-        title="Zgłoszenia"
-        description="Zapisy na listę obozów i zapytania o prowadzenie ze strony głównej VYRA. Gdy dogadasz się z zawodnikiem, zaproś go w zakładce Zawodnicy."
+        eyebrow={tl("Strona VYRA", "VYRA website")}
+        title={tl("Zgłoszenia", "Requests")}
+        description={tl("Zapisy na listę obozów i zapytania o prowadzenie ze strony głównej VYRA. Gdy dogadasz się z zawodnikiem, zaproś go w zakładce Zawodnicy.", "Camp list sign-ups and coaching requests from the VYRA website. Once you agree with an athlete, invite them in Athletes.")}
       />
       {error ? (
         <EmptyState
           icon={<Inbox />}
-          title="Nie udało się wczytać zgłoszeń"
-          description="Jeśli to pierwszy raz, uruchom w Supabase migracje 20261101000100_applications.sql i 20261101000200_applications_kind.sql (README → Migracje)."
+          title={tl("Nie udało się wczytać zgłoszeń", "Couldn’t load requests")}
+          description={tl("Jeśli to pierwszy raz, uruchom w Supabase migracje 20261101000100_applications.sql i 20261101000200_applications_kind.sql (README → Migracje).", "If this is the first time, run the migrations 20261101000100_applications.sql and 20261101000200_applications_kind.sql in Supabase (README → Migrations).")}
         />
       ) : items.length ? (
         <ApplicationsList items={items} />
       ) : (
         <EmptyState
           icon={<Inbox />}
-          title="Brak zgłoszeń"
-          description="Gdy ktoś wypełni formularz na stronie głównej, zobaczysz go tutaj."
+          title={tl("Brak zgłoszeń", "No requests")}
+          description={tl("Gdy ktoś wypełni formularz na stronie głównej, zobaczysz go tutaj.", "When someone fills in a form on the website, you’ll see it here.")}
         />
       )}
     </div>

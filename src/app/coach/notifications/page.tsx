@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { listNotifications } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -18,7 +19,7 @@ export default async function NotificationsPage() {
   const items = await listNotifications(supabase);
   return (
     <div className="grid gap-6">
-      <PageHeader eyebrow="Skrzynka" title="Powiadomienia" />
+      <PageHeader eyebrow={tl("Skrzynka", "Inbox")} title={tl("Powiadomienia", "Notifications")} />
       <NotificationList items={items} />
     </div>
   );

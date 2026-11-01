@@ -28,11 +28,11 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
     <Card>
       <CardHeader>
         <div className="grid gap-0.5">
-          <CardTitle>Plany treningowe</CardTitle>
-          <p className="text-[13px] text-muted">Plan grupuje treningi tego zawodnika w okres (np. blok 5 km). Inni zawodnicy mają własne plany.</p>
+          <CardTitle>{tl("Plany treningowe", "Training plans")}</CardTitle>
+          <p className="text-[13px] text-muted">{tl("Plan grupuje treningi tego zawodnika w okres (np. blok 5 km). Inni zawodnicy mają własne plany.", "A plan groups this athlete’s sessions into a period (e.g. a 5K block). Other athletes have their own plans.")}</p>
         </div>
         <Button size="sm" variant="outline" onClick={() => setDraft({ athlete_id: athleteId, name: "", description: "", goal: "", start_date: today, end_date: "" })}>
-          <Plus className="size-4" /> Nowy plan
+          <Plus className="size-4" /> {tl("Nowy plan", "New plan")}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-2">
@@ -44,23 +44,23 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
               <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3">
                 <div className="grid min-w-0 gap-0.5">
                   <p className="font-semibold">
-                    {p.name} {current ? <span className="ml-1 text-[12px] font-normal text-accent">aktualny</span> : null}
+                    {p.name} {current ? <span className="ml-1 text-[12px] font-normal text-accent">{tl("aktualny", "current")}</span> : null}
                   </p>
                   <p className="text-[12px] text-muted">
-                    {formatDate(p.start_date)} – {p.end_date ? formatDate(p.end_date) : "bez końca"} · {c.total} treningów · wykonane {c.done}
+                    {formatDate(p.start_date)} – {p.end_date ? formatDate(p.end_date) : tl("bez końca", "no end")} · {c.total} treningów · wykonane {c.done}
                     {p.goal ? ` · cel: ${p.goal}` : ""}
                   </p>
                 </div>
                 <div className="flex gap-1">
                   <Button asChild size="sm" variant="ghost">
                     <Link href={`/coach/sessions/new?athlete=${athleteId}&plan=${p.id}&date=${p.start_date > today ? p.start_date : today}`}>
-                      <Plus className="size-3.5" /> Trening
+                      <Plus className="size-3.5" /> {tl("Trening", "Session")}
                     </Link>
                   </Button>
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    aria-label="Edytuj plan"
+                    aria-label={tl("Edytuj plan", "Edit plan")}
                     onClick={() => setDraft({ id: p.id, athlete_id: athleteId, name: p.name, description: p.description ?? "", goal: p.goal ?? "", start_date: p.start_date, end_date: p.end_date ?? "" })}
                   >
                     <Pencil className="size-3.5" />
@@ -68,7 +68,7 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    aria-label="Usuń plan"
+                    aria-label={tl("Usuń plan", "Delete plan")}
                     disabled={pending}
                     onClick={() =>
                       start(async () => {
@@ -85,12 +85,12 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
             );
           })
         ) : (
-          <p className="text-sm text-muted">Brak planów. Treningi możesz dodawać także bez planu.</p>
+          <p className="text-sm text-muted">{tl("Brak planów. Treningi możesz dodawać także bez planu.", "No plans. You can also add sessions without a plan.")}</p>
         )}
       </CardContent>
       <Dialog open={!!draft} onOpenChange={(o: boolean) => !o && setDraft(null)}>
         {draft ? (
-          <DialogContent title={draft.id ? "Edytuj plan" : "Nowy plan"}>
+          <DialogContent title={draft.id ? tl("Edytuj plan", "Edit plan") : tl("Nowy plan", "New plan")}>
             <form
               className="grid gap-4"
               noValidate
@@ -109,24 +109,24 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
                 });
               }}
             >
-              <Field label="Nazwa" htmlFor="plan-name" error={errors.name?.[0]}>
-                <Input id="plan-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="np. Blok 5 km — wiosna" />
+              <Field label={tl("Nazwa", "Name")} htmlFor="plan-name" error={errors.name?.[0]}>
+                <Input id="plan-name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder={tl("np. Blok 5 km — wiosna", "e.g. 5K block — spring")} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Początek" htmlFor="plan-start" error={errors.start_date?.[0]}>
+                <Field label={tl("Początek", "Start")} htmlFor="plan-start" error={errors.start_date?.[0]}>
                   <Input id="plan-start" type="date" value={draft.start_date} onChange={(e) => setDraft({ ...draft, start_date: e.target.value })} />
                 </Field>
-                <Field label="Koniec" htmlFor="plan-end" error={errors.end_date?.[0]}>
+                <Field label={tl("Koniec", "End")} htmlFor="plan-end" error={errors.end_date?.[0]}>
                   <Input id="plan-end" type="date" value={draft.end_date} onChange={(e) => setDraft({ ...draft, end_date: e.target.value })} />
                 </Field>
               </div>
-              <Field label="Cel" htmlFor="plan-goal">
+              <Field label={tl("Cel", "Goal")} htmlFor="plan-goal">
                 <Input id="plan-goal" value={draft.goal} onChange={(e) => setDraft({ ...draft, goal: e.target.value })} />
               </Field>
-              <Field label="Opis" htmlFor="plan-desc">
+              <Field label={tl("Opis", "Description")} htmlFor="plan-desc">
                 <Textarea id="plan-desc" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
               </Field>
-              <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : "Zapisz plan"}</Button>
+              <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : tl("Zapisz plan", "Save plan")}</Button>
             </form>
           </DialogContent>
         ) : null}
@@ -144,8 +144,8 @@ export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: str
     <Card>
       <CardHeader>
         <div className="grid gap-0.5">
-          <CardTitle>Notatki zespołu</CardTitle>
-          <p className="text-[13px] text-muted">Widzi je zespół pracujący z zawodnikiem. Zawodnik ich nie widzi.</p>
+          <CardTitle>{tl("Notatki zespołu", "Team notes")}</CardTitle>
+          <p className="text-[13px] text-muted">{tl("Widzi je zespół pracujący z zawodnikiem. Zawodnik ich nie widzi.", "Visible to the team working with the athlete. The athlete can’t see them.")}</p>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -162,9 +162,9 @@ export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: str
             });
           }}
         >
-          <label htmlFor="coach-note" className="sr-only">Nowa notatka</label>
-          <Textarea id="coach-note" value={body} onChange={(e) => setBody(e.target.value)} placeholder="np. sygnały przeciążenia, rozmowa o celach, zmiany w planie…" />
-          <Button type="submit" size="sm" className="w-fit" disabled={pending || !body.trim()}>Dodaj notatkę</Button>
+          <label htmlFor="coach-note" className="sr-only">{tl("Nowa notatka", "New note")}</label>
+          <Textarea id="coach-note" value={body} onChange={(e) => setBody(e.target.value)} placeholder={tl("np. sygnały przeciążenia, rozmowa o celach, zmiany w planie…", "e.g. signs of overload, a talk about goals, plan changes…")} />
+          <Button type="submit" size="sm" className="w-fit" disabled={pending || !body.trim()}>{tl("Dodaj notatkę", "Add note")}</Button>
         </form>
         {notes.length ? (
           <ul className="grid gap-2">
@@ -176,7 +176,7 @@ export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: str
                   <Button
                     size="icon-sm"
                     variant="ghost"
-                    aria-label="Usuń notatkę"
+                    aria-label={tl("Usuń notatkę", "Delete note")}
                     onClick={() =>
                       start(async () => {
                         const res = await deleteCoachNote(n.id, athleteId);
@@ -196,7 +196,7 @@ export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: str
             ))}
           </ul>
         ) : (
-          <EmptyState title="Brak notatek" />
+          <EmptyState title={tl("Brak notatek", "No notes")} />
         )}
       </CardContent>
     </Card>
@@ -265,7 +265,7 @@ export function AthleteProfileForm({ athleteId, profile, title = tl("Dane zawodn
           <Field label={tl("Informacje od zawodnika", "Notes from the athlete")} htmlFor="ap-notes" hint={tl("np. kontuzje, dostępność, sprzęt", "e.g. injuries, availability, equipment")}>
             <Textarea id="ap-notes" value={v.athlete_notes} onChange={(e) => setV({ ...v, athlete_notes: e.target.value })} />
           </Field>
-          <Button type="submit" className="w-fit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : "Zapisz"}</Button>
+          <Button type="submit" className="w-fit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : tl("Zapisz", "Save")}</Button>
         </form>
       </CardContent>
     </Card>
@@ -302,7 +302,7 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
             </Button>
             <Button asChild variant="outline" size="sm">
               <a href={`/api/reports/${athleteId}/csv?${qs}`}>
-                <FileDown className="size-4" /> Historia CSV
+                <FileDown className="size-4" /> {tl("Historia CSV", "History CSV")}
               </a>
             </Button>
           </div>
@@ -310,7 +310,7 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
         <div className="grid gap-2 border-t border-border pt-4">
           {status === "active" ? (
             <>
-              <p className="text-sm text-muted">Archiwizacja ukrywa zawodnika z list i blokuje nowe treningi. Historia pozostaje dostępna.</p>
+              <p className="text-sm text-muted">{tl("Archiwizacja ukrywa zawodnika z list i blokuje nowe treningi. Historia pozostaje dostępna.", "Archiving hides the athlete from lists and blocks new sessions. Their history stays available.")}</p>
               <Button
                 variant="destructive"
                 size="sm"
@@ -324,7 +324,7 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
                   })
                 }
               >
-                <Archive className="size-4" /> Archiwizuj zawodnika
+                <Archive className="size-4" /> {tl("Archiwizuj zawodnika", "Archive athlete")}
               </Button>
             </>
           ) : (
@@ -341,7 +341,7 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
                 })
               }
             >
-              <RotateCcw className="size-4" /> Przywróć zawodnika
+              <RotateCcw className="size-4" /> {tl("Przywróć zawodnika", "Restore athlete")}
             </Button>
           )}
         </div>

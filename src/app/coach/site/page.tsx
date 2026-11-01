@@ -14,6 +14,7 @@ import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps"
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -30,13 +31,13 @@ export default async function SiteContentPage() {
   return (
     <div className="grid gap-8">
       <PageHeader
-        eyebrow="Zarządzanie"
-        title="Strona VYRA"
-        description="Treści strony marki: pakiety prowadzenia, artykuły w zakładce Wiedza i karty zespołu. Obozy publikujesz w zakładce Obozy."
+        eyebrow={tl("Zarządzanie", "Management")}
+        title={tl("Strona VYRA", "VYRA website")}
+        description={tl("Treści strony marki: pakiety prowadzenia, artykuły w zakładce Wiedza i karty zespołu. Obozy publikujesz w zakładce Obozy.", "Brand website content: coaching packages, Journal articles and team cards. Camps are published in the Camps section.")}
         actions={
           <Button asChild variant="outline">
             <Link href="/" target="_blank">
-              Otwórz stronę
+              {tl("Otwórz stronę", "Open website")}
             </Link>
           </Button>
         }
@@ -45,8 +46,8 @@ export default async function SiteContentPage() {
       <Card>
         <CardHeader>
           <div className="grid gap-1">
-            <CardTitle>Pakiety prowadzenia</CardTitle>
-            <p className="text-[13px] text-muted">Oferta na stronie Prowadzenie. Zmiany ceny i zakresu są widoczne od razu po zapisaniu.</p>
+            <CardTitle>{tl("Pakiety prowadzenia", "Coaching packages")}</CardTitle>
+            <p className="text-[13px] text-muted">{tl("Oferta na stronie Prowadzenie. Zmiany ceny i zakresu są widoczne od razu po zapisaniu.", "The offer on the Coaching page. Price and scope changes show right after saving.")}</p>
           </div>
         </CardHeader>
         <CardContent>
@@ -57,10 +58,10 @@ export default async function SiteContentPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle>Artykuły (Wiedza)</CardTitle>
+            <CardTitle>{tl("Artykuły (Wiedza)", "Articles (Journal)")}</CardTitle>
             <Button asChild size="sm">
               <Link href="/coach/site/articles/new">
-                <Plus className="size-4" /> Nowy artykuł
+                <Plus className="size-4" /> {tl("Nowy artykuł", "New article")}
               </Link>
             </Button>
           </div>
@@ -81,19 +82,19 @@ export default async function SiteContentPage() {
                       {a.published_at ? ` · ${formatDate(a.published_at)}` : ""}
                     </p>
                   </div>
-                  <Badge tone={a.status === "published" ? "done" : "neutral"}>{a.status === "published" ? "Opublikowany" : "Szkic"}</Badge>
+                  <Badge tone={a.status === "published" ? "done" : "neutral"}>{a.status === "published" ? tl("Opublikowany", "Published") : tl("Szkic", "Draft")}</Badge>
                 </Link>
               ))}
             </div>
           ) : (
-            <EmptyState title="Brak artykułów" description="Napisz pierwszy artykuł. Do czasu publikacji strona pokazuje zapowiedź „Wkrótce”." />
+            <EmptyState title={tl("Brak artykułów", "No articles")} description={tl("Napisz pierwszy artykuł. Do czasu publikacji strona pokazuje zapowiedź „Wkrótce”.", "Write the first article. Until something is published, the site shows “Coming soon”.")} />
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Zespół na stronie</CardTitle>
+          <CardTitle>{tl("Zespół na stronie", "Team on the website")}</CardTitle>
         </CardHeader>
         <CardContent>
           <TeamEditor cards={team} />

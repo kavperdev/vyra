@@ -15,6 +15,7 @@ import { getSessionDetail, listComments } from "@/lib/data/sessions";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -34,7 +35,7 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ s
   return (
     <div className="grid gap-6">
       <Link href={`/coach/athletes/${session.athlete_id}?tab=plan`} className="flex w-fit items-center gap-1 text-sm text-muted hover:text-foreground">
-        <ChevronLeft className="size-4" /> {session.athlete?.full_name ?? "Zawodnik"}
+        <ChevronLeft className="size-4" /> {session.athlete?.full_name ?? tl("Zawodnik", "Athlete")}
       </Link>
       <PageHeader
         eyebrow={formatDate(session.scheduled_date, "EEEE, d MMMM")}
@@ -63,17 +64,17 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ s
             <Card>
               <CardContent className="pt-5 text-sm text-muted">
                 {session.scheduled_date < today
-                  ? "Termin minął, a zawodnik nie uzupełnił jeszcze wykonania."
-                  : "Zawodnik jeszcze nie zapisał wykonania tego treningu."}
+                  ? tl("Termin minął, a zawodnik nie uzupełnił jeszcze wykonania.", "The date has passed and the athlete hasn’t logged the result yet.")
+                  : tl("Zawodnik jeszcze nie zapisał wykonania tego treningu.", "The athlete hasn’t logged this session yet.")}
               </CardContent>
             </Card>
           )}
           <Card>
             <CardHeader>
-              <CardTitle className="eyebrow text-[11px]">Komentarze</CardTitle>
+              <CardTitle className="eyebrow text-[11px]">{tl("Komentarze", "Comments")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder="Informacja zwrotna dla zawodnika…" />
+              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder={tl("Informacja zwrotna dla zawodnika…", "Feedback for the athlete…")} />
             </CardContent>
           </Card>
         </div>

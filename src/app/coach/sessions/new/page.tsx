@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind, type TrainingPlan } from "@/lib/types";
 import { emptySessionForm, payloadToForm } from "@/lib/validation/session";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -27,10 +28,10 @@ export default async function NewSessionPage({
   if (!canPlan(user.profile.staff_role)) {
     return (
       <div className="grid gap-6">
-        <PageHeader eyebrow="Kreator treningu" title="Nowy trening" />
+        <PageHeader eyebrow={tl("Kreator treningu", "Session builder")} title={tl("Nowy trening", "New session")} />
         <EmptyState
-          title="Planowanie treningów nie jest dostępne w Twojej roli"
-          description="Fizjoterapeuta widzi plany i wyniki przypisanych zawodników oraz dodaje notatki zespołu. Treningi planują trenerzy."
+          title={tl("Planowanie treningów nie jest dostępne w Twojej roli", "Session planning isn’t available in your role")}
+          description={tl("Fizjoterapeuta widzi plany i wyniki przypisanych zawodników oraz dodaje notatki zespołu. Treningi planują trenerzy.", "The physiotherapist sees assigned athletes’ plans and results and adds team notes. Coaches plan the sessions.")}
         />
       </div>
     );
@@ -42,13 +43,13 @@ export default async function NewSessionPage({
   if (!active.length) {
     return (
       <div className="grid gap-6">
-        <PageHeader eyebrow="Kreator treningu" title="Nowy trening" />
+        <PageHeader eyebrow={tl("Kreator treningu", "Session builder")} title={tl("Nowy trening", "New session")} />
         <EmptyState
-          title="Najpierw dodaj zawodnika"
-          description="Treningi przypisujesz konkretnym zawodnikom. Wyślij zaproszenie, a po dołączeniu zawodnika wróć tutaj."
+          title={tl("Najpierw dodaj zawodnika", "Add an athlete first")}
+          description={tl("Treningi przypisujesz konkretnym zawodnikom. Wyślij zaproszenie, a po dołączeniu zawodnika wróć tutaj.", "Sessions are assigned to specific athletes. Send an invitation and come back once the athlete joins.")}
           action={
             <Button asChild>
-              <Link href="/coach/athletes">Zaproś zawodnika</Link>
+              <Link href="/coach/athletes">{tl("Zaproś zawodnika", "Invite athlete")}</Link>
             </Button>
           }
         />
@@ -75,9 +76,9 @@ export default async function NewSessionPage({
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Kreator treningu"
-        title={template ? `Nowy trening z szablonu „${template.name}”` : "Nowy trening"}
-        description="Trening trafi do kalendarza wybranych zawodników. Każdy dostanie powiadomienie."
+        eyebrow={tl("Kreator treningu", "Session builder")}
+        title={template ? `Nowy trening z szablonu „${template.name}”` : tl("Nowy trening", "New session")}
+        description={tl("Trening trafi do kalendarza wybranych zawodników. Każdy dostanie powiadomienie.", "The session goes to the selected athletes’ calendars. Each gets a notification.")}
       />
       <SessionForm
         mode="create"

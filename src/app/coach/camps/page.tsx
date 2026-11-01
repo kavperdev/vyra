@@ -9,6 +9,7 @@ import { CAMP_FORMAT_LABEL, CAMP_STATUS_LABEL, campDates, formatPLN } from "@/li
 import { listCamps, takenPlaces } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -25,14 +26,14 @@ export default async function CampsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Obozy VYRA"
-        title="Obozy"
-        description="Twórz edycje obozów, publikuj je na stronie i prowadź listę uczestników z testami i raportami."
+        eyebrow={tl("Obozy VYRA", "VYRA camps")}
+        title={tl("Obozy", "Camps")}
+        description={tl("Twórz edycje obozów, publikuj je na stronie i prowadź listę uczestników z testami i raportami.", "Create camp editions, publish them on the website and manage participants with tests and reports.")}
         actions={
           founder ? (
             <Button asChild>
               <Link href="/coach/camps/new">
-                <Plus className="size-4" /> Nowy obóz
+                <Plus className="size-4" /> {tl("Nowy obóz", "New camp")}
               </Link>
             </Button>
           ) : undefined
@@ -49,7 +50,7 @@ export default async function CampsPage() {
               <div className="min-w-0">
                 <p className="truncate font-semibold">{c.title}</p>
                 <p className="truncate text-sm text-muted">
-                  {[CAMP_FORMAT_LABEL[c.format], campDates(c) ?? "termin do ustalenia", c.location, formatPLN(c.price_pln)].filter(Boolean).join(" · ")}
+                  {[CAMP_FORMAT_LABEL[c.format], campDates(c) ?? tl("termin do ustalenia", "date to be confirmed"), c.location, formatPLN(c.price_pln)].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -65,12 +66,12 @@ export default async function CampsPage() {
       ) : (
         <EmptyState
           icon={<Tent />}
-          title="Nie ma jeszcze żadnego obozu"
-          description="Utwórz obóz jako szkic: uzupełnisz termin, miejsce i cenę, kiedy będą znane, a potem opublikujesz go jednym kliknięciem."
+          title={tl("Nie ma jeszcze żadnego obozu", "No camps yet")}
+          description={tl("Utwórz obóz jako szkic: uzupełnisz termin, miejsce i cenę, kiedy będą znane, a potem opublikujesz go jednym kliknięciem.", "Create the camp as a draft: add dates, venue and price when known, then publish it with one click.")}
           action={
             founder ? (
               <Button asChild>
-                <Link href="/coach/camps/new">Utwórz pierwszy obóz</Link>
+                <Link href="/coach/camps/new">{tl("Utwórz pierwszy obóz", "Create the first camp")}</Link>
               </Button>
             ) : undefined
           }

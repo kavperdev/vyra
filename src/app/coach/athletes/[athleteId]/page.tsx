@@ -27,25 +27,26 @@ import { isDone } from "@/lib/training/status";
 import { createClient } from "@/lib/supabase/server";
 import { canPlan, type SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return { title: t("Zawodnik", "Athlete") };
 }
 
-const TABS = [
-  ["overview", "Przegląd"],
-  ["calendar", "Kalendarz"],
+const tabs = () => [
+  ["overview", tl("Przegląd", "Overview")],
+  ["calendar", tl("Kalendarz", "Calendar")],
   ["plan", "Plan"],
-  ["running", "Bieganie"],
-  ["strength", "Siła"],
-  ["analytics", "Analityka"],
-  ["records", "Rekordy i cele"],
-  ["history", "Historia"],
-  ["notes", "Notatki"],
-  ["settings", "Ustawienia"],
+  ["running", tl("Bieganie", "Running")],
+  ["strength", tl("Siła", "Strength")],
+  ["analytics", tl("Analityka", "Analytics")],
+  ["records", tl("Rekordy i cele", "Records & goals")],
+  ["history", tl("Historia", "History")],
+  ["notes", tl("Notatki", "Notes")],
+  ["settings", tl("Ustawienia", "Settings")],
 ] as const;
-type Tab = (typeof TABS)[number][0];
+type Tab = ReturnType<typeof tabs>[number][0];
 
 export default async function AthleteProfilePage({
   params,
@@ -63,13 +64,13 @@ export default async function AthleteProfilePage({
   if (!athlete) notFound();
   const today = todayISO(user.profile.timezone);
   const planner = canPlan(user.profile.staff_role);
-  const tab: Tab = (TABS.find(([k]) => k === sp.tab)?.[0] ?? "overview") as Tab;
+  const tab: Tab = (tabs().find(([k]) => k === sp.tab)?.[0] ?? "overview") as Tab;
   const base = `/coach/athletes/${athleteId}`;
 
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow={athlete.link_status === "archived" ? "Zawodnik · archiwum" : "Zawodnik"}
+        eyebrow={athlete.link_status === "archived" ? tl("Zawodnik · archiwum", "Athlete · archived") : tl("Zawodnik", "Athlete")}
         title={
           <span className="flex items-center gap-3">
             <Initials name={athlete.full_name} size="lg" />
@@ -91,17 +92,17 @@ export default async function AthleteProfilePage({
                 />
                 <Button asChild>
                   <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
-                    <Plus className="size-4" /> Trening
+                    <Plus className="size-4" /> {tl("Trening", "Session")}
                   </Link>
                 </Button>
               </>
             ) : null
           ) : (
-            <Badge>zarchiwizowany</Badge>
+            <Badge>{tl("zarchiwizowany", "archived")}</Badge>
           )
         }
       />
-      <LinkTabs tabs={TABS.map(([key, label]) => ({ key, label, href: `${base}?tab=${key}` }))} active={tab} />
+      <LinkTabs tabs={tabs().map(([key, label]) => ({ key, label, href: `${base}?tab=${key}` }))} active={tab} />
       <TabContent tab={tab} athleteId={athleteId} athlete={athlete} today={today} sp={sp} base={base} planner={planner} userId={user.id} />
     </div>
   );
@@ -144,16 +145,16 @@ async function TabContent({
     return (
       <div className="grid gap-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat label="Realizacja 4 tyg." value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} · pominięte ${comp.skipped}`} />
-          <Stat label="Ten tydzień" value={formatNumber(week?.actualKm ?? 0)} unit="km" hint={week?.plannedKm ? `plan ${formatNumber(week.plannedKm)} km` : "bez planu km"} />
-          <Stat label="Najbliższy trening" value={next ? formatDate(next.scheduled_date, "d MMM") : "–"} hint={next?.title ?? "nic nie zaplanowano"} href={next ? hrefFor(next) : undefined} />
-          <Stat label="Ostatni wykonany" value={done[0] ? formatDate(done[0].execution!.performed_on, "d MMM") : "–"} hint={done[0]?.title ?? "brak wpisów"} href={done[0] ? hrefFor(done[0]) : undefined} />
+          <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} · pominięte ${comp.skipped}`} />
+          <Stat label={tl("Ten tydzień", "This week")} value={formatNumber(week?.actualKm ?? 0)} unit="km" hint={week?.plannedKm ? `plan ${formatNumber(week.plannedKm)} km` : tl("bez planu km", "no planned km")} />
+          <Stat label={tl("Najbliższy trening", "Next session")} value={next ? formatDate(next.scheduled_date, "d MMM") : "–"} hint={next?.title ?? "nic nie zaplanowano"} href={next ? hrefFor(next) : undefined} />
+          <Stat label={tl("Ostatni wykonany", "Last completed")} value={done[0] ? formatDate(done[0].execution!.performed_on, "d MMM") : "–"} hint={done[0]?.title ?? "brak wpisów"} href={done[0] ? hrefFor(done[0]) : undefined} />
         </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <Card>
             <CardHeader>
-              <CardTitle>Trend objętości</CardTitle>
-              <Link href={`${base}?tab=analytics`} className="text-[12px] text-muted hover:text-foreground">Analityka</Link>
+              <CardTitle>{tl("Trend objętości", "Volume trend")}</CardTitle>
+              <Link href={`${base}?tab=analytics`} className="text-[12px] text-muted hover:text-foreground">{tl("Analityka", "Analytics")}</Link>
             </CardHeader>
             <CardContent>
               <VolumeChart data={buckets.map((b) => ({ weekStart: b.weekStart, plannedKm: b.plannedKm, actualKm: b.actualKm }))} />
@@ -161,18 +162,18 @@ async function TabContent({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Informacje</CardTitle>
+              <CardTitle>{tl("Informacje", "Information")}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <KeyValue
                 className="sm:grid-cols-2"
                 items={[
                   { label: "E-mail", value: athlete.email ?? "–" },
-                  { label: "W zespole od", value: formatDate(athlete.linked_at) },
-                  { label: "Aktualny plan", value: current ? current.name : "–" },
-                  { label: "Tętno spocz. / maks.", value: `${p?.resting_hr ?? "–"} / ${p?.max_hr ?? "–"}` },
+                  { label: tl("W zespole od", "On the team since"), value: formatDate(athlete.linked_at) },
+                  { label: tl("Aktualny plan", "Current plan"), value: current ? current.name : "–" },
+                  { label: tl("Tętno spocz. / maks.", "Resting / max HR"), value: `${p?.resting_hr ?? "–"} / ${p?.max_hr ?? "–"}` },
                   { label: "LTHR", value: p?.lthr ? `${p.lthr} bpm` : "–" },
-                  { label: "Easy do", value: p?.easy_hr_max ? `${p.easy_hr_max} bpm` : "–" },
+                  { label: tl("Easy do", "Easy up to"), value: p?.easy_hr_max ? `${p.easy_hr_max} bpm` : "–" },
                 ]}
               />
               {p?.athlete_notes ? <p className="rounded-md bg-surface-2 p-3 text-[13px]">{p.athlete_notes}</p> : null}
@@ -180,8 +181,8 @@ async function TabContent({
           </Card>
         </div>
         <section className="grid gap-3">
-          <SectionTitle>Ostatnie wyniki</SectionTitle>
-          <SessionList sessions={done.slice(0, 6)} hrefFor={hrefFor} today={today} empty={<EmptyState title="Brak wyników" description="Zawodnik nie zapisał jeszcze żadnego treningu." />} />
+          <SectionTitle>{tl("Ostatnie wyniki", "Recent results")}</SectionTitle>
+          <SessionList sessions={done.slice(0, 6)} hrefFor={hrefFor} today={today} empty={<EmptyState title={tl("Brak wyników", "No results")} description={tl("Zawodnik nie zapisał jeszcze żadnego treningu.", "The athlete hasn’t logged any sessions yet.")} />} />
         </section>
       </div>
     );
@@ -225,26 +226,26 @@ async function TabContent({
               athlete.link_status === "active" && planner ? (
                 <Button asChild size="sm" variant="outline">
                   <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
-                    <Plus className="size-4" /> Dodaj trening
+                    <Plus className="size-4" /> {tl("Dodaj trening", "Add session")}
                   </Link>
                 </Button>
               ) : null
             }
           >
-            Najbliższe 5 tygodni
+            {tl("Najbliższe 5 tygodni", "Next 5 weeks")}
           </SectionTitle>
           {weeks.size ? (
             [...weeks.entries()].map(([w, list]) => (
               <div key={w} className="grid gap-2">
                 <p className="text-[13px] text-muted">
-                  Tydzień {formatDate(w, "d MMM")} – {formatDate(addDaysISO(w, 6), "d MMM")} ·{" "}
-                  {formatNumber(list.reduce((n, s) => n + (s.planned_distance_m ?? 0), 0) / 1000)} km zaplanowane
+                  {tl("Tydzień", "Week")} {formatDate(w, "d MMM")} – {formatDate(addDaysISO(w, 6), "d MMM")} ·{" "}
+                  {formatNumber(list.reduce((n, s) => n + (s.planned_distance_m ?? 0), 0) / 1000)} {tl("km zaplanowane", "km planned")}
                 </p>
                 <SessionList sessions={list} hrefFor={hrefFor} today={today} />
               </div>
             ))
           ) : (
-            <EmptyState title="Brak zaplanowanych treningów" description="Dodaj trening albo skorzystaj z szablonu, aby rozpisać kolejne tygodnie." />
+            <EmptyState title={tl("Brak zaplanowanych treningów", "No planned sessions")} description={tl("Dodaj trening albo skorzystaj z szablonu, aby rozpisać kolejne tygodnie.", "Add a session or use a template to plan the coming weeks.")} />
           )}
         </section>
       </div>
@@ -267,14 +268,14 @@ async function TabContent({
         <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={tab === "analytics" ? "all" : tab} />
         {tab === "strength" ? (
           <section className="grid gap-3">
-            <SectionTitle>Historia ćwiczeń</SectionTitle>
+            <SectionTitle>{tl("Historia ćwiczeń", "Exercise history")}</SectionTitle>
             <StrengthHistory entries={strength} sessionHref={(id) => `/coach/sessions/${id}`} />
           </section>
         ) : null}
         {tab !== "analytics" ? (
           <section className="grid gap-3">
-            <SectionTitle>Ostatnie treningi</SectionTitle>
-            <SessionList sessions={recent} hrefFor={hrefFor} today={today} empty={<EmptyState title="Brak treningów w tym okresie" />} />
+            <SectionTitle>{tl("Ostatnie treningi", "Recent sessions")}</SectionTitle>
+            <SessionList sessions={recent} hrefFor={hrefFor} today={today} empty={<EmptyState title={tl("Brak treningów w tym okresie", "No sessions in this period")} />} />
           </section>
         ) : null}
       </div>
@@ -313,7 +314,7 @@ async function TabContent({
         <CoachNotes athleteId={athleteId} notes={notes} currentUserId={userId} />
         <Card>
           <CardHeader>
-            <CardTitle>Komentarze do treningów</CardTitle>
+            <CardTitle>{tl("Komentarze do treningów", "Session comments")}</CardTitle>
           </CardHeader>
           <CardContent>
             {comments.length ? (
@@ -331,7 +332,7 @@ async function TabContent({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">Brak komentarzy.</p>
+              <p className="text-sm text-muted">{tl("Brak komentarzy.", "No comments.")}</p>
             )}
           </CardContent>
         </Card>

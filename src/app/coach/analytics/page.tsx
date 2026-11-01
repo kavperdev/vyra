@@ -14,6 +14,7 @@ import { KIND_LABEL } from "@/lib/training/categories";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -41,17 +42,17 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
   if (!athletes.length) {
     return (
       <div className="grid gap-6">
-        <PageHeader eyebrow="Analityka" title="Analityka zespołu" />
-        <EmptyState title="Brak danych" description="Analityka pojawi się, gdy dodasz zawodników i zaplanujesz treningi." />
+        <PageHeader eyebrow={tl("Analityka", "Analytics")} title={tl("Analityka zespołu", "Team analytics")} />
+        <EmptyState title={tl("Brak danych", "No data")} description={tl("Analityka pojawi się, gdy dodasz zawodników i zaplanujesz treningi.", "Analytics will appear once you add athletes and plan sessions.")} />
       </div>
     );
   }
 
   const header = (
     <div className="flex flex-wrap items-center gap-2">
-      <nav aria-label="Zawodnik" className="flex flex-wrap gap-1">
+      <nav aria-label={tl("Zawodnik", "Athlete")} className="flex flex-wrap gap-1">
         <Link href={filterLink({ athlete: undefined })} className={`rounded-md border px-2.5 py-1.5 text-[13px] ${!selected ? "border-foreground" : "border-border text-muted"}`}>
-          Cały zespół
+          {tl("Cały zespół", "Whole team")}
         </Link>
         {athletes.map((a) => (
           <Link key={a.id} href={filterLink({ athlete: a.id })} className={`rounded-md border px-2.5 py-1.5 text-[13px] ${selected?.id === a.id ? "border-foreground" : "border-border text-muted"}`}>
@@ -69,7 +70,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
     ]);
     return (
       <div className="grid gap-6">
-        <PageHeader eyebrow="Analityka" title={selected.full_name} actions={<PeriodFilter weeks={weeks} basePath="/coach/analytics" extra={{ athlete: selected.id, kind: sp.kind }} />} />
+        <PageHeader eyebrow={tl("Analityka", "Analytics")} title={selected.full_name} actions={<PeriodFilter weeks={weeks} basePath="/coach/analytics" extra={{ athlete: selected.id, kind: sp.kind }} />} />
         {header}
         <KindFilter current={kind} link={filterLink} />
         <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={kind === "running" ? "running" : kind ? "strength" : "all"} />
@@ -91,9 +92,9 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
   return (
     <div className="grid gap-6">
       <PageHeader
-        eyebrow="Analityka"
-        title="Analityka zespołu"
-        description="Każdy zawodnik ma inny plan i poziom, dlatego zestawienie pokazuje realizację własnych planów, a nie ranking."
+        eyebrow={tl("Analityka", "Analytics")}
+        title={tl("Analityka zespołu", "Team analytics")}
+        description={tl("Każdy zawodnik ma inny plan i poziom, dlatego zestawienie pokazuje realizację własnych planów, a nie ranking.", "Every athlete has a different plan and level, so this shows completion of their own plans, not a ranking.")}
         actions={<PeriodFilter weeks={weeks} basePath="/coach/analytics" extra={{ kind: sp.kind }} />}
       />
       {header}
@@ -101,7 +102,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Realizacja planów</CardTitle>
+            <CardTitle>{tl("Realizacja planów", "Plan completion")}</CardTitle>
           </CardHeader>
           <CardContent>
             <CompletionChart data={buckets.map((b) => ({ weekStart: b.weekStart, completion: b.completion, doneSessions: b.doneSessions, dueSessions: b.dueSessions }))} />
@@ -109,7 +110,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Objętość biegowa</CardTitle>
+            <CardTitle>{tl("Objętość biegowa", "Running volume")}</CardTitle>
           </CardHeader>
           <CardContent>
             <VolumeChart data={buckets.map((b) => ({ weekStart: b.weekStart, plannedKm: b.plannedKm, actualKm: b.actualKm }))} />
@@ -120,13 +121,13 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
         <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-surface text-left text-[12px] text-muted">
             <tr>
-              <th className="px-4 py-2.5 font-medium">Zawodnik</th>
-              <th className="px-4 py-2.5 font-medium">Realizacja planu</th>
-              <th className="px-4 py-2.5 font-medium">Wykonane / zaplanowane</th>
-              <th className="px-4 py-2.5 font-medium">Pominięte</th>
-              <th className="px-4 py-2.5 font-medium">Brak wpisu</th>
-              <th className="px-4 py-2.5 font-medium">Bieganie</th>
-              <th className="px-4 py-2.5 font-medium">Śr. RPE</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Zawodnik", "Athlete")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Realizacja planu", "Plan completion")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Wykonane / zaplanowane", "Done / planned")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Pominięte", "Skipped")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Brak wpisu", "Not logged")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Bieganie", "Running")}</th>
+              <th className="px-4 py-2.5 font-medium">{tl("Śr. RPE", "Avg RPE")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -163,9 +164,9 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
 
 function KindFilter({ current, link }: { current: SessionKind | undefined; link: (p: Record<string, string | undefined>) => string }) {
   return (
-    <nav aria-label="Rodzaj treningu" className="flex flex-wrap gap-1">
+    <nav aria-label={tl("Rodzaj treningu", "Session category")} className="flex flex-wrap gap-1">
       <Link href={link({ kind: undefined })} className={`rounded-md px-2.5 py-1 text-[13px] ${!current ? "bg-surface-2" : "text-muted"}`}>
-        Wszystkie
+        {tl("Wszystkie", "All")}
       </Link>
       {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
         <Link key={k} href={link({ kind: k })} className={`rounded-md px-2.5 py-1 text-[13px] ${current === k ? "bg-surface-2" : "text-muted"}`}>

@@ -8,6 +8,7 @@ import { listAthletes } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import type { Invitation, StaffRole } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
+import { tl } from "@/lib/i18n/runtime";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -48,9 +49,9 @@ export default async function TeamPage() {
   return (
     <div className="grid gap-8">
       <PageHeader
-        eyebrow="Zarządzanie"
-        title="Zespół VYRA"
-        description="Zapraszaj trenerów i fizjoterapeutę, nadawaj role i przypisuj im zawodników. Założyciele widzą wszystkich zawodników automatycznie."
+        eyebrow={tl("Zarządzanie", "Management")}
+        title={tl("Zespół VYRA", "VYRA team")}
+        description={tl("Zapraszaj trenerów i fizjoterapeutę, nadawaj role i przypisuj im zawodników. Założyciele widzą wszystkich zawodników automatycznie.", "Invite coaches and the physiotherapist, assign roles and athletes. Founders see all athletes automatically.")}
       />
       <TeamManager
         staff={staff}

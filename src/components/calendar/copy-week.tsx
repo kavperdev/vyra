@@ -10,6 +10,7 @@ import { Field, Input, Select } from "@/components/ui/form-controls";
 import { copyWeek } from "@/lib/actions/sessions";
 import { addDaysISO, weekStartISO } from "@/lib/dates";
 import { formatDate } from "@/lib/format";
+import { tl } from "@/lib/i18n/runtime";
 
 const range = (mon: string) => `${formatDate(mon, "d MMM")} – ${formatDate(addDaysISO(mon, 6), "d MMM")}`;
 
@@ -57,15 +58,15 @@ export function CopyWeekButton({
           setOpen(true);
         }}
       >
-        <CopyPlus className="size-4" /> Kopiuj tydzień
+        <CopyPlus className="size-4" /> {tl("Kopiuj tydzień", "Copy week")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          title="Kopiuj tydzień"
-          description="Kopiuje wszystkie treningi z wybranego tygodnia: na kolejny tydzień albo innemu zawodnikowi. Zawodnik dostanie jedno powiadomienie o nowym planie."
+          title={tl("Kopiuj tydzień", "Copy week")}
+          description={tl("Kopiuje wszystkie treningi z wybranego tygodnia: na kolejny tydzień albo innemu zawodnikowi. Zawodnik dostanie jedno powiadomienie o nowym planie.", "Copies all sessions from the chosen week: to a later week or to another athlete. The athlete gets one notification about the new plan.")}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Z tygodnia zawodnika" htmlFor="cw-source">
+            <Field label={tl("Z tygodnia zawodnika", "From athlete’s week")} htmlFor="cw-source">
               <Select id="cw-source" value={source} onChange={(e) => setSource(e.target.value)}>
                 {athletes.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -74,10 +75,10 @@ export function CopyWeekButton({
                 ))}
               </Select>
             </Field>
-            <Field label="Tydzień źródłowy" htmlFor="cw-from" hint={fromMon ? range(fromMon) : undefined}>
+            <Field label={tl("Tydzień źródłowy", "Source week")} htmlFor="cw-from" hint={fromMon ? range(fromMon) : undefined}>
               <Input id="cw-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </Field>
-            <Field label="Dla zawodnika" htmlFor="cw-target">
+            <Field label={tl("Dla zawodnika", "For athlete")} htmlFor="cw-target">
               <Select id="cw-target" value={target} onChange={(e) => setTarget(e.target.value)}>
                 {athletes.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -86,14 +87,14 @@ export function CopyWeekButton({
                 ))}
               </Select>
             </Field>
-            <Field label="Na tydzień" htmlFor="cw-to" hint={toMon ? range(toMon) : undefined}>
+            <Field label={tl("Na tydzień", "To week")} htmlFor="cw-to" hint={toMon ? range(toMon) : undefined}>
               <Input id="cw-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </Field>
           </div>
           <div className="flex flex-wrap gap-2">
             {[1, 2, 4].map((n) => (
               <Button key={n} type="button" variant="ghost" size="sm" onClick={() => setTo(addDaysISO(fromMon || sourceMonday, 7 * n))}>
-                +{n} {n === 1 ? "tydzień" : "tygodnie"}
+                +{n} {n === 1 ? tl("tydzień", "week") : tl("tygodnie", "weeks")}
               </Button>
             ))}
           </div>
@@ -103,14 +104,14 @@ export function CopyWeekButton({
               start(async () => {
                 const res = await copyWeek({ athlete_id: source, from: fromMon, to: toMon, target_id: target });
                 if (res.ok) {
-                  toast.success(res.message ?? "Skopiowano tydzień.");
+                  toast.success(res.message ?? tl("Skopiowano tydzień.", "Week copied."));
                   setOpen(false);
                   router.refresh();
                 } else toast.error(res.error);
               })
             }
           >
-            Kopiuj treningi
+            {tl("Kopiuj treningi", "Copy sessions")}
           </Button>
         </DialogContent>
       </Dialog>
