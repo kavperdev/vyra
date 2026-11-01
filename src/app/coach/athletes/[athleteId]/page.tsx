@@ -24,7 +24,7 @@ import { completionStats, periodStart, weeklyBuckets } from "@/lib/training/anal
 import { suggestRunningRecords } from "@/lib/training/records";
 import { isDone } from "@/lib/training/status";
 import { createClient } from "@/lib/supabase/server";
-import type { SessionKind } from "@/lib/types";
+import { canPlan, type SessionKind } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Zawodnik" };
 
@@ -56,6 +56,7 @@ export default async function AthleteProfilePage({
   const athlete = await getAthlete(supabase, user.id, athleteId);
   if (!athlete) notFound();
   const today = todayISO(user.profile.timezone);
+  const planner = canPlan(user.profile.staff_role);
   const tab: Tab = (TABS.find(([k]) => k === sp.tab)?.[0] ?? "overview") as Tab;
   const base = `/coach/athletes/${athleteId}`;
 
@@ -72,18 +73,20 @@ export default async function AthleteProfilePage({
         description={athlete.profile?.sport_goal ? `Cel: ${athlete.profile.sport_goal}` : undefined}
         actions={
           athlete.link_status === "active" ? (
-            <Button asChild>
-              <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
-                <Plus className="size-4" /> Trening
-              </Link>
-            </Button>
+            planner ? (
+              <Button asChild>
+                <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
+                  <Plus className="size-4" /> Trening
+                </Link>
+              </Button>
+            ) : null
           ) : (
             <Badge>zarchiwizowany</Badge>
           )
         }
       />
       <LinkTabs tabs={TABS.map(([key, label]) => ({ key, label, href: `${base}?tab=${key}` }))} active={tab} />
-      <TabContent tab={tab} athleteId={athleteId} athlete={athlete} today={today} sp={sp} base={base} />
+      <TabContent tab={tab} athleteId={athleteId} athlete={athlete} today={today} sp={sp} base={base} planner={planner} userId={user.id} />
     </div>
   );
 }
@@ -95,7 +98,11 @@ async function TabContent({
   today,
   sp,
   base,
+  planner,
+  userId,
 }: {
+  planner: boolean;
+  userId: string;
   tab: Tab;
   athleteId: string;
   athlete: NonNullable<Awaited<ReturnType<typeof getAthlete>>>;
@@ -195,11 +202,11 @@ async function TabContent({
     }
     return (
       <div className="grid gap-6">
-        {athlete.link_status === "active" ? <PlansManager athleteId={athleteId} plans={plans} today={today} sessionCounts={counts} /> : null}
+        {athlete.link_status === "active" && planner ? <PlansManager athleteId={athleteId} plans={plans} today={today} sessionCounts={counts} /> : null}
         <section className="grid gap-4">
           <SectionTitle
             action={
-              athlete.link_status === "active" ? (
+              athlete.link_status === "active" && planner ? (
                 <Button asChild size="sm" variant="outline">
                   <Link href={`/coach/sessions/new?athlete=${athleteId}`}>
                     <Plus className="size-4" /> Dodaj trening
@@ -287,7 +294,7 @@ async function TabContent({
     const [notes, comments] = await Promise.all([listCoachNotes(supabase, athleteId), listRecentComments(supabase, { athleteId, limit: 20 })]);
     return (
       <div className="grid gap-6 lg:grid-cols-2">
-        <CoachNotes athleteId={athleteId} notes={notes} />
+        <CoachNotes athleteId={athleteId} notes={notes} currentUserId={userId} />
         <Card>
           <CardHeader>
             <CardTitle>Komentarze do treningów</CardTitle>

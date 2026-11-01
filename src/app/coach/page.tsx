@@ -13,7 +13,7 @@ import { listRecentComments, listSessions } from "@/lib/data/sessions";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { completionStats, periodStart, weeklyBuckets } from "@/lib/training/analytics";
 import { displayStatus } from "@/lib/training/status";
-import type { SessionSummary } from "@/lib/types";
+import { canPlan, type SessionSummary } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Pulpit trenera" };
@@ -100,11 +100,13 @@ export default async function CoachDashboard() {
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={`Cześć, ${user.profile.full_name.split(" ")[0]}`}
         actions={
-          <Button asChild>
-            <Link href="/coach/sessions/new">
-              <Plus className="size-4" /> Nowy trening
-            </Link>
-          </Button>
+          canPlan(user.profile.staff_role) ? (
+            <Button asChild>
+              <Link href="/coach/sessions/new">
+                <Plus className="size-4" /> Nowy trening
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 

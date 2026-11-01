@@ -9,10 +9,25 @@ export type DisplayStatus = SessionStatus | "needs_update";
 export type RecordKind = "running" | "strength" | "other";
 export type GoalStatus = "active" | "achieved" | "abandoned";
 export type InviteStatus = "pending" | "accepted" | "revoked";
+export type StaffRole = "founder" | "running_coach" | "strength_coach" | "physio";
+
+export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
+  founder: "Założyciel",
+  running_coach: "Trener biegowy",
+  strength_coach: "Trener przygotowania siłowego",
+  physio: "Fizjoterapeuta",
+};
+
+/** Staff who plan training. A physiotherapist reads and writes notes but does not plan. */
+export function canPlan(role: StaffRole | null | undefined): boolean {
+  return role === "founder" || role === "running_coach" || role === "strength_coach";
+}
 
 export interface Profile {
   id: string;
   role: UserRole;
+  /** Set for staff accounts (role = coach), null for athletes. */
+  staff_role: StaffRole | null;
   full_name: string;
   email: string | null;
   timezone: string;
@@ -47,6 +62,8 @@ export interface Invitation {
   full_name: string | null;
   message: string | null;
   token: string;
+  /** Non-null for invitations to the VYRA team (staff). */
+  staff_role: StaffRole | null;
   status: InviteStatus;
   expires_at: string;
   accepted_by: string | null;
@@ -277,6 +294,9 @@ export interface CoachNote {
   athlete_id: string;
   body: string;
   created_at: string;
+  /** Author's name and role, filled in by listCoachNotes. */
+  author_name?: string | null;
+  author_role?: StaffRole | null;
 }
 
 export interface AppNotification {

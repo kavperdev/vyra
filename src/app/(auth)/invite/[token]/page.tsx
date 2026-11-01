@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AcceptInviteButton, InviteSignupForm } from "@/components/auth/auth-forms";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Zaproszenie" };
 
@@ -12,6 +13,7 @@ interface InvitationInfo {
   coach_name: string;
   status: "pending" | "accepted" | "revoked";
   expired: boolean;
+  staff_role: StaffRole | null;
 }
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
@@ -34,6 +36,28 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         <Link href="/login" className="text-sm underline underline-offset-4">
           Przejdź do logowania
         </Link>
+      </div>
+    );
+  }
+
+  if (invite.staff_role) {
+    return (
+      <div className="grid gap-8">
+        <div className="grid gap-2">
+          <p className="eyebrow">Zespół VYRA · {STAFF_ROLE_LABEL[invite.staff_role]}</p>
+          <h1 className="display text-3xl">{invite.coach_name} zaprasza Cię do zespołu VYRA</h1>
+          <p className="text-sm text-muted">
+            Załóż konto, żeby pracować z zawodnikami VYRA w roli: {STAFF_ROLE_LABEL[invite.staff_role].toLowerCase()}. Zobaczysz
+            zawodników, których przypisze Ci założyciel.
+          </p>
+        </div>
+        {user ? (
+          <p className="text-sm text-muted">
+            Jesteś zalogowany(a) jako {user.email}. Do zespołu dołączasz nowym kontem: wyloguj się i otwórz link ponownie.
+          </p>
+        ) : (
+          <InviteSignupForm token={token} email={invite.email} fullName={invite.full_name ?? ""} />
+        )}
       </div>
     );
   }

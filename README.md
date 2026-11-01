@@ -76,6 +76,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 3. `20261029000300_rpc.sql` — transakcyjne funkcje zapisu (plan, wykonanie, kopiowanie)
 4. `20261101000100_applications.sql` — zgłoszenia ze strony głównej (widzi je tylko trener)
 5. `20261101000200_applications_kind.sql` — rodzaj zgłoszenia: lista obozów albo prowadzenie
+6. `20261101000300_team_roles.sql` — role zespołu: założyciel, trener biegowy, trener siłowy, fizjoterapeuta
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 
@@ -266,3 +267,18 @@ Kolory statusów są semantyczne i używane tylko dla statusu treningu: zielony 
 - Aplikacja obsługuje wielu trenerów, ale zawodnik jest zwykle połączony z jednym. Kilku trenerów jednego zawodnika działa na poziomie danych, a interfejs pokazuje pierwszego.
 - Brak importu plików FIT/GPX i integracji z Garmin/Strava.
 - Raport PDF zawiera statystyki, wykres objętości i tabelę treningów. Wykresów siłowych w PDF nie ma.
+
+## Zespół VYRA (role)
+
+Konta zespołu mają rolę `coach` i dodatkowo `staff_role`:
+
+| Rola | Co może |
+|---|---|
+| Założyciel (`founder`) | Widzi wszystkich zawodników, zaprasza zespół, nadaje role, przypisuje zawodników, obsługuje zgłoszenia ze strony |
+| Trener biegowy / siłowy | Planuje i analizuje treningi przypisanych zawodników |
+| Fizjoterapeuta (`physio`) | Widzi przypisanych zawodników i ich treningi, pisze notatki zespołu, nie planuje treningów |
+
+- Pierwsze konto w systemie zostaje założycielem. Założyciele są automatycznie połączeni z każdym zawodnikiem.
+- Zespół zaprasza założyciel w **Panel → Zespół VYRA** (osobisty link, nowe konto).
+- Notatki o zawodniku widzi cały zespół, który z nim pracuje; zawodnik ich nie widzi.
+- Uprawnienia egzekwuje baza (RLS i funkcje `set_staff_assignment`, `set_staff_role`), testy w `supabase/tests/10_security_test.sql`.

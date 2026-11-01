@@ -17,7 +17,7 @@ export const SITE: SiteSettings = {
   tagline: "Elite is standard",
   controller: "Kacper Adamczyk",
   email: "",
-  instagram: "",
+  instagram: "@vyra.athl",
 };
 
 export const SITE_NAV = [

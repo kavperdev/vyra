@@ -59,7 +59,7 @@ export async function signUpWithInvite(input: { token: string; full_name: string
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.full_name, invite_token: parsed.data.token },
-      emailRedirectTo: `${await origin()}/auth/callback?next=/athlete`,
+      emailRedirectTo: `${await origin()}/auth/callback?next=/panel`,
     },
   });
   if (error) {
@@ -69,7 +69,7 @@ export async function signUpWithInvite(input: { token: string; full_name: string
     }
     return { ok: false, error: signupMessage(error.message) };
   }
-  if (data.session) redirect("/athlete");
+  if (data.session) redirect("/panel");
   return { ok: true, message: "Konto utworzone. Potwierdź adres e-mail linkiem z wiadomości, a potem zaloguj się." };
 }
 

@@ -1,7 +1,7 @@
 import "server-only";
 import type { ServerSupabase } from "@/lib/supabase/server";
 import type {
-  AppNotification, AthleteGoal, AthleteProfile, CoachNote, Invitation, PersonalRecord, Profile, TrainingPlan, TrainingTemplate,
+  AppNotification, AthleteGoal, AthleteProfile, CoachNote, Invitation, PersonalRecord, Profile, StaffRole, TrainingPlan, TrainingTemplate,
 } from "@/lib/types";
 import { one } from "./sessions";
 
@@ -63,7 +63,11 @@ export async function listCoaches(supabase: ServerSupabase, athleteId: string): 
 }
 
 export async function listInvitations(supabase: ServerSupabase): Promise<Invitation[]> {
-  const { data, error } = await supabase.from("invitations").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("invitations")
+    .select("*")
+    .is("staff_role", null)
+    .order("created_at", { ascending: false });
   if (error) throw new Error(`Nie udało się pobrać zaproszeń: ${error.message}`);
   return (data ?? []) as Invitation[];
 }
@@ -119,11 +123,16 @@ export async function listGoals(supabase: ServerSupabase, athleteId: string): Pr
 export async function listCoachNotes(supabase: ServerSupabase, athleteId: string): Promise<CoachNote[]> {
   const { data, error } = await supabase
     .from("coach_notes")
-    .select("*")
+    .select("*, author:profiles!coach_notes_coach_id_fkey ( full_name, staff_role )")
     .eq("athlete_id", athleteId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(`Nie udało się pobrać notatek: ${error.message}`);
-  return (data ?? []) as CoachNote[];
+  type Author = { full_name: string; staff_role: StaffRole | null };
+  type Row = CoachNote & { author: Author | Author[] | null };
+  return ((data ?? []) as unknown as Row[]).map(({ author, ...n }) => {
+    const a = one(author);
+    return { ...n, author_name: a?.full_name ?? null, author_role: a?.staff_role ?? null };
+  });
 }
 
 export async function listNotifications(supabase: ServerSupabase, limit = 100): Promise<AppNotification[]> {

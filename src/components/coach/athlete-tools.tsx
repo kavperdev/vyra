@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/misc";
 import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus } from "@/lib/actions/athletes";
 import { deletePlan, savePlan } from "@/lib/actions/sessions";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { AthleteProfile, CoachNote, TrainingPlan } from "@/lib/types";
+import { STAFF_ROLE_LABEL, type AthleteProfile, type CoachNote, type TrainingPlan } from "@/lib/types";
 
 // ------------------------------------------------------------------ plans
 
@@ -136,15 +136,15 @@ export function PlansManager({ athleteId, plans, today, sessionCounts }: { athle
 
 // ------------------------------------------------------------------ private notes
 
-export function CoachNotes({ athleteId, notes }: { athleteId: string; notes: CoachNote[] }) {
+export function CoachNotes({ athleteId, notes, currentUserId }: { athleteId: string; notes: CoachNote[]; currentUserId: string }) {
   const [body, setBody] = useState("");
   const [pending, start] = useTransition();
   return (
     <Card>
       <CardHeader>
         <div className="grid gap-0.5">
-          <CardTitle>Notatki trenera</CardTitle>
-          <p className="text-[13px] text-muted">Prywatne. Zawodnik ich nie widzi.</p>
+          <CardTitle>Notatki zespołu</CardTitle>
+          <p className="text-[13px] text-muted">Widzi je zespół pracujący z zawodnikiem. Zawodnik ich nie widzi.</p>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -171,6 +171,7 @@ export function CoachNotes({ athleteId, notes }: { athleteId: string; notes: Coa
               <li key={n.id} className="rounded-md border border-border p-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="whitespace-pre-wrap text-sm">{n.body}</p>
+                  {n.coach_id === currentUserId ? (
                   <Button
                     size="icon-sm"
                     variant="ghost"
@@ -184,8 +185,12 @@ export function CoachNotes({ athleteId, notes }: { athleteId: string; notes: Coa
                   >
                     <Trash2 className="size-3.5" />
                   </Button>
+                  ) : null}
                 </div>
-                <p className="mt-1 text-[12px] text-subtle">{formatDateTime(n.created_at)}</p>
+                <p className="mt-1 text-[12px] text-subtle">
+                  {n.author_name ? `${n.author_name}${n.author_role ? ` · ${STAFF_ROLE_LABEL[n.author_role]}` : ""} · ` : ""}
+                  {formatDateTime(n.created_at)}
+                </p>
               </li>
             ))}
           </ul>

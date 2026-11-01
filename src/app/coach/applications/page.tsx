@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { Inbox } from "lucide-react";
 import { ApplicationsList, type ApplicationRow } from "@/components/coach/applications-list";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Zgłoszenia" };
 
 export default async function ApplicationsPage() {
-  await requireRole("coach");
+  const user = await requireRole("coach");
+  if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("applications")

@@ -10,16 +10,19 @@ export function AppShell({
   name,
   items,
   unread,
+  roleLabel: roleLabelProp,
   children,
 }: {
   role: UserRole;
+  /** Overrides the default "Trener" / "Zawodnik" label, e.g. with the staff role. */
+  roleLabel?: string;
   name: string;
   items: NavItem[];
   unread: number;
   children: React.ReactNode;
 }) {
   const root = role === "coach" ? "/coach" : "/athlete";
-  const roleLabel = role === "coach" ? "Trener" : "Zawodnik";
+  const roleLabel = roleLabelProp ?? (role === "coach" ? "Trener" : "Zawodnik");
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       {/* desktop sidebar */}

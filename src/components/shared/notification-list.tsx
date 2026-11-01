@@ -19,6 +19,7 @@ const ICON: Record<string, typeof Bell> = {
   comment: MessageSquare,
   execution_logged: CheckCircle2,
   invite_accepted: UserPlus,
+  assigned: UserPlus,
   reminder: Bell,
 };
 

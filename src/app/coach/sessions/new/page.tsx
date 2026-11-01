@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/auth";
 import { isISODate, todayISO } from "@/lib/dates";
 import { listAthletes, listTemplates } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
-import type { SessionKind, TrainingPlan } from "@/lib/types";
+import { canPlan, type SessionKind, type TrainingPlan } from "@/lib/types";
 import { emptySessionForm, payloadToForm } from "@/lib/validation/session";
 
 export const metadata: Metadata = { title: "Nowy trening" };
@@ -19,6 +19,17 @@ export default async function NewSessionPage({
 }) {
   const sp = await searchParams;
   const user = await requireRole("coach");
+  if (!canPlan(user.profile.staff_role)) {
+    return (
+      <div className="grid gap-6">
+        <PageHeader eyebrow="Kreator treningu" title="Nowy trening" />
+        <EmptyState
+          title="Planowanie treningów nie jest dostępne w Twojej roli"
+          description="Fizjoterapeuta widzi plany i wyniki przypisanych zawodników oraz dodaje notatki zespołu. Treningi planują trenerzy."
+        />
+      </div>
+    );
+  }
   const supabase = await createClient();
   const [athletes, templates] = await Promise.all([listAthletes(supabase, user.id), listTemplates(supabase)]);
   const active = athletes.filter((a) => a.link_status === "active");

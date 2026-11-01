@@ -112,7 +112,7 @@ select pg_temp.check((select count(*) from public.training_sessions) = 3, 'coach
 -- the other coach sees nothing and cannot plan for someone else's athlete
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
 select pg_temp.check((select count(*) from public.training_sessions) = 0, 'foreign coach sees no sessions');
-select pg_temp.check((select count(*) from public.profiles) = 1, 'foreign coach sees only own profile');
+select pg_temp.check((select count(*) from public.profiles where role = 'athlete') = 0, 'unassigned staff sees no athletes');
 do $$ begin
   insert into public.training_sessions (coach_id, athlete_id, kind, category, title, scheduled_date)
   values (auth.uid(), '00000000-0000-0000-0000-0000000000a1', 'running', 'easy', 'hack', current_date);
@@ -415,3 +415,79 @@ set role anon;
 insert into public.applications (full_name, email, consent, kind) values ('Obozowicz', 'oboz@vyra.test', true, 'camp');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
 select pg_temp.check((select count(*) from public.applications where kind = 'camp') = 1, 'camp waitlist entries are stored');
+
+-- ---------------------------------------------------------------- team roles
+select pg_temp.as_admin();
+select pg_temp.check((select staff_role from public.profiles where id = '00000000-0000-0000-0000-0000000000c1') = 'founder',
+  'first account is a founder');
+select pg_temp.check((select staff_role from public.profiles where id = '00000000-0000-0000-0000-0000000000c2') = 'running_coach',
+  'later open sign-up is not a founder');
+
+-- non-founders cannot invite staff
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+do $$ begin
+  insert into public.invitations (coach_id, email, token, staff_role) values (auth.uid(), 'x@vyra.test', 'tok-x', 'founder');
+  raise exception 'FAIL: non-founder invited staff';
+exception when insufficient_privilege then raise notice 'ok  only founders invite staff';
+end $$;
+
+-- founder invites a physio
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.invitations (coach_id, email, full_name, token, staff_role)
+  values (auth.uid(), 'fizjo@vyra.test', 'Fizjo', 'tok-fizjo', 'physio');
+select pg_temp.as_admin();
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000f1', 'fizjo@vyra.test', '{"invite_token":"tok-fizjo","full_name":"Fizjo"}');
+select pg_temp.check((select role::text || '/' || staff_role from public.profiles where id = '00000000-0000-0000-0000-0000000000f1') = 'coach/physio',
+  'staff invitation creates a staff account');
+
+-- physio sees nothing until assigned
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.check((select count(*) from public.training_sessions) = 0, 'unassigned physio sees no sessions');
+do $$ begin
+  perform public.set_staff_assignment(auth.uid(), '00000000-0000-0000-0000-0000000000a1', true);
+  raise exception 'FAIL: physio assigned itself';
+exception when insufficient_privilege then raise notice 'ok  only founders assign athletes';
+end $$;
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select public.set_staff_assignment('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000a1', true);
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.check((select count(*) from public.training_sessions where athlete_id = '00000000-0000-0000-0000-0000000000a1') > 0,
+  'assigned physio sees the athlete''s sessions');
+select pg_temp.check((select count(*) from public.training_sessions where athlete_id = '00000000-0000-0000-0000-0000000000a2') = 0,
+  'assigned physio does not see other athletes');
+do $$ begin
+  insert into public.training_sessions (coach_id, athlete_id, kind, category, title, scheduled_date)
+  values (auth.uid(), '00000000-0000-0000-0000-0000000000a1', 'running', 'easy', 'fizjo plan', current_date);
+  raise exception 'FAIL: physio planned a session';
+exception when insufficient_privilege then raise notice 'ok  physio cannot plan training';
+end $$;
+insert into public.coach_notes (coach_id, athlete_id, body) values (auth.uid(), '00000000-0000-0000-0000-0000000000a1', 'Napięte pasmo biodrowo-piszczelowe');
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check(exists (select 1 from public.coach_notes where body like 'Napięte%'), 'founder reads team notes');
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check(not exists (select 1 from public.coach_notes), 'athletes never see team notes');
+
+-- new athlete of any coach is visible to founders
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+insert into public.invitations (coach_id, email, token) values (auth.uid(), 'nowa@vyra.test', 'tok-nowa');
+select pg_temp.as_admin();
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000a9', 'nowa@vyra.test', '{"invite_token":"tok-nowa","full_name":"Nowa"}');
+select pg_temp.check(exists (select 1 from public.coach_athletes
+  where coach_id = '00000000-0000-0000-0000-0000000000c1' and athlete_id = '00000000-0000-0000-0000-0000000000a9'),
+  'founders are linked to every new athlete');
+
+-- the last founder cannot be demoted
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+do $$ begin
+  perform public.set_staff_role(auth.uid(), 'running_coach');
+  raise exception 'FAIL: last founder demoted';
+exception when others then
+  if sqlerrm not like '%LAST_FOUNDER%' then raise; end if;
+  raise notice 'ok  last founder cannot be demoted';
+end $$;
