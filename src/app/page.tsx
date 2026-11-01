@@ -136,7 +136,7 @@ export default async function Home() {
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">
               VYRA łączy trening biegowy, przygotowanie siłowe i fizjoterapię. Prowadzimy zawodników indywidualnie i
-              przygotowujemy obozy treningowe na poziomie zawodowym.
+              tworzymy obozy, które dają amatorom elitarne doświadczenie treningowe.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <a
@@ -192,10 +192,10 @@ export default async function Home() {
           <div className={`${wrap} grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
             <div className="grid content-start gap-5">
               <p className="font-mono text-[11px] uppercase tracking-[0.4em] text-[var(--accent)]">Obozy VYRA · Wkrótce</p>
-              <h2 className="display text-3xl text-white sm:text-5xl">Tydzień treningu na poziomie zawodowym</h2>
+              <h2 className="display text-3xl text-white sm:text-5xl">Elitarne doświadczenie dla amatorów</h2>
               <p className="text-lg leading-relaxed text-white/70">
-                Kilka dni pracy pod okiem zespołu specjalistów: trening, żywienie, regeneracja i diagnostyka w jednym
-                miejscu, w kameralnej grupie.
+                Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką zespołu
+                specjalistów: trening, żywienie, regeneracja i diagnostyka w jednym miejscu, w kameralnej grupie.
               </p>
               <dl className="mt-4 grid gap-0">
                 {CAMP_PILLARS.map((c) => (
