@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { StickyCta } from "@/components/site/nudges";
 import { CtaBand, Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { CoachingInquiryForm } from "@/components/site/lead-forms";
 import { PlanCards } from "@/components/site/plan-cards";
@@ -135,6 +136,15 @@ export default async function CoachingPage() {
           {plans.length ? t("Zobacz pakiety", "See packages") : t("Zapytaj o prowadzenie", "Ask about coaching")}
         </a>
       </PageHero>
+
+      {plans.length ? (
+        <StickyCta
+          href="#pakiety"
+          label={t("Zobacz pakiety", "See packages")}
+          note={t(`Od ${Math.min(...plans.map((p) => p.price_pln)).toLocaleString("pl-PL")} zł · BLIK, karta, P24`, `From PLN ${Math.min(...plans.map((p) => p.price_pln))} · BLIK, card, P24`)}
+          hideWhen={["pakiety", "zgloszenie"]}
+        />
+      ) : null}
 
       {plans.length ? (
         <section id="pakiety" className="scroll-mt-24">
