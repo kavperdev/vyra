@@ -94,12 +94,28 @@
   body {
     background: var(--background);
     color: var(--foreground);
+    /* App-like on phones: the page never slides sideways and does not rubber-band. */
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+    overscroll-behavior: none;
   }
   body {
     font-family: var(--font-sans);
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /* Inputs at 16px on phones so iOS does not zoom (and shift) the page on focus. */
+  @media (max-width: 639px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
   h1,
   h2,
@@ -197,6 +213,28 @@
     transition: background-size 0.4s ease, color 0.2s ease;
   }
   .site-link:hover { background-size: 100% 1px; }
+}
+
+/* ---------------------------------------------------------------- app motion (panel) */
+@keyframes vyra-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vyra-tab-in {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@keyframes vyra-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@layer components {
+  .app-page { animation: vyra-page-in 0.38s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-tab-indicator { transform-origin: center; animation: vyra-tab-in 0.3s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-tab-icon-active { animation: vyra-pop 0.35s cubic-bezier(0.2, 0.7, 0.1, 1); }
+  .app-press { transition: transform 0.12s ease; }
+  .app-press:active { transform: scale(0.96); }
 }
 
 @media (prefers-reduced-motion: reduce) {

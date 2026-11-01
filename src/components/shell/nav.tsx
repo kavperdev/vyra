@@ -88,14 +88,17 @@ export function BottomNav({ items, root }: { items: NavItem[]; root: string }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn("relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium", active ? "text-foreground" : "text-muted")}
+                className={cn(
+                  "app-press relative flex select-none flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors duration-200",
+                  active ? "text-foreground" : "text-muted",
+                )}
               >
                 <span className="relative">
-                  <Icon className="size-5" />
+                  <Icon key={active ? "on" : "off"} className={cn("size-5", active && "app-tab-icon-active")} />
                   {item.badge ? <span className="absolute -right-1.5 -top-1 size-2 rounded-full bg-accent" aria-label={`${item.badge} nowych`} /> : null}
                 </span>
                 {item.label}
-                {active ? <span aria-hidden className="absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" /> : null}
+                {active ? <span aria-hidden className="app-tab-indicator absolute inset-x-6 top-0 h-0.5 rounded-full bg-accent" /> : null}
               </Link>
             </li>
           );

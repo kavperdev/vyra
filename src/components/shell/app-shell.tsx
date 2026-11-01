@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
 import { InstallHint } from "@/components/shell/install-hint";
+import { PageTransition } from "@/components/shell/page-transition";
 import { PushPrompt } from "@/components/shell/push-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { UserRole } from "@/lib/types";
@@ -43,7 +44,7 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="min-w-0">
+      <div className="min-w-0 overflow-x-clip">
         {/* phone top bar */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
           <Link href={root} aria-label="VYRA — start">
@@ -67,7 +68,7 @@ export function AppShell({
         <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
           <InstallHint />
           <PushPrompt />
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
 
