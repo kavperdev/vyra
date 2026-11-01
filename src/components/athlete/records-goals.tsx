@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Plus, Trash2, Trophy } from "lucide-react";
+import { Pencil, Plus, Share2, Trash2, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,24 @@ import { localized, tl } from "@/lib/i18n/runtime";
 
 const SOURCE_LABEL: Record<string, string> = localized<string>({ manual: "wpis ręczny", execution: "z treningu", race: "zawody", test: "test" }, { manual: "manual entry", execution: "from a session", race: "race", test: "test" });
 
+
+/** Shares the VYRA record card (story format): system share sheet on phones, otherwise opens the image. */
+async function shareRecord(id: string, title: string) {
+  const url = `/api/share/record/${id}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("card");
+    const blob = await res.blob();
+    const file = new File([blob], "vyra-rekord.png", { type: "image/png" });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title });
+      return;
+    }
+  } catch (e) {
+    if ((e as Error).name === "AbortError") return;
+  }
+  window.open(url, "_blank", "noopener");
+}
 
 const emptyRecord = (athleteId: string, today: string) => ({
   athlete_id: athleteId,
@@ -120,6 +138,14 @@ export function RecordsSection({ athleteId, records, suggestions, today }: { ath
                 <p className="text-[12px] text-muted">
                   {formatDate(r.achieved_on)} · {SOURCE_LABEL[r.source]}
                 </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-1 w-fit"
+                  onClick={() => shareRecord(r.id, `${r.label} · ${formatRecordValue(r)}`)}
+                >
+                  <Share2 className="size-3.5" /> {tl("Karta na Instagram", "Instagram card")}
+                </Button>
               </div>
             ))}
           </div>

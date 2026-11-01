@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/reports/**": ["./src/assets/fonts/**", "./public/branding/vyra-logo-black.png"],
     // Link preview images (opengraph-image) draw with the brand font over the hero photo.
+    "/api/share/**": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/night-city.jpg"],
     "/opengraph-image": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
     "/**/opengraph-image": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
     "/**/opengraph-image*": ["./src/assets/fonts/DejaVuSans-Bold.ttf", "./public/site/hero.jpg"],
