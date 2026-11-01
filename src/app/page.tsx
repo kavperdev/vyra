@@ -85,6 +85,29 @@ const COACHING_STEPS = [
   },
 ];
 
+const FAQ = [
+  {
+    q: "Dla kogo jest VYRA?",
+    a: "Dla biegaczy amatorów na każdym poziomie, którzy chcą trenować świadomie: od osób przygotowujących się do pierwszego startu po zawodników walczących o rekordy życiowe.",
+  },
+  {
+    q: "Czy prowadzenie odbywa się online?",
+    a: "Tak. Plan, wyniki i kontakt z trenerem są w platformie VYRA, więc możesz trenować z nami niezależnie od miejsca zamieszkania.",
+  },
+  {
+    q: "Jak wygląda kontakt z trenerem?",
+    a: "Po każdym treningu zapisujesz wynik i odczucia w platformie. Trener je analizuje, komentuje i na tej podstawie koryguje plan.",
+  },
+  {
+    q: "Jakiego sprzętu potrzebuję?",
+    a: "Wystarczy zegarek lub aplikacja mierząca czas i dystans. Pomiar tętna jest pomocny, ale nie jest konieczny na start.",
+  },
+  {
+    q: "Kiedy odbędzie się pierwszy obóz?",
+    a: "Termin i program ogłosimy najpierw osobom zapisanym na listę zainteresowanych. Liczba miejsc będzie ograniczona.",
+  },
+];
+
 const PLATFORM = [
   "Plan tygodnia z treningami biegowymi i siłowymi",
   "Wynik każdego odcinka: czas, tempo, tętno",
@@ -321,6 +344,28 @@ export default async function Home() {
                   <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/40">{t}</span>
                   <span className="text-white/35">Wkrótce</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        {/* ------------------------------------------------------------ faq */}
+        <section id="pytania" className="scroll-mt-16 border-t border-white/10 bg-[#0a0a0b]">
+          <div className={`${wrap} grid gap-10 py-20 sm:py-28 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]`}>
+            <div className="grid content-start gap-3">
+              <p className="eyebrow">Pytania</p>
+              <h2 className="display text-3xl text-white sm:text-5xl">Najczęstsze pytania</h2>
+            </div>
+            <div className="grid border-b border-white/10">
+              {FAQ.map((f) => (
+                <details key={f.q} className="group border-t border-white/10">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-lg font-semibold text-white [&::-webkit-details-marker]:hidden">
+                    {f.q}
+                    <span aria-hidden className="font-mono text-xl text-white/40 transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="max-w-2xl pb-6 leading-relaxed text-white/65">{f.a}</p>
+                </details>
               ))}
             </div>
           </div>
