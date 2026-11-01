@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell, BellOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { removePushSubscription, savePushSubscription } from "@/lib/actions/push";
+import { removePushSubscription, savePushSubscription, setPushLanguage } from "@/lib/actions/push";
+import { activeLang } from "@/lib/i18n/runtime";
 import { useT } from "@/lib/i18n/client";
 
 type State = "loading" | "unsupported" | "ios-install" | "denied" | "off" | "on";
@@ -47,6 +48,8 @@ function usePush() {
         return;
       }
       const sub = await reg.pushManager.getSubscription();
+      // Push messages follow the language chosen in the app.
+      if (sub) setPushLanguage(sub.endpoint, activeLang()).catch(() => undefined);
       if (!cancelled) setState(sub ? "on" : "off");
     })();
     return () => {
@@ -67,7 +70,7 @@ function usePush() {
       const sub =
         (await reg.pushManager.getSubscription()) ??
         (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(publicKey) }));
-      const res = await savePushSubscription(sub.toJSON(), navigator.userAgent);
+      const res = await savePushSubscription(sub.toJSON(), navigator.userAgent, activeLang());
       if (res.ok) {
         setState("on");
         toast.success(res.message ?? t("Powiadomienia włączone", "Notifications on"));

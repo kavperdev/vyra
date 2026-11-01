@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
+import { translateNotification } from "@/lib/i18n/messages";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase.rpc("take_push_job", { p_id: id });
   if (error) return NextResponse.json({ error: "job" }, { status: 500 });
 
-  type Job = { title: string; body: string | null; link: string | null; endpoint: string; p256dh: string; auth: string };
+  type Job = { title: string; body: string | null; link: string | null; endpoint: string; p256dh: string; auth: string; lang?: string | null };
   const jobs = (data ?? []) as Job[];
   let sent = 0;
   await Promise.all(
@@ -30,7 +31,12 @@ export async function POST(request: NextRequest) {
       try {
         await webpush.sendNotification(
           { endpoint: j.endpoint, keys: { p256dh: j.p256dh, auth: j.auth } },
-          JSON.stringify({ title: j.title, body: j.body ?? "", link: j.link ?? "/panel", tag: id }),
+          JSON.stringify({
+            title: translateNotification(j.title, j.lang === "en" ? "en" : "pl"),
+            body: translateNotification(j.body ?? "", j.lang === "en" ? "en" : "pl"),
+            link: j.link ?? "/panel",
+            tag: id,
+          }),
           { TTL: 60 * 60 * 24 },
         );
         sent++;
