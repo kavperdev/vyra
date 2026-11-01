@@ -249,6 +249,17 @@ export default async function Home() {
         </div>
       </section>
 
+      <CtaBand
+        tone="warm"
+        title={t("Nie biegasz? Zacznij od darmowego planu", "Not running yet? Start with a free plan")}
+        lead={t(
+          "6 tygodni, 18 treningów, od zera do 25 minut ciągłego biegu. Otwiera się od razu po podaniu e-maila.",
+          "6 weeks, 18 sessions, from zero to 25 minutes of continuous running. Opens instantly once you leave your e-mail.",
+        )}
+        href="/zacznij-biegac"
+        label={t("Odbierz darmowy plan", "Get the free plan")}
+      />
+
       {camps.length ? (
         <section className="border-t border-white/10">
           <div className={`${wrap} py-28 sm:py-36`}>

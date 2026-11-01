@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/types";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
+import { FREE_PLAN_NAME } from "@/lib/free-plan";
 import { dbError, validationError, withUser } from "./helpers";
 
 function schemas(t: T) {
@@ -73,7 +74,32 @@ export async function submitApplication(input: ApplicationInput): Promise<Action
   return { ok: true };
 }
 
-const STATUSES = ["new", "contacted", "invited", "rejected"] as const;
+/** E-mail for the free "Zacznij biegać" plan. Saved as a coaching lead so it appears in Zgłoszenia. */
+export async function requestFreePlan(input: { full_name: string; email: string; consent: boolean; website?: string }): Promise<ActionResult> {
+  if (input.website) return { ok: true };
+  const { t } = await getT();
+  const schema = z.object({
+    full_name: z.string().trim().min(2, t("Podaj imię", "Enter your name")).max(120),
+    email: z.string().trim().toLowerCase().email(t("Podaj poprawny adres e-mail", "Enter a valid email address")).max(254),
+    consent: z.literal(true, { errorMap: () => ({ message: t("Zaznacz zgodę, żeby odebrać plan", "Please tick the consent to get the plan") }) }),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return validationError(parsed.error);
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").insert({
+    kind: "coaching",
+    full_name: parsed.data.full_name,
+    email: parsed.data.email,
+    consent: true,
+    package: FREE_PLAN_NAME,
+    goal: "Odebrał(a) darmowy plan „Zacznij biegać” (6 tygodni). Dobry kandydat na pakiet Start.",
+    status: "new",
+  });
+  if (error) return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie za chwilę.", "We couldn’t save that. Please try again in a moment.") };
+  return { ok: true };
+}
+
+const STATUSES =["new", "contacted", "invited", "rejected"] as const;
 
 export async function setApplicationStatus(id: string, status: string): Promise<ActionResult> {
   if (!STATUSES.includes(status as (typeof STATUSES)[number])) return { ok: false, error: "Nieznany status." };

@@ -44,6 +44,9 @@ export async function SiteFooter({ panel }: { panel: { href: string; label: stri
                 Instagram
               </a>
             ) : null}
+            <Link href="/zacznij-biegac" className="site-link w-fit text-[var(--accent)] hover:text-white">
+              {t("Darmowy plan: Zacznij biegać", "Free plan: Start running")}
+            </Link>
             <Link href="/kontakt" className="site-link w-fit text-white/65 hover:text-white">
               {t("Formularz kontaktowy", "Contact form")}
             </Link>

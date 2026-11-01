@@ -287,3 +287,10 @@
   }
   .site-marquee { animation: none !important; }
 }
+
+/* Free plan: print only the plan, black on white. */
+@media print {
+  body * { visibility: hidden; }
+  .print-plan, .print-plan * { visibility: visible; color: #000 !important; background: transparent !important; border-color: #bbb !important; }
+  .print-plan { position: absolute; inset: 0 auto auto 0; width: 100%; }
+}
