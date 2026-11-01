@@ -3,10 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CampForm } from "@/components/camps/camp-form";
 import { ParticipantsPanel } from "@/components/camps/participants";
+import { CampPrivateInfo } from "@/components/camps/private-info";
 import { PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { CAMP_STATUS_LABEL, campDates } from "@/lib/camps";
-import { getCamp, listParticipants } from "@/lib/data/camps";
+import { getCamp, getCampPrivateInfo, listParticipants } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Obóz" };
@@ -18,7 +19,7 @@ export default async function CampPage({ params }: { params: Promise<{ campId: s
   const supabase = await createClient();
   const camp = await getCamp(supabase, { id: campId });
   if (!camp) notFound();
-  const participants = await listParticipants(supabase, camp.id);
+  const [participants, info] = await Promise.all([listParticipants(supabase, camp.id), getCampPrivateInfo(supabase, camp.id)]);
 
   return (
     <div className="grid gap-6">
@@ -31,6 +32,7 @@ export default async function CampPage({ params }: { params: Promise<{ campId: s
         description={[campDates(camp), camp.location].filter(Boolean).join(" · ") || "Termin i miejsce do ustalenia"}
       />
       <ParticipantsPanel campId={camp.id} participants={participants} capacity={camp.capacity} canManage={founder} />
+      <CampPrivateInfo campId={camp.id} initial={info} canEdit={founder} />
       {founder ? <CampForm camp={camp} /> : null}
     </div>
   );

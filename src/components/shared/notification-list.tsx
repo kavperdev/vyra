@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Bell, CalendarClock, CheckCircle2, MessageSquare, UserPlus } from "lucide-react";
+import { Bell, CalendarClock, CheckCircle2, MessageSquare, Tent, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/misc";
@@ -20,6 +20,7 @@ const ICON: Record<string, typeof Bell> = {
   execution_logged: CheckCircle2,
   invite_accepted: UserPlus,
   assigned: UserPlus,
+  camp_info: Tent,
   reminder: Bell,
 };
 

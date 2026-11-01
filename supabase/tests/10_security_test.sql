@@ -549,3 +549,36 @@ update public.camp_participants set status = 'paid' where email = 'obozowiczka@v
 select pg_temp.as_admin();
 set role anon;
 select pg_temp.check((select taken from public.camp_taken_places() limit 1) = 1, 'visitors see how many places are taken');
+
+-- ---------------------------------------------------------------- push and camp participants in the app
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+insert into public.push_subscriptions (endpoint, p256dh, auth) values ('https://push.example/ala', 'k', 'a');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.check((select count(*) from public.push_subscriptions) = 0, 'users see only their own push subscriptions');
+
+-- a fresh notification can be claimed once, by its id
+select pg_temp.as_admin();
+insert into public.notifications (id, user_id, type, title) values
+  ('40000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1', 'reminder', 'Jutro: trening');
+set role anon;
+select pg_temp.check((select count(*) from public.take_push_job('40000000-0000-0000-0000-000000000001')) = 1, 'push job returns the subscriptions');
+select pg_temp.check((select count(*) from public.take_push_job('40000000-0000-0000-0000-000000000001')) = 0, 'push job is delivered once');
+
+-- camp participant with an account sees their camp, private info and own tests
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.camp_participants (camp_id, full_name, email, status)
+  values ('30000000-0000-0000-0000-000000000001', 'Ala', 'ala@vyra.test', 'paid');
+update public.camps set status = 'archived' where id = '30000000-0000-0000-0000-000000000001';
+insert into public.camp_private_info (camp_id, body) values ('30000000-0000-0000-0000-000000000001', 'Zbiórka w piątek o 15:00');
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.camp_participants) = 1, 'participant is linked to the existing account by e-mail');
+select pg_temp.check((select count(*) from public.camps) = 1, 'participant sees their archived camp');
+select pg_temp.check((select body from public.camp_private_info) like 'Zbiórka%', 'participant reads information for participants');
+select pg_temp.check(exists (select 1 from public.notifications where type = 'camp_info'), 'participants are notified about new information');
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.check((select count(*) from public.camp_private_info) = 0, 'other athletes do not see participant information');
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.camps where id = '30000000-0000-0000-0000-000000000001') = 0, 'visitors do not see archived camps');

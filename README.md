@@ -78,6 +78,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 5. `20261101000200_applications_kind.sql` — rodzaj zgłoszenia: lista obozów albo prowadzenie
 6. `20261101000300_team_roles.sql` — role zespołu: założyciel, trener biegowy, trener siłowy, fizjoterapeuta
 7. `20261101000400_camps_and_content.sql` — obozy, uczestnicy, testy, artykuły i zespół na stronie
+8. `20261101000500_push_and_camp_app.sql` — powiadomienia push, uczestnicy obozu w aplikacji
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 
@@ -290,3 +291,14 @@ Konta zespołu mają rolę `coach` i dodatkowo `staff_role`:
 - **Uczestnik obozu**: testy na starcie i na końcu (VO2max, progi, skład ciała, CMJ) i raport „przed i po” z wyznaczonymi strefami; „Drukuj / PDF” zapisuje raport.
 - **Panel → Strona VYRA** (założyciele): artykuły do zakładki Wiedza (szkic / opublikowany) i karty zespołu.
 - Prosty format tekstu w edytorach: `## nagłówek`, `- lista`, `1. lista`, `**pogrubienie**`, `[tekst](https://link)`.
+
+## Powiadomienia push i aplikacja na telefonie
+
+- Aplikacja ma manifest (ikona, pełny ekran, start w `/panel`) i service worker `public/sw.js`.
+- Każde powiadomienie w bazie (nowy lub zmieniony trening, wykonany trening, komentarz, informacje o obozie) wywołuje
+  `pg_net` → `POST /api/push` z `{ id }`. Trasa odbiera je raz funkcją `take_push_job` i wysyła Web Push.
+- Zmienne w Vercel: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (np. `mailto:...`).
+  Parę kluczy wygenerujesz `npx web-push generate-vapid-keys`.
+- Adres odbiorcy jest w `app_config.push_endpoint`; po zmianie domeny:
+  `update public.app_config set value = 'https://twoja-domena.pl/api/push' where key = 'push_endpoint';`
+- iPhone: powiadomienia działają po dodaniu VYRA do ekranu początkowego (iOS 16.4+).

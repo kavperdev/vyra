@@ -79,3 +79,39 @@ export async function listSiteTeam(supabase: ServerSupabase): Promise<SiteTeamCa
   const { data } = await supabase.from("site_team").select("*").order("sort").order("created_at");
   return (data ?? []) as SiteTeamCard[];
 }
+
+export interface MyCamp {
+  participant: CampParticipant;
+  camp: Camp;
+  info: string | null;
+}
+
+/** Camps the signed-in athlete takes part in, newest first, with information for participants. */
+export async function listMyCamps(supabase: ServerSupabase, userId: string): Promise<MyCamp[]> {
+  const { data } = await supabase
+    .from("camp_participants")
+    .select("*, camp:camps ( * )")
+    .eq("athlete_id", userId)
+    .neq("status", "cancelled");
+  type Row = CampParticipant & { camp: Camp | Camp[] | null };
+  const rows = ((data ?? []) as unknown as Row[])
+    .map(({ camp, ...participant }) => ({ participant, camp: Array.isArray(camp) ? (camp[0] ?? null) : camp }))
+    .filter((r): r is { participant: CampParticipant; camp: Camp } => !!r.camp);
+  if (!rows.length) return [];
+  const { data: infos } = await supabase
+    .from("camp_private_info")
+    .select("camp_id, body")
+    .in(
+      "camp_id",
+      rows.map((r) => r.camp.id),
+    );
+  const byCamp = new Map(((infos ?? []) as { camp_id: string; body: string }[]).map((i) => [i.camp_id, i.body]));
+  return rows
+    .map((r) => ({ ...r, info: byCamp.get(r.camp.id) || null }))
+    .sort((a, b) => (b.camp.starts_on ?? "").localeCompare(a.camp.starts_on ?? ""));
+}
+
+export async function getCampPrivateInfo(supabase: ServerSupabase, campId: string): Promise<string> {
+  const { data } = await supabase.from("camp_private_info").select("body").eq("camp_id", campId).maybeSingle();
+  return (data as { body: string } | null)?.body ?? "";
+}

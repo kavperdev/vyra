@@ -3,6 +3,7 @@ import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
 import { InstallHint } from "@/components/shell/install-hint";
+import { PushPrompt } from "@/components/shell/push-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 import type { UserRole } from "@/lib/types";
 
@@ -65,6 +66,7 @@ export function AppShell({
 
         <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
           <InstallHint />
+          <PushPrompt />
           {children}
         </main>
       </div>

@@ -189,3 +189,15 @@ export async function saveCampTest(
     return { ok: true, message: phase === "start" ? "Zapisano test startowy." : "Zapisano test końcowy." };
   });
 }
+
+export async function saveCampPrivateInfo(campId: string, body: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Informacje dla uczestników edytują założyciele." };
+    if (body.length > 20000) return { ok: false, error: "Tekst jest za długi." };
+    const { error } = await supabase.from("camp_private_info").upsert({ camp_id: campId, body }, { onConflict: "camp_id" });
+    if (error) return dbError(error);
+    revalidatePath(`/coach/camps/${campId}`);
+    revalidatePath("/athlete/camp");
+    return { ok: true, message: "Zapisano. Uczestnicy z kontem dostali powiadomienie." };
+  });
+}

@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PushSettings } from "@/components/shell/push-toggle";
 import { Field, Input, Select } from "@/components/ui/form-controls";
 import { updateOwnProfile } from "@/lib/actions/athletes";
 import { updatePassword } from "@/lib/actions/auth";
@@ -52,6 +53,7 @@ export function AccountSettings({ fullName, email }: { fullName: string; email: 
           </form>
         </CardContent>
       </Card>
+      <PushSettings />
       <Card>
         <CardHeader>
           <CardTitle>Zmiana hasła</CardTitle>
