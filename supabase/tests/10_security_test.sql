@@ -600,4 +600,4 @@ reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 update public.coaching_plans set price_pln = 1 where name = 'Elite';
 select pg_temp.as_admin();
-select pg_temp.check((select price_pln from public.coaching_plans where name = 'Elite') = 949, 'non-founder staff cannot change prices');
+select pg_temp.check((select price_pln from public.coaching_plans where name = 'Elite') = 449, 'non-founder staff cannot change prices');

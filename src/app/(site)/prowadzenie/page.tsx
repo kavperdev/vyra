@@ -62,7 +62,7 @@ export default async function CoachingPage() {
           <div className={`${wrap} py-28 sm:py-36`}>
             <SectionHead eyebrow="Pakiety" title="Wybierz poziom prowadzenia">
               Każdy pakiet to indywidualny plan i platforma VYRA. Różni się tym, jak blisko pracujemy: od cotygodniowej korekty po
-              codzienny kontakt i opiekę całego zespołu.
+              codzienny kontakt z trenerem.
             </SectionHead>
             <div className="mt-16">
               <PlanCards plans={plans} />
