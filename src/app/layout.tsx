@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: "VYRA", statusBarStyle: "black-translucent" },
   openGraph: { siteName: "VYRA", locale: "pl_PL", type: "website" },
+  // Google Search Console: paste the code from the "HTML tag" method into GOOGLE_SITE_VERIFICATION.
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export const viewport: Viewport = {
