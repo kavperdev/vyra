@@ -5,6 +5,7 @@ import { PlanCards } from "@/components/site/plan-cards";
 import { listCoachingPlans } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
 import { pick, type T } from "@/lib/i18n/shared";
+import { stripeConfigured } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -145,12 +146,12 @@ export default async function CoachingPage() {
               )}
             </SectionHead>
             <div className="mt-16">
-              <PlanCards plans={plans} />
+              <PlanCards plans={plans} payments={stripeConfigured()} />
             </div>
             <Reveal as="p" className="mt-10 text-[13px] text-white/40">
               {t(
-                "Ceny brutto. Liczba zawodników w każdym pakiecie jest ograniczona, żeby każdy miał pełną uwagę trenera.",
-                "Prices include VAT. Places in every package are limited so each athlete gets the coach’s full attention.",
+                "Ceny brutto. Płatność BLIK, kartą lub Przelewy24; kod rabatowy wpiszesz na stronie płatności. Liczba zawodników w każdym pakiecie jest ograniczona.",
+                "Prices include VAT. Pay by BLIK, card or Przelewy24; enter a discount code on the payment page. Places in every package are limited.",
               )}
             </Reveal>
           </div>

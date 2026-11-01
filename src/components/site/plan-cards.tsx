@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check } from "lucide-react";
 import { Reveal } from "@/components/site/blocks";
+import { BuyButton } from "@/components/site/buy-button";
 import { CHOOSE_PLAN_EVENT } from "@/components/site/lead-forms";
 import { lines, type CoachingPlan } from "@/lib/camps";
 import { useLang, useT } from "@/lib/i18n/client";
@@ -34,7 +35,7 @@ function choose(name: string) {
   document.getElementById("zgloszenie")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function MonthlyCard({ plan, index, lang, t }: { plan: CoachingPlan; index: number; lang: Lang; t: T }) {
+function MonthlyCard({ plan, index, lang, t, payments }: { plan: CoachingPlan; index: number; lang: Lang; t: T; payments: boolean }) {
   const l = local(plan, lang);
   const features = l.features;
   return (
@@ -86,7 +87,8 @@ function MonthlyCard({ plan, index, lang, t }: { plan: CoachingPlan; index: numb
             </li>
           ))}
         </ul>
-        <div className="mt-auto pt-10">
+        <div className="mt-auto grid gap-2.5 pt-10">
+          {payments ? <BuyButton planId={plan.id} primary={plan.highlighted} /> : null}
           <button
             type="button"
             onClick={() => choose(plan.name)}
@@ -97,7 +99,7 @@ function MonthlyCard({ plan, index, lang, t }: { plan: CoachingPlan; index: numb
                 : "border border-white/25 text-white hover:border-white/70",
             )}
           >
-            {t("Wybieram", "Choose")} {l.name}
+            {payments ? t("Mam pytania", "I have questions") : `${t("Wybieram", "Choose")} ${l.name}`}
             <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
         </div>
@@ -106,7 +108,7 @@ function MonthlyCard({ plan, index, lang, t }: { plan: CoachingPlan; index: numb
   );
 }
 
-function OnceRow({ plan, index, lang, t }: { plan: CoachingPlan; index: number; lang: Lang; t: T }) {
+function OnceRow({ plan, index, lang, t, payments }: { plan: CoachingPlan; index: number; lang: Lang; t: T; payments: boolean }) {
   const l = local(plan, lang);
   const features = l.features;
   return (
@@ -130,6 +132,7 @@ function OnceRow({ plan, index, lang, t }: { plan: CoachingPlan; index: number; 
             {amount(plan.price_pln, lang)}
             {lang === "en" ? null : <span className="text-base text-white/50"> zł</span>}
           </span>
+          {payments ? <BuyButton planId={plan.id} className="w-40" /> : null}
           <button
             type="button"
             onClick={() => choose(plan.name)}
@@ -143,7 +146,7 @@ function OnceRow({ plan, index, lang, t }: { plan: CoachingPlan; index: number; 
   );
 }
 
-export function PlanCards({ plans }: { plans: CoachingPlan[] }) {
+export function PlanCards({ plans, payments = false }: { plans: CoachingPlan[]; payments?: boolean }) {
   const lang = useLang();
   const t = useT();
   const monthly = plans.filter((p) => p.kind === "monthly");
@@ -153,7 +156,7 @@ export function PlanCards({ plans }: { plans: CoachingPlan[] }) {
       {monthly.length ? (
         <div className={cn("grid gap-5", monthly.length >= 3 ? "lg:grid-cols-3" : monthly.length === 2 ? "md:grid-cols-2" : "")}>
           {monthly.map((p, i) => (
-            <MonthlyCard key={p.id} plan={p} index={i} lang={lang} t={t} />
+            <MonthlyCard key={p.id} plan={p} index={i} lang={lang} t={t} payments={payments} />
           ))}
         </div>
       ) : null}
@@ -162,7 +165,7 @@ export function PlanCards({ plans }: { plans: CoachingPlan[] }) {
           <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Jednorazowo", "One-off")}</p>
           <div className="border-t border-white/10">
             {once.map((p, i) => (
-              <OnceRow key={p.id} plan={p} index={i} lang={lang} t={t} />
+              <OnceRow key={p.id} plan={p} index={i} lang={lang} t={t} payments={payments} />
             ))}
           </div>
         </div>
