@@ -12,7 +12,7 @@ export default async function ApplicationsPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("applications")
-    .select("id, created_at, full_name, email, phone, package, goal, records, weekly_km, injuries, message, status")
+    .select("id, created_at, full_name, email, phone, package, goal, records, weekly_km, injuries, message, status, kind")
     .order("created_at", { ascending: false })
     .limit(200);
   const items = (data ?? []) as ApplicationRow[];
@@ -22,13 +22,13 @@ export default async function ApplicationsPage() {
       <PageHeader
         eyebrow="Strona VYRA"
         title="Zgłoszenia"
-        description="Osoby, które wypełniły formularz „Dołącz do VYRA” na stronie głównej. Gdy się dogadacie, zaproś je w zakładce Zawodnicy."
+        description="Zapisy na listę obozów i zapytania o prowadzenie ze strony głównej VYRA. Gdy dogadasz się z zawodnikiem, zaproś go w zakładce Zawodnicy."
       />
       {error ? (
         <EmptyState
           icon={<Inbox />}
           title="Nie udało się wczytać zgłoszeń"
-          description="Jeśli to pierwszy raz, uruchom w Supabase migrację 20261101000100_applications.sql (README → Migracje)."
+          description="Jeśli to pierwszy raz, uruchom w Supabase migracje 20261101000100_applications.sql i 20261101000200_applications_kind.sql (README → Migracje)."
         />
       ) : items.length ? (
         <ApplicationsList items={items} />

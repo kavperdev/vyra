@@ -22,6 +22,7 @@ export interface ApplicationRow {
   injuries: string | null;
   message: string | null;
   status: string;
+  kind: string;
 }
 
 const PACKAGE_LABEL: Record<string, string> = {
@@ -42,7 +43,7 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
   const [pending, start] = useTransition();
   const rows: [string, string | null][] = [
     ["Cel", a.goal],
-    ["Rekordy", a.records],
+    ["Rekordy i kilometraż", a.records],
     ["Kilometraż", a.weekly_km ? `${a.weekly_km} km / tydz.` : null],
     ["Kontuzje", a.injuries],
     ["Wiadomość", a.message],
@@ -56,7 +57,8 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
             {a.status === "new" ? <Badge tone="accent" dot>Nowe</Badge> : null}
           </div>
           <p className="text-sm text-muted">
-            {formatDateTime(a.created_at)} · {PACKAGE_LABEL[a.package ?? "unsure"] ?? a.package}
+            {formatDateTime(a.created_at)} · {a.kind === "camp" ? "Lista obozów" : "Prowadzenie"}
+            {a.package ? ` · ${PACKAGE_LABEL[a.package] ?? a.package}` : ""}
           </p>
         </div>
         <Select

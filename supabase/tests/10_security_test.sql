@@ -410,3 +410,8 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
 select pg_temp.check((select count(*) from public.applications) = 1, 'coach reads applications');
 update public.applications set status = 'contacted' where email = 'nowy@vyra.test';
 select pg_temp.check((select status from public.applications where email = 'nowy@vyra.test') = 'contacted', 'coach updates application status');
+select pg_temp.as_admin();
+set role anon;
+insert into public.applications (full_name, email, consent, kind) values ('Obozowicz', 'oboz@vyra.test', true, 'camp');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check((select count(*) from public.applications where kind = 'camp') = 1, 'camp waitlist entries are stored');

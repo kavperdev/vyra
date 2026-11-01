@@ -14,36 +14,45 @@ const optional = (max: number) =>
     .max(max, `Maksymalnie ${max} znaków`)
     .transform((v) => (v === "" ? null : v));
 
-const applicationSchema = z.object({
-  full_name: z.string().trim().min(2, "Podaj imię i nazwisko").max(120),
+const consent = z.literal(true, {
+  errorMap: () => ({ message: "Zaznacz zgodę, żebyśmy mogli się z Tobą skontaktować" }),
+});
+
+const campSchema = z.object({
+  kind: z.literal("camp"),
+  full_name: z.string().trim().min(2, "Podaj imię").max(120),
   email: emailField,
-  phone: optional(40),
-  package: z.enum(["plan", "coaching", "elite", "unsure"]),
-  goal: z.string().trim().min(3, "Napisz w kilku słowach, jaki masz cel").max(1000),
-  records: optional(500),
-  weekly_km: optional(40),
-  injuries: optional(1000),
-  message: optional(2000),
-  consent: z.literal(true, { errorMap: () => ({ message: "Zaznacz zgodę, żebyśmy mogli się z Tobą skontaktować" }) }),
-  // Honeypot: real people never see or fill this field.
+  consent,
   website: z.string().max(0).optional(),
 });
+
+const coachingSchema = z.object({
+  kind: z.literal("coaching"),
+  full_name: z.string().trim().min(2, "Podaj imię i nazwisko").max(120),
+  email: emailField,
+  goal: z.string().trim().min(3, "Napisz w kilku słowach, jaki masz cel").max(1000),
+  records: optional(500),
+  message: optional(2000),
+  consent,
+  website: z.string().max(0).optional(),
+});
+
+const applicationSchema = z.discriminatedUnion("kind", [campSchema, coachingSchema]);
 
 export type ApplicationInput = z.input<typeof applicationSchema>;
 
 export async function submitApplication(input: ApplicationInput): Promise<ActionResult> {
+  // Honeypot: a hidden field only bots fill in. Pretend success so they do not retry.
+  if (input.website) return { ok: true };
   const parsed = applicationSchema.safeParse(input);
-  if (!parsed.success) {
-    if (input.website) return { ok: true };
-    return validationError(parsed.error);
-  }
+  if (!parsed.success) return validationError(parsed.error);
   const { website, ...row } = parsed.data;
   if (website) return { ok: true };
   const supabase = await createClient();
   // No .select() after insert: visitors may write an application but never read one back.
   const { error } = await supabase.from("applications").insert({ ...row, status: "new" });
   if (error) return dbError(error);
-  return { ok: true, message: "Dziękujemy! Odezwiemy się w ciągu 48 godzin." };
+  return { ok: true };
 }
 
 const STATUSES = ["new", "contacted", "invited", "rejected"] as const;
