@@ -65,10 +65,30 @@ function compute(distanceM: number, timeS: number, t: T) {
   return { predictions, zones, vo2: vdot(distanceM, timeS) };
 }
 
+/** Approximate VO2max norms (ml/kg/min) by sex and age: thresholds for fair / good / very good / excellent. */
+const NORMS: Record<"m" | "f", [number, number[]][]> = {
+  m: [[29, [38, 43, 49, 54]], [39, [36, 41, 46, 52]], [49, [34, 39, 44, 50]], [59, [31, 36, 41, 46]], [200, [28, 32, 37, 42]]],
+  f: [[29, [32, 37, 42, 48]], [39, [30, 35, 40, 46]], [49, [28, 33, 38, 43]], [59, [25, 30, 34, 39]], [200, [22, 27, 31, 36]]],
+};
+
+function rating(vo2: number, sex: "m" | "f", age: number, t: T) {
+  const th = (NORMS[sex].find(([max]) => age <= max) ?? NORMS[sex][NORMS[sex].length - 1])[1];
+  const labels = [t("Poniżej przeciętnej", "Below average"), t("Przeciętna", "Average"), t("Dobra", "Good"), t("Bardzo dobra", "Very good"), t("Wybitna", "Excellent")];
+  const idx = th.filter((x) => vo2 >= x).length;
+  // Position on a bar from (fair - 8) to (excellent + 8).
+  const lo = th[0] - 8;
+  const hi = th[3] + 8;
+  return { label: labels[idx], idx, pct: Math.max(0, Math.min(100, ((vo2 - lo) / (hi - lo)) * 100)), th, lo, hi };
+}
+
 export function PaceCalculator() {
   const t = useT();
   const [distance, setDistance] = useState("10000");
   const [time, setTime] = useState("");
+  const [sex, setSex] = useState<"" | "m" | "f">("");
+  const [age, setAge] = useState("");
+  const [goalDist, setGoalDist] = useState("5000");
+  const [goalTime, setGoalTime] = useState("");
 
   const parsed = parseDuration(time);
   const d = Number(distance);
@@ -100,6 +120,28 @@ export function PaceCalculator() {
             aria-invalid={!!error}
           />
         </Field>
+        <Field label={t("Płeć", "Sex")} htmlFor="calc-sex" hint={t("Opcjonalnie: do oceny VO2max", "Optional: to rate your VO2max")}>
+          <Select id="calc-sex" value={sex} onChange={(e) => setSex(e.target.value as "" | "m" | "f")}>
+            <option value="">–</option>
+            <option value="m">{t("Mężczyzna", "Male")}</option>
+            <option value="f">{t("Kobieta", "Female")}</option>
+          </Select>
+        </Field>
+        <Field label={t("Wiek", "Age")} htmlFor="calc-age" hint={t("Opcjonalnie", "Optional")}>
+          <Input id="calc-age" inputMode="numeric" placeholder="35" value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, "").slice(0, 2))} />
+        </Field>
+        <Field label={t("Twój cel: dystans", "Your goal: distance")} htmlFor="calc-gd" hint={t("Opcjonalnie", "Optional")}>
+          <Select id="calc-gd" value={goalDist} onChange={(e) => setGoalDist(e.target.value)}>
+            {targets(t).map((x) => (
+              <option key={x.m} value={x.m}>
+                {x.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t("Twój cel: czas", "Your goal: time")} htmlFor="calc-gt" hint={t("np. 19:59", "e.g. 19:59")}>
+          <Input id="calc-gt" inputMode="numeric" placeholder="19:59" autoComplete="off" value={goalTime} onChange={(e) => setGoalTime(e.target.value)} />
+        </Field>
       </div>
 
       {result ? (
@@ -119,6 +161,65 @@ export function PaceCalculator() {
               </p>
             </div>
           </div>
+
+          {sex && Number(age) >= 14 ? (() => {
+            const r = rating(result.vo2, sex, Number(age), t);
+            return (
+              <div className="grid gap-4 rounded-2xl border border-white/10 p-6 sm:p-10">
+                <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Na tle osób w Twoim wieku", "Compared with people your age")}</p>
+                <p className="display text-3xl text-white">{r.label}</p>
+                <div className="relative h-3 rounded-full bg-gradient-to-r from-white/10 via-white/25 to-[var(--accent)]">
+                  <span className="absolute top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white shadow" style={{ left: `${r.pct}%` }} />
+                </div>
+                <p className="text-sm text-white/55">
+                  {r.idx < 4
+                    ? t(
+                        `Do poziomu „${["Przeciętna", "Dobra", "Bardzo dobra", "Wybitna"][r.idx]}” brakuje Ci ok. ${Math.ceil(r.th[r.idx] - result.vo2)} ml/kg/min. Przy regularnym treningu to realne w kilka miesięcy.`,
+                        `You’re about ${Math.ceil(r.th[r.idx] - result.vo2)} ml/kg/min from the next level. With consistent training that’s realistic within a few months.`,
+                      )
+                    : t("Jesteś w czołówce swojej grupy wiekowej. Teraz liczy się precyzja treningu.", "You’re at the top of your age group. Now precision in training is what counts.")}{" "}
+                  <span className="text-white/35">{t("Normy orientacyjne.", "Approximate norms.")}</span>
+                </p>
+              </div>
+            );
+          })() : null}
+
+          {(() => {
+            const gt = parseDuration(goalTime);
+            const gd = Number(goalDist);
+            if (!gt || !Number.isFinite(gt) || gt / (gd / 1000) < 150) return null;
+            const need = vdot(gd, gt);
+            const now = predict(parsed ?? 0, d, gd);
+            const gap = now - gt;
+            return (
+              <div className="grid gap-4 rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent)]/[0.06] p-6 sm:p-10">
+                <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-[var(--accent)]">{t("Twój cel", "Your goal")}</p>
+                {gap <= 0 ? (
+                  <p className="display text-2xl text-white">
+                    {t("Na papierze masz to już w nogach. Potrzebny jest dobry dzień i mądra taktyka.", "On paper you already have it in your legs. You need a good day and smart pacing.")}
+                  </p>
+                ) : (
+                  <>
+                    <p className="display text-2xl text-white">
+                      {t(`Do celu brakuje ${formatDuration(Math.round(gap))}`, `You’re ${formatDuration(Math.round(gap))} away from your goal`)}
+                    </p>
+                    <p className="text-white/60">
+                      {t(
+                        `Cel wymaga VO2max ok. ${Math.round(need)} (teraz ok. ${Math.round(result.vo2)}). Różnica ${Math.max(1, Math.round(need - result.vo2))} pkt to zwykle ${need - result.vo2 <= 2 ? "2–3 miesiące" : need - result.vo2 <= 5 ? "4–6 miesięcy" : "sezon lub dłużej"} dobrze zaplanowanego treningu.`,
+                        `The goal needs a VO2max of about ${Math.round(need)} (now about ${Math.round(result.vo2)}). A gap of ${Math.max(1, Math.round(need - result.vo2))} points usually takes ${need - result.vo2 <= 2 ? "2–3 months" : need - result.vo2 <= 5 ? "4–6 months" : "a season or more"} of well-planned training.`,
+                      )}
+                    </p>
+                  </>
+                )}
+                <Link
+                  href="/prowadzenie#pakiety"
+                  className="group inline-flex h-12 w-fit items-center gap-3 rounded-full bg-white px-6 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white"
+                >
+                  {t("Zaplanuj drogę do celu", "Plan the way to your goal")} <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            );
+          })()}
 
           <div className="grid gap-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Prognoza wyników", "Predicted times")}</p>

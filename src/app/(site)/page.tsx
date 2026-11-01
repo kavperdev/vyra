@@ -119,7 +119,7 @@ export default async function Home() {
               {t("Trening biegowy, przygotowanie siłowe i fizjoterapia w jednym zespole. Prowadzimy zawodników indywidualnie i tworzymy obozy, które dają amatorom elitarne doświadczenie treningowe.", "Running, strength training and physiotherapy in one team. We coach athletes individually and create camps that give amateurs an elite training experience.")}
             </p>
             <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href="/obozy">{t("Obozy VYRA", "VYRA camps")}</PrimaryLink>
+              <PrimaryLink href="/kalkulator">{t("Sprawdź swoje VO2max", "Check your VO2max")}</PrimaryLink>
               <GhostLink href="/prowadzenie">{t("Prowadzenie indywidualne", "Individual coaching")}</GhostLink>
             </div>
           </div>
@@ -128,6 +128,23 @@ export default async function Home() {
             <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Przewiń", "Scroll")}</span>
           </div>
         </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- trust strip */}
+      <section aria-label={t("Dlaczego VYRA", "Why VYRA")} className="border-b border-white/10 bg-[#070708]">
+        <ul className={`${wrap} grid grid-cols-2 gap-px py-0 md:grid-cols-4`}>
+          {[
+            [t("3 specjalistów", "3 specialists"), t("trener biegowy, siłowy i fizjoterapeuta", "running, strength and physio")],
+            [t("Plan co do odcinka", "Plan to the rep"), t("tempa i strefy z Twoich wyników", "paces and zones from your results")],
+            [t("Każdy trening omówiony", "Every session reviewed"), t("analiza i komentarz trenera", "coach analysis and comments")],
+            [t("Własna platforma", "Own platform"), t("plan i postępy w aplikacji VYRA", "plan and progress in the VYRA app")],
+          ].map(([a, b], i) => (
+            <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
+              <span className="font-semibold text-white">{a}</span>
+              <span className="text-[13px] leading-snug text-white/50">{b}</span>
+            </Reveal>
+          ))}
+        </ul>
       </section>
 
       {/* ---------------------------------------------------------------- statement */}
@@ -192,6 +209,42 @@ export default async function Home() {
                 </span>
               </div>
             </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- calculator */}
+      <section className="border-t border-white/10">
+        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
+          <div className="grid gap-6">
+            <Reveal>
+              <Eyebrow accent>{t("Narzędzia VYRA · za darmo", "VYRA tools · free")}</Eyebrow>
+            </Reveal>
+            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
+              {t("Sprawdź swoje VO2max i tempa treningowe", "Check your VO2max and training paces")}
+            </Reveal>
+            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
+              {t("Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i maraton oraz poda tempa, w jakich warto trenować.", "Enter a recent race result. The calculator estimates your VO2max, predicts your 5K, 10K, half marathon and marathon times, and gives the paces worth training at.")}
+            </Reveal>
+            <Reveal delay={240}>
+              <PrimaryLink href="/kalkulator">{t("Otwórz kalkulator", "Open the calculator")}</PrimaryLink>
+            </Reveal>
+          </div>
+          <Reveal delay={150}>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+              {[
+                ["VO2max", "45"],
+                ["5 km", "21:49"],
+                [t("Półmaraton", "Half marathon"), "1:40:23"],
+                [t("Tempo progowe", "Threshold pace"), "4:32–4:43"],
+              ].map(([k, v]) => (
+                <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
+                  <span className="text-sm text-white/45">{k}</span>
+                  <span className="display num text-3xl text-white">{v}</span>
+                </div>
+              ))}
+              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">{t("Przykład dla wyniku 10 km w 45:30", "Example for a 10K in 45:30")}</p>
+            </div>
           </Reveal>
         </div>
       </section>
@@ -330,41 +383,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- calculator */}
-      <section className="border-t border-white/10">
-        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
-          <div className="grid gap-6">
-            <Reveal>
-              <Eyebrow accent>{t("Narzędzia VYRA · za darmo", "VYRA tools · free")}</Eyebrow>
-            </Reveal>
-            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
-              {t("Sprawdź swoje VO2max i tempa treningowe", "Check your VO2max and training paces")}
-            </Reveal>
-            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
-              {t("Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i maraton oraz poda tempa, w jakich warto trenować.", "Enter a recent race result. The calculator estimates your VO2max, predicts your 5K, 10K, half marathon and marathon times, and gives the paces worth training at.")}
-            </Reveal>
-            <Reveal delay={240}>
-              <PrimaryLink href="/kalkulator">{t("Otwórz kalkulator", "Open the calculator")}</PrimaryLink>
-            </Reveal>
-          </div>
-          <Reveal delay={150}>
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
-              {[
-                ["VO2max", "45"],
-                ["5 km", "21:49"],
-                [t("Półmaraton", "Half marathon"), "1:40:23"],
-                [t("Tempo progowe", "Threshold pace"), "4:32–4:43"],
-              ].map(([k, v]) => (
-                <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
-                  <span className="text-sm text-white/45">{k}</span>
-                  <span className="display num text-3xl text-white">{v}</span>
-                </div>
-              ))}
-              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">{t("Przykład dla wyniku 10 km w 45:30", "Example for a 10K in 45:30")}</p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
 
       {articles.length ? (
         <section className="border-t border-white/10 bg-[#070708]">
@@ -406,7 +424,10 @@ export default async function Home() {
       <CtaBand
         tone="warm"
         title={t("Zostań częścią VYRA", "Become part of VYRA")}
-        lead={t("Zapisz się na listę obozów albo zapytaj o prowadzenie indywidualne. Odpowiadamy osobiście.", "Join the camp list or ask about individual coaching. We reply personally.")}
+        lead={t(
+          "Pierwsza rozmowa jest bez zobowiązań: poznamy Twój cel i powiemy szczerze, czy i jak możemy pomóc. Odpowiadamy osobiście w ciągu jednego dnia roboczego.",
+          "The first conversation comes with no commitment: we learn your goal and tell you honestly whether and how we can help. We reply personally within one working day.",
+        )}
         href="/kontakt"
         label={t("Skontaktuj się", "Get in touch")}
       />
