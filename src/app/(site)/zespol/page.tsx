@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { CtaBand, Eyebrow, PageHero, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { listSiteTeam } from "@/lib/data/camps";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Zespół",
@@ -7,28 +9,17 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const TEAM = [
-  {
-    name: "Kacper Adamczyk",
-    role: "Trener biegowy · Współzałożyciel",
-    body: "Odpowiada za planowanie treningu biegowego, periodyzację i analizę wyników zawodników w platformie VYRA.",
-    areas: ["Periodyzacja", "Strefy tempa i tętna", "Przygotowanie startowe"],
-  },
-  {
-    name: null,
-    role: "Trener przygotowania siłowego · Współzałożyciel",
-    body: "Odpowiada za trening siłowy i motoryczny, budowanie odporności na kontuzje i ekonomię ruchu.",
-    areas: ["Siła i moc", "Stabilizacja", "Ekonomia ruchu"],
-  },
-  {
-    name: null,
-    role: "Fizjoterapeuta",
-    body: "Odpowiada za diagnostykę, profilaktykę urazów i regenerację zawodników.",
-    areas: ["Diagnostyka", "Profilaktyka urazów", "Regeneracja"],
-  },
-];
-
-export default function TeamPage() {
+export default async function TeamPage() {
+  const supabase = await createClient();
+  const team = (await listSiteTeam(supabase).catch(() => []))
+    .filter((t) => t.visible)
+    .map((t) => ({
+      key: t.id,
+      name: t.full_name,
+      role: t.role_label,
+      body: t.bio ?? "",
+      areas: (t.areas ?? "").split(",").map((a) => a.trim()).filter(Boolean),
+    }));
   return (
     <>
       <PageHero
@@ -39,8 +30,8 @@ export default function TeamPage() {
 
       <section className={`${wrap} py-28 sm:py-36`}>
         <div className="grid gap-5 lg:grid-cols-3">
-          {TEAM.map((t, i) => (
-            <Reveal as="article" key={t.role} delay={i * 120} className="grid content-start gap-8 rounded-2xl border border-white/10 p-8 sm:p-10">
+          {team.map((t, i) => (
+            <Reveal as="article" key={t.key} delay={i * 120} className="grid content-start gap-8 rounded-2xl border border-white/10 p-8 sm:p-10">
               <div className="grid aspect-[4/5] place-items-center rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
                 <span className="display text-6xl text-white/15">{t.name ? t.name.split(" ").map((w) => w[0]).join("") : "V"}</span>
               </div>

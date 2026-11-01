@@ -77,6 +77,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 4. `20261101000100_applications.sql` — zgłoszenia ze strony głównej (widzi je tylko trener)
 5. `20261101000200_applications_kind.sql` — rodzaj zgłoszenia: lista obozów albo prowadzenie
 6. `20261101000300_team_roles.sql` — role zespołu: założyciel, trener biegowy, trener siłowy, fizjoterapeuta
+7. `20261101000400_camps_and_content.sql` — obozy, uczestnicy, testy, artykuły i zespół na stronie
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 
@@ -282,3 +283,10 @@ Konta zespołu mają rolę `coach` i dodatkowo `staff_role`:
 - Zespół zaprasza założyciel w **Panel → Zespół VYRA** (osobisty link, nowe konto).
 - Notatki o zawodniku widzi cały zespół, który z nim pracuje; zawodnik ich nie widzi.
 - Uprawnienia egzekwuje baza (RLS i funkcje `set_staff_assignment`, `set_staff_role`), testy w `supabase/tests/10_security_test.sql`.
+
+## Obozy i treści strony
+
+- **Panel → Obozy**: obóz zapisany jako szkic nie jest widoczny na stronie; „Zapisz i opublikuj” pokazuje go w `/obozy` i `/obozy/<adres>` z formularzem zapisów. Zapisy ze strony trafiają na listę uczestników obozu (status „Zainteresowany”).
+- **Uczestnik obozu**: testy na starcie i na końcu (VO2max, progi, skład ciała, CMJ) i raport „przed i po” z wyznaczonymi strefami; „Drukuj / PDF” zapisuje raport.
+- **Panel → Strona VYRA** (założyciele): artykuły do zakładki Wiedza (szkic / opublikowany) i karty zespołu.
+- Prosty format tekstu w edytorach: `## nagłówek`, `- lista`, `1. lista`, `**pogrubienie**`, `[tekst](https://link)`.

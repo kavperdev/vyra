@@ -48,15 +48,20 @@ function Honeypot({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
-export function CampWaitlistForm() {
-  const [v, setV] = useState({ full_name: "", email: "", consent: false, website: "" });
+export function CampWaitlistForm({ campId, withPhone = false, submitLabel = "Zapisz się na listę" }: { campId?: string; withPhone?: boolean; submitLabel?: string } = {}) {
+  const [v, setV] = useState({ full_name: "", email: "", phone: "", consent: false, website: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
   const err = (k: string) => errors[k]?.[0];
 
-  if (done) return <Done title="Jesteś na liście" body="Gdy ogłosimy termin pierwszego obozu, dowiesz się jako pierwszy." />;
+  if (done)
+    return campId ? (
+      <Done title="Dziękujemy za zgłoszenie" body="Odezwiemy się na podany adres e-mail ze szczegółami i potwierdzeniem miejsca." />
+    ) : (
+      <Done title="Jesteś na liście" body="Gdy ogłosimy termin pierwszego obozu, dowiesz się jako pierwszy." />
+    );
 
   return (
     <form
@@ -66,7 +71,7 @@ export function CampWaitlistForm() {
         e.preventDefault();
         setFormError(null);
         start(async () => {
-          const res = await submitApplication({ kind: "camp", ...v, consent: v.consent as true });
+          const res = await submitApplication({ kind: "camp", camp_id: campId, ...v, consent: v.consent as true });
           if (res.ok) {
             setDone(true);
             return;
@@ -77,7 +82,7 @@ export function CampWaitlistForm() {
       }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Imię" htmlFor="camp-name" error={err("full_name")}>
+        <Field label={campId ? "Imię i nazwisko" : "Imię"} htmlFor="camp-name" error={err("full_name")}>
           <Input
             id="camp-name"
             autoComplete="given-name"
@@ -97,6 +102,11 @@ export function CampWaitlistForm() {
           />
         </Field>
       </div>
+      {withPhone ? (
+        <Field label="Telefon" htmlFor="camp-phone" hint="Opcjonalnie" error={err("phone")}>
+          <Input id="camp-phone" type="tel" autoComplete="tel" value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} />
+        </Field>
+      ) : null}
       <Honeypot value={v.website} onChange={(website) => setV({ ...v, website })} />
       <Consent checked={v.consent} onChange={(consent) => setV({ ...v, consent })} error={err("consent")} />
       {formError ? (
@@ -105,7 +115,7 @@ export function CampWaitlistForm() {
         </p>
       ) : null}
       <Button type="submit" variant="accent" size="lg" disabled={pending} className="w-full sm:w-fit">
-        {pending ? "Zapisywanie…" : "Zapisz się na listę"} <ArrowRight className="size-4" />
+        {pending ? "Zapisywanie…" : submitLabel} <ArrowRight className="size-4" />
       </Button>
     </form>
   );

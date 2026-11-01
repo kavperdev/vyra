@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, BarChart3, Bell, CalendarDays, ClipboardList, History, Home, Inbox, LayoutDashboard, Settings, ShieldCheck, Trophy, Users,
+  Activity, BarChart3, Bell, CalendarDays, ClipboardList, Globe, History, Home, Inbox, LayoutDashboard, Settings, ShieldCheck, Tent, Trophy, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,8 @@ const ICONS = {
   bell: Bell,
   inbox: Inbox,
   team: ShieldCheck,
+  camps: Tent,
+  site: Globe,
   settings: Settings,
 } as const;
 

@@ -20,8 +20,10 @@ const consent = z.literal(true, {
 
 const campSchema = z.object({
   kind: z.literal("camp"),
+  camp_id: z.string().uuid().optional(),
   full_name: z.string().trim().min(2, "Podaj imię").max(120),
   email: emailField,
+  phone: optional(40).optional(),
   consent,
   website: z.string().max(0).optional(),
 });

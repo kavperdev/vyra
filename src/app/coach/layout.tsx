@@ -24,11 +24,13 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     { href: "/coach", label: "Pulpit", icon: "dashboard", mobile: true },
     { href: "/coach/athletes", label: "Zawodnicy", icon: "athletes", mobile: true },
     { href: "/coach/calendar", label: "Kalendarz", icon: "calendar", mobile: true },
+    { href: "/coach/camps", label: "Obozy", icon: "camps" },
     ...(canPlan(staffRole) ? [{ href: "/coach/templates", label: "Szablony", icon: "templates" } as NavItem] : []),
     ...(founder
       ? [
           { href: "/coach/team", label: "Zespół VYRA", icon: "team" } as NavItem,
           { href: "/coach/applications", label: "Zgłoszenia", icon: "inbox", badge: newApplications } as NavItem,
+          { href: "/coach/site", label: "Strona VYRA", icon: "site" } as NavItem,
         ]
       : []),
     { href: "/coach/analytics", label: "Analityka", icon: "analytics", mobile: true },

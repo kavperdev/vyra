@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { CtaBand, Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
+import { CampCards } from "@/components/site/camp-cards";
 import { CampWaitlistForm } from "@/components/site/lead-forms";
+import { listCamps, takenPlaces } from "@/lib/data/camps";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Obozy",
@@ -30,21 +33,38 @@ const FAQ = [
   { q: "Czy zapis na listę do czegoś zobowiązuje?", a: "Nie. Lista służy tylko do tego, żebyśmy mogli poinformować Cię o terminie jako pierwszego." },
 ];
 
-export default function CampsPage() {
+export default async function CampsPage() {
+  const supabase = await createClient();
+  const [camps, taken] = await Promise.all([
+    listCamps(supabase, { publicOnly: true }).catch(() => []),
+    takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
+  ]);
+  const hasCamps = camps.length > 0;
   return (
     <>
       <PageHero
-        eyebrow="Obozy VYRA · Wkrótce"
+        eyebrow={hasCamps ? "Obozy VYRA" : "Obozy VYRA · Wkrótce"}
         title="Elitarne doświadczenie dla amatorów"
         lead="Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką zespołu specjalistów, w kameralnej grupie."
       >
         <a
-          href="#lista"
+          href={hasCamps ? "#terminy" : "#lista"}
           className="inline-flex h-12 items-center rounded-full bg-[var(--accent)] px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
-          Zapisz się na listę
+          {hasCamps ? "Zobacz terminy" : "Zapisz się na listę"}
         </a>
       </PageHero>
+
+      {hasCamps ? (
+        <section id="terminy" className="scroll-mt-24 border-b border-white/10">
+          <div className={`${wrap} py-24 sm:py-32`}>
+            <SectionHead eyebrow="Terminy" title="Najbliższe obozy" />
+            <div className="mt-14">
+              <CampCards camps={camps} taken={taken} />
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className={`${wrap} grid gap-14 py-28 sm:py-36 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center`}>
         <Reveal className="relative aspect-square overflow-hidden rounded-2xl border border-white/10">

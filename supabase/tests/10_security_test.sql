@@ -491,3 +491,61 @@ exception when others then
   if sqlerrm not like '%LAST_FOUNDER%' then raise; end if;
   raise notice 'ok  last founder cannot be demoted';
 end $$;
+
+-- ---------------------------------------------------------------- camps and site content
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.camps (id, slug, title, status, capacity, price_pln)
+  values ('30000000-0000-0000-0000-000000000001', 'weekend-test', 'VYRA Weekend', 'draft', 12, 5990);
+insert into public.articles (slug, title, body, status) values ('szkic', 'Szkic', 'tekst', 'draft');
+
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.camps) = 0, 'visitors do not see draft camps');
+select pg_temp.check((select count(*) from public.articles) = 0, 'visitors do not see draft articles');
+select pg_temp.check((select count(*) from public.site_team) = 3, 'visitors see team cards');
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+update public.camps set status = 'published' where slug = 'weekend-test';
+update public.articles set status = 'published' where slug = 'szkic';
+select pg_temp.check((select published_at is not null from public.articles where slug = 'szkic'), 'publishing sets the date');
+
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.camps) = 1, 'visitors see published camps');
+insert into public.applications (full_name, email, consent, kind, camp_id)
+  values ('Obozowiczka', 'obozowiczka@vyra.test', true, 'camp', '30000000-0000-0000-0000-000000000001');
+do $$ begin
+  perform count(*) from public.camp_participants;
+  raise exception 'FAIL: visitor read participants';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read participants';
+end $$;
+do $$ begin
+  insert into public.camps (slug, title) values ('hack', 'hack');
+  raise exception 'FAIL: visitor created a camp';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot create camps';
+end $$;
+
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check((select count(*) from public.camp_participants where camp_id = '30000000-0000-0000-0000-000000000001') = 1,
+  'a site sign-up lands on the camp participant list');
+
+-- physio records tests but cannot manage camps
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+insert into public.camp_tests (participant_id, phase, vo2max)
+  select id, 'start', 48.5 from public.camp_participants where email = 'obozowiczka@vyra.test';
+select pg_temp.check((select vo2max from public.camp_tests where phase = 'start') = 48.5, 'staff records camp tests');
+do $$ begin
+  update public.camps set price_pln = 1 where slug = 'weekend-test';
+  if found then raise exception 'FAIL: physio changed a camp'; end if;
+  raise notice 'ok  only founders manage camps';
+end $$;
+
+-- athletes never see other people's camp data
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.camp_participants) = 0, 'athletes do not see camp participants');
+select pg_temp.check((select count(*) from public.camp_tests) = 0, 'athletes do not see camp tests');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+update public.camp_participants set status = 'paid' where email = 'obozowiczka@vyra.test';
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select taken from public.camp_taken_places() limit 1) = 1, 'visitors see how many places are taken');
