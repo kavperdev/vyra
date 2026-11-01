@@ -84,6 +84,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 11. `20261101000800_copy_week.sql` — kopiowanie tygodnia treningów z jednym powiadomieniem
 12. `20261101000900_english.sql` — angielska wersja strony: pola EN w obozach, pakietach i zespole, język artykułów
 13. `20261101001000_readiness.sql` — poranna gotowość zawodnika
+14. `20261101001100_run_club_business_testimonials.sql` — Run Club, zapytania firm, opinie na stronie
 13. `20261101001000_push_lang.sql` — powiadomienia push w języku urządzenia
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.

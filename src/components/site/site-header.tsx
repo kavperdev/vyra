@@ -45,7 +45,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
           <Logo className="h-3.5 text-white sm:h-4" />
         </Link>
 
-        <nav aria-label={en ? "Main navigation" : "Główna nawigacja"} className="hidden items-center gap-8 lg:flex">
+        <nav aria-label={en ? "Main navigation" : "Główna nawigacja"} className="hidden items-center gap-5 lg:flex xl:gap-8">
           {SITE_NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (

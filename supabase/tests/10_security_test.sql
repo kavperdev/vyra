@@ -634,3 +634,16 @@ select pg_temp.check((select count(*) from public.readiness) = 1, 'coach sees at
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
 select pg_temp.check((select count(*) from public.readiness) = 0, 'foreign coach does not see readiness');
 select pg_temp.as_admin();
+
+-- ---------------------------------------------------------------- run club
+select pg_temp.as_admin();
+insert into public.run_club_events (title, starts_at, place) values ('VYRA Run Club', now() + interval '2 days', 'Park');
+set role anon;
+insert into public.run_club_signups (event_id, full_name, email) select id, 'Ala', 'ala@x.pl' from public.run_club_events;
+select pg_temp.check((select taken from public.run_club_counts()) = 1, 'visitor signs up for run club and sees only the count');
+do $$ begin
+  perform 1 from public.run_club_signups;
+  raise exception 'FAIL: visitors read run club sign-ups';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read run club sign-ups';
+end $$;
+reset role;

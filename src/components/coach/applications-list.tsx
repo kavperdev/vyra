@@ -58,7 +58,7 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
             {a.status === "new" ? <Badge tone="accent" dot>{tl("Nowe", "New")}</Badge> : null}
           </div>
           <p className="text-sm text-muted">
-            {formatDateTime(a.created_at)} · {a.kind === "camp" ? tl("Lista obozów", "Camp list") : tl("Prowadzenie", "Coaching")}
+            {formatDateTime(a.created_at)} · {a.kind === "camp" ? tl("Lista obozów", "Camp list") : a.kind === "business" ? tl("Dla firm", "For companies") : tl("Prowadzenie", "Coaching")}
             {a.package ? ` · ${PACKAGE_LABEL[a.package] ?? a.package}` : ""}
           </p>
         </div>

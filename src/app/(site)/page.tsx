@@ -9,6 +9,7 @@ import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
+import { listTestimonials } from "@/lib/data/club";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
 import { createClient } from "@/lib/supabase/server";
@@ -65,12 +66,13 @@ const SAMPLE_LAPS = [
 export default async function Home() {
   const { lang, t } = await getT();
   const supabase = await createClient();
-  const [camps, taken, allArticles] = await Promise.all([
+  const [camps, taken, allArticles, testimonials] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
     listArticles(supabase, { publishedOnly: true }).catch(() => []),
+    listTestimonials(supabase).then((x) => x.filter((t) => t.visible)),
   ]);
   const articles = articlesFor(allArticles, lang).items;
   const origin = publicOrigin();
@@ -202,6 +204,25 @@ export default async function Home() {
             </SectionHead>
             <div className="mt-16">
               <CampCards camps={camps.slice(0, 2)} taken={taken} lang={lang} />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {testimonials.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow={t("Zawodnicy VYRA", "VYRA athletes")} title={t("Wyniki mówią same za siebie", "The results speak for themselves")} />
+            <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {testimonials.slice(0, 6).map((x, i) => (
+                <Reveal key={x.id} delay={i * 90} className="grid content-between gap-8 rounded-2xl border border-white/10 bg-[#070708] p-8">
+                  <p className="text-lg leading-relaxed text-white/80">„{lang === "en" && x.quote_en ? x.quote_en : x.quote}”</p>
+                  <div className="grid gap-1 border-t border-white/10 pt-5">
+                    <span className="font-semibold text-white">{x.name}</span>
+                    {x.result ? <span className="num text-sm text-[var(--accent)]">{x.result}</span> : null}
+                  </div>
+                </Reveal>
+              ))}
             </div>
           </div>
         </section>

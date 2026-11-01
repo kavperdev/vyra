@@ -23,8 +23,10 @@ export const SITE: SiteSettings = {
 export const SITE_NAV = [
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
+  { href: "/run-club", label: "Run Club", en: "Run Club" },
   { href: "/zespol", label: "Zespół", en: "Team" },
   { href: "/wiedza", label: "Wiedza", en: "Journal" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
+  { href: "/dla-firm", label: "Dla firm", en: "For companies" },
   { href: "/kontakt", label: "Kontakt", en: "Contact" },
 ] as const;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
+import { RunClubEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { PlansEditor } from "@/components/content/plans-editor";
 import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
+import { listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -26,7 +28,14 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [articles, team, plans] = await Promise.all([listArticles(supabase), listSiteTeam(supabase), listCoachingPlans(supabase)]);
+  const [articles, team, plans, events, signups, testimonials] = await Promise.all([
+    listArticles(supabase),
+    listSiteTeam(supabase),
+    listCoachingPlans(supabase),
+    listRunClubEvents(supabase),
+    listRunClubSignups(supabase),
+    listTestimonials(supabase),
+  ]);
 
   return (
     <div className="grid gap-8">
@@ -42,6 +51,30 @@ export default async function SiteContentPage() {
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>VYRA Run Club</CardTitle>
+            <p className="text-[13px] text-muted">{tl("Terminy wspólnych treningów na stronie Run Club. Kliknij termin, żeby zobaczyć zapisanych.", "Group run dates on the Run Club page. Click a date to see who signed up.")}</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <RunClubEditor events={events} signups={signups} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>{tl("Opinie zawodników", "Athlete testimonials")}</CardTitle>
+            <p className="text-[13px] text-muted">{tl("Sekcja opinii na stronie głównej pojawi się, gdy dodasz pierwszą widoczną opinię.", "The testimonials section on the home page appears once you add the first visible one.")}</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TestimonialsEditor items={testimonials} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

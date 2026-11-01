@@ -42,7 +42,18 @@ function schemas(t: T) {
     website: z.string().max(0).optional(),
   });
 
-  return z.discriminatedUnion("kind", [campSchema, coachingSchema]);
+  const businessSchema = z.object({
+    kind: z.literal("business"),
+    full_name: z.string().trim().min(2, t("Podaj imię i nazwisko", "Enter your full name")).max(120),
+    email,
+    phone: optional(40).optional(),
+    goal: z.string().trim().min(2, t("Podaj nazwę firmy", "Enter your company name")).max(1000),
+    message: z.string().trim().min(5, t("Napisz kilka słów o tym, czego szukacie", "Tell us briefly what you’re looking for")).max(2000),
+    consent,
+    website: z.string().max(0).optional(),
+  });
+
+  return z.discriminatedUnion("kind", [campSchema, coachingSchema, businessSchema]);
 }
 
 export type ApplicationInput = z.input<ReturnType<typeof schemas>>;
