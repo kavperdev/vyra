@@ -1,4 +1,4 @@
-import { cache } from "react";
+import * as React from "react";
 import type { Lang } from "./shared";
 
 /**
@@ -7,7 +7,10 @@ import type { Lang } from "./shared";
  * - client components: set by <LangProvider> (one user per browser; during server rendering it is
  *   set right before the client tree renders).
  */
-const requestLang = cache((): { lang: Lang | null } => ({ lang: null }));
+// React.cache exists in server components; in the browser build it may be missing, so fall back to a plain function.
+const cacheFn: <F extends (...args: never[]) => unknown>(fn: F) => F =
+  (React as unknown as { cache?: <F extends (...args: never[]) => unknown>(fn: F) => F }).cache ?? ((fn) => fn);
+const requestLang = cacheFn((): { lang: Lang | null } => ({ lang: null }));
 let globalLang: Lang = "pl";
 
 export function setRequestLang(lang: Lang): void {
