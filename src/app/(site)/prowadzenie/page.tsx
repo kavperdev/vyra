@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { StickyCta } from "@/components/site/nudges";
 import { CtaBand, Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { CoachingInquiryForm } from "@/components/site/lead-forms";
+import { PackageQuiz } from "@/components/site/package-quiz";
 import { PlanCards } from "@/components/site/plan-cards";
 import { listCoachingPlans } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
@@ -155,7 +156,10 @@ export default async function CoachingPage() {
                 "Every package includes an individual plan and the VYRA platform. They differ in how closely we work together: from a weekly review to day-to-day contact with your coach.",
               )}
             </SectionHead>
-            <div className="mt-16">
+            <div className="mt-12">
+              <PackageQuiz plans={plans} payments={stripeConfigured()} />
+            </div>
+            <div className="mt-12">
               <PlanCards plans={plans} payments={stripeConfigured()} />
             </div>
             <Reveal as="p" className="mt-10 text-[13px] text-white/40">

@@ -55,6 +55,9 @@ export async function SiteFooter({ panel }: { panel: { href: string; label: stri
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8 text-[12px] text-white/40">
           <p className="font-mono uppercase tracking-[0.4em]">{SITE.tagline} · Est. 2026</p>
           <div className="flex flex-wrap gap-6">
+            <Link href="/regulamin" className="site-link hover:text-white">
+              {t("Regulamin", "Terms of sale")}
+            </Link>
             <Link href="/polityka-prywatnosci" className="site-link hover:text-white">
               {t("Polityka prywatności", "Privacy policy")}
             </Link>

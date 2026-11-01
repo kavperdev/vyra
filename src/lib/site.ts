@@ -6,6 +6,8 @@ export interface SiteSettings {
   name: string;
   tagline: string;
   controller: string;
+  /** Seller's address for the terms of sale (street, postcode, city). Empty string hides the line. */
+  address: string;
   /** Public contact e-mail. Empty string hides it everywhere. */
   email: string;
   /** Instagram handle, e.g. "@vyra.athl". Empty string hides it everywhere. */
@@ -16,6 +18,7 @@ export const SITE: SiteSettings = {
   name: "VYRA",
   tagline: "Elite is standard",
   controller: "Kacper Adamczyk",
+  address: "",
   email: "",
   instagram: "@vyra.athl",
 };

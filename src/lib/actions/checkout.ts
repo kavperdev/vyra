@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase/server";
 import type { CoachingPlan } from "@/lib/camps";
 
 /** Creates a Stripe Checkout for a coaching package and returns its URL. The price always comes from the database. */
-export async function startCheckout(planId: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+export async function startCheckout(planId: string, accepted = false): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const { lang, t } = await getT();
+  if (!accepted) return { ok: false, error: t("Zaakceptuj regulamin, żeby przejść do płatności.", "Please accept the terms to continue to payment.") };
   if (!stripeConfigured()) return { ok: false, error: t("Płatności online nie są jeszcze włączone.", "Online payments aren’t enabled yet.") };
   const supabase = await createClient();
   const { data } = await supabase.from("coaching_plans").select("*").eq("id", planId).eq("visible", true).maybeSingle();
@@ -28,7 +29,7 @@ export async function startCheckout(planId: string): Promise<{ ok: true; url: st
       billing_address_collection: "auto",
       success_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/prowadzenie#pakiety`,
-      metadata: { plan_id: plan.id, plan_name: plan.name },
+      metadata: { plan_id: plan.id, plan_name: plan.name, terms: "regulamin+start_przed_14_dniami" },
       line_items: {
         0: {
           quantity: 1,

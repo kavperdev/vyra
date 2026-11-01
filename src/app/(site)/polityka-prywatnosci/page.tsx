@@ -57,6 +57,18 @@ export default async function PrivacyPage() {
               </li>
               <li>
                 {t(
+                  "Zakup pakietu: płatność obsługuje Stripe (Stripe Payments Europe Ltd.), który przetwarza dane płatności jako odrębny administrator. My otrzymujemy imię i nazwisko, e-mail, nazwę pakietu i kwotę, aby zrealizować usługę i rozliczyć sprzedaż.",
+                  "Buying a package: payments are handled by Stripe (Stripe Payments Europe Ltd.), which processes payment data as a separate controller. We receive your name, e-mail, the package and the amount to deliver the service and account for the sale.",
+                )}
+              </li>
+              <li>
+                {t(
+                  "Darmowy plan „Zacznij biegać”: imię i e-mail, aby udostępnić plan i skontaktować się w sprawie treningów. Zgodę możesz wycofać w każdej chwili.",
+                  "The free “Start running” plan: your name and e-mail, to give you the plan and contact you about training. You can withdraw consent at any time.",
+                )}
+              </li>
+              <li>
+                {t(
                   "Konto w platformie VYRA (dla zawodników): dane potrzebne do prowadzenia treningu, w tym plan i wyniki treningów.",
                   "A VYRA platform account (for athletes): the data needed for coaching, including your plan and training results.",
                 )}

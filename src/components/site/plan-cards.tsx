@@ -126,13 +126,13 @@ function OnceRow({ plan, index, lang, t, payments }: { plan: CoachingPlan; index
             </li>
           ))}
         </ul>
-        <div className="flex items-center justify-between gap-6 md:grid md:justify-items-end">
+        <div className="flex flex-wrap items-center justify-between gap-4 md:grid md:justify-items-end">
           <span className="display num text-3xl text-white">
             {lang === "en" ? <span className="text-base text-white/50">PLN </span> : null}
             {amount(plan.price_pln, lang)}
             {lang === "en" ? null : <span className="text-base text-white/50"> zł</span>}
           </span>
-          {payments ? <BuyButton planId={plan.id} className="w-40" /> : null}
+          {payments ? <BuyButton planId={plan.id} className="w-full sm:w-64" /> : null}
           <button
             type="button"
             onClick={() => choose(plan.name)}
