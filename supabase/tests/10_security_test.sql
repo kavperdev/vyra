@@ -624,3 +624,13 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 update public.coaching_plans set price_pln = 1 where name = 'Elite';
 select pg_temp.as_admin();
 select pg_temp.check((select price_pln from public.coaching_plans where name = 'Elite') = 449, 'non-founder staff cannot change prices');
+
+-- ---------------------------------------------------------------- readiness
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+insert into public.readiness (athlete_id, day, sleep, energy, soreness, pain, pain_area)
+  values ('00000000-0000-0000-0000-0000000000a1', current_date, 4, 3, 2, true, 'kolano');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check((select count(*) from public.readiness) = 1, 'coach sees athlete readiness');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.check((select count(*) from public.readiness) = 0, 'foreign coach does not see readiness');
+select pg_temp.as_admin();

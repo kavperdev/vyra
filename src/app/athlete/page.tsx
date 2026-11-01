@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, HelloCard, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
 import { describeSegment, KindIcon, plannedVolume, SessionList, StatusBadge } from "@/components/training/session-bits";
+import { ReadinessCard } from "@/components/athlete/readiness-card";
 import { requireRole } from "@/lib/auth";
+import type { Readiness } from "@/lib/readiness";
 import { addDaysISO, eachDay, todayISO, weekEndISO, weekStartISO } from "@/lib/dates";
 import { listRecords } from "@/lib/data/people";
 import { getSessionDetail, listRecentComments, listSessions } from "@/lib/data/sessions";
@@ -30,10 +32,18 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
-  const [sessions, records, coachComments] = await Promise.all([
+  const [sessions, records, coachComments, readiness] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
+    // Missing table (migration not run yet) simply hides the check-in.
+    supabase
+      .from("readiness")
+      .select("*")
+      .eq("athlete_id", user.id)
+      .eq("day", today)
+      .maybeSingle()
+      .then((r) => (r.error ? undefined : ((r.data as Readiness | null) ?? null))),
   ]);
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
@@ -68,6 +78,8 @@ export default async function AthleteDashboard() {
               : tl("Dziś wolne.", "Rest day today.")
         }
       />
+
+      {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
 
       <section aria-labelledby="today-title" className="grid gap-3">
         <h2 id="today-title" className="eyebrow">{tl("Dzisiejszy trening", "Today’s session")}</h2>

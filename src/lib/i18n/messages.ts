@@ -35,6 +35,7 @@ const EXACT: Record<string, string> = {
   "Ta osoba jest już w Twoim zespole.": "This person is already on your team.",
   "Ta osoba ma już konto w VYRA.": "This person already has a VYRA account.",
   "Zaproszenie anulowane.": "Invitation cancelled.",
+  "Dziękujemy. Trener widzi Twoją gotowość.": "Thanks. Your coach can see your readiness.",
   // general
   "Sesja wygasła. Zaloguj się ponownie.": "Your session has expired. Please sign in again.",
   "Coś poszło nie tak. Spróbuj ponownie.": "Something went wrong. Please try again.",

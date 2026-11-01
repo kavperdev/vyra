@@ -7,6 +7,8 @@ import { EmptyState, HelloCard, Initials, PageHeader, SectionTitle, Stat } from 
 import { CompletionChart, VolumeChart } from "@/components/charts/charts";
 import { SessionList } from "@/components/training/session-bits";
 import { requireRole } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import { READINESS_TONE, readinessLevel, type Readiness } from "@/lib/readiness";
 import { addDaysISO, todayISO, weekStartISO } from "@/lib/dates";
 import { listAthletes } from "@/lib/data/people";
 import { listRecentComments, listSessions } from "@/lib/data/sessions";
@@ -80,10 +82,17 @@ export default async function CoachDashboard() {
 
   const ids = athletes.map((a) => a.id);
   const from = periodStart(today, 8);
-  const [sessions, comments] = await Promise.all([
+  const [sessions, comments, readinessRows] = await Promise.all([
     listSessions(supabase, { athleteIds: ids, from, to: addDaysISO(today, 14) }),
     listRecentComments(supabase, { onlyRole: "athlete", limit: 5 }),
+    supabase
+      .from("readiness")
+      .select("*")
+      .eq("day", today)
+      .in("athlete_id", ids)
+      .then((r) => (r.error ? null : ((r.data ?? []) as Readiness[]))),
   ]);
+  const readinessBy = new Map((readinessRows ?? []).map((r) => [r.athlete_id, r]));
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
   const weekStart = weekStartISO(today);
@@ -159,6 +168,31 @@ export default async function CoachDashboard() {
         </div>
 
         <div className="grid content-start gap-8">
+          {readinessRows ? (
+            <section className="grid gap-3">
+              <SectionTitle>{tl("Gotowość dziś", "Readiness today")}</SectionTitle>
+              <ul className="grid gap-1.5">
+                {athletes.map((a) => {
+                  const r = readinessBy.get(a.id);
+                  const level = r ? readinessLevel(r) : null;
+                  return (
+                    <li key={a.id}>
+                      <Link href={`/coach/athletes/${a.id}`} className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2 hover:border-border-strong">
+                        <span className={cn("size-2.5 shrink-0 rounded-full", level ? READINESS_TONE[level] : "bg-border-strong")} aria-hidden />
+                        <span className="min-w-0 flex-1 truncate text-sm">{a.full_name}</span>
+                        <span className="num truncate text-[12px] text-muted">
+                          {r
+                            ? `${tl("sen", "sleep")} ${r.sleep} · ${tl("energia", "energy")} ${r.energy} · ${tl("zakwasy", "soreness")} ${r.soreness}${r.pain ? ` · ${tl("ból", "pain")}${r.pain_area ? `: ${r.pain_area}` : ""}` : ""}`
+                            : tl("brak wpisu", "no check-in")}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+
           <section className="grid gap-3">
             <SectionTitle>{tl("Wymagają uwagi", "Need attention")}</SectionTitle>
             {attention.length ? (
