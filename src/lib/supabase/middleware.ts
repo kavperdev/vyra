@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED = ["/coach", "/athlete", "/api/reports", "/settings", "/notifications"];
+const PROTECTED = ["/coach", "/athlete", "/api/reports", "/settings", "/notifications", "/panel"];
 const AUTH_PAGES = ["/login", "/signup", "/forgot-password"];
 
 /** Refreshes the auth session on every request and guards protected paths. */
@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && AUTH_PAGES.includes(path)) {
     const redirect = request.nextUrl.clone();
-    redirect.pathname = "/";
+    redirect.pathname = "/panel";
     redirect.search = "";
     return NextResponse.redirect(redirect);
   }

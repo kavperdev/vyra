@@ -386,3 +386,27 @@ exception when others then
   if sqlerrm like 'FAIL%' then raise; end if;
   raise notice 'ok  save_execution rejects foreign sessions';
 end $$;
+
+-- ---------------------------------------------------------------- applications (public form)
+select pg_temp.as_admin();
+set role anon;
+select set_config('request.jwt.claim.sub', '', false);
+insert into public.applications (full_name, email, goal, consent) values ('Nowy Biegacz', 'nowy@vyra.test', '10 km < 40 min', true);
+do $$ begin
+  insert into public.applications (full_name, email, consent, status) values ('Spryciarz', 'x@vyra.test', true, 'invited');
+  raise exception 'FAIL: visitor set a status other than new';
+exception when others then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  raise notice 'ok  visitors can only submit new applications';
+end $$;
+do $$ begin
+  perform count(*) from public.applications;
+  raise exception 'FAIL: visitor read applications';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read applications';
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.applications) = 0, 'athletes cannot read applications');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check((select count(*) from public.applications) = 1, 'coach reads applications');
+update public.applications set status = 'contacted' where email = 'nowy@vyra.test';
+select pg_temp.check((select status from public.applications where email = 'nowy@vyra.test') = 'contacted', 'coach updates application status');

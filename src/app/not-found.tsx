@@ -12,7 +12,7 @@ export default function NotFound() {
         <p className="text-sm text-muted">Strona nie istnieje albo nie masz do niej dostępu.</p>
       </div>
       <Button asChild className="mx-auto w-fit">
-        <Link href="/">Wróć do panelu</Link>
+        <Link href="/panel">Wróć do panelu</Link>
       </Button>
     </main>
   );

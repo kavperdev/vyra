@@ -74,6 +74,7 @@ Migracje są w `supabase/migrations` i trzeba je uruchomić **w kolejności nazw
 1. `20261029000100_core_schema.sql` — tabele, typy, indeksy
 2. `20261029000200_logic_and_security.sql` — funkcje dostępu, triggery, RLS, uprawnienia kolumn
 3. `20261029000300_rpc.sql` — transakcyjne funkcje zapisu (plan, wykonanie, kopiowanie)
+4. `20261101000100_applications.sql` — formularz „Dołącz do VYRA” na stronie głównej (zgłoszenia widzi tylko trener)
 
 **Opcja A, SQL Editor:** Supabase → SQL Editor → wklej kolejno zawartość trzech plików → Run.
 

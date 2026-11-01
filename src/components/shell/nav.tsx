@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, BarChart3, Bell, CalendarDays, ClipboardList, History, Home, LayoutDashboard, Settings, Trophy, Users,
+  Activity, BarChart3, Bell, CalendarDays, ClipboardList, History, Home, Inbox, LayoutDashboard, Settings, Trophy, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ const ICONS = {
   history: History,
   records: Trophy,
   bell: Bell,
+  inbox: Inbox,
   settings: Settings,
 } as const;
 

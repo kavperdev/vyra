@@ -33,7 +33,7 @@ export async function signIn(input: { email: string; password: string; next?: st
     return { ok: false, error: "Nieprawidłowy e-mail lub hasło." };
   }
   const user = await getCurrentUser();
-  redirect(safeNext(input.next) ?? (user ? homeFor(user.profile.role) : "/"));
+  redirect(safeNext(input.next) ?? (user ? homeFor(user.profile.role) : "/panel"));
 }
 
 export async function signUpCoach(input: { full_name: string; email: string; password: string }): Promise<ActionResult> {
