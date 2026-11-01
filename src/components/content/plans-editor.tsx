@@ -23,6 +23,11 @@ function PlanForm({ plan, onDone }: { plan: CoachingPlan | null; onDone?: () => 
     highlighted: plan?.highlighted ?? false,
     visible: plan?.visible ?? true,
     sort: String(plan?.sort ?? 100),
+    name_en: plan?.name_en ?? "",
+    tagline_en: plan?.tagline_en ?? "",
+    features_en: plan?.features_en ?? "",
+    badge_en: plan?.badge_en ?? "",
+    had_en: !!(plan?.name_en || plan?.tagline_en || plan?.features_en || plan?.badge_en),
   });
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [pending, start] = useTransition();
@@ -84,6 +89,25 @@ function PlanForm({ plan, onDone }: { plan: CoachingPlan | null; onDone?: () => 
       <Field label="Co zawiera" htmlFor={id("feat")} hint="Każdy punkt w nowej linii" error={e("features")}>
         <Textarea id={id("feat")} rows={6} value={v.features} onChange={(ev) => setV({ ...v, features: ev.target.value })} />
       </Field>
+      <details className="rounded-md border border-border p-3" open={!!(v.name_en || v.tagline_en || v.features_en || v.badge_en)}>
+        <summary className="cursor-pointer text-sm font-medium">Wersja angielska (EN)</summary>
+        <div className="mt-3 grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nazwa (EN)" htmlFor={id("name-en")} hint="Puste = jak po polsku" error={e("name_en")}>
+              <Input id={id("name-en")} value={v.name_en} onChange={(ev) => setV({ ...v, name_en: ev.target.value })} />
+            </Field>
+            <Field label="Wyróżnik (EN)" htmlFor={id("badge-en")} error={e("badge_en")}>
+              <Input id={id("badge-en")} value={v.badge_en} onChange={(ev) => setV({ ...v, badge_en: ev.target.value })} />
+            </Field>
+          </div>
+          <Field label="Jedno zdanie (EN)" htmlFor={id("tag-en")} error={e("tagline_en")}>
+            <Input id={id("tag-en")} value={v.tagline_en} onChange={(ev) => setV({ ...v, tagline_en: ev.target.value })} />
+          </Field>
+          <Field label="Co zawiera (EN)" htmlFor={id("feat-en")} hint="Każdy punkt w nowej linii" error={e("features_en")}>
+            <Textarea id={id("feat-en")} rows={5} value={v.features_en} onChange={(ev) => setV({ ...v, features_en: ev.target.value })} />
+          </Field>
+        </div>
+      </details>
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         <Field label="Kolejność" htmlFor={id("sort")} hint="Mniejsza = wyżej" error={e("sort")}>
           <Input id={id("sort")} inputMode="numeric" className="w-24" value={v.sort} onChange={(ev) => setV({ ...v, sort: ev.target.value })} />

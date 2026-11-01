@@ -4,57 +4,61 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/types";
-import { emailField } from "@/lib/validation/forms";
+import { getT } from "@/lib/i18n/server";
+import type { T } from "@/lib/i18n/shared";
 import { dbError, validationError, withUser } from "./helpers";
 
-const optional = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, `Maksymalnie ${max} znaków`)
-    .transform((v) => (v === "" ? null : v));
+function schemas(t: T) {
+  const optional = (max: number) =>
+    z
+      .string()
+      .trim()
+      .max(max, t(`Maksymalnie ${max} znaków`, `At most ${max} characters`))
+      .transform((v) => (v === "" ? null : v));
+  const consent = z.literal(true, {
+    errorMap: () => ({ message: t("Zaznacz zgodę, żebyśmy mogli się z Tobą skontaktować", "Please tick the consent so we can contact you") }),
+  });
+  const email = z.string().trim().toLowerCase().email(t("Podaj poprawny adres e-mail", "Enter a valid email address")).max(254);
 
-const consent = z.literal(true, {
-  errorMap: () => ({ message: "Zaznacz zgodę, żebyśmy mogli się z Tobą skontaktować" }),
-});
+  const campSchema = z.object({
+    kind: z.literal("camp"),
+    camp_id: z.string().uuid().optional(),
+    full_name: z.string().trim().min(2, t("Podaj imię", "Enter your name")).max(120),
+    email,
+    phone: optional(40).optional(),
+    consent,
+    website: z.string().max(0).optional(),
+  });
 
-const campSchema = z.object({
-  kind: z.literal("camp"),
-  camp_id: z.string().uuid().optional(),
-  full_name: z.string().trim().min(2, "Podaj imię").max(120),
-  email: emailField,
-  phone: optional(40).optional(),
-  consent,
-  website: z.string().max(0).optional(),
-});
+  const coachingSchema = z.object({
+    kind: z.literal("coaching"),
+    full_name: z.string().trim().min(2, t("Podaj imię i nazwisko", "Enter your full name")).max(120),
+    email,
+    package: optional(80).optional(),
+    goal: z.string().trim().min(3, t("Napisz w kilku słowach, jaki masz cel", "Describe your goal in a few words")).max(1000),
+    records: optional(500),
+    message: optional(2000),
+    consent,
+    website: z.string().max(0).optional(),
+  });
 
-const coachingSchema = z.object({
-  kind: z.literal("coaching"),
-  full_name: z.string().trim().min(2, "Podaj imię i nazwisko").max(120),
-  email: emailField,
-  package: optional(80).optional(),
-  goal: z.string().trim().min(3, "Napisz w kilku słowach, jaki masz cel").max(1000),
-  records: optional(500),
-  message: optional(2000),
-  consent,
-  website: z.string().max(0).optional(),
-});
+  return z.discriminatedUnion("kind", [campSchema, coachingSchema]);
+}
 
-const applicationSchema = z.discriminatedUnion("kind", [campSchema, coachingSchema]);
-
-export type ApplicationInput = z.input<typeof applicationSchema>;
+export type ApplicationInput = z.input<ReturnType<typeof schemas>>;
 
 export async function submitApplication(input: ApplicationInput): Promise<ActionResult> {
   // Honeypot: a hidden field only bots fill in. Pretend success so they do not retry.
   if (input.website) return { ok: true };
-  const parsed = applicationSchema.safeParse(input);
+  const { t } = await getT();
+  const parsed = schemas(t).safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const { website, ...row } = parsed.data;
   if (website) return { ok: true };
   const supabase = await createClient();
   // No .select() after insert: visitors may write an application but never read one back.
   const { error } = await supabase.from("applications").insert({ ...row, status: "new" });
-  if (error) return dbError(error);
+  if (error) return { ok: false, error: t("Nie udało się wysłać zgłoszenia. Spróbuj ponownie za chwilę.", "We couldn’t send your request. Please try again in a moment.") };
   return { ok: true };
 }
 

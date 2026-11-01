@@ -3,6 +3,8 @@ import { Archivo, JetBrains_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppToaster, ThemeProvider } from "@/components/theme-provider";
 import { publicOrigin } from "@/lib/env";
+import { LangProvider } from "@/lib/i18n/client";
+import { getLang } from "@/lib/i18n/server";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -47,14 +49,17 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
-    <html lang="pl" suppressHydrationWarning className={`${archivo.variable} ${jetbrains.variable}`}>
+    <html lang={lang} suppressHydrationWarning className={`${archivo.variable} ${jetbrains.variable}`}>
       <body>
-        <ThemeProvider>
-          {children}
-          <AppToaster />
-        </ThemeProvider>
+        <LangProvider lang={lang}>
+          <ThemeProvider>
+            {children}
+            <AppToaster />
+          </ThemeProvider>
+        </LangProvider>
         <SpeedInsights />
       </body>
     </html>

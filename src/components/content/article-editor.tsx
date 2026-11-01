@@ -20,6 +20,8 @@ export function ArticleEditor({ article }: { article: Article | null }) {
     excerpt: article?.excerpt ?? "",
     body: article?.body ?? "",
     status: article?.status ?? "draft",
+    lang: article?.lang ?? "pl",
+    lang_was: article?.lang ?? "pl",
   });
   const [slugTouched, setSlugTouched] = useState(!!article);
   const [preview, setPreview] = useState(false);
@@ -71,6 +73,12 @@ export function ArticleEditor({ article }: { article: Article | null }) {
                   setV({ ...v, slug: slugify(e.target.value) });
                 }}
               />
+            </Field>
+            <Field label="Język artykułu" htmlFor="a-lang" hint="Angielskie artykuły widać w wersji EN strony">
+              <Select id="a-lang" value={v.lang} onChange={(e) => setV({ ...v, lang: e.target.value as "pl" | "en" })}>
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+              </Select>
             </Field>
             <Field label="Kategoria" htmlFor="a-cat">
               <Select id="a-cat" value={v.category} onChange={(e) => setV({ ...v, category: e.target.value as ArticleCategory })}>

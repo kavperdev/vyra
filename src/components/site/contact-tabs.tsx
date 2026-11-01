@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 import { CampWaitlistForm, CoachingInquiryForm } from "./lead-forms";
 
 const TABS = [
-  { key: "coaching", label: "Prowadzenie indywidualne" },
-  { key: "camp", label: "Lista obozów" },
+  { key: "coaching", label: "Prowadzenie indywidualne", en: "Individual coaching" },
+  { key: "camp", label: "Lista obozów", en: "Camp list" },
 ] as const;
 
 export function ContactTabs() {
+  const en = useLang() === "en";
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("coaching");
   return (
     <div className="grid gap-8">
-      <div role="tablist" aria-label="Rodzaj zgłoszenia" className="inline-flex w-fit flex-wrap gap-1 rounded-full border border-white/15 p-1">
+      <div role="tablist" aria-label={en ? "Request type" : "Rodzaj zgłoszenia"} className="inline-flex w-fit flex-wrap gap-1 rounded-full border border-white/15 p-1">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -28,7 +30,7 @@ export function ContactTabs() {
               tab === t.key ? "bg-white text-black" : "text-white/60 hover:text-white",
             )}
           >
-            {t.label}
+            {en ? t.en : t.label}
           </button>
         ))}
       </div>

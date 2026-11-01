@@ -14,6 +14,8 @@ const articleSchema = z.object({
   excerpt: optionalText(400),
   body: z.string().max(60000, "Tekst jest za długi"),
   status: z.enum(["draft", "published"]),
+  lang: z.enum(["pl", "en"]).optional(),
+  lang_was: z.enum(["pl", "en"]).optional(),
 });
 
 export type ArticleInput = z.input<typeof articleSchema>;
@@ -30,6 +32,8 @@ export async function saveArticle(id: string | null, input: ArticleInput): Promi
       excerpt: toText(v.excerpt),
       body: v.body,
       status: v.status,
+      // Written only for English articles, so Polish articles save even before the translation migration.
+      ...(v.lang === "en" || v.lang_was === "en" ? { lang: v.lang ?? "pl" } : {}),
     };
     const res = id
       ? await supabase.from("articles").update(row).eq("id", id).select("id").single()
@@ -65,6 +69,10 @@ const teamSchema = z.object({
   areas: optionalText(300),
   sort: z.string().trim().refine((v) => v === "" || /^-?\d+$/.test(v), "Liczba"),
   visible: z.boolean(),
+  role_label_en: optionalText(120),
+  bio_en: optionalText(1200),
+  areas_en: optionalText(300),
+  had_en: z.boolean().optional(),
 });
 
 export type TeamCardInput = z.input<typeof teamSchema>;
@@ -82,6 +90,9 @@ export async function saveTeamCard(id: string | null, input: TeamCardInput): Pro
       areas: toText(v.areas),
       sort: v.sort === "" ? 0 : Number(v.sort),
       visible: v.visible,
+      ...(v.had_en || v.role_label_en || v.bio_en || v.areas_en
+        ? { role_label_en: toText(v.role_label_en), bio_en: toText(v.bio_en), areas_en: toText(v.areas_en) }
+        : {}),
     };
     const { error } = id ? await supabase.from("site_team").update(row).eq("id", id) : await supabase.from("site_team").insert(row);
     if (error) return dbError(error);
@@ -112,6 +123,11 @@ const planSchema = z.object({
   highlighted: z.boolean(),
   visible: z.boolean(),
   sort: z.string().trim().refine((v) => v === "" || /^-?\d+$/.test(v), "Liczba"),
+  name_en: optionalText(60),
+  tagline_en: optionalText(200),
+  features_en: optionalText(3000),
+  badge_en: optionalText(40),
+  had_en: z.boolean().optional(),
 });
 
 export type CoachingPlanInput = z.input<typeof planSchema>;
@@ -133,6 +149,9 @@ export async function saveCoachingPlan(id: string | null, input: CoachingPlanInp
       highlighted: v.highlighted,
       visible: v.visible,
       sort: v.sort === "" ? 0 : Number(v.sort),
+      ...(v.had_en || v.name_en || v.tagline_en || v.features_en || v.badge_en
+        ? { name_en: toText(v.name_en), tagline_en: toText(v.tagline_en), features_en: toText(v.features_en), badge_en: toText(v.badge_en) }
+        : {}),
     };
     const { error } = id ? await supabase.from("coaching_plans").update(row).eq("id", id) : await supabase.from("coaching_plans").insert(row);
     if (error) return dbError(error);

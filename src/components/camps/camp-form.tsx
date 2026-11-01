@@ -25,6 +25,11 @@ function toForm(c: Camp | null): CampInput {
     summary: c?.summary ?? "",
     description: c?.description ?? "",
     included: c?.included ?? "",
+    title_en: c?.title_en ?? "",
+    summary_en: c?.summary_en ?? "",
+    description_en: c?.description_en ?? "",
+    included_en: c?.included_en ?? "",
+    had_en: !!(c?.title_en || c?.summary_en || c?.description_en || c?.included_en),
   };
 }
 
@@ -150,6 +155,34 @@ export function CampForm({ camp }: { camp: Camp | null }) {
             <Textarea id="c-inc" rows={6} value={v.included} onChange={(e) => set("included", e.target.value)} />
           </Field>
         </CardContent>
+      </Card>
+
+      <Card>
+        <details open={!!(v.title_en || v.summary_en || v.description_en || v.included_en)}>
+          <summary className="cursor-pointer list-none p-5 sm:p-6">
+            <span className="flex items-center justify-between gap-3">
+              <span className="grid gap-0.5">
+                <span className="font-semibold">Wersja angielska (EN)</span>
+                <span className="text-[13px] text-muted">Opcjonalnie. Puste pola na angielskiej stronie pokażą tekst po polsku.</span>
+              </span>
+              <span className="text-sm text-muted">Rozwiń</span>
+            </span>
+          </summary>
+          <CardContent className="grid gap-4">
+            <Field label="Nazwa obozu (EN)" htmlFor="c-title-en" error={err("title_en")}>
+              <Input id="c-title-en" value={v.title_en} onChange={(e) => set("title_en", e.target.value)} />
+            </Field>
+            <Field label="Krótki opis (EN)" htmlFor="c-sum-en" error={err("summary_en")}>
+              <Textarea id="c-sum-en" rows={2} value={v.summary_en} onChange={(e) => set("summary_en", e.target.value)} />
+            </Field>
+            <Field label="Pełny opis i program (EN)" htmlFor="c-desc-en" error={err("description_en")}>
+              <Textarea id="c-desc-en" rows={10} value={v.description_en} onChange={(e) => set("description_en", e.target.value)} />
+            </Field>
+            <Field label="W cenie (EN)" htmlFor="c-inc-en" hint="Każda pozycja w osobnej linii" error={err("included_en")}>
+              <Textarea id="c-inc-en" rows={5} value={v.included_en} onChange={(e) => set("included_en", e.target.value)} />
+            </Field>
+          </CardContent>
+        </details>
       </Card>
 
       <div className="sticky bottom-20 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background/95 p-3 backdrop-blur lg:bottom-4">

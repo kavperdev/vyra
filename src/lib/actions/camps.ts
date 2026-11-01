@@ -29,6 +29,12 @@ const campSchema = z
     summary: optionalText(600),
     description: optionalText(20000),
     included: optionalText(4000),
+    title_en: optionalText(160),
+    summary_en: optionalText(600),
+    description_en: optionalText(20000),
+    included_en: optionalText(3000),
+    /** The record already had English texts, so empty fields must be cleared, not skipped. */
+    had_en: z.boolean().optional(),
   })
   .refine((v) => !v.starts_on || !v.ends_on || v.ends_on >= v.starts_on, {
     path: ["ends_on"],
@@ -58,6 +64,15 @@ export async function saveCamp(id: string | null, input: CampInput): Promise<Act
       summary: toText(v.summary),
       description: toText(v.description),
       included: toText(v.included),
+      // English fields are written only when used, so the form keeps working before the translation migration.
+      ...(v.had_en || v.title_en || v.summary_en || v.description_en || v.included_en
+        ? {
+            title_en: toText(v.title_en),
+            summary_en: toText(v.summary_en),
+            description_en: toText(v.description_en),
+            included_en: toText(v.included_en),
+          }
+        : {}),
     };
     const res = id
       ? await supabase.from("camps").update(row).eq("id", id).select("id").single()

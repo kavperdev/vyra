@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { CAMP_FORMAT_LABEL, campDates, formatPLN, type Camp } from "@/lib/camps";
+import type { Camp } from "@/lib/camps";
+import { campDatesL, campFormatLabel, formatPrice } from "@/lib/i18n/labels";
+import { makeT, pick, type Lang } from "@/lib/i18n/shared";
 import { Eyebrow, Reveal } from "./blocks";
 
-export function CampCards({ camps, taken }: { camps: Camp[]; taken: Record<string, number> }) {
+export function CampCards({ camps, taken, lang = "pl" }: { camps: Camp[]; taken: Record<string, number>; lang?: Lang }) {
+  const t = makeT(lang);
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       {camps.map((c, i) => {
@@ -17,21 +20,21 @@ export function CampCards({ camps, taken }: { camps: Camp[]; taken: Record<strin
             >
               <div className="grid gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Eyebrow accent={!closed}>{CAMP_FORMAT_LABEL[c.format]}</Eyebrow>
+                  <Eyebrow accent={!closed}>{campFormatLabel(c.format, t)}</Eyebrow>
                   <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/45">
-                    {closed ? "Zapisy zamknięte" : left != null ? `Wolne miejsca: ${left}` : "Zapisy otwarte"}
+                    {closed ? t("Zapisy zamknięte", "Sign-up closed") : left != null ? t(`Wolne miejsca: ${left}`, `Places left: ${left}`) : t("Zapisy otwarte", "Sign-up open")}
                   </span>
                 </div>
-                <h3 className="display text-3xl text-white sm:text-4xl">{c.title}</h3>
-                {c.summary ? <p className="max-w-lg leading-relaxed text-white/60">{c.summary}</p> : null}
+                <h3 className="display text-3xl text-white sm:text-4xl">{pick(lang, c.title, c.title_en)}</h3>
+                {c.summary ? <p className="max-w-lg leading-relaxed text-white/60">{pick(lang, c.summary, c.summary_en)}</p> : null}
               </div>
               <div className="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-6">
                 <div className="grid gap-1 text-white/75">
-                  <span>{campDates(c) ?? "Termin wkrótce"}</span>
+                  <span>{campDatesL(c, lang) ?? t("Termin wkrótce", "Dates coming soon")}</span>
                   {c.location ? <span className="text-white/50">{c.location}</span> : null}
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="display text-2xl text-white">{formatPLN(c.price_pln) ?? "Cena wkrótce"}</span>
+                  <span className="display text-2xl text-white">{formatPrice(c.price_pln, lang) ?? t("Cena wkrótce", "Price coming soon")}</span>
                   <ArrowUpRight className="size-5 text-white/60 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </div>
               </div>

@@ -21,10 +21,10 @@ export const SITE: SiteSettings = {
 };
 
 export const SITE_NAV = [
-  { href: "/obozy", label: "Obozy" },
-  { href: "/prowadzenie", label: "Prowadzenie" },
-  { href: "/zespol", label: "Zespół" },
-  { href: "/wiedza", label: "Wiedza" },
-  { href: "/kalkulator", label: "Kalkulator" },
-  { href: "/kontakt", label: "Kontakt" },
+  { href: "/obozy", label: "Obozy", en: "Camps" },
+  { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
+  { href: "/zespol", label: "Zespół", en: "Team" },
+  { href: "/wiedza", label: "Wiedza", en: "Journal" },
+  { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
+  { href: "/kontakt", label: "Kontakt", en: "Contact" },
 ] as const;

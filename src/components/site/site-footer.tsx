@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { getT } from "@/lib/i18n/server";
 import { SITE, SITE_NAV } from "@/lib/site";
 import { wrap } from "./blocks";
 
-export function SiteFooter({ panel }: { panel: { href: string; label: string } }) {
+export async function SiteFooter({ panel }: { panel: { href: string; label: string } }) {
+  const { lang, t } = await getT();
   return (
     <footer className="border-t border-white/10">
       <div className={`${wrap} grid gap-14 py-16 pb-[max(4rem,env(safe-area-inset-bottom))]`}>
@@ -11,19 +13,22 @@ export function SiteFooter({ panel }: { panel: { href: string; label: string } }
           <div className="grid content-start gap-6">
             <Logo className="h-6 text-white" />
             <p className="max-w-xs text-sm leading-relaxed text-white/50">
-              Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe dla amatorów.
+              {t(
+                "Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe dla amatorów.",
+                "Running, strength and physiotherapy. Individual coaching and training camps for amateur athletes.",
+              )}
             </p>
           </div>
-          <nav aria-label="Stopka" className="grid content-start gap-3 text-sm">
+          <nav aria-label={t("Stopka", "Footer")} className="grid content-start gap-3 text-sm">
             <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">VYRA</p>
             {SITE_NAV.map((n) => (
               <Link key={n.href} href={n.href} className="site-link w-fit text-white/65 hover:text-white">
-                {n.label}
+                {lang === "en" ? n.en : n.label}
               </Link>
             ))}
           </nav>
           <div className="grid content-start gap-3 text-sm">
-            <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">Kontakt</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">{t("Kontakt", "Contact")}</p>
             {SITE.email ? (
               <a href={`mailto:${SITE.email}`} className="site-link w-fit text-white/65 hover:text-white">
                 {SITE.email}
@@ -40,7 +45,7 @@ export function SiteFooter({ panel }: { panel: { href: string; label: string } }
               </a>
             ) : null}
             <Link href="/kontakt" className="site-link w-fit text-white/65 hover:text-white">
-              Formularz kontaktowy
+              {t("Formularz kontaktowy", "Contact form")}
             </Link>
             <Link href={panel.href} className="site-link w-fit text-white/65 hover:text-white">
               {panel.label}
@@ -51,7 +56,7 @@ export function SiteFooter({ panel }: { panel: { href: string; label: string } }
           <p className="font-mono uppercase tracking-[0.4em]">{SITE.tagline} · Est. 2026</p>
           <div className="flex flex-wrap gap-6">
             <Link href="/polityka-prywatnosci" className="site-link hover:text-white">
-              Polityka prywatności
+              {t("Polityka prywatności", "Privacy policy")}
             </Link>
             <span>© {new Date().getFullYear()} VYRA</span>
           </div>

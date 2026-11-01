@@ -5,16 +5,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CtaBand, Eyebrow, Reveal, wrap } from "@/components/site/blocks";
 import { RichText } from "@/components/site/rich-text";
-import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { getArticle } from "@/lib/data/camps";
-import { formatDate } from "@/lib/format";
+import { getT } from "@/lib/i18n/server";
+import { categoryLabel, formatDateL } from "@/lib/i18n/labels";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const supabase = await createClient();
   const a = await getArticle(supabase, { slug });
-  if (!a) return { title: "Wiedza" };
+  const { t } = await getT();
+  if (!a) return { title: t("Wiedza", "Journal") };
   const published = a.status === "published";
   return {
     title: a.title,
@@ -34,9 +35,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const { lang, t } = await getT();
   const supabase = await createClient();
   const article = await getArticle(supabase, { slug });
   if (!article) notFound();
+  const articleLang = article.lang ?? "pl";
   const origin = publicOrigin();
 
   return (
@@ -50,7 +53,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             description: article.excerpt ?? undefined,
             datePublished: article.published_at ?? undefined,
             dateModified: article.updated_at,
-            inLanguage: "pl-PL",
+            inLanguage: articleLang === "en" ? "en-GB" : "pl-PL",
             mainEntityOfPage: `${origin}/wiedza/${article.slug}`,
             image: [`${origin}/wiedza/${article.slug}/opengraph-image`],
             author: { "@type": "Organization", name: "VYRA", url: origin },
@@ -60,19 +63,20 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       ) : null}
       {article.status !== "published" ? (
         <div className="fixed inset-x-0 bottom-0 z-50 bg-[var(--accent)] py-2 text-center text-sm font-semibold text-white">
-          Podgląd szkicu: odwiedzający nie widzą tego artykułu.
+          {t("Podgląd szkicu: odwiedzający nie widzą tego artykułu.", "Draft preview: visitors cannot see this article.")}
         </div>
       ) : null}
-      <article className={`${wrap} max-w-3xl pb-24 pt-36 sm:pb-32 sm:pt-44`}>
+      <article lang={articleLang} className={`${wrap} max-w-3xl pb-24 pt-36 sm:pb-32 sm:pt-44`}>
         <div className="site-rise">
           <Link href="/wiedza" className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45 hover:text-white">
-            ← Wiedza
+            ← {t("Wiedza", "Journal")}
           </Link>
         </div>
         <div className="site-rise mt-8 grid gap-4" style={{ animationDelay: "100ms" }}>
           <Eyebrow accent>
-            {ARTICLE_CATEGORY_LABEL[article.category]}
-            {article.published_at ? ` · ${formatDate(article.published_at, "d MMMM yyyy")}` : ""}
+            {categoryLabel(article.category, t)}
+            {article.published_at ? ` · ${formatDateL(article.published_at, "d MMMM yyyy", lang)}` : ""}
+            {articleLang !== lang ? ` · ${t("po angielsku", "in Polish")}` : ""}
           </Eyebrow>
           <h1 className="display text-[clamp(2.25rem,5.5vw,4rem)] leading-[1.02] text-white">{article.title}</h1>
           {article.excerpt ? <p className="text-xl leading-relaxed text-white/65">{article.excerpt}</p> : null}
@@ -85,10 +89,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </Reveal>
       </article>
       <CtaBand
-        title="Trenuj z VYRA"
-        lead="Wiedza działa najlepiej w planie ułożonym pod Ciebie."
+        title={t("Trenuj z VYRA", "Train with VYRA")}
+        lead={t("Wiedza działa najlepiej w planie ułożonym pod Ciebie.", "Knowledge works best in a plan built around you.")}
         href="/prowadzenie"
-        label="Prowadzenie indywidualne"
+        label={t("Prowadzenie indywidualne", "Individual coaching")}
       />
     </>
   );

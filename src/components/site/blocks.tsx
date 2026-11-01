@@ -2,6 +2,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { T } from "@/lib/i18n/shared";
 import { cn } from "@/lib/utils";
 
 export const wrap = "mx-auto w-full max-w-6xl px-[max(1.25rem,env(safe-area-inset-left))]";
@@ -260,7 +261,7 @@ export function PhotoBand({
 }
 
 /** The VYRA reel ("Not a level. A standard.") next to the brand statement. */
-export function Manifest() {
+export function Manifest({ t }: { t: T }) {
   return (
     <section className="relative isolate overflow-hidden border-t border-white/10">
       <ToneField tone="sky" className="opacity-40" />
@@ -275,15 +276,16 @@ export function Manifest() {
             <span className="text-white/45">A standard.</span>
           </Reveal>
           <Reveal delay={160} as="p" className="max-w-xl text-lg leading-relaxed text-white/65">
-            Standard VYRA nie zależy od tego, jak szybko biegasz. To sposób pracy: przemyślany plan, rzetelnie zapisany trening,
-            regeneracja traktowana poważnie i konsekwencja tydzień po tygodniu. Ten sam dla debiutanta i dla zawodnika walczącego o
-            rekord.
+            {t(
+              "Standard VYRA nie zależy od tego, jak szybko biegasz. To sposób pracy: przemyślany plan, rzetelnie zapisany trening, regeneracja traktowana poważnie i konsekwencja tydzień po tygodniu. Ten sam dla debiutanta i dla zawodnika walczącego o rekord.",
+              "The VYRA standard does not depend on how fast you run. It is a way of working: a considered plan, every session logged honestly, recovery taken seriously and consistency week after week. The same for a first-timer and for an athlete chasing a record.",
+            )}
           </Reveal>
           <Reveal delay={240} className="flex flex-wrap gap-x-10 gap-y-4 border-t border-white/15 pt-6">
             {[
-              ["Każdy poziom", "ten sam standard"],
-              ["Każdy trening", "zapisany i omówiony"],
-              ["Każdy sezon", "zaplanowany od startu"],
+              [t("Każdy poziom", "Every level"), t("ten sam standard", "the same standard")],
+              [t("Każdy trening", "Every session"), t("zapisany i omówiony", "logged and reviewed")],
+              [t("Każdy sezon", "Every season"), t("zaplanowany od startu", "planned from day one")],
             ].map(([a, b]) => (
               <div key={a} className="grid gap-1">
                 <span className="text-sm font-semibold text-white">{a}</span>
@@ -303,7 +305,7 @@ export function Manifest() {
               loop
               playsInline
               preload="metadata"
-              aria-label="Film VYRA: Not a level. A standard."
+              aria-label={t("Film VYRA: Not a level. A standard.", "VYRA film: Not a level. A standard.")}
             />
           </div>
         </Reveal>
@@ -313,7 +315,7 @@ export function Manifest() {
 }
 
 /** Three recent brand posts linking to Instagram. */
-export function InstagramStrip({ handle, posts }: { handle: string; posts: { src: string; alt: string }[] }) {
+export function InstagramStrip({ handle, posts, follow = "Obserwuj" }: { handle: string; posts: { src: string; alt: string }[]; follow?: string }) {
   const url = `https://www.instagram.com/${handle.replace(/^@/, "")}/`;
   return (
     <section className="border-t border-white/10">
@@ -330,7 +332,7 @@ export function InstagramStrip({ handle, posts }: { handle: string; posts: { src
               rel="noreferrer"
               className="inline-flex h-12 items-center rounded-full border border-white/20 px-7 text-sm font-semibold text-white transition-colors hover:border-white/60"
             >
-              Obserwuj
+              {follow}
             </a>
           </Reveal>
         </div>

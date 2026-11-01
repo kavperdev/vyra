@@ -7,32 +7,51 @@ import { JsonLd } from "@/components/site/json-ld";
 import { publicOrigin } from "@/lib/env";
 import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
-import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
+import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
+import { getT } from "@/lib/i18n/server";
+import type { T } from "@/lib/i18n/shared";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = {
-  title: { absolute: "VYRA · Elite is standard" },
-  description:
-    "VYRA łączy trening biegowy, przygotowanie siłowe i fizjoterapię. Indywidualne prowadzenie zawodników i obozy, które dają amatorom elitarne doświadczenie treningowe.",
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: "VYRA · Elite is standard",
-    description: "Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe.",
-  },
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return {
+    title: { absolute: "VYRA · Elite is standard" },
+    description: t(
+      "VYRA łączy trening biegowy, przygotowanie siłowe i fizjoterapię. Indywidualne prowadzenie zawodników i obozy, które dają amatorom elitarne doświadczenie treningowe.",
+      "VYRA brings together running, strength training and physiotherapy. Individual coaching and camps that give amateur athletes an elite training experience.",
+    ),
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: "VYRA · Elite is standard",
+      description: t(
+        "Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe.",
+        "Running, strength and physiotherapy. Individual coaching and training camps.",
+      ),
+    },
+    alternates: { canonical: "/" },
+  };
+}
 
-const PRINCIPLES = [
-  { title: "Proces, nie przypadek", body: "Forma powstaje z tygodni dobrze zaplanowanej pracy, nie z pojedynczych mocnych treningów." },
-  { title: "Dane, nie domysły", body: "Tempo, tętno i odczucia z każdego treningu pokazują, co działa. Plan zmieniamy na podstawie faktów." },
-  { title: "Zdrowie przed ambicją", body: "Najszybszy jest ten, kto trenuje bez przerw. Na zmęczenie i ból reagujemy wcześnie." },
+const principles = (t: T) => [
+  {
+    title: t("Proces, nie przypadek", "Process, not chance"),
+    body: t("Forma powstaje z tygodni dobrze zaplanowanej pracy, nie z pojedynczych mocnych treningów.", "Fitness is built from weeks of well-planned work, not from a few hard sessions."),
+  },
+  {
+    title: t("Dane, nie domysły", "Data, not guesswork"),
+    body: t("Tempo, tętno i odczucia z każdego treningu pokazują, co działa. Plan zmieniamy na podstawie faktów.", "Pace, heart rate and feel from every session show what works. We change the plan based on facts."),
+  },
+  {
+    title: t("Zdrowie przed ambicją", "Health before ambition"),
+    body: t("Najszybszy jest ten, kto trenuje bez przerw. Na zmęczenie i ból reagujemy wcześnie.", "The fastest runner is the one who trains without breaks. We react early to fatigue and pain."),
+  },
 ];
 
-const DISCIPLINES = [
-  { title: "Trening biegowy", body: "Periodyzacja, strefy tempa i tętna, przygotowanie do startu docelowego." },
-  { title: "Przygotowanie siłowe", body: "Siła, moc i stabilizacja, które przekładają się na ekonomię biegu." },
-  { title: "Fizjoterapia", body: "Diagnostyka, profilaktyka urazów i regeneracja jako część planu." },
+const disciplines = (t: T) => [
+  { title: t("Trening biegowy", "Running"), body: t("Periodyzacja, strefy tempa i tętna, przygotowanie do startu docelowego.", "Periodisation, pace and heart-rate zones, preparation for your goal race.") },
+  { title: t("Przygotowanie siłowe", "Strength & conditioning"), body: t("Siła, moc i stabilizacja, które przekładają się na ekonomię biegu.", "Strength, power and stability that carry over to running economy.") },
+  { title: t("Fizjoterapia", "Physiotherapy"), body: t("Diagnostyka, profilaktyka urazów i regeneracja jako część planu.", "Assessment, injury prevention and recovery as part of the plan.") },
 ];
 
 /** Illustrative example of the athlete view (not real data). */
@@ -44,14 +63,16 @@ const SAMPLE_LAPS = [
 ];
 
 export default async function Home() {
+  const { lang, t } = await getT();
   const supabase = await createClient();
-  const [camps, taken, articles] = await Promise.all([
+  const [camps, taken, allArticles] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
     listArticles(supabase, { publishedOnly: true }).catch(() => []),
   ]);
+  const articles = articlesFor(allArticles, lang).items;
   const origin = publicOrigin();
   return (
     <>
@@ -93,17 +114,16 @@ export default async function Home() {
           </h1>
           <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
             <p className="site-rise max-w-xl text-lg leading-relaxed text-white/70 sm:text-xl" style={{ animationDelay: "400ms" }}>
-              Trening biegowy, przygotowanie siłowe i fizjoterapia w jednym zespole. Prowadzimy zawodników indywidualnie i
-              tworzymy obozy, które dają amatorom elitarne doświadczenie treningowe.
+              {t("Trening biegowy, przygotowanie siłowe i fizjoterapia w jednym zespole. Prowadzimy zawodników indywidualnie i tworzymy obozy, które dają amatorom elitarne doświadczenie treningowe.", "Running, strength training and physiotherapy in one team. We coach athletes individually and create camps that give amateurs an elite training experience.")}
             </p>
             <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href="/obozy">Obozy VYRA</PrimaryLink>
-              <GhostLink href="/prowadzenie">Prowadzenie indywidualne</GhostLink>
+              <PrimaryLink href="/obozy">{t("Obozy VYRA", "VYRA camps")}</PrimaryLink>
+              <GhostLink href="/prowadzenie">{t("Prowadzenie indywidualne", "Individual coaching")}</GhostLink>
             </div>
           </div>
           <div className="site-fade mt-16 flex items-center justify-between border-t border-white/15 pt-6" style={{ animationDelay: "800ms" }}>
             <span className="font-mono text-[11px] uppercase tracking-[0.5em] text-white/45">Est. 2026</span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">Przewiń</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-white/45">{t("Przewiń", "Scroll")}</span>
           </div>
         </div>
       </section>
@@ -111,25 +131,24 @@ export default async function Home() {
       {/* ---------------------------------------------------------------- statement */}
       <section className={`${wrap} py-28 sm:py-40`}>
         <Reveal>
-          <Eyebrow>Filozofia</Eyebrow>
+          <Eyebrow>{t("Filozofia", "Philosophy")}</Eyebrow>
         </Reveal>
         <Reveal delay={100} as="p" className="display mt-8 max-w-5xl text-[clamp(1.75rem,4vw,3.25rem)] leading-[1.12] text-white">
-          Nie musisz być zawodowcem, żeby trenować jak zawodowiec.{" "}
+          {t("Nie musisz być zawodowcem, żeby trenować jak zawodowiec.", "You don’t have to be a pro to train like one.")}{" "}
           <span className="text-white/40">
-            Elite is standard to poziom podejścia, a nie poziom wyników: planowanie, rzetelność, regeneracja i konsekwencja.
+            {t("Elite is standard to poziom podejścia, a nie poziom wyników: planowanie, rzetelność, regeneracja i konsekwencja.", "Elite is standard is a level of approach, not a level of results: planning, diligence, recovery and consistency.")}
           </span>
         </Reveal>
       </section>
 
-      <Marquee words={["Elite is standard", "Performance culture", "Trening", "Regeneracja", "Diagnostyka", "Est. 2026"]} />
+      <Marquee words={["Elite is standard", "Performance culture", t("Trening", "Training"), t("Regeneracja", "Recovery"), t("Diagnostyka", "Testing"), "Est. 2026"]} />
 
-      <Manifest />
+      <Manifest t={t} />
 
       {/* ---------------------------------------------------------------- offer */}
       <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow="Co robimy" title="Dwie drogi do jednego standardu">
-          Obozy dla tych, którzy chcą przeżyć kilka dni treningu jak zawodowiec. Prowadzenie dla tych, którzy chcą budować formę
-          przez cały sezon.
+        <SectionHead eyebrow={t("Co robimy", "What we do")} title={t("Dwie drogi do jednego standardu", "Two paths to one standard")}>
+          {t("Obozy dla tych, którzy chcą przeżyć kilka dni treningu jak zawodowiec. Prowadzenie dla tych, którzy chcą budować formę przez cały sezon.", "Camps for those who want to spend a few days training like a pro. Coaching for those who want to build form over a whole season.")}
         </SectionHead>
         <div className="mt-16 grid gap-5 lg:grid-cols-2">
           <Reveal>
@@ -143,11 +162,11 @@ export default async function Home() {
               />
               <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 grid gap-3 p-8">
-                <Eyebrow accent>Wkrótce</Eyebrow>
-                <h3 className="display text-3xl text-white sm:text-4xl">Obozy VYRA</h3>
-                <p className="max-w-md text-white/70">Elitarne doświadczenie dla amatorów: trening, żywienie, regeneracja i diagnostyka.</p>
+                <Eyebrow accent>{t("Wkrótce", "Coming soon")}</Eyebrow>
+                <h3 className="display text-3xl text-white sm:text-4xl">{t("Obozy VYRA", "VYRA camps")}</h3>
+                <p className="max-w-md text-white/70">{t("Elitarne doświadczenie dla amatorów: trening, żywienie, regeneracja i diagnostyka.", "An elite experience for amateurs: training, nutrition, recovery and testing.")}</p>
                 <span className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  Poznaj obozy <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  {t("Poznaj obozy", "Discover the camps")} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </span>
               </div>
             </Link>
@@ -163,11 +182,11 @@ export default async function Home() {
               />
               <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 grid gap-3 p-8">
-                <Eyebrow>Cały sezon</Eyebrow>
-                <h3 className="display text-3xl text-white sm:text-4xl">Prowadzenie indywidualne</h3>
-                <p className="max-w-md text-white/70">Plan budowany pod Ciebie, analiza każdego treningu i stały kontakt z trenerem.</p>
+                <Eyebrow>{t("Cały sezon", "Full season")}</Eyebrow>
+                <h3 className="display text-3xl text-white sm:text-4xl">{t("Prowadzenie indywidualne", "Individual coaching")}</h3>
+                <p className="max-w-md text-white/70">{t("Plan budowany pod Ciebie, analiza każdego treningu i stały kontakt z trenerem.", "A plan built around you, analysis of every session and ongoing contact with your coach.")}</p>
                 <span className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  Jak pracujemy <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  {t("Jak pracujemy", "How we work")} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </span>
               </div>
             </Link>
@@ -178,26 +197,27 @@ export default async function Home() {
       {camps.length ? (
         <section className="border-t border-white/10">
           <div className={`${wrap} py-28 sm:py-36`}>
-            <SectionHead eyebrow="Obozy VYRA" title="Najbliższe terminy">
-              Kameralne grupy i ograniczona liczba miejsc. Zapisy przez stronę obozu.
+            <SectionHead eyebrow={t("Obozy VYRA", "VYRA camps")} title={t("Najbliższe terminy", "Upcoming dates")}>
+              {t("Kameralne grupy i ograniczona liczba miejsc. Zapisy przez stronę obozu.", "Small groups and limited places. Sign up on the camp page.")}
             </SectionHead>
             <div className="mt-16">
-              <CampCards camps={camps.slice(0, 2)} taken={taken} />
+              <CampCards camps={camps.slice(0, 2)} taken={taken} lang={lang} />
             </div>
           </div>
         </section>
       ) : null}
 
       <PhotoBand src="/site/night-city.jpg" eyebrow="Run. Train. Evolve." position="60% 40%">
-        Przed pracą, po pracy, w deszczu i po zmroku. <span className="text-white/50">Warunki się zmieniają, standard zostaje ten sam.</span>
+        {t("Przed pracą, po pracy, w deszczu i po zmroku.", "Before work, after work, in the rain and after dark.")}{" "}
+        <span className="text-white/50">{t("Warunki się zmieniają, standard zostaje ten sam.", "Conditions change. The standard stays the same.")}</span>
       </PhotoBand>
 
       {/* ---------------------------------------------------------------- principles */}
       <section className="border-t border-white/10 bg-[#070708]">
         <div className={`${wrap} py-28 sm:py-36`}>
-          <SectionHead eyebrow="Zasady" title="Na czym opieramy pracę" />
+          <SectionHead eyebrow={t("Zasady", "Principles")} title={t("Na czym opieramy pracę", "What our work is built on")} />
           <div className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-3">
-            {PRINCIPLES.map((p, i) => (
+            {principles(t).map((p, i) => (
               <Reveal key={p.title} delay={i * 100} className="grid min-h-72 content-between gap-12 bg-[#070708] p-8 sm:p-10">
                 <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
                 <div className="grid gap-4">
@@ -212,12 +232,11 @@ export default async function Home() {
 
       {/* ---------------------------------------------------------------- team */}
       <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow="Zespół" title="Trzy kompetencje, jeden zespół">
-          Każdy zawodnik i uczestnik obozu pracuje z całym zespołem: trenerem biegowym, trenerem przygotowania siłowego i
-          fizjoterapeutą.
+        <SectionHead eyebrow={t("Zespół", "Team")} title={t("Trzy kompetencje, jeden zespół", "Three disciplines, one team")}>
+          {t("Każdy zawodnik i uczestnik obozu pracuje z całym zespołem: trenerem biegowym, trenerem przygotowania siłowego i fizjoterapeutą.", "Every athlete and camp participant works with the whole team: a running coach, a strength coach and a physiotherapist.")}
         </SectionHead>
         <div className="mt-16 grid gap-0 border-t border-white/10">
-          {DISCIPLINES.map((d, i) => (
+          {disciplines(t).map((d, i) => (
             <Reveal
               key={d.title}
               delay={i * 80}
@@ -231,7 +250,7 @@ export default async function Home() {
         </div>
         <Reveal className="mt-10">
           <Link href="/zespol" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
-            Poznaj zespół <ArrowUpRight className="size-4" />
+            {t("Poznaj zespół", "Meet the team")} <ArrowUpRight className="size-4" />
           </Link>
         </Reveal>
       </section>
@@ -241,35 +260,34 @@ export default async function Home() {
         <div className={`${wrap} grid gap-16 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
           <div className="grid gap-6">
             <Reveal>
-              <Eyebrow>Platforma VYRA.ATHL</Eyebrow>
+              <Eyebrow>{t("Platforma VYRA.ATHL", "The VYRA.ATHL platform")}</Eyebrow>
             </Reveal>
             <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
-              Każdy trening zapisany. Każda decyzja oparta na danych.
+              {t("Każdy trening zapisany. Każda decyzja oparta na danych.", "Every session logged. Every decision based on data.")}
             </Reveal>
             <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
-              Zawodnicy VYRA pracują w autorskiej platformie: plan tygodnia rozpisany co do odcinka, wynik każdego powtórzenia,
-              porównanie z planem i komentarze trenera. Na telefonie i komputerze.
+              {t("Zawodnicy VYRA pracują w autorskiej platformie: plan tygodnia rozpisany co do odcinka, wynik każdego powtórzenia, porównanie z planem i komentarze trenera. Na telefonie i komputerze.", "VYRA athletes work in our own platform: a weekly plan broken down rep by rep, the result of every repetition, comparison with the plan and coach comments. On phone and desktop.")}
             </Reveal>
             <Reveal delay={240}>
-              <GhostLink href="/prowadzenie">Jak wygląda prowadzenie</GhostLink>
+              <GhostLink href="/prowadzenie">{t("Jak wygląda prowadzenie", "How coaching works")}</GhostLink>
             </Reveal>
           </div>
           <Reveal delay={150}>
             <figure className="rounded-2xl border border-white/10 bg-black p-6 shadow-[0_40px_120px_-40px_rgba(240,51,57,0.35)] sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="grid gap-1">
-                  <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/40">Interwały · Wykonany</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/40">{t("Interwały · Wykonany", "Intervals · Completed")}</p>
                   <p className="display text-2xl text-white">4 × 1200 m</p>
                 </div>
-                <span className="rounded-full border border-emerald-400/30 px-3 py-1 text-[12px] font-medium text-emerald-300">4/4 w zakresie</span>
+                <span className="rounded-full border border-emerald-400/30 px-3 py-1 text-[12px] font-medium text-emerald-300">{t("4/4 w zakresie", "4/4 on target")}</span>
               </div>
               <table className="mt-8 w-full text-left text-sm">
                 <thead>
                   <tr className="text-[12px] text-white/40">
-                    <th className="pb-3 font-normal">Odcinek</th>
-                    <th className="pb-3 font-normal">Czas</th>
-                    <th className="pb-3 font-normal">Tempo</th>
-                    <th className="pb-3 font-normal">Tętno</th>
+                    <th className="pb-3 font-normal">{t("Odcinek", "Rep")}</th>
+                    <th className="pb-3 font-normal">{t("Czas", "Time")}</th>
+                    <th className="pb-3 font-normal">{t("Tempo", "Pace")}</th>
+                    <th className="pb-3 font-normal">{t("Tętno", "HR")}</th>
                   </tr>
                 </thead>
                 <tbody className="font-mono">
@@ -284,7 +302,7 @@ export default async function Home() {
                 </tbody>
               </table>
               <figcaption className="mt-6 border-t border-white/10 pt-4 text-[12px] text-white/35">
-                Cel 3:25–3:30 /km · przykładowy widok z platformy
+                {t("Cel 3:25–3:30 /km · przykładowy widok z platformy", "Target 3:25–3:30 /km · sample view from the platform")}
               </figcaption>
             </figure>
           </Reveal>
@@ -296,17 +314,16 @@ export default async function Home() {
         <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center`}>
           <div className="grid gap-6">
             <Reveal>
-              <Eyebrow accent>Narzędzia VYRA · za darmo</Eyebrow>
+              <Eyebrow accent>{t("Narzędzia VYRA · za darmo", "VYRA tools · free")}</Eyebrow>
             </Reveal>
             <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
-              Sprawdź swoje VO2max i tempa treningowe
+              {t("Sprawdź swoje VO2max i tempa treningowe", "Check your VO2max and training paces")}
             </Reveal>
             <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
-              Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i
-              maraton oraz poda tempa, w jakich warto trenować.
+              {t("Wpisz wynik z ostatniego biegu. Kalkulator oszacuje Twoje VO2max, przewidzi czasy na 5 km, 10 km, półmaraton i maraton oraz poda tempa, w jakich warto trenować.", "Enter a recent race result. The calculator estimates your VO2max, predicts your 5K, 10K, half marathon and marathon times, and gives the paces worth training at.")}
             </Reveal>
             <Reveal delay={240}>
-              <PrimaryLink href="/kalkulator">Otwórz kalkulator</PrimaryLink>
+              <PrimaryLink href="/kalkulator">{t("Otwórz kalkulator", "Open the calculator")}</PrimaryLink>
             </Reveal>
           </div>
           <Reveal delay={150}>
@@ -314,15 +331,15 @@ export default async function Home() {
               {[
                 ["VO2max", "45"],
                 ["5 km", "21:49"],
-                ["Półmaraton", "1:40:23"],
-                ["Tempo progowe", "4:32–4:43"],
+                [t("Półmaraton", "Half marathon"), "1:40:23"],
+                [t("Tempo progowe", "Threshold pace"), "4:32–4:43"],
               ].map(([k, v]) => (
                 <div key={k} className="grid gap-2 bg-black p-6 sm:p-8">
                   <span className="text-sm text-white/45">{k}</span>
                   <span className="display num text-3xl text-white">{v}</span>
                 </div>
               ))}
-              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">Przykład dla wyniku 10 km w 45:30</p>
+              <p className="col-span-2 bg-black px-6 pb-6 text-[12px] text-white/35 sm:px-8">{t("Przykład dla wyniku 10 km w 45:30", "Example for a 10K in 45:30")}</p>
             </div>
           </Reveal>
         </div>
@@ -331,7 +348,7 @@ export default async function Home() {
       {articles.length ? (
         <section className="border-t border-white/10 bg-[#070708]">
           <div className={`${wrap} py-28 sm:py-36`}>
-            <SectionHead eyebrow="Wiedza" title="Najnowsze artykuły" />
+            <SectionHead eyebrow={t("Wiedza", "Journal")} title={t("Najnowsze artykuły", "Latest articles")} />
             <div className="mt-14 grid gap-5 md:grid-cols-3">
               {articles.slice(0, 3).map((a, i) => (
                 <Reveal key={a.id} delay={i * 100}>
@@ -339,13 +356,13 @@ export default async function Home() {
                     href={`/wiedza/${a.slug}`}
                     className="group grid h-full content-between gap-8 rounded-2xl border border-white/10 bg-black p-7 transition-colors hover:border-white/30"
                   >
-                    <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/40">{ARTICLE_CATEGORY_LABEL[a.category]}</span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/40">{categoryLabel(a.category, t)}</span>
                     <span className="grid gap-3">
                       <span className="display text-2xl text-white">{a.title}</span>
                       {a.excerpt ? <span className="text-sm leading-relaxed text-white/55">{a.excerpt}</span> : null}
                     </span>
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 group-hover:text-white">
-                      Czytaj <ArrowUpRight className="size-4" />
+                      {t("Czytaj", "Read")} <ArrowUpRight className="size-4" />
                     </span>
                   </Link>
                 </Reveal>
@@ -357,6 +374,7 @@ export default async function Home() {
 
       <InstagramStrip
         handle={SITE.instagram}
+        follow={t("Obserwuj", "Follow")}
         posts={[
           { src: "/site/ig-standard.jpg", alt: "VYRA Standard Series: Elite is standard" },
           { src: "/site/ig-neon.jpg", alt: "Neon VYRA: Elite is standard" },
@@ -366,10 +384,10 @@ export default async function Home() {
 
       <CtaBand
         tone="warm"
-        title="Zostań częścią VYRA"
-        lead="Zapisz się na listę obozów albo zapytaj o prowadzenie indywidualne. Odpowiadamy osobiście."
+        title={t("Zostań częścią VYRA", "Become part of VYRA")}
+        lead={t("Zapisz się na listę obozów albo zapytaj o prowadzenie indywidualne. Odpowiadamy osobiście.", "Join the camp list or ask about individual coaching. We reply personally.")}
         href="/kontakt"
-        label="Skontaktuj się"
+        label={t("Skontaktuj się", "Get in touch")}
       />
     </>
   );

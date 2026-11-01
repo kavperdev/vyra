@@ -18,6 +18,10 @@ function CardEditor({ card, onDone }: { card: SiteTeamCard | null; onDone?: () =
     areas: card?.areas ?? "",
     sort: String(card?.sort ?? 0),
     visible: card?.visible ?? true,
+    role_label_en: card?.role_label_en ?? "",
+    bio_en: card?.bio_en ?? "",
+    areas_en: card?.areas_en ?? "",
+    had_en: !!(card?.role_label_en || card?.bio_en || card?.areas_en),
   });
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [pending, start] = useTransition();
@@ -62,6 +66,20 @@ function CardEditor({ card, onDone }: { card: SiteTeamCard | null; onDone?: () =
           <Input id={id("sort")} inputMode="numeric" value={v.sort} onChange={(e) => setV({ ...v, sort: e.target.value })} />
         </Field>
       </div>
+      <details className="rounded-md border border-border p-3" open={!!(v.role_label_en || v.bio_en || v.areas_en)}>
+        <summary className="cursor-pointer text-sm font-medium">Wersja angielska (EN)</summary>
+        <div className="mt-3 grid gap-4">
+          <Field label="Rola (EN)" htmlFor={id("role-en")} error={errors.role_label_en?.[0]}>
+            <Input id={id("role-en")} value={v.role_label_en} onChange={(e) => setV({ ...v, role_label_en: e.target.value })} />
+          </Field>
+          <Field label="Opis (EN)" htmlFor={id("bio-en")} error={errors.bio_en?.[0]}>
+            <Textarea id={id("bio-en")} rows={3} value={v.bio_en} onChange={(e) => setV({ ...v, bio_en: e.target.value })} />
+          </Field>
+          <Field label="Specjalizacje (EN)" htmlFor={id("areas-en")} hint="Oddziel przecinkami" error={errors.areas_en?.[0]}>
+            <Input id={id("areas-en")} value={v.areas_en} onChange={(e) => setV({ ...v, areas_en: e.target.value })} />
+          </Field>
+        </div>
+      </details>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={v.visible} onChange={(e) => setV({ ...v, visible: e.target.checked })} />
         Widoczna na stronie

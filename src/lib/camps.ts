@@ -19,6 +19,10 @@ export interface Camp {
   price_pln: number | null;
   capacity: number | null;
   summary: string | null;
+  title_en?: string | null;
+  summary_en?: string | null;
+  description_en?: string | null;
+  included_en?: string | null;
   description: string | null;
   included: string | null;
   created_at: string;
@@ -68,6 +72,8 @@ export interface Article {
   published_at: string | null;
   author_id: string | null;
   updated_at: string;
+  /** Language the article is written in (default Polish). */
+  lang?: "pl" | "en";
 }
 
 export interface SiteTeamCard {
@@ -78,6 +84,9 @@ export interface SiteTeamCard {
   areas: string | null;
   sort: number;
   visible: boolean;
+  role_label_en?: string | null;
+  bio_en?: string | null;
+  areas_en?: string | null;
 }
 
 export const CAMP_FORMAT_LABEL: Record<CampFormat, string> = {
@@ -153,10 +162,19 @@ export interface CoachingPlan {
   highlighted: boolean;
   visible: boolean;
   sort: number;
+  name_en?: string | null;
+  tagline_en?: string | null;
+  features_en?: string | null;
+  badge_en?: string | null;
 }
 
 export function planFeatures(p: Pick<CoachingPlan, "features">): string[] {
-  return (p.features ?? "")
+  return lines(p.features);
+}
+
+/** Non-empty lines of a multi-line field, without leading list markers. */
+export function lines(text: string | null | undefined): string[] {
+  return (text ?? "")
     .split("\n")
     .map((l) => l.replace(/^[-*•]\s*/, "").trim())
     .filter(Boolean);
