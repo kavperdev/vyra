@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { CtaBand, Eyebrow, GhostLink, Marquee, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
+import { CtaBand, Eyebrow, GhostLink, Marquee, PhotoBand, PhotoGallery, PrimaryLink, Reveal, SectionHead, wrap } from "@/components/site/blocks";
 import { CampCards } from "@/components/site/camp-cards";
-import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
-import { listArticles, listCamps, takenPlaces } from "@/lib/data/camps";
+import { ARTICLE_CATEGORY_LABEL, MEDIA_SLOTS, PACKAGE_PERIOD_LABEL, mediaUrl } from "@/lib/camps";
+import { getSiteMedia, listArticles, listCamps, listPackages, takenPlaces } from "@/lib/data/camps";
+import { SITE } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -42,20 +43,29 @@ const SAMPLE_LAPS = [
 
 export default async function Home() {
   const supabase = await createClient();
-  const [camps, taken, articles] = await Promise.all([
+  const [camps, taken, articles, media, packages] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
     listArticles(supabase, { publishedOnly: true }).catch(() => []),
+    getSiteMedia(supabase).catch(() => ({}) as Awaited<ReturnType<typeof getSiteMedia>>),
+    listPackages(supabase).catch(() => []),
   ]);
+  const img = (slot: string) => mediaUrl(media, slot) ?? "/site/hero.jpg";
+  const gallery = MEDIA_SLOTS.filter((m) => m.slot.startsWith("gallery_"))
+    .map((m) => ({ url: mediaUrl(media, m.slot), alt: media[m.slot]?.alt ?? null }))
+    .filter((g): g is { url: string; alt: string | null } => !!g.url);
+  const offer = packages.filter((p) => p.visible).slice(0, 4);
+  const instagram = SITE.instagram.replace(/^@/, "");
   return (
     <>
       {/* ---------------------------------------------------------------- hero */}
       <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden">
         <div className="absolute inset-0 -z-20 overflow-hidden">
-          <Image src="/site/hero.jpg" alt="" fill priority sizes="100vw" className="site-zoom object-cover opacity-50 grayscale" />
+          <Image src={img("home_hero")} alt="" fill priority sizes="100vw" className="site-zoom object-cover opacity-60" />
         </div>
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(70%_55%_at_85%_20%,rgba(240,51,57,0.22),transparent_70%)]" />
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className={`${wrap} pb-14 pt-36 sm:pb-20`}>
           <div className="site-rise">
@@ -115,7 +125,7 @@ export default async function Home() {
           <Reveal>
             <Link href="/obozy" className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[5/4]">
               <Image
-                src="/branding/source/vyra-neon-poster.png"
+                src={img("home_camps")}
                 alt=""
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
@@ -135,11 +145,11 @@ export default async function Home() {
           <Reveal delay={120}>
             <Link href="/prowadzenie" className="group relative block aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 sm:aspect-[5/4]">
               <Image
-                src="/site/track.jpg"
+                src={img("home_coaching")}
                 alt=""
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover opacity-60 grayscale transition-transform duration-[1.6s] ease-out group-hover:scale-[1.04]"
+                className="object-cover opacity-60 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.04]"
               />
               <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 grid gap-3 p-8">
@@ -152,6 +162,81 @@ export default async function Home() {
               </div>
             </Link>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- reel + packages */}
+      <section className="relative overflow-hidden border-t border-white/10 bg-[#070708]">
+        <div aria-hidden className="pointer-events-none absolute -left-40 top-1/3 size-[36rem] rounded-full bg-[var(--accent)] opacity-[0.12] blur-[140px]" />
+        <div className={`${wrap} relative grid gap-14 py-28 sm:py-36 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center`}>
+          <Reveal className="relative mx-auto w-full max-w-[340px] lg:mx-0">
+            <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] border border-white/15 bg-black shadow-[0_50px_140px_-40px_rgba(240,51,57,0.45)]">
+              <video
+                className="absolute inset-0 size-full object-cover"
+                src="/site/vyra-reel.mp4"
+                poster="/site/vyra-reel-poster.jpg"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="VYRA: Not a level. A standard."
+              />
+            </div>
+            {instagram ? (
+              <a
+                href={`https://instagram.com/${instagram}`}
+                target="_blank"
+                rel="noreferrer"
+                className="site-link mt-5 inline-flex items-center gap-2 pb-0.5 font-mono text-[11px] uppercase tracking-[0.3em] text-white/60 hover:text-white"
+              >
+                {SITE.instagram} <ArrowUpRight className="size-3.5" />
+              </a>
+            ) : null}
+          </Reveal>
+          <div className="grid gap-8">
+            <Reveal>
+              <Eyebrow accent>Not a level. A standard.</Eyebrow>
+            </Reveal>
+            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">
+              Wybierz swój poziom prowadzenia
+            </Reveal>
+            <Reveal delay={160} as="p" className="text-lg leading-relaxed text-white/60">
+              Od samodzielnego planu po pełne przygotowanie na poziomie zawodnika. Ten sam standard pracy, różny zakres opieki.
+            </Reveal>
+            {offer.length ? (
+              <div className="grid border-t border-white/10">
+                {offer.map((p, i) => (
+                  <Reveal key={p.id} delay={200 + i * 70}>
+                    <Link
+                      href="/prowadzenie#pakiety"
+                      className="group flex items-center justify-between gap-6 border-b border-white/10 py-5 transition-colors hover:border-white/30"
+                    >
+                      <span className="grid gap-1">
+                        <span className="flex items-center gap-3 text-lg font-semibold text-white">
+                          {p.name}
+                          {p.highlighted ? <span className="size-1.5 rounded-full bg-[var(--accent)]" aria-hidden /> : null}
+                        </span>
+                        {p.tagline ? <span className="text-sm text-white/45">{p.tagline}</span> : null}
+                      </span>
+                      <span className="flex shrink-0 items-baseline gap-2 text-right">
+                        {p.price_pln != null ? (
+                          <>
+                            <span className="display text-2xl text-white">{p.price_pln.toLocaleString("pl-PL")} zł</span>
+                            <span className="hidden text-[12px] text-white/40 sm:inline">{PACKAGE_PERIOD_LABEL[p.period]}</span>
+                          </>
+                        ) : null}
+                        <ArrowUpRight className="size-4 self-center text-white/40 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent)]" />
+                      </span>
+                    </Link>
+                  </Reveal>
+                ))}
+              </div>
+            ) : null}
+            <Reveal delay={480}>
+              <PrimaryLink href="/prowadzenie#pakiety">Zobacz wszystkie pakiety</PrimaryLink>
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -185,6 +270,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <PhotoBand image={img("home_band")} eyebrow="Every level. Same standard." title={<>Nie poziom.<br />Standard.</>} />
 
       {/* ---------------------------------------------------------------- team */}
       <section className={`${wrap} py-28 sm:py-36`}>
@@ -303,6 +390,19 @@ export default async function Home() {
           </Reveal>
         </div>
       </section>
+
+      {gallery.length ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow="VYRA w ruchu" title="Trening, który widać">
+              Poranne akcenty, nocne kilometry i praca na bieżni. Tak wygląda codzienność zawodników VYRA.
+            </SectionHead>
+            <div className="mt-16">
+              <PhotoGallery photos={gallery} />
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {articles.length ? (
         <section className="border-t border-white/10 bg-[#070708]">

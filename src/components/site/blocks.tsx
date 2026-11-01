@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,10 +34,30 @@ export function Eyebrow({ children, accent = false, className }: { children: Rea
 }
 
 /** Opening block of a sub page: eyebrow, large title, lead. */
-export function PageHero({ eyebrow, title, lead, children }: { eyebrow: string; title: React.ReactNode; lead?: React.ReactNode; children?: React.ReactNode }) {
+export function PageHero({
+  eyebrow,
+  title,
+  lead,
+  image,
+  children,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  lead?: React.ReactNode;
+  /** Optional background photo, shown darkened behind the text. */
+  image?: string | null;
+  children?: React.ReactNode;
+}) {
   return (
-    <section className="relative overflow-hidden border-b border-white/10 pt-36 sm:pt-44">
-      <div className={cn(wrap, "pb-20 sm:pb-28")}>
+    <section className={cn("relative overflow-hidden border-b border-white/10 pt-36 sm:pt-44", image && "min-h-[78svh] sm:min-h-[82svh]")}>
+      {image ? (
+        <div aria-hidden className="absolute inset-0">
+          <Image src={image} alt="" fill priority sizes="100vw" className="site-kenburns object-cover opacity-55" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/35 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/20 to-transparent" />
+        </div>
+      ) : null}
+      <div className={cn(wrap, "relative pb-20 sm:pb-28", image && "flex min-h-[inherit] flex-col justify-end")}>
         <div className="site-rise">
           <Eyebrow accent>{eyebrow}</Eyebrow>
         </div>
@@ -176,6 +197,54 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
             </summary>
             <p className="max-w-2xl pb-7 leading-relaxed text-white/60">{f.a}</p>
           </details>
+        </Reveal>
+      ))}
+    </div>
+  );
+}
+
+/** Full-bleed photo band with a short line of text. */
+export function PhotoBand({ image, eyebrow, title, alt = "" }: { image: string | null; eyebrow?: string; title: React.ReactNode; alt?: string }) {
+  if (!image) return null;
+  return (
+    <section className="relative isolate overflow-hidden">
+      <div className="relative h-[70svh] min-h-[420px] w-full">
+        <Image src={image} alt={alt} fill sizes="100vw" className="site-parallax object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/50" />
+        <div className={cn(wrap, "relative flex h-full flex-col justify-end pb-16 sm:pb-24")}>
+          <Reveal className="grid max-w-4xl gap-5">
+            {eyebrow ? <Eyebrow accent>{eyebrow}</Eyebrow> : null}
+            <p className="display text-[clamp(2.25rem,6vw,5rem)] leading-[0.98] text-white">{title}</p>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Photo grid: first photo large, others smaller. Renders nothing without photos. */
+export function PhotoGallery({ photos }: { photos: { url: string; alt: string | null }[] }) {
+  if (!photos.length) return null;
+  return (
+    <div className="grid auto-rows-[180px] grid-cols-2 gap-3 sm:auto-rows-[240px] sm:gap-4 lg:grid-cols-4">
+      {photos.map((p, i) => (
+        <Reveal
+          key={p.url}
+          delay={i * 70}
+          className={cn(
+            "group relative overflow-hidden rounded-2xl bg-white/5",
+            i === 0 && "col-span-2 row-span-2",
+            i === 3 && photos.length > 4 && "lg:col-span-2",
+          )}
+        >
+          <Image
+            src={p.url}
+            alt={p.alt ?? ""}
+            fill
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
         </Reveal>
       ))}
     </div>

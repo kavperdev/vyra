@@ -591,3 +591,21 @@ select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'staff without founder role do not see camp finances');
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
 select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'participants do not see camp finances');
+
+-- ---------------------------------------------------------------- packages and site photos
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.site_packages) = 5, 'visitors see coaching packages');
+do $$ begin
+  update public.site_packages set price_pln = 1;
+  raise exception 'FAIL: visitor changed a package';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot change packages';
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
+update public.site_packages set price_pln = 1;
+select pg_temp.check((select min(price_pln) from public.site_packages) > 1, 'only founders change packages');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.site_media (slot, url) values ('home_hero', 'https://example.supabase.co/storage/v1/object/public/site/a.jpg');
+select pg_temp.as_admin();
+set role anon;
+select pg_temp.check((select count(*) from public.site_media) = 1, 'visitors read site photos');

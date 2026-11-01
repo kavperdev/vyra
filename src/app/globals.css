@@ -183,6 +183,10 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes vyra-drift {
+  from { transform: scale(1.12) translateY(-5%); }
+  to { transform: scale(1.12) translateY(5%); }
+}
 @keyframes vyra-line {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -194,6 +198,14 @@
   .site-zoom { animation: vyra-zoom 2.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .site-line { transform-origin: left; animation: vyra-line 1.2s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .site-marquee { animation: vyra-marquee 60s linear infinite; }
+  .site-kenburns { animation: vyra-zoom 9s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .site-parallax { transform: scale(1.12); }
+  @supports (animation-timeline: view()) {
+    .site-parallax {
+      animation: vyra-drift linear both;
+      animation-timeline: view();
+    }
+  }
 
   /* Scroll reveal: [data-reveal] starts hidden only when JS is running (html.js), then gets .is-in. */
   .js [data-reveal] {

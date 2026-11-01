@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { CtaBand, Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
+import { CtaBand, Eyebrow, Faq, PageHero, PhotoBand, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { CoachingInquiryForm } from "@/components/site/lead-forms";
+import { PackageGrid } from "@/components/site/packages";
+import { mediaUrl } from "@/lib/camps";
+import { getSiteMedia, listPackages } from "@/lib/data/camps";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Prowadzenie indywidualne",
@@ -30,13 +34,19 @@ const FAQ = [
   { q: "Czy prowadzenie odbywa się online?", a: "Tak. Plan, wyniki i kontakt z trenerem są w platformie VYRA, więc możesz trenować z nami niezależnie od miejsca zamieszkania." },
   { q: "Jak wygląda kontakt z trenerem?", a: "Po każdym treningu zapisujesz wynik i odczucia w platformie. Trener je analizuje, komentuje i na tej podstawie koryguje plan." },
   { q: "Jakiego sprzętu potrzebuję?", a: "Wystarczy zegarek lub aplikacja mierząca czas i dystans. Pomiar tętna jest pomocny, ale nie jest konieczny na start." },
-  { q: "Ile kosztuje prowadzenie?", a: "Zakres i cenę ustalamy po rozmowie, zależnie od celu i potrzeb. Wyślij zgłoszenie, a przedstawimy propozycję." },
+  { q: "Ile kosztuje prowadzenie?", a: "Ceny pakietów są podane wyżej. Jeśli nie wiesz, który wybrać, wyślij zgłoszenie z opcją „Jeszcze nie wiem”: po rozmowie doradzimy najlepszy zakres." },
+  { q: "Czy mogę zmienić pakiet albo zrezygnować?", a: "Tak. Pakiety miesięczne odnawiasz z miesiąca na miesiąc i możesz je zmienić przed kolejnym okresem. Nie ma długich umów." },
+  { q: "Od czego zaczyna się współpraca?", a: "Od rozmowy i diagnozy: historia treningowa, cel, dostępność i test wyjściowy. Pierwszy plan dostajesz w aplikacji VYRA w ciągu kilku dni." },
 ];
 
-export default function CoachingPage() {
+export default async function CoachingPage() {
+  const supabase = await createClient();
+  const [packages, media] = await Promise.all([listPackages(supabase), getSiteMedia(supabase)]);
+  const visible = packages.filter((p) => p.visible);
   return (
     <>
       <PageHero
+        image={mediaUrl(media, "prowadzenie_hero")}
         eyebrow="Prowadzenie indywidualne"
         title="Indywidualny proces treningowy"
         lead="Plan zbudowany pod Twój cel, poziom, kalendarz i ograniczenia. Prowadzimy biegaczy na każdym etapie, od pierwszych startów po walkę o rekordy życiowe."
@@ -47,6 +57,14 @@ export default function CoachingPage() {
         >
           Zapytaj o prowadzenie
         </a>
+        {visible.length ? (
+          <a
+            href="#pakiety"
+            className="ml-3 inline-flex h-12 items-center rounded-full border border-white/30 px-7 text-sm font-semibold text-white transition-colors hover:border-white"
+          >
+            Zobacz pakiety
+          </a>
+        ) : null}
       </PageHero>
 
       <section className={`${wrap} py-28 sm:py-36`}>
@@ -83,6 +101,22 @@ export default function CoachingPage() {
         </div>
       </section>
 
+      {visible.length ? (
+        <section id="pakiety" className="scroll-mt-24 border-t border-white/10">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow="Pakiety" title={<>Wybierz poziom <span className="text-[var(--accent)]">prowadzenia</span></>}>
+              Każdy pakiet to gotowy zakres współpracy w aplikacji VYRA. Kliknij „Wybieram”, a pakiet od razu trafi do
+              zgłoszenia poniżej.
+            </SectionHead>
+            <div className="mt-16">
+              <PackageGrid packages={visible} />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <PhotoBand image={mediaUrl(media, "home_band")} eyebrow="Proces" title="Każdy trening ma powód." />
+
       <section id="zgloszenie" className="scroll-mt-24">
         <div className={`${wrap} grid gap-14 py-28 sm:py-36 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]`}>
           <div className="grid content-start gap-6">
@@ -98,7 +132,7 @@ export default function CoachingPage() {
             </Reveal>
           </div>
           <Reveal delay={120} className="rounded-2xl border border-white/10 bg-[#070708] p-6 sm:p-10">
-            <CoachingInquiryForm />
+            <CoachingInquiryForm packages={visible.map((p) => p.name)} />
           </Reveal>
         </div>
       </section>

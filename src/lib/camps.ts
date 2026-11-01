@@ -140,3 +140,49 @@ export function formatPLN(value: number | null | undefined): string | null {
 
 /** Statuses that take a place on the camp. */
 export const TAKES_PLACE: ParticipantStatus[] = ["registered", "paid", "attended"];
+
+// ---------------------------------------------------------------- coaching packages and site photos
+export interface SitePackage {
+  id: string;
+  name: string;
+  tagline: string | null;
+  price_pln: number | null;
+  period: "month" | "once" | "cycle";
+  features: string | null;
+  highlighted: boolean;
+  sort: number;
+  visible: boolean;
+}
+
+export const PACKAGE_PERIOD_LABEL: Record<SitePackage["period"], string> = {
+  month: "/ miesiąc",
+  cycle: "/ 4 tygodnie",
+  once: "jednorazowo",
+};
+
+export interface SiteMediaItem {
+  url: string;
+  alt: string | null;
+}
+
+/** Photo places on the brand site. `fallback` is used until a photo is uploaded. */
+export const MEDIA_SLOTS: { slot: string; label: string; fallback: string | null }[] = [
+  { slot: "home_hero", label: "Strona główna · zdjęcie w tle", fallback: "/site/hero.jpg" },
+  { slot: "home_band", label: "Strona główna · pas ze zdjęciem i hasłem", fallback: "/site/runner-city.jpg" },
+  { slot: "home_camps", label: "Strona główna · karta Obozy", fallback: "/branding/source/vyra-neon-poster.png" },
+  { slot: "home_coaching", label: "Strona główna · karta Prowadzenie", fallback: "/site/runner-city.jpg" },
+  { slot: "obozy_hero", label: "Obozy · nagłówek", fallback: "/site/track.jpg" },
+  { slot: "obozy_concept", label: "Obozy · koncepcja", fallback: "/branding/source/vyra-neon-poster.png" },
+  { slot: "prowadzenie_hero", label: "Prowadzenie · nagłówek", fallback: "/site/runner-city.jpg" },
+  { slot: "zespol_hero", label: "Zespół · nagłówek", fallback: "/site/hero.jpg" },
+  { slot: "gallery_1", label: "Galeria „VYRA w ruchu” · 1", fallback: "/site/elite-is-standard.jpg" },
+  { slot: "gallery_2", label: "Galeria „VYRA w ruchu” · 2", fallback: "/site/runner-city.jpg" },
+  { slot: "gallery_3", label: "Galeria „VYRA w ruchu” · 3", fallback: "/site/track.jpg" },
+  { slot: "gallery_4", label: "Galeria „VYRA w ruchu” · 4", fallback: "/site/run-train-evolve.jpg" },
+  { slot: "gallery_5", label: "Galeria „VYRA w ruchu” · 5", fallback: "/site/hero.jpg" },
+  { slot: "gallery_6", label: "Galeria „VYRA w ruchu” · 6", fallback: "/branding/source/vyra-neon-poster.png" },
+];
+
+export function mediaUrl(media: Record<string, SiteMediaItem>, slot: string): string | null {
+  return media[slot]?.url ?? MEDIA_SLOTS.find((m) => m.slot === slot)?.fallback ?? null;
+}

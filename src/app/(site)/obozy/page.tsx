@@ -3,7 +3,8 @@ import Image from "next/image";
 import { CtaBand, Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { CampCards } from "@/components/site/camp-cards";
 import { CampWaitlistForm } from "@/components/site/lead-forms";
-import { listCamps, takenPlaces } from "@/lib/data/camps";
+import { mediaUrl } from "@/lib/camps";
+import { getSiteMedia, listCamps, takenPlaces } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -35,14 +36,16 @@ const FAQ = [
 
 export default async function CampsPage() {
   const supabase = await createClient();
-  const [camps, taken] = await Promise.all([
+  const [camps, taken, media] = await Promise.all([
     listCamps(supabase, { publicOnly: true }).catch(() => []),
     takenPlaces(supabase).catch(() => ({}) as Record<string, number>),
+    getSiteMedia(supabase).catch(() => ({}) as Awaited<ReturnType<typeof getSiteMedia>>),
   ]);
   const hasCamps = camps.length > 0;
   return (
     <>
       <PageHero
+        image={mediaUrl(media, "obozy_hero")}
         eyebrow={hasCamps ? "Obozy VYRA" : "Obozy VYRA · Wkrótce"}
         title="Elitarne doświadczenie dla amatorów"
         lead="Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką zespołu specjalistów, w kameralnej grupie."
@@ -68,7 +71,7 @@ export default async function CampsPage() {
 
       <section className={`${wrap} grid gap-14 py-28 sm:py-36 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-center`}>
         <Reveal className="relative aspect-square overflow-hidden rounded-2xl border border-white/10">
-          <Image src="/branding/source/vyra-neon-poster.png" alt="Plakat VYRA: Elite is standard, coming soon" fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" />
+          <Image src={mediaUrl(media, "obozy_concept") ?? "/branding/source/vyra-neon-poster.png"} alt={media.obozy_concept?.alt ?? "VYRA: Elite is standard"} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" />
         </Reveal>
         <div className="grid gap-6">
           <Reveal>

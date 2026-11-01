@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { submitApplication } from "@/lib/actions/applications";
+import { PACKAGE_EVENT } from "./packages";
 
 type Errors = Record<string, string[] | undefined>;
 
@@ -121,8 +122,13 @@ export function CampWaitlistForm({ campId, withPhone = false, submitLabel = "Zap
   );
 }
 
-export function CoachingInquiryForm() {
-  const [v, setV] = useState({ full_name: "", email: "", goal: "", records: "", message: "", consent: false, website: "" });
+export function CoachingInquiryForm({ packages = [] }: { packages?: string[] }) {
+  const [v, setV] = useState({ full_name: "", email: "", package: "", goal: "", records: "", message: "", consent: false, website: "" });
+  useEffect(() => {
+    const onPick = (e: Event) => setV((cur) => ({ ...cur, package: String((e as CustomEvent).detail ?? "") }));
+    window.addEventListener(PACKAGE_EVENT, onPick);
+    return () => window.removeEventListener(PACKAGE_EVENT, onPick);
+  }, []);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -170,6 +176,18 @@ export function CoachingInquiryForm() {
           />
         </Field>
       </div>
+      {packages.length ? (
+        <Field label="Pakiet" htmlFor="co-pkg" hint="Możesz zostawić „Jeszcze nie wiem”, doradzimy po rozmowie">
+          <Select id="co-pkg" value={v.package} onChange={(e) => setV({ ...v, package: e.target.value })}>
+            <option value="">Jeszcze nie wiem</option>
+            {packages.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
       <Field
         label="Twój cel"
         htmlFor="co-goal"

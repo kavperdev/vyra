@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
+import { MediaEditor } from "@/components/content/media-editor";
+import { PackagesEditor } from "@/components/content/packages-editor";
 import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
-import { listArticles, listSiteTeam } from "@/lib/data/camps";
+import { getSiteMedia, listArticles, listPackages, listSiteTeam } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,14 +21,19 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [articles, team] = await Promise.all([listArticles(supabase), listSiteTeam(supabase)]);
+  const [articles, team, packages, media] = await Promise.all([
+    listArticles(supabase),
+    listSiteTeam(supabase),
+    listPackages(supabase),
+    getSiteMedia(supabase),
+  ]);
 
   return (
     <div className="grid gap-8">
       <PageHeader
         eyebrow="Zarządzanie"
         title="Strona VYRA"
-        description="Treści strony marki: artykuły w zakładce Wiedza i karty zespołu. Obozy publikujesz w zakładce Obozy."
+        description="Treści strony marki: zdjęcia, pakiety prowadzenia, artykuły i zespół. Obozy publikujesz w zakładce Obozy."
         actions={
           <Button asChild variant="outline">
             <Link href="/" target="_blank">
@@ -35,6 +42,26 @@ export default async function SiteContentPage() {
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Zdjęcia na stronie</CardTitle>
+          <p className="text-sm text-muted">Kliknij zdjęcie, żeby wgrać nowe (z telefonu też). Zmiana jest widoczna na stronie od razu.</p>
+        </CardHeader>
+        <CardContent>
+          <MediaEditor media={media} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pakiety prowadzenia</CardTitle>
+          <p className="text-sm text-muted">Oferty z cenami w zakładce Prowadzenie. Kliknij pakiet, żeby go edytować.</p>
+        </CardHeader>
+        <CardContent>
+          <PackagesEditor packages={packages} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

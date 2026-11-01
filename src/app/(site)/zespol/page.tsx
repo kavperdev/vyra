@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CtaBand, Eyebrow, PageHero, Reveal, SectionHead, wrap } from "@/components/site/blocks";
-import { listSiteTeam } from "@/lib/data/camps";
+import { mediaUrl } from "@/lib/camps";
+import { getSiteMedia, listSiteTeam } from "@/lib/data/camps";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function TeamPage() {
   const supabase = await createClient();
+  const media = await getSiteMedia(supabase).catch(() => ({}) as Awaited<ReturnType<typeof getSiteMedia>>);
   const team = (await listSiteTeam(supabase).catch(() => []))
     .filter((t) => t.visible)
     .map((t) => ({
@@ -23,6 +25,7 @@ export default async function TeamPage() {
   return (
     <>
       <PageHero
+        image={mediaUrl(media, "zespol_hero")}
         eyebrow="Zespół VYRA"
         title="Specjaliści, którzy tworzą VYRA"
         lead="Trzy kompetencje: trening biegowy, przygotowanie siłowe i fizjoterapia. Każdy zawodnik i uczestnik obozu pracuje z całym zespołem, nie z jedną osobą."

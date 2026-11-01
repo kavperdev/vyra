@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Site photos uploaded from the panel live in Supabase Storage.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" }],
+  },
   // Keep visited screens in the client cache for a moment, so switching tabs back and forth is instant.
   // Every save still refreshes the data (revalidatePath / router.refresh).
   experimental: {

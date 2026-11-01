@@ -145,3 +145,15 @@ export async function getCampBudget(supabase: ServerSupabase, campId: string): P
     items: ((items ?? []) as BudgetItem[]).map((i) => ({ ...i, amount_pln: Number(i.amount_pln) })),
   };
 }
+
+export async function listPackages(supabase: ServerSupabase): Promise<import("@/lib/camps").SitePackage[]> {
+  const { data } = await supabase.from("site_packages").select("*").order("sort").order("created_at");
+  return (data ?? []) as import("@/lib/camps").SitePackage[];
+}
+
+export async function getSiteMedia(supabase: ServerSupabase): Promise<Record<string, import("@/lib/camps").SiteMediaItem>> {
+  const { data } = await supabase.from("site_media").select("slot, url, alt");
+  const out: Record<string, import("@/lib/camps").SiteMediaItem> = {};
+  for (const r of (data ?? []) as { slot: string; url: string; alt: string | null }[]) out[r.slot] = { url: r.url, alt: r.alt };
+  return out;
+}
