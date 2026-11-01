@@ -47,6 +47,9 @@ export interface AthleteProfile {
   lthr: number | null;
   easy_hr_max: number | null;
   athlete_notes: string | null;
+  /** Onboarding questionnaire (migration 20261102000100); absent before it runs. */
+  intake?: Record<string, string | string[]> | null;
+  intake_done_at?: string | null;
 }
 
 export interface CoachAthlete {

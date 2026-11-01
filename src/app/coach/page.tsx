@@ -32,7 +32,13 @@ interface Attention {
 }
 
 /** Transparent rules, each shown as the reason on the card. */
-function attentionFor(athletes: { id: string; full_name: string }[], sessions: SessionSummary[], today: string): Attention[] {
+function attentionFor(
+  athletes: { id: string; full_name: string }[],
+  sessions: SessionSummary[],
+  today: string,
+  readiness: Readiness[],
+  noIntake: Set<string>,
+): Attention[] {
   const from14 = addDaysISO(today, -14);
   const from7 = addDaysISO(today, -7);
   const out: Attention[] = [];
@@ -40,15 +46,21 @@ function attentionFor(athletes: { id: string; full_name: string }[], sessions: S
     const mine = sessions.filter((s) => s.athlete_id === a.id);
     const recent = mine.filter((s) => s.scheduled_date >= from14 && s.scheduled_date <= today);
     const reasons: string[] = [];
+    const checkins = readiness.filter((r) => r.athlete_id === a.id);
+    const pain = checkins.filter((r) => r.pain).sort((x, y) => y.day.localeCompare(x.day))[0];
+    if (pain) reasons.push(tl(`zgłoszony ból${pain.pain_area ? `: ${pain.pain_area}` : ""} (${formatDate(pain.day, "d MMM")})`, `pain reported${pain.pain_area ? `: ${pain.pain_area}` : ""} (${formatDate(pain.day, "d MMM")})`));
+    const low = checkins.filter((r) => !r.pain && readinessLevel(r) === "low").length;
+    if (low >= 2) reasons.push(tl(`niska gotowość ${low} dni z 3`, `low readiness on ${low} of 3 days`));
+    if (noIntake.has(a.id)) reasons.push(tl("nie wypełnił ankiety startowej", "starting questionnaire not filled in"));
     const missing = recent.filter((s) => displayStatus(s.status, s.scheduled_date, today) === "needs_update").length;
     const skipped = recent.filter((s) => s.status === "skipped").length;
-    if (missing >= 2) reasons.push(`${missing} treningi bez wpisu (14 dni)`);
+    if (missing >= 2) reasons.push(tl(`${missing} treningi bez wpisu (14 dni)`, `${missing} sessions not logged (14 days)`));
     if (skipped >= 2) reasons.push(tl(`${skipped} pominięte treningi (14 dni)`, `${skipped} skipped sessions (14 days)`));
     const plannedWeek = mine.filter((s) => s.scheduled_date >= from7 && s.scheduled_date <= today).length;
     const loggedWeek = mine.filter((s) => s.execution && s.execution.performed_on >= from7).length;
     if (plannedWeek >= 2 && loggedWeek === 0) reasons.push(tl("brak zapisanych treningów od 7 dni", "no sessions logged for 7 days"));
     const highRpe = recent.filter((s) => (s.execution?.rpe ?? 0) >= 9).length;
-    if (highRpe >= 2) reasons.push(`${highRpe} treningi z RPE ≥ 9 (14 dni)`);
+    if (highRpe >= 2) reasons.push(tl(`${highRpe} treningi z RPE ≥ 9 (14 dni)`, `${highRpe} sessions at RPE ≥ 9 (14 days)`));
     const upcoming = mine.filter((s) => s.scheduled_date > today && s.scheduled_date <= addDaysISO(today, 7)).length;
     if (upcoming === 0) reasons.push(tl("brak treningów na najbliższy tydzień", "no sessions planned for next week"));
     if (reasons.length) out.push({ athleteId: a.id, name: a.full_name, reasons });
@@ -82,16 +94,24 @@ export default async function CoachDashboard() {
 
   const ids = athletes.map((a) => a.id);
   const from = periodStart(today, 8);
-  const [sessions, comments, readinessRows] = await Promise.all([
+  const [sessions, comments, readinessRecent, intakeRows] = await Promise.all([
     listSessions(supabase, { athleteIds: ids, from, to: addDaysISO(today, 14) }),
     listRecentComments(supabase, { onlyRole: "athlete", limit: 5 }),
     supabase
       .from("readiness")
       .select("*")
-      .eq("day", today)
+      .gte("day", addDaysISO(today, -2))
+      .lte("day", today)
       .in("athlete_id", ids)
       .then((r) => (r.error ? null : ((r.data ?? []) as Readiness[]))),
+    supabase
+      .from("athlete_profiles")
+      .select("athlete_id, intake_done_at")
+      .in("athlete_id", ids)
+      .then((r) => (r.error ? [] : ((r.data ?? []) as { athlete_id: string; intake_done_at: string | null }[]))),
   ]);
+  const readinessRows = readinessRecent ? readinessRecent.filter((r) => r.day === today) : null;
+  const noIntake = new Set(intakeRows.filter((r) => !r.intake_done_at).map((r) => r.athlete_id));
   const readinessBy = new Map((readinessRows ?? []).map((r) => [r.athlete_id, r]));
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
@@ -102,7 +122,7 @@ export default async function CoachDashboard() {
   const comp = completionStats(sessions, addDaysISO(today, -27), today);
   const buckets = weeklyBuckets(sessions, today, 8);
   const weekKm = buckets[buckets.length - 1]?.actualKm ?? 0;
-  const attention = attentionFor(athletes, sessions, today);
+  const attention = attentionFor(athletes, sessions, today, readinessRecent ?? [], noIntake);
   const recentDone = sessions
     .filter((s) => s.execution && s.execution.status !== "in_progress")
     .sort((a, b) => (b.execution!.performed_on + b.scheduled_date).localeCompare(a.execution!.performed_on + a.scheduled_date))
@@ -133,6 +153,33 @@ export default async function CoachDashboard() {
         <Stat label={tl("Do uzupełnienia", "To update")} value={awaiting.length} tone={awaiting.length ? "warning" : "default"} hint={tl("ostatnie 14 dni", "last 14 days")} href="/coach/calendar?status=needs_update&view=list" />
         <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} treningów`} />
         <Stat label={tl("Kilometry w tym tyg.", "Km this week")} value={formatNumber(weekKm)} unit="km" hint={tl("wszyscy zawodnicy", "all athletes")} />
+      </section>
+
+      <section className="grid gap-3">
+        <SectionTitle>{tl("Wymagają uwagi", "Need attention")}</SectionTitle>
+        {attention.length ? (
+          <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {attention.map((a) => (
+              <li key={a.athleteId}>
+                <Link href={`/coach/athletes/${a.athleteId}`} className="flex gap-3 rounded-lg border border-warning/30 bg-surface p-3 hover:border-warning/60">
+                  <Initials name={a.name} size="sm" />
+                  <div className="grid min-w-0 gap-1">
+                    <p className="text-sm font-semibold">{a.name}</p>
+                    <ul className="grid gap-0.5">
+                      {a.reasons.map((r) => (
+                        <li key={r} className="flex items-center gap-1.5 text-[13px] text-warning">
+                          <AlertTriangle className="size-3.5 shrink-0" /> {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">{tl("Wszyscy zawodnicy realizują plan bez sygnałów ostrzegawczych.", "All athletes are following their plan with no warning signs.")}</p>
+        )}
       </section>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -193,32 +240,7 @@ export default async function CoachDashboard() {
             </section>
           ) : null}
 
-          <section className="grid gap-3">
-            <SectionTitle>{tl("Wymagają uwagi", "Need attention")}</SectionTitle>
-            {attention.length ? (
-              <ul className="grid gap-2">
-                {attention.map((a) => (
-                  <li key={a.athleteId}>
-                    <Link href={`/coach/athletes/${a.athleteId}`} className="flex gap-3 rounded-lg border border-warning/30 bg-surface p-3 hover:border-warning/60">
-                      <Initials name={a.name} size="sm" />
-                      <div className="grid min-w-0 gap-1">
-                        <p className="text-sm font-semibold">{a.name}</p>
-                        <ul className="grid gap-0.5">
-                          {a.reasons.map((r) => (
-                            <li key={r} className="flex items-center gap-1.5 text-[13px] text-warning">
-                              <AlertTriangle className="size-3.5 shrink-0" /> {r}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">{tl("Wszyscy zawodnicy realizują plan bez sygnałów ostrzegawczych.", "All athletes are following their plan with no warning signs.")}</p>
-            )}
-          </section>
+
 
           <section className="grid gap-3">
             <SectionTitle>{tl("Komentarze zawodników", "Athlete comments")}</SectionTitle>

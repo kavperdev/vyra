@@ -32,7 +32,7 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
-  const [sessions, records, coachComments, readiness] = await Promise.all([
+  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
@@ -44,6 +44,20 @@ export default async function AthleteDashboard() {
       .eq("day", today)
       .maybeSingle()
       .then((r) => (r.error ? undefined : ((r.data as Readiness | null) ?? null))),
+    // Onboarding questionnaire not sent yet (hidden if the migration has not run).
+    supabase
+      .from("athlete_profiles")
+      .select("intake_done_at")
+      .eq("athlete_id", user.id)
+      .maybeSingle()
+      .then((r) => !r.error && !(r.data as { intake_done_at: string | null } | null)?.intake_done_at),
+    supabase
+      .from("readiness")
+      .select("sleep, energy, soreness, pain")
+      .eq("athlete_id", user.id)
+      .gte("day", addDaysISO(weekStart, -7))
+      .lt("day", weekStart)
+      .then((r) => (r.error ? [] : ((r.data ?? []) as Pick<Readiness, "sleep" | "energy" | "soreness" | "pain">[]))),
   ]);
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
@@ -54,8 +68,21 @@ export default async function AthleteDashboard() {
     .filter((s) => s.execution && isDone(s.execution.status))
     .sort((a, b) => b.execution!.performed_on.localeCompare(a.execution!.performed_on))[0];
   const comp = completionStats(sessions, addDaysISO(today, -27), today);
-  const buckets = weeklyBuckets(sessions, today, 1);
-  const week = buckets[0];
+  const buckets = weeklyBuckets(sessions, today, 8);
+  const week = buckets[buckets.length - 1];
+  const last = buckets[buckets.length - 2];
+  const prev = buckets[buckets.length - 3];
+  // Consecutive finished weeks with at least 80% of planned sessions done.
+  let streak = 0;
+  for (let i = buckets.length - 2; i >= 0; i--) {
+    const b = buckets[i];
+    if (!b.plannedSessions || b.doneSessions / b.plannedSessions < 0.8) break;
+    streak++;
+  }
+  const lastReady = lastWeekReadiness.length
+    ? Math.round((lastWeekReadiness.reduce((n, r) => n + r.sleep + r.energy + (6 - r.soreness), 0) / lastWeekReadiness.length / 15) * 100)
+    : null;
+  const kmTrend = last && prev && prev.actualKm > 0 ? Math.round(((last.actualKm - prev.actualKm) / prev.actualKm) * 100) : null;
   const weekDays = eachDay(weekStart, weekEndISO(today));
   const weekSessions = sessions.filter((s) => s.scheduled_date >= weekStart && s.scheduled_date <= weekEndISO(today));
   const weekDone = weekSessions.filter((s) => isDone(s.status)).length;
@@ -78,6 +105,24 @@ export default async function AthleteDashboard() {
               : tl("Dziś wolne.", "Rest day today.")
         }
       />
+
+      {intakeMissing ? (
+        <Card className="border-accent/50">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div className="grid gap-1">
+              <p className="font-semibold">{tl("Pierwszy krok: ankieta startowa", "First step: your starting questionnaire")}</p>
+              <p className="text-[13px] text-muted">
+                {tl("5 minut. Cel, doświadczenie, kalendarz i zdrowie. Na tej podstawie trener ułoży Twój plan.", "5 minutes. Goal, experience, schedule and health. Your coach builds your plan from it.")}
+              </p>
+            </div>
+            <Button asChild variant="accent">
+              <Link href="/athlete/ankieta">
+                {tl("Wypełnij ankietę", "Fill it in")} <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
 
@@ -130,6 +175,68 @@ export default async function AthleteDashboard() {
         <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={tl(`${comp.done} z ${comp.due} treningów`, `${comp.done} of ${comp.due} sessions`)} href="/athlete/progress" />
         <Stat label={tl("Ostatni trening", "Last session")} value={lastDone ? formatDate(lastDone.execution!.performed_on, "d MMM") : "–"} hint={lastDone?.title} href={lastDone ? `/athlete/sessions/${lastDone.id}` : undefined} />
       </section>
+
+      {last && last.plannedSessions > 0 ? (
+        <Card>
+          <CardContent className="grid gap-4 pt-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="font-semibold">
+                {tl("Podsumowanie poprzedniego tygodnia", "Last week in review")}
+                <span className="ml-2 text-[13px] font-normal text-muted">
+                  {formatDate(last.weekStart, "d MMM")} – {formatDate(addDaysISO(last.weekStart, 6), "d MMM")}
+                </span>
+              </p>
+              {streak >= 2 ? (
+                <span className="rounded-full bg-accent/15 px-3 py-1 text-[12px] font-semibold text-accent">
+                  🔥 {tl(`${streak} tygodnie z rzędu na planie`, `${streak} weeks in a row on plan`)}
+                </span>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid gap-0.5">
+                <span className="text-[12px] text-muted">{tl("Treningi", "Sessions")}</span>
+                <span className="num text-xl font-semibold">
+                  {last.doneSessions}/{last.plannedSessions}
+                </span>
+              </div>
+              <div className="grid gap-0.5">
+                <span className="text-[12px] text-muted">{tl("Kilometry", "Distance")}</span>
+                <span className="num text-xl font-semibold">
+                  {formatNumber(last.actualKm)} <span className="text-sm font-normal text-muted">km</span>
+                </span>
+                {kmTrend != null ? (
+                  <span className={cn("num text-[12px]", kmTrend >= 0 ? "text-done" : "text-muted")}>
+                    {kmTrend >= 0 ? "+" : ""}
+                    {kmTrend}% {tl("vs tydzień wcześniej", "vs the week before")}
+                  </span>
+                ) : last.plannedKm ? (
+                  <span className="num text-[12px] text-muted">plan {formatNumber(last.plannedKm)} km</span>
+                ) : null}
+              </div>
+              <div className="grid gap-0.5">
+                <span className="text-[12px] text-muted">{tl("Czas biegu", "Running time")}</span>
+                <span className="num text-xl font-semibold">
+                  {Math.floor(last.runningSeconds / 3600)}:{String(Math.round((last.runningSeconds % 3600) / 60)).padStart(2, "0")} <span className="text-sm font-normal text-muted">h</span>
+                </span>
+              </div>
+              <div className="grid gap-0.5">
+                <span className="text-[12px] text-muted">{tl("Średnia gotowość", "Average readiness")}</span>
+                <span className="num text-xl font-semibold">{lastReady != null ? `${lastReady}%` : "–"}</span>
+                {lastWeekReadiness.length ? (
+                  <span className="text-[12px] text-muted">{tl(`${lastWeekReadiness.length} poranne wpisy`, `${lastWeekReadiness.length} check-ins`)}</span>
+                ) : null}
+              </div>
+            </div>
+            <p className="text-sm text-muted">
+              {last.doneSessions >= last.plannedSessions
+                ? tl("Cały plan wykonany. Tak buduje się formę: tydzień po tygodniu.", "The whole plan done. This is how form is built: week after week.")
+                : last.doneSessions / last.plannedSessions >= 0.8
+                  ? tl("Bardzo dobry tydzień. Regularność to Twoja największa przewaga.", "A very good week. Consistency is your biggest advantage.")
+                  : tl("Nie wszystko wyszło? Napisz trenerowi, co przeszkodziło. Plan dopasujemy do życia, nie odwrotnie.", "Didn’t go to plan? Tell your coach what got in the way. We fit the plan to your life, not the other way round.")}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="grid content-start gap-3">

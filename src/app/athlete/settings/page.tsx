@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
 import { AthleteProfileForm } from "@/components/coach/athlete-tools";
 import { AccountSettings } from "@/components/shared/account-settings";
@@ -25,6 +28,17 @@ export default async function AthleteSettingsPage() {
         title={tl("Ustawienia", "Settings")}
         description={coaches.length ? tl(`Trener: ${coaches.map((c) => c.full_name).join(", ")}. Trener widzi Twoje treningi, wyniki i dane poniżej.`, `Coach: ${coaches.map((c) => c.full_name).join(", ")}. Your coach sees your sessions, results and the details below.`) : undefined}
       />
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
+          <div className="grid gap-0.5">
+            <p className="font-semibold">{tl("Ankieta startowa", "Starting questionnaire")}</p>
+            <p className="text-[13px] text-muted">{tl("Zmienił się cel, kalendarz albo zdrowie? Zaktualizuj odpowiedzi.", "Has your goal, schedule or health changed? Update your answers.")}</p>
+          </div>
+          <Button asChild variant="outline">
+            <Link href="/athlete/ankieta">{tl("Otwórz ankietę", "Open questionnaire")}</Link>
+          </Button>
+        </CardContent>
+      </Card>
       <AccountSettings fullName={user.profile.full_name} email={user.email} />
       <AthleteProfileForm athleteId={user.id} profile={profile} title={tl("Dane treningowe", "Training details")} />
     </div>

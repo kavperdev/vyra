@@ -13,6 +13,7 @@ import { TrainingCalendar } from "@/components/calendar/training-calendar";
 import { HistoryTable } from "@/components/athlete/history-table";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
+import { IntakeView } from "@/components/coach/intake-view";
 import { SessionList } from "@/components/training/session-bits";
 import { StrengthHistory } from "@/components/training/strength-history";
 import { requireRole } from "@/lib/auth";
@@ -180,6 +181,7 @@ async function TabContent({
             </CardContent>
           </Card>
         </div>
+        <IntakeView intake={p ? p.intake : undefined} doneAt={p?.intake_done_at} />
         <section className="grid gap-3">
           <SectionTitle>{tl("Ostatnie wyniki", "Recent results")}</SectionTitle>
           <SessionList sessions={done.slice(0, 6)} hrefFor={hrefFor} today={today} empty={<EmptyState title={tl("Brak wyników", "No results")} description={tl("Zawodnik nie zapisał jeszcze żadnego treningu.", "The athlete hasn’t logged any sessions yet.")} />} />
