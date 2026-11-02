@@ -9,6 +9,7 @@ import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls"
 import { deleteTeamCard, saveTeamCard, type TeamCardInput } from "@/lib/actions/content";
 import type { SiteTeamCard } from "@/lib/camps";
 import { tl } from "@/lib/i18n/runtime";
+import { PhotoUpload } from "@/components/content/photo-upload";
 
 function CardEditor({ card, onDone }: { card: SiteTeamCard | null; onDone?: () => void }) {
   const router = useRouter();
@@ -23,6 +24,8 @@ function CardEditor({ card, onDone }: { card: SiteTeamCard | null; onDone?: () =
     bio_en: card?.bio_en ?? "",
     areas_en: card?.areas_en ?? "",
     had_en: !!(card?.role_label_en || card?.bio_en || card?.areas_en),
+    photo_url: card?.photo_url ?? "",
+    had_photo: !!card?.photo_url,
   });
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [pending, start] = useTransition();
@@ -48,6 +51,11 @@ function CardEditor({ card, onDone }: { card: SiteTeamCard | null; onDone?: () =
         });
       }}
     >
+      <div className="grid gap-1.5">
+        <p className="text-sm font-medium">{tl("Zdjęcie", "Photo")}</p>
+        <PhotoUpload folder="team" value={v.photo_url ?? ""} onChange={(url) => setV({ ...v, photo_url: url })} />
+        <p className="text-[12px] text-subtle">{tl("Najlepiej pionowe (4:5), dobrze oświetlona twarz. Zmniejszymy je automatycznie.", "Portrait (4:5) works best, face well lit. It is resized automatically.")}</p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={tl("Imię i nazwisko", "Full name")} htmlFor={id("name")} hint={tl("Puste = „Przedstawimy wkrótce”", "Empty = “Coming soon”")} error={errors.full_name?.[0]}>
           <Input id={id("name")} value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />

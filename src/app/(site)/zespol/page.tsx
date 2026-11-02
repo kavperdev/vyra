@@ -26,6 +26,7 @@ export default async function TeamPage() {
     .map((m) => ({
       key: m.id,
       name: m.full_name,
+      photo: m.photo_url ?? null,
       role: pick(lang, m.role_label, m.role_label_en) ?? m.role_label,
       body: pick(lang, m.bio, m.bio_en) ?? "",
       areas: (pick(lang, m.areas, m.areas_en) ?? "").split(",").map((a) => a.trim()).filter(Boolean),
@@ -43,9 +44,18 @@ export default async function TeamPage() {
         <div className="grid gap-5 lg:grid-cols-3">
           {team.map((m, i) => (
             <Reveal as="article" key={m.key} delay={i * 120} className="grid content-start gap-8 rounded-2xl border border-white/10 p-8 sm:p-10">
-              <div className="grid aspect-[4/5] place-items-center rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
-                <span className="display text-6xl text-white/15">{m.name ? m.name.split(" ").map((w) => w[0]).join("") : "V"}</span>
-              </div>
+              {m.photo ? (
+                <div
+                  role="img"
+                  aria-label={m.name ?? m.role}
+                  className="aspect-[4/5] rounded-xl border border-white/10 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${m.photo})` }}
+                />
+              ) : (
+                <div className="grid aspect-[4/5] place-items-center rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
+                  <span className="display text-6xl text-white/15">{m.name ? m.name.split(" ").map((w) => w[0]).join("") : "V"}</span>
+                </div>
+              )}
               <div className="grid gap-2">
                 <h2 className={m.name ? "display text-2xl text-white" : "display text-2xl text-white/35"}>{m.name ?? t("Przedstawimy wkrótce", "Coming soon")}</h2>
                 <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--accent)]">{m.role}</p>

@@ -88,6 +88,8 @@ export interface SiteTeamCard {
   role_label_en?: string | null;
   bio_en?: string | null;
   areas_en?: string | null;
+  /** Photo in the "site-photos" bucket (migration 20261102000300). */
+  photo_url?: string | null;
 }
 
 export const CAMP_FORMAT_LABEL: Record<CampFormat, string> = localized<CampFormat>({

@@ -10,6 +10,7 @@ import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls"
 import { deleteAmbassador, saveAmbassador } from "@/lib/actions/club";
 import type { Ambassador } from "@/lib/data/club";
 import { tl } from "@/lib/i18n/runtime";
+import { PhotoUpload } from "@/components/content/photo-upload";
 
 function AmbassadorForm({ item, leads, onDone }: { item: Ambassador | null; leads?: number; onDone?: () => void }) {
   const router = useRouter();
@@ -74,16 +75,18 @@ function AmbassadorForm({ item, leads, onDone }: { item: Ambassador | null; lead
       <Field label={tl("Cytat (opcjonalnie)", "Quote (optional)")} htmlFor={id("q")}>
         <Textarea id={id("q")} rows={2} value={v.quote} onChange={set("quote")} />
       </Field>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field label={tl("Kod rabatowy", "Discount code")} htmlFor={id("c")} hint={tl("Taki sam jak w Stripe", "Same as in Stripe")}>
           <Input id={id("c")} value={v.code} onChange={set("code")} />
         </Field>
         <Field label={tl("Rabat", "Discount")} unit="%" htmlFor={id("d")} error={errors.discount_pct?.[0]}>
           <Input id={id("d")} inputMode="numeric" value={v.discount_pct} onChange={set("discount_pct")} />
         </Field>
-        <Field label={tl("Zdjęcie (adres)", "Photo (URL)")} htmlFor={id("p")} error={errors.photo_url?.[0]} hint={tl("Opcjonalnie, https://…", "Optional, https://…")}>
-          <Input id={id("p")} value={v.photo_url} onChange={set("photo_url")} />
-        </Field>
+      </div>
+      <div className="grid gap-1.5">
+        <p className="text-sm font-medium">{tl("Zdjęcie (tło strony)", "Photo (page background)")}</p>
+        <PhotoUpload folder="ambassadors" value={v.photo_url} onChange={(url) => setV({ ...v, photo_url: url })} />
+        {errors.photo_url?.[0] ? <p className="text-[13px] text-problem">{errors.photo_url[0]}</p> : null}
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2 text-sm">

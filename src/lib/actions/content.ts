@@ -73,6 +73,13 @@ const teamSchema = z.object({
   bio_en: optionalText(1200),
   areas_en: optionalText(300),
   had_en: z.boolean().optional(),
+  photo_url: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => v === "" || /^https:\/\//.test(v), "Nieprawidłowy adres zdjęcia")
+    .optional(),
+  had_photo: z.boolean().optional(),
 });
 
 export type TeamCardInput = z.input<typeof teamSchema>;
@@ -93,6 +100,8 @@ export async function saveTeamCard(id: string | null, input: TeamCardInput): Pro
       ...(v.had_en || v.role_label_en || v.bio_en || v.areas_en
         ? { role_label_en: toText(v.role_label_en), bio_en: toText(v.bio_en), areas_en: toText(v.areas_en) }
         : {}),
+      // Only sent when a photo is set or removed, so saving works before the photo migration.
+      ...(v.photo_url || v.had_photo ? { photo_url: v.photo_url || null } : {}),
     };
     const { error } = id ? await supabase.from("site_team").update(row).eq("id", id) : await supabase.from("site_team").insert(row);
     if (error) return dbError(error);
