@@ -26,6 +26,8 @@ export async function stripe<T>(method: "GET" | "POST", path: string, body?: Rec
     headers: {
       Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      // Pinned so new account defaults can't change field names under us.
+      "Stripe-Version": "2024-06-20",
     },
     body: body ? encode(body).join("&") : undefined,
     cache: "no-store",

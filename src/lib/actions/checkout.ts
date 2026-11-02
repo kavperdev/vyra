@@ -69,7 +69,8 @@ export async function startCheckout(
     return { ok: true, url: session.url };
   } catch (e) {
     console.error("[stripe]", e);
-    return { ok: false, error: t("Nie udało się otworzyć płatności. Spróbuj ponownie za chwilę.", "Couldn’t open the payment. Please try again in a moment.") };
+    const why = e instanceof Error && e.message ? ` (${e.message.slice(0, 160)})` : "";
+    return { ok: false, error: t("Nie udało się otworzyć płatności. Spróbuj ponownie za chwilę.", "Couldn’t open the payment. Please try again in a moment.") + why };
   }
 }
 
