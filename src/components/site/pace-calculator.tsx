@@ -109,10 +109,10 @@ export function PaceCalculator() {
             ))}
           </Select>
         </Field>
-        <Field label={t("Twój czas", "Your time")} htmlFor="calc-time" hint={t("np. 45:30 albo 1:39:00", "e.g. 45:30 or 1:39:00")} error={error}>
+        <Field label={t("Twój czas", "Your time")} htmlFor="calc-time" hint={t("np. 45:30 albo 1:39:00; na telefonie możesz wpisać 45,30", "e.g. 45:30 or 1:39:00; on a phone you can type 45,30")} error={error}>
           <Input
             id="calc-time"
-            inputMode="numeric"
+            inputMode="decimal"
             placeholder="45:30"
             autoComplete="off"
             value={time}
@@ -140,7 +140,7 @@ export function PaceCalculator() {
           </Select>
         </Field>
         <Field label={t("Twój cel: czas", "Your goal: time")} htmlFor="calc-gt" hint={t("np. 19:59", "e.g. 19:59")}>
-          <Input id="calc-gt" inputMode="numeric" placeholder="19:59" autoComplete="off" value={goalTime} onChange={(e) => setGoalTime(e.target.value)} />
+          <Input id="calc-gt" inputMode="decimal" placeholder="19:59" autoComplete="off" value={goalTime} onChange={(e) => setGoalTime(e.target.value)} />
         </Field>
       </div>
 

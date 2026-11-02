@@ -28,7 +28,7 @@ export const paceField = z
   .refine((v) => {
     const p = parsePace(v);
     return p === null || (Number.isFinite(p) && p >= 60 && p <= 1800);
-  }, { message: "Tempo wpisz jako m:ss, np. 4:30" });
+  }, { message: "Tempo wpisz jako m:ss, np. 4:30 (albo 4,30)" });
 
 /** Optional duration "mm:ss", "h:mm:ss" or minutes. */
 export const durationField = (maxSeconds = 172800) =>
@@ -38,7 +38,7 @@ export const durationField = (maxSeconds = 172800) =>
     .refine((v) => {
       const d = parseDuration(v);
       return d === null || (Number.isFinite(d) && d >= 0 && d <= maxSeconds);
-    }, { message: "Czas wpisz jako mm:ss, h:mm:ss albo w minutach" });
+    }, { message: "Czas wpisz jako mm:ss albo h:mm:ss, np. 49:08 (albo 49,08), lub w minutach" });
 
 /** Optional distance in km ("10,5"). */
 export const kmField = (maxKm = 1000) =>

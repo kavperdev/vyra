@@ -12,12 +12,17 @@ export function formatPace(secondsPerKm: number | null | undefined): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** "4:30" or "4.30" → 270. "" → null. Invalid → NaN. */
+/**
+ * Pace "4:30" → 270. Also accepts what a phone number pad can type:
+ * "4.30", "4,30", "4 30" and "430" (3–4 digits). "" → null. Invalid → NaN.
+ */
 export function parsePace(input: string | null | undefined): number | null {
   const v = (input ?? "").trim();
   if (!v) return null;
-  const m = /^(\d{1,2})[:.,](\d{1,2})$/.exec(v);
+  const m = /^(\d{1,2})\s*[:.,;\s]\s*(\d{1,2})$/.exec(v) ?? /^(\d{1,2})(\d{2})$/.exec(v);
   if (!m) return Number.NaN;
+  // "4,5" is ambiguous (4:05, 4:30 or 4:50), so separators other than ":" need two digits.
+  if (m[2].length === 1 && !v.includes(":")) return Number.NaN;
   const sec = Number(m[2]);
   if (sec >= 60) return Number.NaN;
   return Number(m[1]) * 60 + sec;
@@ -33,11 +38,17 @@ export function formatDuration(seconds: number | null | undefined): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** "49:08" → 2948, "1:12:01" → 4321, "45" → 2700 (minutes). "" → null. Invalid → NaN. */
+/**
+ * Time "49:08" → 2948, "1:12:01" → 4321, "45" → 2700 (minutes), "1,5" → 90 (decimal minutes).
+ * A phone number pad cannot type ":", so ".", "," and spaces work as separators too
+ * when followed by two digits: "49,08", "1.12.01", "49 08". "" → null. Invalid → NaN.
+ */
 export function parseDuration(input: string | null | undefined): number | null {
-  const v = (input ?? "").trim();
-  if (!v) return null;
-  if (/^\d+([.,]\d+)?$/.test(v)) return Math.round(Number(v.replace(",", ".")) * 60);
+  const raw = (input ?? "").trim();
+  if (!raw) return null;
+  // Whole or decimal minutes with a single digit after the separator: "45", "1,5".
+  if (/^\d+([.,]\d)?$/.test(raw)) return Math.round(Number(raw.replace(",", ".")) * 60);
+  const v = raw.replace(/\s*[.,;\s]\s*/g, ":");
   const parts = v.split(":");
   if (parts.length < 2 || parts.length > 3 || parts.some((p) => !/^\d+$/.test(p))) return Number.NaN;
   const nums = parts.map(Number);

@@ -286,7 +286,7 @@ export function SessionForm({
             </Field>
             {kind !== "running" ? (
               <Field label={tl("Planowany czas", "Planned time")} htmlFor="planned_duration" hint={tl("np. 45 lub 1:00:00", "e.g. 45 or 1:00:00")} error={errors.planned_duration?.message}>
-                <Input id="planned_duration" inputMode="numeric" {...register("planned_duration")} />
+                <Input id="planned_duration" inputMode="decimal" {...register("planned_duration")} />
               </Field>
             ) : null}
           </div>
@@ -316,7 +316,7 @@ export function SessionForm({
                 <Input id="running.distance_km" inputMode="decimal" placeholder="10" {...register("running.distance_km")} />
               </Field>
               <Field label={tl("Czas", "Time")} htmlFor="running.duration" hint={tl("np. 50:00", "e.g. 50:00")} error={errors.running?.duration?.message}>
-                <Input id="running.duration" inputMode="numeric" placeholder="50:00" {...register("running.duration")} />
+                <Input id="running.duration" inputMode="decimal" placeholder="50:00" {...register("running.duration")} />
               </Field>
               <Field label={tl("Strefa", "Zone")} htmlFor="running.zone">
                 <Select id="running.zone" {...register("running.zone")}>
@@ -329,10 +329,10 @@ export function SessionForm({
                 </Select>
               </Field>
               <Field label={tl("Tempo od", "Pace from")} unit="min/km" htmlFor="running.pace_from" error={errors.running?.pace_from?.message} hint={tl("szybsza granica", "faster limit")}>
-                <Input id="running.pace_from" inputMode="numeric" placeholder="4:50" {...register("running.pace_from")} />
+                <Input id="running.pace_from" inputMode="decimal" placeholder="4:50" {...register("running.pace_from")} />
               </Field>
               <Field label={tl("Tempo do", "Pace to")} unit="min/km" htmlFor="running.pace_to" error={errors.running?.pace_to?.message} hint={tl("wolniejsza granica", "slower limit")}>
-                <Input id="running.pace_to" inputMode="numeric" placeholder="5:10" {...register("running.pace_to")} />
+                <Input id="running.pace_to" inputMode="decimal" placeholder="5:10" {...register("running.pace_to")} />
               </Field>
               <Field label={tl("Tętno od", "HR from")} unit="bpm" htmlFor="running.hr_min" error={errors.running?.hr_min?.message}>
                 <Input id="running.hr_min" inputMode="numeric" {...register("running.hr_min")} />
@@ -445,13 +445,13 @@ function SegmentsEditor({
                 <Input id={`seg-${i}-dist`} inputMode="numeric" placeholder="800" {...register(`segments.${i}.distance_m`)} />
               </Field>
               <Field label={tl("lub czas", "or time")} htmlFor={`seg-${i}-dur`} error={segErr(i)?.duration?.message}>
-                <Input id={`seg-${i}-dur`} inputMode="numeric" placeholder="2:00" {...register(`segments.${i}.duration`)} />
+                <Input id={`seg-${i}-dur`} inputMode="decimal" placeholder="2:00" {...register(`segments.${i}.duration`)} />
               </Field>
               <Field label={tl("Tempo od", "Pace from")} htmlFor={`seg-${i}-pf`} error={segErr(i)?.pace_from?.message}>
-                <Input id={`seg-${i}-pf`} inputMode="numeric" placeholder="3:20" {...register(`segments.${i}.pace_from`)} />
+                <Input id={`seg-${i}-pf`} inputMode="decimal" placeholder="3:20" {...register(`segments.${i}.pace_from`)} />
               </Field>
               <Field label={tl("Tempo do", "Pace to")} htmlFor={`seg-${i}-pt`} error={segErr(i)?.pace_to?.message}>
-                <Input id={`seg-${i}-pt`} inputMode="numeric" placeholder="3:24" {...register(`segments.${i}.pace_to`)} />
+                <Input id={`seg-${i}-pt`} inputMode="decimal" placeholder="3:24" {...register(`segments.${i}.pace_to`)} />
               </Field>
               <Field label={tl("Intensywność", "Intensity")} htmlFor={`seg-${i}-int`}>
                 <Select id={`seg-${i}-int`} {...register(`segments.${i}.intensity`)}>
@@ -480,10 +480,10 @@ function SegmentsEditor({
                 </Select>
               </Field>
               <Field label={tl("Czas przerwy", "Recovery time")} htmlFor={`seg-${i}-rd`} error={segErr(i)?.recovery_duration?.message}>
-                <Input id={`seg-${i}-rd`} inputMode="numeric" placeholder="1:30" {...register(`segments.${i}.recovery_duration`)} />
+                <Input id={`seg-${i}-rd`} inputMode="decimal" placeholder="1:30" {...register(`segments.${i}.recovery_duration`)} />
               </Field>
               <Field label={tl("lub dystans", "or distance")} unit="m" htmlFor={`seg-${i}-rdist`} error={segErr(i)?.recovery_distance_m?.message}>
-                <Input id={`seg-${i}-rdist`} inputMode="numeric" placeholder="200" {...register(`segments.${i}.recovery_distance_m`)} />
+                <Input id={`seg-${i}-rdist`} inputMode="decimal" placeholder="200" {...register(`segments.${i}.recovery_distance_m`)} />
               </Field>
               <Field label={tl("Nazwa (opcjonalnie)", "Name (optional)")} htmlFor={`seg-${i}-label`}>
                 <Input id={`seg-${i}-label`} {...register(`segments.${i}.label`)} />
@@ -554,7 +554,7 @@ function ExercisesEditor({
                 <Input id={`ex-${i}-mg`} placeholder={tl("np. nogi", "e.g. legs")} {...register(`exercises.${i}.muscle_group`)} />
               </Field>
               <Field label={tl("Odpoczynek", "Rest")} htmlFor={`ex-${i}-rest`} hint={tl("np. 2:00", "e.g. 2:00")} error={errors.exercises?.[i]?.rest?.message}>
-                <Input id={`ex-${i}-rest`} inputMode="numeric" {...register(`exercises.${i}.rest`)} />
+                <Input id={`ex-${i}-rest`} inputMode="decimal" {...register(`exercises.${i}.rest`)} />
               </Field>
               <Field label={tl("Tempo wykonania", "Lifting tempo")} htmlFor={`ex-${i}-tempo`} hint={tl("np. 3-1-1-0", "e.g. 3-1-1-0")}>
                 <Input id={`ex-${i}-tempo`} {...register(`exercises.${i}.tempo`)} />
@@ -625,7 +625,7 @@ function SetsEditor({
                   <Input aria-label={tl(`Seria ${j + 1}: obciążenie kg`, `Set ${j + 1}: load kg`)} inputMode="decimal" className="h-10" aria-invalid={!!setErr(j)?.planned_load_kg} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_load_kg`)} />
                 </td>
                 <td className="py-1 pr-1.5">
-                  <Input aria-label={`Seria ${j + 1}: czas`} inputMode="numeric" placeholder="0:40" className="h-10" aria-invalid={!!setErr(j)?.planned_duration} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_duration`)} />
+                  <Input aria-label={`Seria ${j + 1}: czas`} inputMode="decimal" placeholder="0:40" className="h-10" aria-invalid={!!setErr(j)?.planned_duration} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_duration`)} />
                 </td>
                 <td className="py-1 pr-1.5">
                   <Input aria-label={`Seria ${j + 1}: RPE`} inputMode="decimal" className="h-10" aria-invalid={!!setErr(j)?.planned_rpe} {...register(`exercises.${exerciseIndex}.sets.${j}.planned_rpe`)} />

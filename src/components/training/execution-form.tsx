@@ -156,12 +156,12 @@ export function ExecutionForm({
                 <Input id="r-dist" inputMode="decimal" placeholder="10,15" className="h-12 text-lg" {...register("running.distance_km")} />
               </Field>
               <Field label={tl("Czas", "Time")} htmlFor="r-time" hint={tl("mm:ss lub h:mm:ss", "mm:ss or h:mm:ss")} error={errors.running?.duration?.message}>
-                <Input id="r-time" inputMode="numeric" placeholder="49:08" className="h-12 text-lg" {...register("running.duration")} />
+                <Input id="r-time" inputMode="decimal" placeholder="49:08" className="h-12 text-lg" {...register("running.duration")} />
               </Field>
               <div className="col-span-2 grid gap-1.5 sm:col-span-1">
                 <span className="text-[13px] font-medium text-muted">{tl("Średnie tempo", "Avg pace")}</span>
                 {manualPace ? (
-                  <Input aria-label={tl("Tempo wpisane ręcznie", "Pace entered manually")} inputMode="numeric" placeholder="4:50" className="h-12 text-lg" {...register("running.pace")} />
+                  <Input aria-label={tl("Tempo wpisane ręcznie", "Pace entered manually")} inputMode="decimal" placeholder="4:50" className="h-12 text-lg" {...register("running.pace")} />
                 ) : (
                   <p className="num flex h-12 items-center rounded-md border border-dashed border-border px-3 text-lg">
                     {autoPace ? `${formatPace(autoPace)} /km` : "—"}
@@ -355,7 +355,7 @@ function LapsEditor({ control, register }: { control: Control<ExecutionFormValue
                     <Input aria-label={`${f.label}: dystans`} inputMode="numeric" className="h-10" {...register(`laps.${i}.distance_m`)} />
                   </td>
                   <td className="py-1 pr-1.5">
-                    <Input aria-label={`${f.label}: czas`} inputMode="numeric" placeholder="2:42" className="h-10" {...register(`laps.${i}.duration`)} />
+                    <Input aria-label={`${f.label}: czas`} inputMode="decimal" placeholder="2:42" className="h-10" {...register(`laps.${i}.duration`)} />
                   </td>
                   <td className="num py-1 pr-1.5 text-[13px]">{pace ? formatPace(pace) : "–"}</td>
                   <td className="py-1">
@@ -442,7 +442,7 @@ function StrengthEntry({
                         <div className="grid grid-cols-4 gap-1.5">
                           <Input aria-label={tl(`Seria ${j + 1}: powtórzenia`, `Set ${j + 1}: reps`)} placeholder="powt." inputMode="numeric" className="h-10" {...register(`exercises.${i}.sets.${j}.reps`)} />
                           <Input aria-label={`Seria ${j + 1}: kg`} placeholder="kg" inputMode="decimal" className="h-10" {...register(`exercises.${i}.sets.${j}.load_kg`)} />
-                          <Input aria-label={`Seria ${j + 1}: czas`} placeholder="czas" inputMode="numeric" className="h-10" {...register(`exercises.${i}.sets.${j}.duration`)} />
+                          <Input aria-label={`Seria ${j + 1}: czas`} placeholder="czas" inputMode="decimal" className="h-10" {...register(`exercises.${i}.sets.${j}.duration`)} />
                           <Input aria-label={`Seria ${j + 1}: RPE`} placeholder="RPE" inputMode="decimal" className="h-10" {...register(`exercises.${i}.sets.${j}.rpe`)} />
                         </div>
                       </div>

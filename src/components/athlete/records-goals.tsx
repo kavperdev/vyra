@@ -273,7 +273,7 @@ function RecordForm({ value: v, onChange, onSubmit, pending }: { value: Record<s
       ) : null}
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label={tl("Wynik", "Result")} htmlFor="rec-value" hint={v.unit === "s" ? tl("mm:ss lub h:mm:ss", "mm:ss or h:mm:ss") : undefined}>
-          <Input id="rec-value" inputMode={v.unit === "s" ? "numeric" : "decimal"} value={v.value} onChange={(e) => set({ value: e.target.value })} placeholder={v.unit === "s" ? "17:45" : "100"} />
+          <Input id="rec-value" inputMode="decimal" value={v.value} onChange={(e) => set({ value: e.target.value })} placeholder={v.unit === "s" ? "17:45" : "100"} />
         </Field>
         <Field label={tl("Data", "Date")} htmlFor="rec-date">
           <Input id="rec-date" type="date" value={v.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} />
