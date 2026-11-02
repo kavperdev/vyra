@@ -19,9 +19,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: { absolute: t("VYRA · Trening biegowy i prowadzenie online · Elite is standard", "VYRA · Online running coaching · Elite is standard") },
+    title: { absolute: t("VYRA · Trener biegowy Siedlce i prowadzenie online · Elite is standard", "VYRA · Running coach in Siedlce and online · Elite is standard") },
     description: t(
-      "Indywidualne prowadzenie biegowe online: plan od trenera co do odcinka, trening siłowy, analiza każdego treningu i aplikacja VYRA. Darmowy plan dla początkujących i Run Club.",
+      "Trener biegowy z Siedlec i prowadzenie online w całej Polsce: plan od trenera co do odcinka, trening siłowy, analiza każdego treningu i aplikacja VYRA. Darmowy plan dla początkujących i Run Club w Siedlcach.",
       "Individual online running coaching: a coach-built plan down to the rep, strength work, analysis of every session and the VYRA app. A free beginner plan and Run Club.",
     ),
     robots: { index: true, follow: true },
@@ -95,6 +95,8 @@ export default async function Home() {
           logo: `${origin}/branding/vyra-icon-512.png`,
           sport: "Running",
           founder: { "@type": "Person", name: "Kacper Adamczyk" },
+          address: { "@type": "PostalAddress", addressLocality: "Siedlce", addressRegion: "mazowieckie", addressCountry: "PL" },
+          areaServed: [{ "@type": "City", name: "Siedlce" }, { "@type": "City", name: "Warszawa" }, { "@type": "Country", name: "Polska" }],
           sameAs: [`https://www.instagram.com/${company.instagram.replace(/^@/, "")}/`],
         }}
       />
@@ -106,7 +108,7 @@ export default async function Home() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className={`${wrap} pb-14 pt-36 sm:pb-20`}>
           <div className="site-rise">
-            <Eyebrow accent>{t("Trening biegowy · prowadzenie online", "Running coaching · online")}</Eyebrow>
+            <Eyebrow accent>{t("Trening biegowy · Siedlce i online", "Running coaching · Siedlce and online")}</Eyebrow>
           </div>
           <h1 className="display mt-6 text-[clamp(3.25rem,11vw,9rem)] uppercase leading-[0.9] text-white">
             <span className="block overflow-hidden">
@@ -188,7 +190,7 @@ export default async function Home() {
               img: "/site/night-city.jpg",
               tag: t("Za darmo", "Free"),
               title: t("Chcę biegać z ludźmi", "I want to run with people"),
-              body: t("VYRA Run Club: wspólne treningi dla każdego poziomu, z rozgrzewką i grupami tempowymi.", "VYRA Run Club: group runs for every level, with a warm-up and pace groups."),
+              body: t("VYRA Run Club w Siedlcach: wspólne treningi dla każdego poziomu, z rozgrzewką i grupami tempowymi.", "VYRA Run Club in Siedlce: group runs for every level, with a warm-up and pace groups."),
               cta: t("Najbliższy trening", "Next group run"),
             },
           ].map((c, i) => (

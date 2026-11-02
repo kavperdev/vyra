@@ -10,10 +10,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: "VYRA Run Club",
+    title: t("VYRA Run Club Siedlce: wspólne bieganie za darmo", "VYRA Run Club Siedlce: free group runs"),
     description: t(
-      "Wspólne treningi VYRA Run Club. Za darmo, dla każdego poziomu. Zapisz się na najbliższy termin.",
-      "VYRA Run Club group runs. Free and for every level. Sign up for the next date.",
+      "Wspólne treningi biegowe w Siedlcach z VYRA Run Club. Za darmo, dla każdego poziomu, z rozgrzewką i grupami tempowymi. Zapisz się na najbliższy termin.",
+      "Free group runs in Siedlce with VYRA Run Club, for every level, with a warm-up and pace groups. Sign up for the next date.",
     ),
     robots: { index: true, follow: true },
     alternates: { canonical: "/run-club" },
@@ -30,11 +30,11 @@ export default async function RunClubPage() {
     <>
       <PageHero
         image="/site/track.jpg"
-        eyebrow="VYRA Run Club"
+        eyebrow="VYRA Run Club · Siedlce"
         title={t("Biegamy razem", "We run together")}
         lead={t(
-          "Wspólny trening z zespołem VYRA. Za darmo, dla każdego poziomu: grupy tempowe, rozgrzewka i krótka technika biegu. Wystarczy zapis.",
-          "A group session with the VYRA team. Free and for every level: pace groups, a warm-up and short running drills. Just sign up.",
+          "Wspólny trening z zespołem VYRA w Siedlcach. Za darmo, dla każdego poziomu: grupy tempowe, rozgrzewka i krótka technika biegu. Wystarczy zapis.",
+          "A group session with the VYRA team in Siedlce. Free and for every level: pace groups, a warm-up and short running drills. Just sign up.",
         )}
       />
 
