@@ -26,7 +26,7 @@ alter table public.notifications add column pushed_at timestamptz;
 
 -- Where the app receives push jobs. Change it when the site moves to its own domain:
 --   update public.app_config set value = 'https://twoja-domena.pl/api/push' where key = 'push_endpoint';
-insert into public.app_config (key, value) values ('push_endpoint', 'https://vyra-mu-blush.vercel.app/api/push')
+insert into public.app_config (key, value) values ('push_endpoint', 'https://www.vyraathl.pl/api/push')
   on conflict (key) do nothing;
 
 -- pg_net is available on Supabase; elsewhere (tests) pushes are simply not sent.
