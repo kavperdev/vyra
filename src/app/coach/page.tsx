@@ -73,6 +73,11 @@ export default async function CoachDashboard() {
   const user = await requireRole("coach");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
+  // Ends access for athletes whose package ran out or whose subscription was cancelled (hidden if not migrated).
+  await supabase.rpc("sync_memberships").then(
+    () => undefined,
+    () => undefined,
+  );
   const athletes = (await listAthletes(supabase, user.id)).filter((a) => a.link_status === "active");
 
   if (!athletes.length) {

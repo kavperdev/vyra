@@ -32,7 +32,7 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
-  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness] = await Promise.all([
+  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
@@ -58,6 +58,14 @@ export default async function AthleteDashboard() {
       .gte("day", addDaysISO(weekStart, -7))
       .lt("day", weekStart)
       .then((r) => (r.error ? [] : ((r.data ?? []) as Pick<Readiness, "sleep" | "energy" | "soreness" | "pain">[]))),
+    // A bought package that has ended (cancelled or run out): offer to come back.
+    supabase
+      .from("memberships")
+      .select("status")
+      .then((r) => {
+        const rows = (r.error ? [] : (r.data ?? [])) as { status: string }[];
+        return rows.length > 0 && rows.every((m) => m.status === "ended");
+      }),
   ]);
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
@@ -105,6 +113,24 @@ export default async function AthleteDashboard() {
               : tl("Dziś wolne.", "Rest day today.")
         }
       />
+
+      {membershipEnded ? (
+        <Card className="border-accent/50">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div className="grid gap-1">
+              <p className="font-semibold">{tl("Twój pakiet się zakończył", "Your package has ended")}</p>
+              <p className="text-[13px] text-muted">
+                {tl("Historia treningów i rekordy zostają. Wybierz pakiet, żeby wrócić do planu z trenerem.", "Your training history and records stay. Choose a package to get back to coaching.")}
+              </p>
+            </div>
+            <Button asChild variant="accent">
+              <a href="/prowadzenie#pakiety">
+                {tl("Wróć do prowadzenia", "Resume coaching")} <ArrowRight className="size-4" />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {intakeMissing ? (
         <Card className="border-accent/50">

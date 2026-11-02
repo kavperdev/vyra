@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getT } from "@/lib/i18n/server";
 import { DAY_KEYS, INTAKE_KEYS, type Intake } from "@/lib/intake";
+import { todayISO } from "@/lib/dates";
+import { buildStarterWeek } from "@/lib/starter-week";
 import type { ActionResult } from "@/lib/types";
 import { dbError, withUser } from "./helpers";
 
@@ -37,7 +39,20 @@ export async function saveIntake(input: { intake: Intake; birth_year?: string; h
       weight_kg: num(input.weight_kg, 30, 250),
     });
     if (error) return dbError(error);
+
+    // First questionnaire of a buyer: their first week of training appears right away.
+    let created = 0;
+    if (!(current as { intake_done_at: string | null } | null)?.intake_done_at) {
+      const week = buildStarterWeek(clean, todayISO(user.profile.timezone));
+      const res = await supabase.rpc("create_starter_week", { p_sessions: week });
+      if (!res.error && typeof res.data === "number") created = res.data;
+    }
     revalidatePath("/athlete", "layout");
-    return { ok: true, message: t("Dziękujemy! Trener dostał Twoją ankietę.", "Thank you! Your coach has your questionnaire.") };
+    return {
+      ok: true,
+      message: created
+        ? t(`Gotowe! Twój pierwszy tydzień (${created} treningi) jest już w kalendarzu.`, `Done! Your first week (${created} sessions) is in your calendar.`)
+        : t("Dziękujemy! Trener dostał Twoją ankietę.", "Thank you! Your coach has your questionnaire."),
+    };
   });
 }

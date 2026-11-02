@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
+import { MembershipCard, type MembershipInfo } from "@/components/athlete/membership-card";
 import { AthleteProfileForm } from "@/components/coach/athlete-tools";
 import { AccountSettings } from "@/components/shared/account-settings";
 import { requireRole } from "@/lib/auth";
@@ -20,7 +21,15 @@ export default async function AthleteSettingsPage() {
   await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();
-  const [profile, coaches] = await Promise.all([getAthleteProfile(supabase, user.id), listCoaches(supabase, user.id)]);
+  const [profile, coaches, memberships] = await Promise.all([
+    getAthleteProfile(supabase, user.id),
+    listCoaches(supabase, user.id),
+    supabase
+      .from("memberships")
+      .select("plan_name, kind, status, access_until, stripe_customer")
+      .order("created_at", { ascending: false })
+      .then((r) => (r.error ? [] : ((r.data ?? []) as MembershipInfo[]))),
+  ]);
   return (
     <div className="grid gap-6">
       <PageHeader
@@ -28,6 +37,7 @@ export default async function AthleteSettingsPage() {
         title={tl("Ustawienia", "Settings")}
         description={coaches.length ? tl(`Trener: ${coaches.map((c) => c.full_name).join(", ")}. Trener widzi Twoje treningi, wyniki i dane poniżej.`, `Coach: ${coaches.map((c) => c.full_name).join(", ")}. Your coach sees your sessions, results and the details below.`) : undefined}
       />
+      <MembershipCard items={memberships} />
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
           <div className="grid gap-0.5">

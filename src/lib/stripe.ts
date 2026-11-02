@@ -5,6 +5,12 @@ export function stripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }
 
+/** Publishable key for paying on our own page (Embedded Checkout). Without it, buyers go to the Stripe page. */
+export function stripePublishableKey(): string | null {
+  const k = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  return k && /^pk_(test|live)_/.test(k) ? k : null;
+}
+
 function encode(obj: Record<string, unknown>, prefix = ""): string[] {
   return Object.entries(obj).flatMap(([k, v]) => {
     const key = prefix ? `${prefix}[${k}]` : k;
@@ -32,6 +38,9 @@ export async function stripe<T>(method: "GET" | "POST", path: string, body?: Rec
 export interface CheckoutSession {
   id: string;
   url: string | null;
+  client_secret?: string | null;
+  subscription?: string | null;
+  customer?: string | null;
   mode: "payment" | "subscription";
   payment_status: "paid" | "unpaid" | "no_payment_required";
   status: "open" | "complete" | "expired";

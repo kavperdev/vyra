@@ -647,3 +647,60 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  visitors cannot read run club sign-ups';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- purchase → access → starter week → end
+reset role;
+do $$ begin
+  perform * from public.purchase_access('wrong', 'kup@x.pl', 'Kupiec', 'Start', 'once', 'cs_1', '', 'cus_1', 63);
+  raise exception 'FAIL: purchase_access accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  purchase_access rejects a wrong secret';
+end $$;
+select set_config('vyra.test_secret', (select value from public.app_config where key = 'purchase_secret'), false);
+set role anon;
+select pg_temp.check(
+  (select token is not null and not existing from public.purchase_access(current_setting('vyra.test_secret'), 'kup@x.pl', 'Kupiec Nowy', 'Start', 'once', 'cs_1', '', 'cus_1', 63)),
+  'purchase creates an invitation for a new buyer');
+select pg_temp.check(
+  (select token from public.purchase_access(current_setting('vyra.test_secret'), 'kup@x.pl', 'Kupiec Nowy', 'Start', 'once', 'cs_1', '', 'cus_1', 63))
+  = (select token from public.purchase_access(current_setting('vyra.test_secret'), 'KUP@x.pl', 'Kupiec Nowy', 'Start', 'once', 'cs_1', '', 'cus_1', 63)),
+  'refreshing the thank-you page reuses the same invitation');
+reset role;
+select pg_temp.check((select count(*) from public.memberships where email = 'kup@x.pl') = 1, 'one membership per payment');
+-- buyer creates the account with the invitation
+insert into auth.users (id, email, raw_user_meta_data)
+select '00000000-0000-0000-0000-0000000000b9', 'kup@x.pl',
+       jsonb_build_object('full_name', 'Kupiec Nowy', 'invite_token', (select token from public.invitations where email = 'kup@x.pl'));
+select pg_temp.check((select role from public.profiles where id = '00000000-0000-0000-0000-0000000000b9') = 'athlete', 'buyer account is an athlete');
+-- starter week
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000b9');
+select pg_temp.check(public.create_starter_week(jsonb_build_array(
+  jsonb_build_object('date', current_date + 1, 'kind', 'running', 'category', 'easy', 'title', 'Spokojny bieg', 'duration_s', 1800, 'zone', 'Z2',
+    'segments', jsonb_build_array(jsonb_build_object('type', 'steady', 'label', 'Bieg', 'duration_s', 1800, 'intensity', 'easy'))),
+  jsonb_build_object('date', current_date + 2, 'kind', 'strength', 'category', 'strength', 'title', 'Siła A',
+    'exercises', jsonb_build_array(jsonb_build_object('name', 'Przysiad', 'sets', jsonb_build_array(jsonb_build_object('reps', 10), jsonb_build_object('reps', 10)))))
+)) = 2, 'buyer gets a starter week');
+select pg_temp.check(public.create_starter_week('[]'::jsonb) = 0, 'starter week is created only once');
+select pg_temp.check((select count(*) from public.training_sessions where athlete_id = auth.uid()) = 2, 'starter sessions belong to the buyer');
+select pg_temp.check((select count(*) from public.memberships) = 1, 'buyer sees own membership');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.memberships) = 0, 'other athletes do not see memberships');
+select pg_temp.check(public.create_starter_week('[]'::jsonb) = 0, 'no starter week without a purchase');
+-- end of access
+select pg_temp.as_admin();
+update public.memberships set access_until = current_date - 1 where email = 'kup@x.pl';
+select public.sync_memberships();
+select pg_temp.check((select status from public.coach_athletes where athlete_id = '00000000-0000-0000-0000-0000000000b9' limit 1) = 'archived',
+  'athlete is archived when the package runs out');
+select pg_temp.check((select status from public.coach_athletes where athlete_id = '00000000-0000-0000-0000-0000000000a1' limit 1) = 'active',
+  'athletes without a purchase are never archived');
+-- buying again restores access
+set role anon;
+select public.purchase_access(current_setting('vyra.test_secret'), 'kup@x.pl', 'Kupiec Nowy', 'Performance', 'monthly', 'cs_2', 'sub_2', 'cus_1', null);
+reset role;
+select pg_temp.check((select status from public.coach_athletes where athlete_id = '00000000-0000-0000-0000-0000000000b9' limit 1) = 'active',
+  'a new purchase restores access');
+set role anon;
+select public.purchase_end(current_setting('vyra.test_secret'), 'sub_2');
+reset role;
+select pg_temp.check((select status from public.coach_athletes where athlete_id = '00000000-0000-0000-0000-0000000000b9' limit 1) = 'archived',
+  'cancelled subscription ends access');
