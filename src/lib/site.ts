@@ -18,7 +18,7 @@ export const SITE: SiteSettings = {
   name: "VYRA",
   tagline: "Elite is standard",
   controller: "Kacper Adamczyk",
-  address: "Leśna 11 21-470 Krzywda",
+  address: "ul. Leśna 11, 21-470 Krzywda",
   email: "adamczykkacper18@gmail.com",
   instagram: "@vyra.athl",
 };
