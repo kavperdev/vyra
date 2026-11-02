@@ -16,10 +16,15 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+/** Trims spaces, trailing slashes and a trailing dot after the domain ("https://www.x.pl." → "https://www.x.pl"). */
+function cleanOrigin(v: string | undefined): string {
+  return (v ?? "").trim().replace(/[/.\s]+$/, "");
+}
+
 /** Absolute origin for links sent outside the app (invitations, password reset). */
 export function siteUrl(fallbackOrigin?: string): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  return fromEnv || fallbackOrigin || "http://localhost:3000";
+  const fromEnv = cleanOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+  return fromEnv || cleanOrigin(fallbackOrigin) || "http://localhost:3000";
 }
 
 /**
@@ -27,7 +32,7 @@ export function siteUrl(fallbackOrigin?: string): string {
  * otherwise the production domain Vercel provides.
  */
 export function publicOrigin(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const fromEnv = cleanOrigin(process.env.NEXT_PUBLIC_SITE_URL);
   if (fromEnv && !fromEnv.includes("localhost")) return fromEnv;
   const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   if (vercel) return `https://${vercel}`;
