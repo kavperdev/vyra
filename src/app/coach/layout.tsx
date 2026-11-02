@@ -31,6 +31,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     ...(canPlan(staffRole) ? [{ href: "/coach/templates", label: t("Szablony", "Templates"), icon: "templates" } as NavItem] : []),
     ...(founder
       ? [
+          { href: "/coach/growth", label: t("Rozwój", "Growth"), icon: "progress" } as NavItem,
           { href: "/coach/team", label: t("Zespół VYRA", "VYRA team"), icon: "team" } as NavItem,
           { href: "/coach/applications", label: t("Zgłoszenia", "Requests"), icon: "inbox", badge: newApplications } as NavItem,
           { href: "/coach/site", label: t("Strona VYRA", "VYRA website"), icon: "site" } as NavItem,
