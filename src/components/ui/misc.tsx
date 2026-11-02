@@ -21,7 +21,7 @@ export function PageHeader({
       <div className="grid min-w-0 gap-1.5">
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1 className="display text-2xl sm:text-[28px]">{title}</h1>
-        {description ? <p className="max-w-2xl text-sm text-muted">{description}</p> : null}
+        {description ? <p className="max-w-2xl text-[15px] leading-relaxed text-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -42,7 +42,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("grid justify-items-start gap-2 rounded-lg border border-dashed border-border-strong p-6", className)}>
+    <div className={cn("grid justify-items-start gap-2 rounded-xl border border-dashed border-border-strong p-6", className)}>
       {icon ? <div className="text-muted [&_svg]:size-5">{icon}</div> : null}
       <p className="font-semibold">{title}</p>
       {description ? <p className="max-w-prose text-sm text-muted">{description}</p> : null}
@@ -71,7 +71,7 @@ export function Stat({
       <p className="eyebrow">{label}</p>
       <p
         className={cn(
-          "num mt-1 text-[26px] font-semibold leading-none",
+          "num mt-2 text-[26px] font-semibold leading-none",
           tone === "warning" && "text-warning",
           tone === "problem" && "text-problem",
           tone === "done" && "text-done",
@@ -80,10 +80,10 @@ export function Stat({
         {value}
         {unit ? <span className="ml-1 text-sm font-normal text-muted">{unit}</span> : null}
       </p>
-      {hint ? <p className="mt-1.5 text-[12px] text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-[12.5px] leading-snug text-muted">{hint}</p> : null}
     </>
   );
-  const cls = "block min-w-0 rounded-lg border border-border bg-surface px-4 py-3.5";
+  const cls = "app-card block min-w-0 rounded-xl border border-border bg-surface px-4 py-4";
   return href ? (
     <Link href={href} className={cn(cls, "transition-colors hover:border-border-strong")}>
       {body}
@@ -152,7 +152,10 @@ export function LinkTabs({ tabs, active, className }: { tabs: { key: string; lab
 export function SectionTitle({ children, action, className }: { children: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
     <div className={cn("flex items-center justify-between gap-3", className)}>
-      <h2 className="eyebrow">{children}</h2>
+      <h2 className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
+        <span aria-hidden className="h-3.5 w-[3px] rounded-full bg-accent" />
+        {children}
+      </h2>
       {action}
     </div>
   );
@@ -163,7 +166,7 @@ export function KeyValue({ items, className }: { items: { label: string; value: 
     <dl className={cn("grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3", className)}>
       {items.map((i) => (
         <div key={i.label} className="min-w-0">
-          <dt className="text-[12px] text-muted">{i.label}</dt>
+          <dt className="text-[12.5px] text-muted">{i.label}</dt>
           <dd className="truncate text-sm font-medium">{i.value}</dd>
         </div>
       ))}
@@ -189,7 +192,7 @@ export function HelloCard({
   actions?: React.ReactNode;
 }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-xl border border-white/10 bg-black text-white">
+    <section className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-black text-white">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div
           className="site-drift absolute inset-0 bg-cover bg-center opacity-60"

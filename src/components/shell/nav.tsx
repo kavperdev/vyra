@@ -56,11 +56,12 @@ export function SidebarNav({ items, root }: { items: NavItem[]; root: string }) 
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14.5px] font-medium transition-colors",
                 active ? "bg-surface-2 text-foreground" : "text-muted hover:bg-surface-2/60 hover:text-foreground",
               )}
             >
-              <Icon className={cn("size-4", active && "text-accent")} />
+              {active ? <span aria-hidden className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent" /> : null}
+              <Icon className={cn("size-[18px]", active && "text-accent")} />
               <span className="flex-1">{item.label}</span>
               {item.badge ? (
                 <span className="num rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">{item.badge}</span>
