@@ -133,7 +133,7 @@ export default async function GrowthPage() {
       tone: "lead",
       reason: tl(`Darmowy plan od ${weeks} tyg.: zapytaj, jak idzie`, `Free plan for ${weeks} weeks: ask how it’s going`),
       subject: "Jak idzie Twój plan „Zacznij biegać”?",
-      body: `Cześć ${first(a.full_name)}!\n\n${weeksPl(weeks)}, odkąd zacząłeś/zaczęłaś plan „Zacznij biegać”. Który tydzień robisz? Coś było za trudne albo za łatwe?\n\nJeśli chcesz pójść krok dalej, w pakiecie Start (8 tygodni, 99 zł) ułożę Ci plan na pierwsze 5 km pod Twój kalendarz i będę sprawdzał każdy trening: https://www.vyraathl.pl/prowadzenie\n\nA w środę biegamy razem na Run Clubie, wpadaj: https://www.vyraathl.pl/run-club\n\nKacper, VYRA`,
+      body: `Cześć ${first(a.full_name)}!\n\n${weeksPl(weeks)}, odkąd zacząłeś/zaczęłaś plan „Zacznij biegać”. Który tydzień robisz? Coś było za trudne albo za łatwe?\n\nJeśli chcesz pójść krok dalej, w pakiecie Start (8 tygodni, 99 zł) ułożę Ci plan na pierwsze 5 km pod Twój kalendarz i będę sprawdzał każdy trening: https://www.vyraathl.pl/prowadzenie\n\nCo tydzień biegamy też razem na VYRA Run Club w Siedlcach, wpadaj: https://www.vyraathl.pl/run-club\n\nKacper, VYRA`,
     });
   }
 
