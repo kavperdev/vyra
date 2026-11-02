@@ -7,6 +7,7 @@ import type { ActionResult } from "@/lib/types";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
 import { FREE_PLAN_NAME } from "@/lib/free-plan";
+import { insertApplication } from "@/lib/source";
 import { dbError, validationError, withUser } from "./helpers";
 
 function schemas(t: T) {
@@ -69,7 +70,7 @@ export async function submitApplication(input: ApplicationInput): Promise<Action
   if (website) return { ok: true };
   const supabase = await createClient();
   // No .select() after insert: visitors may write an application but never read one back.
-  const { error } = await supabase.from("applications").insert({ ...row, status: "new" });
+  const { error } = await insertApplication(supabase, { ...row, status: "new" });
   if (error) return { ok: false, error: t("Nie udało się wysłać zgłoszenia. Spróbuj ponownie za chwilę.", "We couldn’t send your request. Please try again in a moment.") };
   return { ok: true };
 }
@@ -86,7 +87,7 @@ export async function requestFreePlan(input: { full_name: string; email: string;
   const parsed = schema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
-  const { error } = await supabase.from("applications").insert({
+  const { error } = await insertApplication(supabase, {
     kind: "coaching",
     full_name: parsed.data.full_name,
     email: parsed.data.email,

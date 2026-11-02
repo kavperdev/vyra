@@ -110,3 +110,59 @@ export async function deleteTestimonial(id: string): Promise<ActionResult> {
     return { ok: true };
   });
 }
+
+const ambassadorSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Tylko małe litery, cyfry i myślniki, np. ania-biega")
+    .max(40),
+  name: z.string().trim().min(2, "Podaj imię").max(80),
+  handle: z.string().trim().max(60),
+  goal: z.string().trim().max(160),
+  quote: z.string().trim().max(400),
+  code: z.string().trim().toUpperCase().max(40),
+  discount_pct: z.string().trim().refine((v) => /^\d{1,2}$/.test(v), "Liczba 0–90"),
+  photo_url: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => v === "" || /^https:\/\//.test(v) || v.startsWith("/"), "Adres zdjęcia musi zaczynać się od https://"),
+  visible: z.boolean(),
+});
+export type AmbassadorInput = z.input<typeof ambassadorSchema>;
+
+export async function saveAmbassador(id: string | null, input: AmbassadorInput): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Stroną zarządzają założyciele." };
+    const parsed = ambassadorSchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+    const v = parsed.data;
+    const row = {
+      slug: v.slug,
+      name: v.name,
+      handle: v.handle || null,
+      goal: v.goal || null,
+      quote: v.quote || null,
+      code: v.code || null,
+      discount_pct: Number(v.discount_pct),
+      photo_url: v.photo_url || null,
+      visible: v.visible,
+    };
+    const { error } = id ? await supabase.from("ambassadors").update(row).eq("id", id) : await supabase.from("ambassadors").insert(row);
+    if (error) return error.code === "23505" ? { ok: false, error: "Ten adres jest już zajęty.", fieldErrors: { slug: ["Ten adres jest już zajęty"] } } : dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath(`/z/${v.slug}`);
+    return { ok: true, message: "Zapisano." };
+  });
+}
+
+export async function deleteAmbassador(id: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const { error } = await supabase.from("ambassadors").delete().eq("id", id);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    return { ok: true };
+  });
+}

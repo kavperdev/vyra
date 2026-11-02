@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/form-controls";
 import { deleteApplication, setApplicationStatus } from "@/lib/actions/applications";
 import { formatDateTime } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
+import { sourceLabel } from "@/lib/source-label";
 
 export interface ApplicationRow {
   id: string;
@@ -24,7 +25,10 @@ export interface ApplicationRow {
   message: string | null;
   status: string;
   kind: string;
+  source?: string | null;
 }
+
+
 
 const PACKAGE_LABEL: Record<string, string> = {
   plan: "VYRA Plan",
@@ -56,6 +60,7 @@ function ApplicationCard({ a }: { a: ApplicationRow }) {
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold">{a.full_name}</h2>
             {a.status === "new" ? <Badge tone="accent" dot>{tl("Nowe", "New")}</Badge> : null}
+            {a.source ? <Badge tone="outline">{sourceLabel(a.source)}</Badge> : null}
           </div>
           <p className="text-sm text-muted">
             {formatDateTime(a.created_at)} · {a.kind === "camp" ? tl("Lista obozów", "Camp list") : a.kind === "business" ? tl("Dla firm", "For companies") : tl("Prowadzenie", "Coaching")}

@@ -5,6 +5,7 @@ import { siteUrl } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
 import { stripe, stripeConfigured, type CheckoutSession } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
+import { insertApplication, readSource } from "@/lib/source";
 import type { CoachingPlan } from "@/lib/camps";
 
 /** Creates a Stripe Checkout for a coaching package and returns its URL. The price always comes from the database. */
@@ -29,7 +30,7 @@ export async function startCheckout(planId: string, accepted = false): Promise<{
       billing_address_collection: "auto",
       success_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/prowadzenie#pakiety`,
-      metadata: { plan_id: plan.id, plan_name: plan.name, terms: "regulamin+start_przed_14_dniami" },
+      metadata: { plan_id: plan.id, plan_name: plan.name, terms: "regulamin+start_przed_14_dniami", source: (await readSource()) ?? "" },
       line_items: {
         0: {
           quantity: 1,
@@ -66,7 +67,7 @@ export async function recordCheckout(sessionId: string): Promise<{ status: "paid
   const discount = s.total_details?.amount_discount ? ` · rabat ${(s.total_details.amount_discount / 100).toLocaleString("pl-PL")} zł (kod)` : "";
   const supabase = await createClient();
   // Unique payment_ref: refreshing the thank-you page never creates a second entry.
-  await supabase.from("applications").insert({
+  await insertApplication(supabase, {
     kind: "coaching",
     status: "new",
     full_name: (s.customer_details?.name || s.customer_details?.email || "Klient").slice(0, 120),
@@ -77,6 +78,6 @@ export async function recordCheckout(sessionId: string): Promise<{ status: "paid
     message: `Płatność Stripe ${s.id}. Wyślij zaproszenie do platformy i umów pierwszą rozmowę.`,
     consent: true,
     payment_ref: s.id,
-  });
+  }, s.metadata.source || null);
   return { status: "paid", plan: s.metadata.plan_name, email: s.customer_details?.email };
 }

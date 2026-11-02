@@ -54,3 +54,27 @@ export async function listTestimonials(supabase: ServerSupabase): Promise<Testim
   const { data, error } = await supabase.from("testimonials").select("*").order("sort").order("created_at");
   return error ? [] : ((data ?? []) as Testimonial[]);
 }
+
+export interface Ambassador {
+  id: string;
+  slug: string;
+  name: string;
+  handle: string | null;
+  goal: string | null;
+  quote: string | null;
+  code: string | null;
+  discount_pct: number;
+  photo_url: string | null;
+  visible: boolean;
+}
+
+/** Influencer pages. Empty list when the table does not exist yet. */
+export async function listAmbassadors(supabase: ServerSupabase): Promise<Ambassador[]> {
+  const { data, error } = await supabase.from("ambassadors").select("*").order("created_at");
+  return error ? [] : ((data ?? []) as Ambassador[]);
+}
+
+export async function getAmbassador(supabase: ServerSupabase, slug: string): Promise<Ambassador | null> {
+  const { data, error } = await supabase.from("ambassadors").select("*").eq("slug", slug).eq("visible", true).maybeSingle();
+  return error ? null : ((data as Ambassador | null) ?? null);
+}

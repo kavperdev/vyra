@@ -12,7 +12,8 @@ import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
-import { listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
+import { listAmbassadors, listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
+import { AmbassadorsEditor } from "@/components/content/ambassadors-editor";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -28,14 +29,22 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [articles, team, plans, events, signups, testimonials] = await Promise.all([
+  const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
     listCoachingPlans(supabase),
     listRunClubEvents(supabase),
     listRunClubSignups(supabase),
     listTestimonials(supabase),
+    listAmbassadors(supabase),
+    supabase
+      .from("applications")
+      .select("source")
+      .like("source", "z:%")
+      .then((r) => (r.error ? [] : ((r.data ?? []) as { source: string }[]))),
   ]);
+  const leads: Record<string, number> = {};
+  for (const r of sourceRows) leads[r.source] = (leads[r.source] ?? 0) + 1;
 
   return (
     <div className="grid gap-8">
@@ -51,6 +60,23 @@ export default async function SiteContentPage() {
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>{tl("Ambasadorzy (influencerzy)", "Ambassadors (influencers)")}</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Każdy ambasador ma stronę vyraathl.pl/z/nazwa ze swoim celem i kodem. Osoby, które tam wejdą, są oznaczone w Zgłoszeniach i przy zakupach. Kod rabatowy utwórz osobno w Stripe, z tą samą nazwą.",
+                "Each ambassador gets a page at vyraathl.pl/z/name with their goal and code. Visitors from it are tagged in Requests and purchases. Create the discount code separately in Stripe, with the same name.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <AmbassadorsEditor items={ambassadors} leads={leads} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
