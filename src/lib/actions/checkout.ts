@@ -35,7 +35,8 @@ export async function startCheckout(
   const origin = siteUrl(`${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`);
   const monthly = plan.kind === "monthly";
   const name = lang === "en" && plan.name_en ? plan.name_en : plan.name;
-  const publishableKey = stripePublishableKey();
+  // Payment on the Stripe page (redirect). Embedded mode stays available only if STRIPE_EMBEDDED=1.
+  const publishableKey = process.env.STRIPE_EMBEDDED === "1" ? stripePublishableKey() : null;
   const embedded = !!publishableKey;
   try {
     const session = await stripe<CheckoutSession>("POST", "checkout/sessions", {
