@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: { absolute: "VYRA · Elite is standard" },
+    title: { absolute: t("VYRA · Trening biegowy i prowadzenie online · Elite is standard", "VYRA · Online running coaching · Elite is standard") },
     description: t(
       "Indywidualne prowadzenie biegowe online: plan od trenera co do odcinka, trening siłowy, analiza każdego treningu i aplikacja VYRA. Darmowy plan dla początkujących i Run Club.",
       "Individual online running coaching: a coach-built plan down to the rep, strength work, analysis of every session and the VYRA app. A free beginner plan and Run Club.",
@@ -81,6 +81,8 @@ export default async function Home() {
   const origin = publicOrigin();
   return (
     <>
+      {/* Tells Google the site's name ("VYRA") for the search result header. */}
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: "VYRA", alternateName: ["VYRA.ATHL", "vyraathl"], url: origin }} />
       <JsonLd
         data={{
           "@context": "https://schema.org",
