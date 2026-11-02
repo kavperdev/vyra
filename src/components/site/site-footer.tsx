@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { getT } from "@/lib/i18n/server";
+import { getCompany } from "@/lib/data/site-settings";
 import { SITE, SITE_NAV, SITE_NAV_MORE } from "@/lib/site";
 import { wrap } from "./blocks";
 
 export async function SiteFooter({ panel }: { panel: { href: string; label: string } }) {
   const { lang, t } = await getT();
+  const company = await getCompany();
   return (
     <footer className="border-t border-white/10">
       <div className={`${wrap} grid gap-14 py-16 pb-[max(4rem,env(safe-area-inset-bottom))]`}>
@@ -29,14 +31,14 @@ export async function SiteFooter({ panel }: { panel: { href: string; label: stri
           </nav>
           <div className="grid content-start gap-3 text-sm">
             <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/35">{t("Kontakt", "Contact")}</p>
-            {SITE.email ? (
-              <a href={`mailto:${SITE.email}`} className="site-link w-fit text-white/65 hover:text-white">
-                {SITE.email}
+            {company.email ? (
+              <a href={`mailto:${company.email}`} className="site-link w-fit text-white/65 hover:text-white">
+                {company.email}
               </a>
             ) : null}
-            {SITE.instagram ? (
+            {company.instagram ? (
               <a
-                href={`https://instagram.com/${SITE.instagram.replace(/^@/, "")}`}
+                href={`https://instagram.com/${company.instagram.replace(/^@/, "")}`}
                 target="_blank"
                 rel="noreferrer"
                 className="site-link w-fit text-white/65 hover:text-white"

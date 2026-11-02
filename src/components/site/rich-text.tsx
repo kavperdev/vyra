@@ -7,7 +7,7 @@ import * as React from "react";
  */
 function inline(text: string, keyBase: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g;
+  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|\/[^\s)]*)\)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
@@ -15,6 +15,12 @@ function inline(text: string, keyBase: string): React.ReactNode[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     if (m[1]) out.push(<strong key={`${keyBase}-b${i++}`}>{m[1]}</strong>);
     else if (m[3].startsWith("/"))
+      out.push(
+        <a key={`${keyBase}-a${i++}`} href={m[3]} className="underline underline-offset-4">
+          {m[2]}
+        </a>,
+      );
+    else if (m[3].startsWith("mailto:"))
       out.push(
         <a key={`${keyBase}-a${i++}`} href={m[3]} className="underline underline-offset-4">
           {m[2]}

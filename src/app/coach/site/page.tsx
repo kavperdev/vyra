@@ -14,6 +14,8 @@ import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
 import { listAmbassadors, listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
 import { AmbassadorsEditor } from "@/components/content/ambassadors-editor";
+import { CompanyForm, LegalEditor } from "@/components/content/legal-editor";
+import { getCompany, getLegalOverride } from "@/lib/data/site-settings";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -29,7 +31,7 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows] = await Promise.all([
+  const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
     listCoachingPlans(supabase),
@@ -42,6 +44,9 @@ export default async function SiteContentPage() {
       .select("source")
       .like("source", "z:%")
       .then((r) => (r.error ? [] : ((r.data ?? []) as { source: string }[]))),
+    getCompany(),
+    getLegalOverride("regulamin"),
+    getLegalOverride("polityka-prywatnosci"),
   ]);
   const leads: Record<string, number> = {};
   for (const r of sourceRows) leads[r.source] = (leads[r.source] ?? 0) + 1;
@@ -157,6 +162,24 @@ export default async function SiteContentPage() {
         </CardHeader>
         <CardContent>
           <TeamEditor cards={team} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>{tl("Dane firmy i dokumenty", "Company details and legal pages")}</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Dane sprzedawcy, regulamin sprzedaży i polityka prywatności. Zmiany są widoczne na stronie od razu po zapisaniu.",
+                "Seller details, terms of sale and privacy policy. Changes appear on the site as soon as you save.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <CompanyForm initial={company} />
+          <LegalEditor slug="regulamin" title={tl("Regulamin sprzedaży", "Terms of sale")} initial={terms} />
+          <LegalEditor slug="polityka-prywatnosci" title={tl("Polityka prywatności", "Privacy policy")} initial={privacy} />
         </CardContent>
       </Card>
     </div>

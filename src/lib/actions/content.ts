@@ -179,3 +179,46 @@ export async function deleteCoachingPlan(id: string): Promise<ActionResult> {
     return { ok: true };
   });
 }
+
+const companySchema = z.object({
+  controller: z.string().trim().min(2, "Podaj imię i nazwisko lub nazwę firmy").max(120),
+  address: z.string().trim().max(200),
+  tax_id: z.string().trim().max(40),
+  email: z.string().trim().max(120).refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Nieprawidłowy e-mail"),
+  phone: z.string().trim().max(40),
+  instagram: z.string().trim().max(60),
+});
+export type CompanyInput = z.input<typeof companySchema>;
+
+/** Company details shown in the footer, contact page, terms and privacy policy. */
+export async function saveCompany(input: CompanyInput): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Stroną zarządzają założyciele." };
+    const parsed = companySchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+    const v = parsed.data;
+    const instagram = v.instagram && !v.instagram.startsWith("@") ? `@${v.instagram}` : v.instagram;
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ id: 1, ...v, instagram, updated_at: new Date().toISOString() });
+    if (error) return dbError(error);
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Zapisano dane firmy." };
+  });
+}
+
+/** Text of the terms or privacy policy. Empty text restores the built-in default. */
+export async function saveLegalPage(slug: "regulamin" | "polityka-prywatnosci", input: { body: string; body_en: string }): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Stroną zarządzają założyciele." };
+    if (slug !== "regulamin" && slug !== "polityka-prywatnosci") return { ok: false, error: "Nieznana strona." };
+    const body = input.body.trim().slice(0, 40000);
+    const body_en = input.body_en.trim().slice(0, 40000);
+    const { error } = await supabase
+      .from("site_pages")
+      .upsert({ slug, body: body || null, body_en: body_en || null, updated_at: new Date().toISOString() });
+    if (error) return dbError(error);
+    revalidatePath(`/${slug}`);
+    return { ok: true, message: body ? "Zapisano. Zmiana jest już na stronie." : "Przywrócono treść domyślną." };
+  });
+}

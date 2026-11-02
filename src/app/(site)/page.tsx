@@ -5,7 +5,6 @@ import { ArrowUpRight } from "lucide-react";
 import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, PhotoBand, PrimaryLink, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { JsonLd } from "@/components/site/json-ld";
 import { publicOrigin } from "@/lib/env";
-import { SITE } from "@/lib/site";
 import { CampCards } from "@/components/site/camp-cards";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { listArticles, listCamps, listCoachingPlans, takenPlaces } from "@/lib/data/camps";
@@ -13,6 +12,7 @@ import { PlanCards } from "@/components/site/plan-cards";
 import { stripeConfigured } from "@/lib/stripe";
 import { listTestimonials } from "@/lib/data/club";
 import { getT } from "@/lib/i18n/server";
+import { getCompany } from "@/lib/data/site-settings";
 import type { T } from "@/lib/i18n/shared";
 import { createClient } from "@/lib/supabase/server";
 
@@ -62,6 +62,7 @@ const SAMPLE_LAPS = [
 
 export default async function Home() {
   const { lang, t } = await getT();
+  const company = await getCompany();
   const supabase = await createClient();
   const [camps, taken, allArticles, testimonials, allPlans] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
@@ -94,7 +95,7 @@ export default async function Home() {
           logo: `${origin}/branding/vyra-icon-512.png`,
           sport: "Running",
           founder: { "@type": "Person", name: "Kacper Adamczyk" },
-          sameAs: [`https://www.instagram.com/${SITE.instagram.replace(/^@/, "")}/`],
+          sameAs: [`https://www.instagram.com/${company.instagram.replace(/^@/, "")}/`],
         }}
       />
       {/* 1. HERO: who we are, what you get, from what price. One primary action. */}
@@ -446,7 +447,7 @@ export default async function Home() {
       ) : null}
 
       <InstagramStrip
-        handle={SITE.instagram}
+        handle={company.instagram}
         follow={t("Obserwuj", "Follow")}
         posts={[
           { src: "/site/ig-standard.jpg", alt: "VYRA Standard Series: Elite is standard" },

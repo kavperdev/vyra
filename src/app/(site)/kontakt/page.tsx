@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ContactTabs } from "@/components/site/contact-tabs";
 import { Eyebrow, PageHero, Reveal, wrap } from "@/components/site/blocks";
 import { getT } from "@/lib/i18n/server";
-import { SITE } from "@/lib/site";
+import { getCompany } from "@/lib/data/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -19,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const { t } = await getT();
+  const company = await getCompany();
   return (
     <>
       <PageHero
@@ -37,17 +38,17 @@ export default async function ContactPage() {
             <Eyebrow>{t("Obozy", "Camps")}</Eyebrow>
             <p className="leading-relaxed text-white/60">{t("Zapisz się na listę, a o terminie pierwszego obozu dowiesz się jako pierwszy.", "Join the list and be the first to hear the date of the first camp.")}</p>
           </div>
-          {SITE.email || SITE.instagram ? (
+          {company.email || company.instagram ? (
             <div className="grid gap-3">
               <Eyebrow>{t("Bezpośrednio", "Directly")}</Eyebrow>
-              {SITE.email ? (
-                <a href={`mailto:${SITE.email}`} className="site-link w-fit text-white">
-                  {SITE.email}
+              {company.email ? (
+                <a href={`mailto:${company.email}`} className="site-link w-fit text-white">
+                  {company.email}
                 </a>
               ) : null}
-              {SITE.instagram ? (
-                <a href={`https://instagram.com/${SITE.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="site-link w-fit text-white">
-                  Instagram {SITE.instagram}
+              {company.instagram ? (
+                <a href={`https://instagram.com/${company.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" className="site-link w-fit text-white">
+                  Instagram {company.instagram}
                 </a>
               ) : null}
             </div>
