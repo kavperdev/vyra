@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell, BellOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { removePushSubscription, savePushSubscription, setPushLanguage } from "@/lib/actions/push";
+import { removePushSubscription, savePushSubscription, sendTestPush, setPushLanguage } from "@/lib/actions/push";
 import { activeLang } from "@/lib/i18n/runtime";
 import { useT } from "@/lib/i18n/client";
 
@@ -47,9 +47,22 @@ function usePush() {
         setState("denied");
         return;
       }
-      const sub = await reg.pushManager.getSubscription();
-      // Push messages follow the language chosen in the app.
-      if (sub) setPushLanguage(sub.endpoint, activeLang()).catch(() => undefined);
+      let sub = await reg.pushManager.getSubscription();
+      if (sub && Notification.permission === "granted") {
+        // Keys changed on the server since this device subscribed: the old subscription can never
+        // receive anything, so replace it silently.
+        const current = urlBase64ToUint8Array(publicKey!);
+        const own = sub.options?.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+        if (own && (own.length !== current.length || own.some((b, i) => b !== current[i]))) {
+          await sub.unsubscribe().catch(() => undefined);
+          sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: current }).catch(() => null);
+        }
+        // Re-save on every visit: a device that is subscribed in the browser but missing on the
+        // server (an earlier save failed, the account changed) would otherwise never get anything.
+        if (sub) savePushSubscription(sub.toJSON(), navigator.userAgent, activeLang()).catch(() => undefined);
+      } else if (sub) {
+        setPushLanguage(sub.endpoint, activeLang()).catch(() => undefined);
+      }
       if (!cancelled) setState(sub ? "on" : "off");
     })();
     return () => {
@@ -105,6 +118,7 @@ function usePush() {
 export function PushSettings() {
   const t = useT();
   const { state, busy, enable, disable } = usePush();
+  const [testing, setTesting] = useState(false);
   return (
     <div className="grid gap-3 rounded-lg border border-border p-4">
       <div className="flex items-center gap-2">
@@ -115,9 +129,28 @@ export function PushSettings() {
         {t("Nowe i zmienione treningi, wykonane treningi, komentarze i informacje o obozie przyjdą jako powiadomienie, także gdy aplikacja jest zamknięta.", "New and changed sessions, completed sessions, comments and camp updates arrive as notifications, even when the app is closed.")}
       </p>
       {state === "loading" ? null : state === "on" ? (
-        <Button variant="outline" size="sm" className="w-fit" disabled={busy} onClick={disable}>
-          <BellOff className="size-4" /> {t("Wyłącz powiadomienia", "Turn off notifications")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="w-fit"
+            disabled={busy || testing}
+            onClick={async () => {
+              setTesting(true);
+              try {
+                const res = await sendTestPush();
+                if (res.ok) toast.success(res.message ?? "OK", { duration: 8000 });
+                else toast.error(res.error, { duration: 10000 });
+              } finally {
+                setTesting(false);
+              }
+            }}
+          >
+            <Bell className="size-4" /> {testing ? t("Wysyłanie…", "Sending…") : t("Wyślij powiadomienie testowe", "Send a test notification")}
+          </Button>
+          <Button variant="outline" size="sm" className="w-fit" disabled={busy} onClick={disable}>
+            <BellOff className="size-4" /> {t("Wyłącz powiadomienia", "Turn off notifications")}
+          </Button>
+        </div>
       ) : state === "off" ? (
         <Button size="sm" className="w-fit" disabled={busy} onClick={enable}>
           <Bell className="size-4" /> {t("Włącz powiadomienia", "Turn on notifications")}

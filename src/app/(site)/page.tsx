@@ -19,17 +19,17 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: { absolute: t("VYRA · Społeczność biegowa · Elite is standard", "VYRA · Running community · Elite is standard") },
+    title: { absolute: t("VYRA · Ruch biegowy · Elite is standard", "VYRA · A running movement · Elite is standard") },
     description: t(
-      "Społeczność biegaczy, którzy trenują mądrze. Wspólne treningi VYRA Run Club, wiedza o treningu, darmowy plan na start i trenerzy, z którymi dojdziesz dalej.",
-      "A community of runners who train smart. VYRA Run Club group runs, training know-how, a free starter plan and coaches who take you further.",
+      "VYRA to ruch biegaczy, którzy podnoszą swój standard. Wspólne bieganie, wiedza o treningu i ludzie, z którymi dojdziesz dalej, niż biegając sam.",
+      "VYRA is a movement of runners who raise their own standard. Running together, training know-how and people who take you further than running alone.",
     ),
     robots: { index: true, follow: true },
     openGraph: {
       title: "VYRA · Elite is standard",
       description: t(
-        "Społeczność biegowa VYRA: Run Club, wiedza o treningu, darmowy plan na start i trenerzy, z którymi dojdziesz dalej.",
-        "The VYRA running community: Run Club, training know-how, a free starter plan and coaches who take you further.",
+        "Ruch biegaczy, którzy podnoszą swój standard. Wspólne bieganie, wiedza i ludzie, z którymi dojdziesz dalej.",
+        "A movement of runners who raise their own standard. Running together, know-how and people who take you further.",
       ),
     },
     alternates: { canonical: "/" },
@@ -91,7 +91,7 @@ export default async function Home() {
           name: "VYRA",
           alternateName: "VYRA.ATHL",
           slogan: "Elite is standard",
-          description: "VYRA to polska społeczność biegowa i zespół trenerów: Run Club, wiedza o treningu, plany treningowe i obozy dla biegaczy amatorów.",
+          description: "VYRA to polski ruch biegowy: społeczność biegaczy, którzy podnoszą swój standard. Wspólne treningi Run Club, wiedza o treningu, trenerzy i obozy dla biegaczy amatorów.",
           url: origin,
           logo: `${origin}/branding/vyra-icon-512.png`,
           sport: "Running",

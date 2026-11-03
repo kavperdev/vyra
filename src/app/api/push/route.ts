@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { translateNotification } from "@/lib/i18n/messages";
+import { vapidSubject } from "@/lib/push-config";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -18,10 +19,13 @@ export async function POST(request: NextRequest) {
   const id = typeof body?.id === "string" ? body.id : null;
   if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:kontakt@vyra.app", publicKey, privateKey);
+  webpush.setVapidDetails(vapidSubject(), publicKey, privateKey);
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("take_push_job", { p_id: id });
-  if (error) return NextResponse.json({ error: "job" }, { status: 500 });
+  if (error) {
+    console.error("[push] take_push_job", error.message);
+    return NextResponse.json({ error: "job" }, { status: 500 });
+  }
 
   type Job = { title: string; body: string | null; link: string | null; endpoint: string; p256dh: string; auth: string; lang?: string | null };
   const jobs = (data ?? []) as Job[];
@@ -42,6 +46,7 @@ export async function POST(request: NextRequest) {
         sent++;
       } catch (e) {
         const status = (e as { statusCode?: number }).statusCode;
+        console.error("[push] send", status, (e as { body?: string }).body ?? e);
         if (status === 404 || status === 410) await supabase.rpc("drop_push_subscription", { p_endpoint: j.endpoint });
       }
     }),
