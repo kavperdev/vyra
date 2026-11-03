@@ -24,7 +24,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(publicOrigin()),
   title: { default: "VYRA", template: "%s · VYRA" },
-  description: "VYRA — platforma treningowa dla trenera i zawodników. Elite is standard.",
+  description: "VYRA · społeczność biegowa. Elite is standard.",
   applicationName: "VYRA",
   icons: {
     icon: [{ url: "/branding/vyra-icon.svg", type: "image/svg+xml" }, { url: "/icon.png", sizes: "32x32" }],

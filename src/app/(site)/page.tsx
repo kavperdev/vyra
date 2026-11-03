@@ -19,17 +19,17 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: { absolute: t("VYRA · Trening biegowy i prowadzenie online · Elite is standard", "VYRA · Online running coaching · Elite is standard") },
+    title: { absolute: t("VYRA · Społeczność biegowa · Elite is standard", "VYRA · Running community · Elite is standard") },
     description: t(
-      "Indywidualne prowadzenie biegowe online: plan od trenera co do odcinka, trening siłowy, analiza każdego treningu i aplikacja VYRA. Darmowy plan dla początkujących i Run Club.",
-      "Individual online running coaching: a coach-built plan down to the rep, strength work, analysis of every session and the VYRA app. A free beginner plan and Run Club.",
+      "Społeczność biegaczy, którzy trenują mądrze. Wspólne treningi VYRA Run Club, wiedza o treningu, darmowy plan na start i trenerzy, z którymi dojdziesz dalej.",
+      "A community of runners who train smart. VYRA Run Club group runs, training know-how, a free starter plan and coaches who take you further.",
     ),
     robots: { index: true, follow: true },
     openGraph: {
       title: "VYRA · Elite is standard",
       description: t(
-        "Trening biegowy, przygotowanie siłowe i fizjoterapia. Prowadzenie zawodników i obozy treningowe.",
-        "Running, strength and physiotherapy. Individual coaching and training camps.",
+        "Społeczność biegowa VYRA: Run Club, wiedza o treningu, darmowy plan na start i trenerzy, z którymi dojdziesz dalej.",
+        "The VYRA running community: Run Club, training know-how, a free starter plan and coaches who take you further.",
       ),
     },
     alternates: { canonical: "/" },
@@ -91,6 +91,7 @@ export default async function Home() {
           name: "VYRA",
           alternateName: "VYRA.ATHL",
           slogan: "Elite is standard",
+          description: "VYRA to polska społeczność biegowa i zespół trenerów: Run Club, wiedza o treningu, plany treningowe i obozy dla biegaczy amatorów.",
           url: origin,
           logo: `${origin}/branding/vyra-icon-512.png`,
           sport: "Running",
