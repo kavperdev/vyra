@@ -12,6 +12,8 @@ import { CopyWeekButton } from "@/components/calendar/copy-week";
 import { TrainingCalendar } from "@/components/calendar/training-calendar";
 import { HistoryTable } from "@/components/athlete/history-table";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
+import { RaceCountdownCard } from "@/components/athlete/race-countdown";
+import { raceCountdown } from "@/lib/training/race";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
 import { IntakeView } from "@/components/coach/intake-view";
 import { SessionList } from "@/components/training/session-bits";
@@ -132,10 +134,12 @@ async function TabContent({
   const hrefFor = (s: { id: string }) => `/coach/sessions/${s.id}`;
 
   if (tab === "overview") {
-    const [sessions, plans] = await Promise.all([
+    const [sessions, plans, goals] = await Promise.all([
       listSessions(supabase, { athleteIds: [athleteId], from: periodStart(today, 8), to: addDaysISO(today, 28) }),
       listPlans(supabase, athleteId),
+      listGoals(supabase, athleteId).catch(() => []),
     ]);
+    const race = raceCountdown(goals, today);
     const current = plans.find((p) => p.start_date <= today && (!p.end_date || p.end_date >= today));
     const next = sessions.find((s) => s.scheduled_date >= today && s.status === "planned");
     const done = sessions.filter((s) => s.execution && isDone(s.execution.status)).sort((a, b) => b.execution!.performed_on.localeCompare(a.execution!.performed_on));
@@ -145,6 +149,7 @@ async function TabContent({
     const p = athlete.profile;
     return (
       <div className="grid gap-6">
+        {race ? <RaceCountdownCard race={race} goalsHref={`${base}?tab=records`} /> : null}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={`${comp.done}/${comp.due} · pominięte ${comp.skipped}`} />
           <Stat label={tl("Ten tydzień", "This week")} value={formatNumber(week?.actualKm ?? 0)} unit="km" hint={week?.plannedKm ? `plan ${formatNumber(week.plannedKm)} km` : tl("bez planu km", "no planned km")} />

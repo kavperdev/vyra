@@ -6,10 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, HelloCard, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
 import { describeSegment, KindIcon, plannedVolume, SessionList, StatusBadge } from "@/components/training/session-bits";
 import { ReadinessCard } from "@/components/athlete/readiness-card";
+import { RaceCountdownCard } from "@/components/athlete/race-countdown";
+import { WorkoutChart } from "@/components/training/workout-chart";
+import { raceCountdown } from "@/lib/training/race";
 import { requireRole } from "@/lib/auth";
 import type { Readiness } from "@/lib/readiness";
 import { addDaysISO, eachDay, todayISO, weekEndISO, weekStartISO } from "@/lib/dates";
-import { listRecords } from "@/lib/data/people";
+import { listGoals, listRecords } from "@/lib/data/people";
 import { getSessionDetail, listRecentComments, listSessions } from "@/lib/data/sessions";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { completionStats, weeklyBuckets } from "@/lib/training/analytics";
@@ -32,7 +35,7 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
-  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded] = await Promise.all([
+  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
@@ -66,7 +69,9 @@ export default async function AthleteDashboard() {
         const rows = (r.error ? [] : (r.data ?? [])) as { status: string }[];
         return rows.length > 0 && rows.every((m) => m.status === "ended");
       }),
+    listGoals(supabase, user.id).catch(() => []),
   ]);
+  const race = raceCountdown(goals, today);
 
   const todays = sessions.filter((s) => s.scheduled_date === today);
   const featured = todays.find((s) => s.status === "planned" || s.status === "in_progress") ?? todays[0];
@@ -150,6 +155,8 @@ export default async function AthleteDashboard() {
         </Card>
       ) : null}
 
+      {intakeMissing ? null : <RaceCountdownCard race={race} goalsHref="/athlete/records" />}
+
       {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
 
       <section aria-labelledby="today-title" className="grid gap-3">
@@ -168,6 +175,7 @@ export default async function AthleteDashboard() {
                 </div>
                 <StatusBadge status={featured.status} date={featured.scheduled_date} today={today} />
               </div>
+              {featuredDetail.segments.length ? <WorkoutChart segments={featuredDetail.segments} compact /> : null}
               {featuredDetail.segments.length ? (
                 <ul className="grid gap-1 text-sm">
                   {featuredDetail.segments.slice(0, 5).map((s) => (

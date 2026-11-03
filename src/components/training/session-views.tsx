@@ -9,6 +9,7 @@ import { bestSet, estimateOneRepMax, volumeLoad } from "@/lib/training/strength"
 import type { SessionDetail, StrengthExercise } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { hrRange, paceRange, SegmentList } from "./session-bits";
+import { WorkoutChart } from "./workout-chart";
 import { tl } from "@/lib/i18n/runtime";
 
 export function PlanDetails({ session }: { session: SessionDetail }) {
@@ -49,6 +50,7 @@ export function PlanDetails({ session }: { session: SessionDetail }) {
         {session.segments.length ? (
           <div className="grid gap-2">
             <p className="text-[12px] text-muted">{tl("Struktura treningu", "Session structure")}</p>
+            <WorkoutChart segments={session.segments} />
             <SegmentList segments={session.segments} />
           </div>
         ) : null}
