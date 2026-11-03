@@ -4,7 +4,7 @@ import { getT } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t("Regulamin sprzedaży", "Terms of sale"), robots: { index: true, follow: true }, alternates: { canonical: "/regulamin" } };
+  return { title: t("Regulamin sprzedaży", "Terms of sale"), description: t("Zasady zakupu i realizacji usług VYRA: pakiety, płatności, vouchery, program poleceń, odstąpienie od umowy i reklamacje.", "Terms for buying and using VYRA services: packages, payments, vouchers, referrals, withdrawal and complaints."), robots: { index: true, follow: true }, alternates: { canonical: "/regulamin" } };
 }
 
 export default function TermsPage() {

@@ -2,7 +2,7 @@
 
 import webpush from "web-push";
 import { z } from "zod";
-import { vapidSubject } from "@/lib/push-config";
+import { vapidKeys, vapidProblem, vapidSubject } from "@/lib/push-config";
 import type { ActionResult } from "@/lib/types";
 import { dbError, withUser } from "./helpers";
 
@@ -54,18 +54,20 @@ export async function setPushLanguage(endpoint: string, lang: string): Promise<A
  */
 export async function sendTestPush(): Promise<ActionResult> {
   return withUser(null, async ({ supabase, user }) => {
-    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    const privateKey = process.env.VAPID_PRIVATE_KEY;
-    if (!publicKey || !privateKey) return { ok: false, error: "Brak kluczy powiadomień na serwerze (VAPID w Vercel). Napisz do administratora." };
+    const keys = vapidKeys();
+    if (!keys) return { ok: false, error: "Brak kluczy powiadomień na serwerze (VAPID w Vercel). Napisz do administratora." };
     const { data, error } = await supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", user.id);
     if (error) return dbError(error);
     const subs = (data ?? []) as { endpoint: string; p256dh: string; auth: string }[];
     if (!subs.length) return { ok: false, error: "To konto nie ma zapisanego żadnego urządzenia. Wyłącz i włącz powiadomienia jeszcze raz." };
     try {
-      webpush.setVapidDetails(vapidSubject(), publicKey, privateKey);
+      webpush.setVapidDetails(vapidSubject(), keys.publicKey, keys.privateKey);
     } catch (e) {
       console.error("[push test] vapid", e);
-      return { ok: false, error: "Klucze powiadomień na serwerze są nieprawidłowe (VAPID). Trzeba je wygenerować od nowa." };
+      return {
+        ok: false,
+        error: `Klucze powiadomień są nieprawidłowe: ${vapidProblem(e)}. Założyciel wygeneruje nowe w Ustawieniach (sekcja „Klucze powiadomień”).`,
+      };
     }
     let sent = 0;
     const errors: string[] = [];
@@ -89,5 +91,14 @@ export async function sendTestPush(): Promise<ActionResult> {
       ok: true,
       message: `Wysłano na ${sent} ${sent === 1 ? "urządzenie" : "urządzenia"}. Jeśli test dotarł, a zwykłe powiadomienia nie, przyczyna jest w bazie (wysyłka z Supabase).`,
     };
+  });
+}
+
+/** Founder only: a fresh VAPID key pair to paste into Vercel. Nothing is stored here. */
+export async function generateVapidKeys(): Promise<ActionResult<{ publicKey: string; privateKey: string }>> {
+  return withUser("coach", async ({ user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Tylko dla założycieli." };
+    const k = webpush.generateVAPIDKeys();
+    return { ok: true, data: { publicKey: k.publicKey, privateKey: k.privateKey } };
   });
 }

@@ -24,7 +24,7 @@ function usePush() {
   const t = useT();
   const [state, setState] = useState<State>("loading");
   const [busy, setBusy] = useState(false);
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const publicKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "").trim().replace(/^["']+|["']+$/g, "").replace(/\s+/g, "").replace(/=+$/, "") || undefined;
 
   useEffect(() => {
     let cancelled = false;

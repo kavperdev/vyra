@@ -61,6 +61,19 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           }}
         />
       ) : null}
+      {article.status === "published" ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "VYRA", item: origin },
+              { "@type": "ListItem", position: 2, name: t("Wiedza", "Journal"), item: `${origin}/wiedza` },
+              { "@type": "ListItem", position: 3, name: article.title, item: `${origin}/wiedza/${article.slug}` },
+            ],
+          }}
+        />
+      ) : null}
       {article.status !== "published" ? (
         <div className="fixed inset-x-0 bottom-0 z-50 bg-[var(--accent)] py-2 text-center text-sm font-semibold text-white">
           {t("Podgląd szkicu: odwiedzający nie widzą tego artykułu.", "Draft preview: visitors cannot see this article.")}

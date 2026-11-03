@@ -14,6 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
       "Podaruj indywidualny plan biegowy z trenerem VYRA. Voucher do wydruku od razu po płatności, ważny 12 miesięcy.",
       "Give individual running coaching with a VYRA coach. A printable voucher right after payment, valid for 12 months.",
     ),
+    robots: { index: true, follow: true },
+    alternates: { canonical: "/voucher" },
   };
 }
 

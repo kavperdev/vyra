@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { translateNotification } from "@/lib/i18n/messages";
-import { vapidSubject } from "@/lib/push-config";
+import { vapidKeys, vapidSubject } from "@/lib/push-config";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -11,15 +11,19 @@ import { createClient } from "@/lib/supabase/server";
  * database knows fresh notification ids, and each can be claimed one time.
  */
 export async function POST(request: NextRequest) {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!publicKey || !privateKey) return NextResponse.json({ sent: 0, reason: "push not configured" });
+  const keys = vapidKeys();
+  if (!keys) return NextResponse.json({ sent: 0, reason: "push not configured" });
 
   const body = (await request.json().catch(() => null)) as { id?: unknown } | null;
   const id = typeof body?.id === "string" ? body.id : null;
   if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
-  webpush.setVapidDetails(vapidSubject(), publicKey, privateKey);
+  try {
+    webpush.setVapidDetails(vapidSubject(), keys.publicKey, keys.privateKey);
+  } catch (e) {
+    console.error("[push] vapid", e);
+    return NextResponse.json({ error: "vapid" }, { status: 500 });
+  }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("take_push_job", { p_id: id });
   if (error) {
