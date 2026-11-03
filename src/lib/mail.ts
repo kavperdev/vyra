@@ -1,6 +1,5 @@
 import "server-only";
 import { publicOrigin } from "@/lib/env";
-import { SITE } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
 /**
