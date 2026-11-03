@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppToaster, ThemeProvider } from "@/components/theme-provider";
 import { publicOrigin } from "@/lib/env";
@@ -62,8 +61,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </ThemeProvider>
         </LangProvider>
         <SpeedInsights />
-        {/* Vercel Web Analytics: page views without cookies (turn on in Vercel → Analytics). */}
-        {process.env.VERCEL ? <Script src="/_vercel/insights/script.js" strategy="afterInteractive" /> : null}
       </body>
     </html>
   );
