@@ -57,7 +57,7 @@ export function VapidKeys() {
           <div className="grid gap-3">
             <CopyRow label="NEXT_PUBLIC_VAPID_PUBLIC_KEY" value={keys.publicKey} />
             <CopyRow label="VAPID_PRIVATE_KEY" value={keys.privateKey} />
-            <CopyRow label="VAPID_SUBJECT" value="mailto:adamczykkacper18@gmail.com" />
+            <CopyRow label="VAPID_SUBJECT" value="mailto:kontakt@vyraathl.pl" />
             <p className="text-[13px] text-warning">
               {tl("Klucz prywatny wklej tylko w Vercel (Sensitive). Nie wysyłaj go nikomu. Po zamknięciu tej strony już go tu nie zobaczysz.", "Paste the private key only into Vercel (Sensitive). Never send it to anyone. It won't be shown again after you leave this page.")}
             </p>

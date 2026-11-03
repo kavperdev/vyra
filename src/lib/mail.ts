@@ -80,7 +80,7 @@ export async function sendMailOnce(key: string, to: string, m: MailContent): Pro
       body: JSON.stringify({
         from: process.env.MAIL_FROM || "VYRA <kontakt@vyraathl.pl>",
         to: [to],
-        reply_to: process.env.MAIL_REPLY_TO || SITE.email,
+        reply_to: process.env.MAIL_REPLY_TO || "kontakt@vyraathl.pl",
         subject: m.subject,
         html: html(m),
         text: text(m),

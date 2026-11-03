@@ -19,7 +19,7 @@ export const SITE: SiteSettings = {
   tagline: "Elite is standard",
   controller: "Kacper Adamczyk",
   address: "ul. Leśna 11, 21-470 Krzywda",
-  email: "adamczykkacper18@gmail.com",
+  email: "kontakt@vyraathl.pl",
   instagram: "@vyra.athl",
 };
 

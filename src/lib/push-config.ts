@@ -22,7 +22,7 @@ export function vapidSubject(): string {
   const raw = (process.env.VAPID_SUBJECT ?? "").trim().replace(/^["']+|["']+$/g, "").replace(/^mailto:\s*/i, "mailto:");
   if (/^mailto:[^\s@]+@[^\s@]+$/.test(raw) || /^https:\/\/\S+$/.test(raw)) return raw;
   if (/^[^\s@]+@[^\s@]+$/.test(raw)) return `mailto:${raw}`;
-  return "mailto:adamczykkacper18@gmail.com";
+  return "mailto:kontakt@vyraathl.pl";
 }
 
 /** Plain-language reason why web-push refused the keys. */
