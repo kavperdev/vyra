@@ -7,6 +7,8 @@ import { stripe, stripeConfigured, stripePublishableKey, type CheckoutSession } 
 import { createClient } from "@/lib/supabase/server";
 import { insertApplication, readSource } from "@/lib/source";
 import type { CoachingPlan } from "@/lib/camps";
+import { accessDays } from "@/lib/access";
+import { creditReferrer, referralCoupon, referralFromSource } from "@/lib/referral";
 
 /** Creates a Stripe Checkout for a coaching package and returns its URL. The price always comes from the database. */
 export type CheckoutStart =
@@ -38,11 +40,20 @@ export async function startCheckout(
   // Payment on the Stripe page (redirect). Embedded mode stays available only if STRIPE_EMBEDDED=1.
   const publishableKey = process.env.STRIPE_EMBEDDED === "1" ? stripePublishableKey() : null;
   const embedded = !!publishableKey;
+  // Came through a friend's referral link: their discount is applied automatically.
+  const source = await readSource();
+  let refCode = referralFromSource(source);
+  let coupon: string | null = null;
+  if (refCode) {
+    const { data: who } = await supabase.rpc("referral_lookup", { p_code: refCode });
+    coupon = Array.isArray(who) && who.length ? await referralCoupon() : null;
+    if (!coupon) refCode = null;
+  }
   try {
     const session = await stripe<CheckoutSession>("POST", "checkout/sessions", {
       mode: monthly ? "subscription" : "payment",
       locale: lang === "en" ? "en" : "pl",
-      allow_promotion_codes: "true",
+      ...(coupon ? { discounts: { 0: { coupon } } } : { allow_promotion_codes: "true" }),
       billing_address_collection: "auto",
       ...(embedded
         ? { ui_mode: "embedded", return_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}` }
@@ -51,7 +62,7 @@ export async function startCheckout(
             cancel_url: `${origin}/prowadzenie#pakiety`,
           }),
       customer_email: email,
-      metadata: { plan_id: plan.id, plan_name: plan.name, full_name: fullName, terms: "regulamin+start_przed_14_dniami", source: (await readSource()) ?? "" },
+      metadata: { plan_id: plan.id, plan_name: plan.name, full_name: fullName, terms: "regulamin+start_przed_14_dniami", source: source ?? "", ref: refCode ?? "" },
       line_items: {
         0: {
           quantity: 1,
@@ -76,14 +87,6 @@ export async function startCheckout(
 }
 
 /** After returning from Stripe: verifies the payment and records it once as a paid request in the panel. */
-/** How long a one-off package gives access to the app (days): Start 8 weeks, 12-week plan, consultation. */
-function accessDays(plan: string): number {
-  const p = plan.toLowerCase();
-  if (p.includes("start") && !p.includes("startowy")) return 63;
-  if (p.includes("12")) return 91;
-  if (p.includes("konsult")) return 21;
-  return 35;
-}
 
 export interface CheckoutRecord {
   status: "paid" | "pending" | "invalid";
@@ -104,7 +107,7 @@ export async function recordCheckout(sessionId: string): Promise<CheckoutRecord>
   } catch {
     return { status: "invalid" };
   }
-  if (s.status !== "complete") return { status: "invalid" };
+  if (s.status !== "complete" || s.metadata.kind === "voucher") return { status: "invalid" };
   if (s.payment_status === "unpaid") return { status: "pending", plan: s.metadata.plan_name };
   const amount = ((s.amount_total ?? 0) / 100).toLocaleString("pl-PL");
   const discount = s.total_details?.amount_discount ? ` · rabat ${(s.total_details.amount_discount / 100).toLocaleString("pl-PL")} zł (kod)` : "";
@@ -147,6 +150,15 @@ export async function recordCheckout(sessionId: string): Promise<CheckoutRecord>
       token = row.token;
       existing = row.existing;
     } else if (error) console.error("[purchase_access]", error.message);
+
+    // Referral: reward the friend who sent this buyer (once per payment).
+    const ref = s.metadata.ref;
+    if (ref) {
+      const rr = await supabase.rpc("referral_record", { p_secret: secret, p_code: ref, p_session: s.id, p_email: email, p_plan: plan });
+      const row = (Array.isArray(rr.data) ? rr.data[0] : rr.data) as { reward: string; referrer_customer: string | null } | null;
+      if (rr.error) console.error("[referral_record]", rr.error.message);
+      else if (row?.reward === "credit" && row.referrer_customer) await creditReferrer(row.referrer_customer, email);
+    }
   }
   return { status: "paid", plan: s.metadata.plan_name, email, name, token, existing };
 }

@@ -26,6 +26,8 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },
     { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress", mobile: true },
     { href: "/athlete/records", label: t("Rekordy i cele", "Records & goals"), icon: "records", mobile: true },
+    { href: "/athlete/odznaki", label: t("Odznaki", "Badges"), icon: "badges" },
+    { href: "/athlete/polecaj", label: t("Poleć znajomemu", "Refer a friend"), icon: "gift" },
     { href: "/athlete/notifications", label: t("Powiadomienia", "Notifications"), icon: "bell", badge: unread },
     { href: "/athlete/settings", label: t("Ustawienia", "Settings"), icon: "settings" },
   ];

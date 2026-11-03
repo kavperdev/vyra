@@ -14,6 +14,7 @@ import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
 import { listAmbassadors, listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
 import { AmbassadorsEditor } from "@/components/content/ambassadors-editor";
+import { FeedbackInbox, type FeedbackRow } from "@/components/content/feedback-inbox";
 import { CompanyForm, LegalEditor } from "@/components/content/legal-editor";
 import { getCompany, getLegalOverride } from "@/lib/data/site-settings";
 import { formatDate } from "@/lib/format";
@@ -31,7 +32,7 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy] = await Promise.all([
+  const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
     listCoachingPlans(supabase),
@@ -47,6 +48,12 @@ export default async function SiteContentPage() {
     getCompany(),
     getLegalOverride("regulamin"),
     getLegalOverride("polityka-prywatnosci"),
+    supabase
+      .from("athlete_feedback")
+      .select("*, athlete:profiles(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then((r) => (r.error ? null : ((r.data ?? []) as FeedbackRow[]))),
   ]);
   const leads: Record<string, number> = {};
   for (const r of sourceRows) leads[r.source] = (leads[r.source] ?? 0) + 1;
@@ -94,6 +101,25 @@ export default async function SiteContentPage() {
           <RunClubEditor events={events} signups={signups} />
         </CardContent>
       </Card>
+
+      {feedback ? (
+        <Card id="opinie">
+          <CardHeader>
+            <div className="grid gap-1">
+              <CardTitle>{tl("Opinie z aplikacji", "Feedback from the app")}</CardTitle>
+              <p className="text-[13px] text-muted">
+                {tl(
+                  "Zawodnicy dostają prośbę o opinię po 4 tygodniach. Te ze zgodą publikujesz jednym kliknięciem, trafiają do sekcji opinii poniżej i na stronę.",
+                  "Athletes are asked for feedback after 4 weeks. Publish the consented ones with one click: they go to the testimonials below and to the website.",
+                )}
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <FeedbackInbox items={feedback} />
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

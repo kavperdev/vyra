@@ -35,7 +35,7 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
-  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals] = await Promise.all([
+  const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals, feedbackDue] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
@@ -70,6 +70,14 @@ export default async function AthleteDashboard() {
         return rows.length > 0 && rows.every((m) => m.status === "ended");
       }),
     listGoals(supabase, user.id).catch(() => []),
+    // After 4 weeks with the coach: ask once for feedback (hidden if the migration has not run).
+    Promise.all([
+      supabase.from("coach_athletes").select("created_at").eq("athlete_id", user.id).eq("status", "active").order("created_at").limit(1),
+      supabase.from("athlete_feedback").select("id", { count: "exact", head: true }).eq("athlete_id", user.id),
+    ]).then(([link, fb]) => {
+      const since = (link.data as { created_at: string }[] | null)?.[0]?.created_at;
+      return !fb.error && (fb.count ?? 0) === 0 && !!since && Date.now() - Date.parse(since) >= 28 * 86_400_000;
+    }),
   ]);
   const race = raceCountdown(goals, today);
 
@@ -149,6 +157,22 @@ export default async function AthleteDashboard() {
             <Button asChild variant="accent">
               <Link href="/athlete/ankieta">
                 {tl("Wypełnij ankietę", "Fill it in")} <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {feedbackDue ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div className="grid gap-1">
+              <p className="font-semibold">{tl("Minął pierwszy miesiąc. Jak Ci się trenuje?", "Your first month is done. How is it going?")}</p>
+              <p className="text-[13px] text-muted">{tl("2 minuty, szczerze. Twoja odpowiedź pomaga nam prowadzić Cię lepiej.", "2 minutes, honestly. Your answer helps us coach you better.")}</p>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/athlete/opinia">
+                {tl("Daj znać", "Tell us")} <ArrowRight className="size-4" />
               </Link>
             </Button>
           </CardContent>

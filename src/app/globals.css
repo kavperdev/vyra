@@ -301,7 +301,11 @@
   body * { visibility: hidden; }
   .print-plan, .print-plan * { visibility: visible; color: #000 !important; background: transparent !important; border-color: #bbb !important; }
   .print-plan { position: absolute; inset: 0 auto auto 0; width: 100%; }
+  /* Gift voucher keeps its dark design on paper. */
+  .print-voucher, .print-voucher * { visibility: visible; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-voucher { position: absolute; inset: 0 auto auto 0; width: 100%; margin: 0 !important; }
 }
+@page { margin: 12mm; }
 
 /* Free-plan nudge slides up once. */
 @keyframes site-nudge-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

@@ -244,6 +244,16 @@ export default async function CoachingPage() {
       </section>
 
       <CtaBand
+        title={t("Prezent dla biegacza", "A gift for a runner")}
+        lead={t(
+          "Podaruj pakiet prowadzenia. Voucher do wydruku od razu po płatności, ważny 12 miesięcy.",
+          "Give a coaching package. A printable voucher right after payment, valid for 12 months.",
+        )}
+        href="/voucher"
+        label={t("Kup voucher", "Buy a voucher")}
+      />
+
+      <CtaBand
         tone="warm"
         title={t("Obozy VYRA", "VYRA camps")}
         lead={t(

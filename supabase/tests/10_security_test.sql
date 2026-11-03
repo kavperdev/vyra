@@ -704,3 +704,86 @@ select public.purchase_end(current_setting('vyra.test_secret'), 'sub_2');
 reset role;
 select pg_temp.check((select status from public.coach_athletes where athlete_id = '00000000-0000-0000-0000-0000000000b9' limit 1) = 'archived',
   'cancelled subscription ends access');
+
+-- ---------------------------------------------------------------- growth: feedback, referrals, vouchers
+-- feedback: athletes write their own, founders publish
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+insert into public.athlete_feedback (athlete_id, rating, quote, consent_publish, display_name) values (auth.uid(), 9, 'Świetny plan', true, 'Ala');
+do $$ begin
+  insert into public.athlete_feedback (athlete_id, rating) values ('00000000-0000-0000-0000-0000000000a2', 3);
+  raise exception 'FAIL: athlete wrote feedback as someone else';
+exception when insufficient_privilege then raise notice 'ok  feedback only as yourself';
+end $$;
+update public.athlete_feedback set status = 'published';
+select pg_temp.check((select status from public.athlete_feedback limit 1) = 'new', 'athletes cannot publish their own feedback');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.check((select count(*) from public.athlete_feedback) = 0, 'athletes do not see others'' feedback');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.check((select count(*) from public.athlete_feedback) = 1, 'founder sees feedback');
+select pg_temp.check(exists (select 1 from public.notifications where title like 'Nowa opinia%'), 'founder is notified about feedback');
+
+-- referrals
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select set_config('vyra.ref', public.referral_my_code(), false);
+select pg_temp.check(public.referral_my_code() = current_setting('vyra.ref'), 'referral code is stable');
+select pg_temp.check(current_setting('vyra.ref') like 'ala-%', 'referral code starts with the first name');
+set role anon;
+select pg_temp.check((select first_name from public.referral_lookup(current_setting('vyra.ref'))) = 'Ala', 'visitors see the referrer first name');
+select pg_temp.check((select count(*) from public.referral_lookup('nope-123')) = 0, 'unknown code gives nothing');
+do $$ begin
+  perform * from public.referral_record('wrong', current_setting('vyra.ref'), 'cs_r1', 'f@x.pl', 'Start');
+  raise exception 'FAIL: referral_record accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  referral_record rejects a wrong secret';
+end $$;
+select pg_temp.check((select count(*) from public.referral_record(current_setting('vyra.test_secret'), current_setting('vyra.ref'), 'cs_r0', 'ala@vyra.test', 'Start')) = 0,
+  'self-referral gives no reward');
+select pg_temp.check((select reward from public.referral_record(current_setting('vyra.test_secret'), current_setting('vyra.ref'), 'cs_r1', 'friend@x.pl', 'Start')) = 'manual',
+  'referral without own package is rewarded by hand');
+select pg_temp.check((select count(*) from public.referral_record(current_setting('vyra.test_secret'), current_setting('vyra.ref'), 'cs_r1', 'friend@x.pl', 'Start')) = 0,
+  'one reward per payment');
+reset role;
+-- a referrer with a one-off package gets 14 more days
+insert into public.memberships (email, plan_name, kind, stripe_session, access_until) values ('ala@vyra.test', 'Start', 'once', 'cs_ala', current_date + 10);
+set role anon;
+select pg_temp.check((select reward from public.referral_record(current_setting('vyra.test_secret'), current_setting('vyra.ref'), 'cs_r2', 'friend2@x.pl', 'Start')) = 'access',
+  'one-off package referrer is rewarded with access');
+reset role;
+select pg_temp.check((select access_until from public.memberships where stripe_session = 'cs_ala') = current_date + 24, 'access extended by 14 days');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.referrals) = 2, 'referrer sees own referrals');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.check((select count(*) from public.referrals) = 0, 'others do not see referrals');
+select pg_temp.as_admin();
+
+-- vouchers
+set role anon;
+do $$ begin
+  perform public.voucher_issue('wrong', 'cs_v1', 'Start', 63, 99, 'Mama', 'mama@x.pl', 'Syn', 'Wszystkiego dobrego');
+  raise exception 'FAIL: voucher_issue accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  voucher_issue rejects a wrong secret';
+end $$;
+select set_config('vyra.voucher', public.voucher_issue(current_setting('vyra.test_secret'), 'cs_v1', 'Start', 63, 99, 'Mama', 'mama@x.pl', 'Syn', 'Wszystkiego dobrego'), false);
+select pg_temp.check(current_setting('vyra.voucher') ~ '^VYRA-[A-Z0-9]{4}-[A-Z0-9]{4}$', 'voucher code format');
+select pg_temp.check(public.voucher_issue(current_setting('vyra.test_secret'), 'cs_v1', 'Start', 63, 99, 'Mama', 'mama@x.pl', 'Syn', '') = current_setting('vyra.voucher'),
+  'one voucher per payment');
+select pg_temp.check((select status from public.voucher_info(lower(current_setting('vyra.voucher')))) = 'active', 'voucher info works with any letter case');
+do $$ begin
+  perform * from public.vouchers;
+  raise exception 'FAIL: visitors read vouchers';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot list vouchers';
+end $$;
+select pg_temp.check((select token is not null from public.voucher_redeem(current_setting('vyra.test_secret'), current_setting('vyra.voucher'), 'syn@x.pl', 'Syn')),
+  'voucher redeem gives an account invitation');
+select pg_temp.check((select token is not null from public.voucher_redeem(current_setting('vyra.test_secret'), current_setting('vyra.voucher'), 'syn@x.pl', 'Syn')),
+  'redeeming again with the same e-mail is safe');
+do $$ begin
+  perform * from public.voucher_redeem(current_setting('vyra.test_secret'), current_setting('vyra.voucher'), 'inny@x.pl', 'Inny');
+  raise exception 'FAIL: voucher redeemed twice';
+exception when others then
+  if sqlerrm not like '%VOUCHER_USED%' then raise; end if;
+  raise notice 'ok  a voucher works once';
+end $$;
+reset role;
+select pg_temp.check((select access_until from public.memberships where stripe_session = 'voucher:' || current_setting('vyra.voucher')) = current_date + 63,
+  'voucher gives the package access');
+select pg_temp.check((select status from public.voucher_info(current_setting('vyra.voucher'))) = 'redeemed', 'voucher marked as redeemed');

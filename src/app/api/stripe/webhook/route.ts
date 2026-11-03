@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { recordCheckout } from "@/lib/actions/checkout";
+import { recordVoucher } from "@/lib/actions/vouchers";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +32,11 @@ export async function POST(request: Request) {
   const payload = await request.text();
   if (!verify(payload, request.headers.get("stripe-signature"), secret)) return NextResponse.json({ error: "bad signature" }, { status: 400 });
 
-  const event = JSON.parse(payload) as { type: string; data: { object: { id: string } } };
+  const event = JSON.parse(payload) as { type: string; data: { object: { id: string; metadata?: Record<string, string> } } };
   try {
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-      await recordCheckout(event.data.object.id);
+      if (event.data.object.metadata?.kind === "voucher") await recordVoucher(event.data.object.id);
+      else await recordCheckout(event.data.object.id);
     } else if (event.type === "customer.subscription.deleted") {
       const purchaseSecret = process.env.VYRA_PURCHASE_SECRET;
       if (purchaseSecret) {

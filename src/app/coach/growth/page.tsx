@@ -74,7 +74,22 @@ export default async function GrowthPage() {
     ? await supabase.from("applications").select(cols).order("created_at", { ascending: false }).limit(1000)
     : withSource;
   const apps = (res.data ?? []) as App[];
-  const [events, signups] = await Promise.all([listRunClubEvents(supabase), listRunClubSignups(supabase)]);
+  const [events, signups, vouchers, referrals] = await Promise.all([
+    listRunClubEvents(supabase),
+    listRunClubSignups(supabase),
+    supabase
+      .from("vouchers")
+      .select("code, plan_name, amount_pln, buyer_name, recipient_name, status, created_at, redeemed_email")
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then((r) => (r.error ? null : ((r.data ?? []) as { code: string; plan_name: string; amount_pln: number | null; buyer_name: string | null; recipient_name: string | null; status: string; created_at: string; redeemed_email: string | null }[]))),
+    supabase
+      .from("referrals")
+      .select("code, buyer_email, plan_name, reward, created_at, referrer:profiles(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then((r) => (r.error ? null : ((r.data ?? []) as unknown as { code: string; buyer_email: string; plan_name: string | null; reward: string; created_at: string; referrer: { full_name: string } | null }[]))),
+  ]);
 
   const now = Date.now();
   const month = new Date().toISOString().slice(0, 7);
@@ -283,6 +298,59 @@ export default async function GrowthPage() {
           </div>
         </CardContent>
       </Card>
+
+      {vouchers || referrals ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>{tl(`Vouchery (${vouchers?.length ?? 0})`, `Vouchers (${vouchers?.length ?? 0})`)}</CardTitle>
+              <Link href="/voucher" target="_blank" className="text-[12px] text-muted hover:text-foreground">vyraathl.pl/voucher</Link>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {vouchers?.length ? (
+                vouchers.map((v) => (
+                  <div key={v.code} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2 text-sm last:border-b-0">
+                    <span>
+                      <span className="font-mono">{v.code}</span> · {v.plan_name}
+                      <span className="block text-[12px] text-muted">
+                        {v.buyer_name ?? "?"} → {v.recipient_name ?? "?"} · {formatDate(v.created_at, "d MMM")}
+                        {v.amount_pln ? ` · ${v.amount_pln} zł` : ""}
+                      </span>
+                    </span>
+                    <span className={cn("text-[12px] font-semibold", v.status === "redeemed" ? "text-done" : "text-muted")}>
+                      {v.status === "redeemed" ? tl(`zrealizowany (${v.redeemed_email ?? ""})`, `redeemed (${v.redeemed_email ?? ""})`) : v.status === "void" ? tl("anulowany", "void") : tl("czeka na realizację", "not redeemed yet")}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted">{tl("Jeszcze żaden. Przed świętami wrzuć relację z linkiem do vouchera.", "None yet. Before the holidays, post a story with the voucher link.")}</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{tl(`Polecenia (${referrals?.length ?? 0})`, `Referrals (${referrals?.length ?? 0})`)}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {referrals?.length ? (
+                referrals.map((r, i) => (
+                  <div key={i} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2 text-sm last:border-b-0">
+                    <span>
+                      {r.referrer?.full_name ?? r.code} → {r.buyer_email}
+                      <span className="block text-[12px] text-muted">{r.plan_name ?? ""} · {formatDate(r.created_at, "d MMM")}</span>
+                    </span>
+                    <span className={cn("text-[12px] font-semibold", r.reward === "manual" ? "text-warning" : "text-done")}>
+                      {r.reward === "access" ? tl("+14 dni przyznane", "+14 days given") : r.reward === "credit" ? tl("kredyt w Stripe", "Stripe credit") : tl("nagroda do przyznania", "reward to give")}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted">{tl("Zawodnicy mają swój link w aplikacji: Poleć znajomemu.", "Athletes have their link in the app: Refer a friend.")}</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }
