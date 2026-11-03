@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import { FreePlanNudge } from "@/components/site/nudges";
 import { SourceTracker } from "@/components/site/source-tracker";
+import { CookieBanner } from "@/components/site/cookie-banner";
 import { RevealObserver } from "@/components/site/reveal";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -23,6 +24,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <RevealObserver />
       <FreePlanNudge />
       <SourceTracker />
+      <CookieBanner />
       {/* Cookie-free visit statistics (Vercel Web Analytics). */}
       <Analytics />
     </div>

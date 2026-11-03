@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { insertApplication, readSource } from "@/lib/source";
 import type { CoachingPlan } from "@/lib/camps";
 import { accessDays } from "@/lib/access";
+import { MAILS, sendMailOnce } from "@/lib/mail";
 import { creditReferrer, referralCoupon, referralFromSource } from "@/lib/referral";
 
 /** Creates a Stripe Checkout for a coaching package and returns its URL. The price always comes from the database. */
@@ -150,6 +151,9 @@ export async function recordCheckout(sessionId: string): Promise<CheckoutRecord>
       token = row.token;
       existing = row.existing;
     } else if (error) console.error("[purchase_access]", error.message);
+
+    // Welcome e-mail with the account link: works even if the buyer closed the thank-you page.
+    if (token || existing) await sendMailOnce(`buy:${s.id}`, email, MAILS.purchase({ name, plan, token }));
 
     // Referral: reward the friend who sent this buyer (once per payment).
     const ref = s.metadata.ref;

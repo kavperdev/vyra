@@ -1,5 +1,7 @@
 "use server";
 
+import { MAILS, sendMailOnce } from "@/lib/mail";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -97,6 +99,7 @@ export async function requestFreePlan(input: { full_name: string; email: string;
     status: "new",
   });
   if (error) return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie za chwilę.", "We couldn’t save that. Please try again in a moment.") };
+  await sendMailOnce(`free:${parsed.data.email}`, parsed.data.email, MAILS.freePlan({ name: parsed.data.full_name }));
   return { ok: true };
 }
 

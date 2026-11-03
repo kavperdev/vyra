@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { CookieSettingsLink } from "@/components/site/cookie-banner";
 import { getT } from "@/lib/i18n/server";
 import { getCompany } from "@/lib/data/site-settings";
 import { SITE, SITE_NAV, SITE_NAV_MORE } from "@/lib/site";
@@ -63,6 +64,7 @@ export async function SiteFooter({ panel }: { panel: { href: string; label: stri
             <Link href="/polityka-prywatnosci" className="site-link hover:text-white">
               {t("Polityka prywatności", "Privacy policy")}
             </Link>
+            <CookieSettingsLink className="site-link hover:text-white" />
             <span>© {new Date().getFullYear()} VYRA</span>
           </div>
         </div>

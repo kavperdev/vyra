@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { accessDays } from "@/lib/access";
 import type { CoachingPlan } from "@/lib/camps";
 import { siteUrl } from "@/lib/env";
+import { MAILS, sendMailOnce } from "@/lib/mail";
 import { getT } from "@/lib/i18n/server";
 import { stripe, stripeConfigured, type CheckoutSession } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -116,7 +117,11 @@ export async function recordVoucher(sessionId: string): Promise<VoucherRecord> {
     console.error("[voucher_issue]", error.message);
     return { status: "paid", code: null };
   }
-  return { status: "paid", code: typeof data === "string" ? data : null };
+  const code = typeof data === "string" ? data : null;
+  const to = s.customer_details?.email;
+  if (code && to)
+    await sendMailOnce(`voucher:${s.id}`, to, MAILS.voucher({ buyer: s.metadata.buyer_name ?? null, recipient: s.metadata.recipient || null, plan: s.metadata.plan_name ?? "", code }));
+  return { status: "paid", code };
 }
 
 export type RedeemResult =

@@ -1,5 +1,7 @@
 "use server";
 
+import { MAILS, sendMailOnce, whenPl } from "@/lib/mail";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getT } from "@/lib/i18n/server";
@@ -27,6 +29,14 @@ export async function signUpRunClub(input: { event_id: string; full_name: string
     return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie.", "Couldn’t sign you up. Please try again.") };
   }
   revalidatePath("/run-club");
+  const { data: ev } = await supabase.from("run_club_events").select("title, starts_at, place, map_url").eq("id", row.event_id).maybeSingle();
+  const e = ev as { title: string; starts_at: string; place: string; map_url: string | null } | null;
+  if (e)
+    await sendMailOnce(
+      `rcsign:${row.event_id}:${row.email}`,
+      row.email,
+      MAILS.runClubSignup({ name: row.full_name, title: e.title, when: whenPl(e.starts_at), place: e.place, map: e.map_url }),
+    );
   return { ok: true };
 }
 

@@ -787,3 +787,32 @@ reset role;
 select pg_temp.check((select access_until from public.memberships where stripe_session = 'voucher:' || current_setting('vyra.voucher')) = current_date + 63,
   'voucher gives the package access');
 select pg_temp.check((select status from public.voucher_info(current_setting('vyra.voucher'))) = 'redeemed', 'voucher marked as redeemed');
+
+-- ---------------------------------------------------------------- automatic e-mails
+set role anon;
+select pg_temp.check(public.mail_once(current_setting('vyra.test_secret'), 'test:1') = true, 'first e-mail with a key is sent');
+select pg_temp.check(public.mail_once(current_setting('vyra.test_secret'), 'test:1') = false, 'the same e-mail is never sent twice');
+select public.mail_unmark(current_setting('vyra.test_secret'), 'test:1');
+select pg_temp.check(public.mail_once(current_setting('vyra.test_secret'), 'test:1') = true, 'a failed e-mail can be retried');
+do $$ begin
+  perform public.mail_once('wrong', 'test:2');
+  raise exception 'FAIL: mail_once accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  mail_once rejects a wrong secret';
+end $$;
+do $$ begin
+  perform * from public.mail_log;
+  raise exception 'FAIL: visitors read the mail log';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read the mail log';
+end $$;
+reset role;
+insert into public.run_club_events (id, title, starts_at, place) values
+  ('00000000-0000-0000-0000-00000000e001', 'Jutro', ((now() at time zone 'Europe/Warsaw')::date + 1 + time '18:00') at time zone 'Europe/Warsaw', 'Park'),
+  ('00000000-0000-0000-0000-00000000e002', 'Za tydzień', now() + interval '7 days', 'Park');
+insert into public.run_club_signups (event_id, full_name, email) values
+  ('00000000-0000-0000-0000-00000000e001', 'Jan', 'jan@x.pl'),
+  ('00000000-0000-0000-0000-00000000e002', 'Ola', 'ola@x.pl');
+set role anon;
+select pg_temp.check((select count(*) from public.run_club_reminders(current_setting('vyra.test_secret')) where email in ('jan@x.pl', 'ola@x.pl')) = 1
+  and exists (select 1 from public.run_club_reminders(current_setting('vyra.test_secret')) where email = 'jan@x.pl'),
+  'reminders only for tomorrow''s Run Club');
+reset role;
