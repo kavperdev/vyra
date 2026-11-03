@@ -5,7 +5,7 @@ import { Check, Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { generateVapidKeys } from "@/lib/actions/push";
+import { generateVapidKeys, sendTestMail } from "@/lib/actions/push";
 import { tl } from "@/lib/i18n/runtime";
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -78,6 +78,35 @@ export function VapidKeys() {
             <KeyRound className="size-4" /> {pending ? tl("Generowanie…", "Generating…") : tl("Wygeneruj nowe klucze", "Generate new keys")}
           </Button>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Founder tool: one-click e-mail test with a plain reason when it fails. */
+export function MailTest() {
+  const [pending, start] = useTransition();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{tl("E-maile automatyczne", "Automatic e-mails")}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3">
+        <p className="text-sm text-muted">{tl("Wysyła testowy e-mail na Twój adres i mówi dokładnie, co jest nie tak, jeśli się nie uda.", "Sends a test e-mail to your address and says exactly what is wrong if it fails.")}</p>
+        <Button
+          variant="outline"
+          className="w-fit"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const res = await sendTestMail();
+              if (res.ok) toast.success(res.message ?? "OK", { duration: 10000 });
+              else toast.error(res.error, { duration: 15000 });
+            })
+          }
+        >
+          {pending ? tl("Wysyłanie…", "Sending…") : tl("Wyślij testowy e-mail", "Send a test e-mail")}
+        </Button>
       </CardContent>
     </Card>
   );

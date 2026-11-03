@@ -102,3 +102,39 @@ export async function generateVapidKeys(): Promise<ActionResult<{ publicKey: str
     return { ok: true, data: { publicKey: k.publicKey, privateKey: k.privateKey } };
   });
 }
+
+/**
+ * Founder only: sends a test e-mail to the founder's own address and reports exactly
+ * which step fails (keys, database migration, Resend domain or key).
+ */
+export async function sendTestMail(): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Tylko dla założycieli." };
+    const apiKey = (process.env.RESEND_API_KEY ?? "").trim();
+    const secret = process.env.VYRA_PURCHASE_SECRET;
+    if (!apiKey) return { ok: false, error: "Brak RESEND_API_KEY w Vercel (albo nie było Redeployu po jego dodaniu)." };
+    if (!/^re_/.test(apiKey)) return { ok: false, error: "RESEND_API_KEY ma zły format: powinien zaczynać się od re_." };
+    if (!secret) return { ok: false, error: "Brak VYRA_PURCHASE_SECRET w Vercel." };
+    const { error } = await supabase.rpc("mail_once", { p_secret: secret, p_key: `test:${Date.now()}` });
+    if (error) {
+      if (/function|does not exist|schema cache/i.test(error.message)) return { ok: false, error: "Brak migracji maili w Supabase (20261103000200_mail.sql). Uruchom ją w SQL Editor." };
+      if (/FORBIDDEN/i.test(error.message)) return { ok: false, error: "VYRA_PURCHASE_SECRET w Vercel nie zgadza się z kodem w Supabase." };
+      return { ok: false, error: `Baza: ${error.message.slice(0, 160)}` };
+    }
+    const from = process.env.MAIL_FROM || "VYRA <kontakt@vyraathl.pl>";
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [user.email], subject: "VYRA: test e-maili", text: "E-maile z vyraathl.pl działają." }),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      const m = body.message ?? `HTTP ${res.status}`;
+      if (/not verified|verify/i.test(m)) return { ok: false, error: `Resend: domena vyraathl.pl nie jest jeszcze zweryfikowana (${m}).` };
+      if (res.status === 401 || res.status === 403) return { ok: false, error: `Resend odrzucił klucz API: ${m}` };
+      return { ok: false, error: `Resend: ${m}` };
+    }
+    return { ok: true, message: `Wysłano test na ${user.email}. Sprawdź też Spam.` };
+  });
+}
