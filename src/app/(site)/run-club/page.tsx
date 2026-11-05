@@ -36,8 +36,8 @@ export default async function RunClubPage() {
     {
       q: t("Czy dam radę? Nie biegam szybko.", "Can I keep up? I’m not fast."),
       a: t(
-        "Tak. Biegamy w dwóch grupach, a spokojna biegnie w tempie rozmowy, z marszem, kiedy trzeba. Nikt nie zostaje sam: prowadzący zamyka grupę.",
-        "Yes. We run in two groups and the easy one goes at a talking pace, with walk breaks when needed. Nobody is left alone: a leader runs at the back.",
+        "Tak. Biegamy razem w jednej grupie, w tempie ok. 6:30–7:00 min/km, czyli takim, w którym da się rozmawiać. Na miejscu dopasujemy je do osób, które przyszły. Nikt nie zostaje sam.",
+        "Yes. We run together as one group at about 6:30–7:00 min/km, a pace you can talk at, and adjust it to whoever shows up. Nobody is left alone.",
       ),
     },
     {
@@ -64,7 +64,7 @@ export default async function RunClubPage() {
     },
     {
       q: t("Jak długo to trwa?", "How long does it take?"),
-      a: t("Około godziny: rozgrzewka, 30–40 minut biegu w grupach, rozciąganie i jedna rada na kolejny tydzień.", "About an hour: a warm-up, 30–40 minutes of running in groups, a stretch and one tip for the week ahead."),
+      a: t("Około godziny: rozgrzewka, ok. 5 km wspólnego biegu, rozciąganie i jedna rada na kolejny tydzień.", "About an hour: a warm-up, about 5 km of running together, a stretch and one tip for the week ahead."),
     },
     {
       q: t("Nie mogę przyjść, a jestem zapisany. Co zrobić?", "I signed up but can’t make it. What now?"),
@@ -79,8 +79,8 @@ export default async function RunClubPage() {
         eyebrow="VYRA Run Club"
         title={t("Biegamy razem", "We run together")}
         lead={t(
-          "Wspólny trening z trenerami VYRA, co tydzień. Za darmo i dla każdego poziomu: rozgrzewka, technika biegu, grupa spokojna i szybsza. Wystarczy zapis.",
-          "A weekly group session with the VYRA coaches. Free and for every level: a warm-up, running drills, an easy group and a faster one. Just sign up.",
+          "Wspólny trening z trenerami VYRA, co tydzień. Za darmo i dla każdego poziomu: rozgrzewka, technika biegu i wspólne 5 km w tempie rozmowy. Wystarczy zapis.",
+          "A weekly group session with the VYRA coaches. Free and for every level: a warm-up, running drills and 5 km together at a talking pace. Just sign up.",
         )}
       />
 
@@ -179,15 +179,15 @@ export default async function RunClubPage() {
         <div className={`${wrap} py-24 sm:py-32`}>
           <SectionHead eyebrow={t("Jak to wygląda", "How it works")} title={t("Około godziny, z trenerem", "About an hour, with a coach")}>
             {t(
-              "Nie musisz umieć przebiec 5 km. Grupa spokojna biega w tempie rozmowy, z marszem, kiedy trzeba. Weź wygodne buty, wodę i dobry humor.",
-              "You don’t need to run 5K yet. The easy group runs at a talking pace, with walk breaks when needed. Bring comfortable shoes, water and good spirits.",
+              "Nie musisz biegać szybko. Biegniemy razem w tempie ok. 6:30–7:00 min/km, w którym da się rozmawiać, i dopasowujemy je do grupy. Weź wygodne buty, wodę i dobry humor.",
+              "You don’t need to be fast. We run together at about 6:30–7:00 min/km, a pace you can talk at, and adjust it to the group. Bring comfortable shoes, water and good spirits.",
             )}
           </SectionHead>
           <div className="mt-14">
             <Steps
               items={[
                 { title: t("Zbiórka i rozgrzewka", "Meet and warm up"), body: t("Rozgrzewka z trenerem i 5 minut techniki biegu: jedno ćwiczenie tygodnia.", "A warm-up with the coach and 5 minutes of running drills: one drill of the week.") },
-                { title: t("Bieg w dwóch grupach", "Run in two groups"), body: t("30–40 minut. Grupa spokojna i szybsza, każda z prowadzącym. Nikt nie zostaje z tyłu.", "30–40 minutes. An easy group and a faster one, each with a leader. Nobody gets left behind.") },
+                { title: t("Wspólny bieg", "Run together"), body: t("Około 5 km w jednej grupie, w tempie ok. 6:30–7:00 min/km. Tempo dopasowujemy do osób na miejscu. Nikt nie zostaje z tyłu.", "About 5 km as one group at about 6:30–7:00 min/km, adjusted to who shows up. Nobody gets left behind.") },
                 { title: t("Rozciąganie i rada", "Stretch and a tip"), body: t("Pytania do trenera i jedna konkretna rada na najbliższy tydzień.", "Questions for the coach and one concrete tip for the coming week.") },
                 { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność dla biegaczy.", "A running-technique video, a 2K test with your VO2max, or strength and mobility for runners.") },
               ]}

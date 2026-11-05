@@ -162,7 +162,7 @@ export default async function Home() {
           {[
             [t("Za darmo", "Free"), t("wystarczy zapis na stronie", "just sign up on the site")],
             [t("Z trenerem", "With a coach"), t("rozgrzewka, technika i rada na tydzień", "warm-up, drills and a tip for the week")],
-            [t("Każdy poziom", "Every level"), t("grupa spokojna i szybsza", "an easy group and a faster one")],
+            [t("Każdy poziom", "Every level"), t("tempo rozmowy", "a talking pace")],
             [t("Co tydzień", "Every week"), t("stały dzień, godzina i miejsce", "same day, time and place")],
           ].map(([a, b], i) => (
             <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
@@ -177,15 +177,15 @@ export default async function Home() {
       <section className={`${wrap} py-28 sm:py-36`}>
         <SectionHead eyebrow="VYRA Run Club" title={t("Jak wygląda trening", "What a session looks like")}>
           {t(
-            "Około godziny. Nie musisz umieć przebiec 5 km: grupa spokojna biega w tempie rozmowy, z marszem, kiedy trzeba.",
-            "About an hour. You don’t need to run 5K yet: the easy group runs at a talking pace, with walk breaks when needed.",
+            "Około godziny. Nie musisz biegać szybko: biegniemy razem w tempie ok. 6:30–7:00 min/km, w którym da się rozmawiać.",
+            "About an hour. You don’t need to be fast: we run together at about 6:30–7:00 min/km, a pace you can talk at.",
           )}
         </SectionHead>
         <div className="mt-16">
           <Steps
             items={[
               { title: t("Zbiórka i rozgrzewka", "Meet and warm up"), body: t("Rozgrzewka z trenerem i 5 minut techniki biegu: jedno ćwiczenie tygodnia.", "A warm-up with the coach and 5 minutes of running drills: one drill of the week.") },
-              { title: t("Bieg w dwóch grupach", "Run in two groups"), body: t("30–40 minut. Grupa spokojna i szybsza, każda z prowadzącym. Nikt nie zostaje z tyłu.", "30–40 minutes. An easy group and a faster one, each with a leader. Nobody gets left behind.") },
+              { title: t("Wspólny bieg", "Run together"), body: t("Około 5 km w jednej grupie, w tempie ok. 6:30–7:00 min/km. Tempo dopasowujemy do osób na miejscu. Nikt nie zostaje z tyłu.", "About 5 km as one group at about 6:30–7:00 min/km, adjusted to who shows up. Nobody gets left behind.") },
               { title: t("Rozciąganie i rada", "Stretch and a tip"), body: t("Pytania do trenera i jedna konkretna rada na najbliższy tydzień.", "Questions for the coach and one concrete tip for the coming week.") },
               { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność dla biegaczy.", "A running-technique video, a 2K test with your VO2max, or strength and mobility for runners.") },
             ]}
