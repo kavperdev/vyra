@@ -10,7 +10,8 @@ import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { listArticles, listCamps, listCoachingPlans, takenPlaces } from "@/lib/data/camps";
 import { PlanCards } from "@/components/site/plan-cards";
 import { stripeConfigured } from "@/lib/stripe";
-import { listRunClubEvents, listTestimonials, runClubCounts } from "@/lib/data/club";
+import { listRunClubEvents, listTestimonials, runClubCounts, runClubStats } from "@/lib/data/club";
+import { RunClubCounter } from "@/components/site/run-club-stats";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { getCompany } from "@/lib/data/site-settings";
@@ -65,7 +66,7 @@ export default async function Home() {
   const { lang, t } = await getT();
   const company = await getCompany();
   const supabase = await createClient();
-  const [camps, taken, allArticles, testimonials, allPlans, clubEvents, clubCounts] = await Promise.all([
+  const [camps, taken, allArticles, testimonials, allPlans, clubEvents, clubCounts, clubStats] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
@@ -79,6 +80,7 @@ export default async function Home() {
       .then((e) => e.filter((x) => x.visible))
       .catch(() => []),
     runClubCounts(supabase).catch(() => ({}) as Record<string, number>),
+    runClubStats(supabase).catch(() => ({ sessions: 0, people: 0, km: 0 })),
   ]);
   const nextRuns = clubEvents.slice(0, 3);
   const nextRun = nextRuns[0] ?? null;
@@ -189,6 +191,11 @@ export default async function Home() {
             ]}
           />
         </div>
+        {clubStats.km > 0 ? (
+          <div className="mt-14">
+            <RunClubCounter stats={clubStats} t={t} locale={lang === "en" ? "en-GB" : "pl-PL"} />
+          </div>
+        ) : null}
         {nextRuns.length ? (
           <div className="mt-14 grid gap-5 md:grid-cols-3">
             {nextRuns.map((e, i) => {

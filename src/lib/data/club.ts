@@ -11,6 +11,47 @@ export interface RunClubEvent {
   description: string | null;
   capacity: number | null;
   visible: boolean;
+  meeting_note?: string | null;
+  attendees?: number | null;
+  distance_km?: number | null;
+}
+
+export interface RunClubStats {
+  sessions: number;
+  people: number;
+  km: number;
+}
+
+/** Totals for the public counter. Zeros when the migration has not been run yet. */
+export async function runClubStats(supabase: ServerSupabase): Promise<RunClubStats> {
+  const { data, error } = await supabase.rpc("run_club_stats");
+  const r = (Array.isArray(data) ? data[0] : data) as { sessions: number; people: number; km: number | string } | null;
+  if (error || !r) return { sessions: 0, people: 0, km: 0 };
+  return { sessions: Number(r.sessions) || 0, people: Number(r.people) || 0, km: Number(r.km) || 0 };
+}
+
+export interface RunClubPhoto {
+  id: string;
+  url: string;
+  caption: string | null;
+  sort: number;
+  visible: boolean;
+}
+
+export async function listRunClubPhotos(supabase: ServerSupabase): Promise<RunClubPhoto[]> {
+  const { data, error } = await supabase.from("run_club_photos").select("*").order("sort").order("created_at", { ascending: false });
+  return error ? [] : ((data ?? []) as RunClubPhoto[]);
+}
+
+/** Size of the "notify me" list, for founders. */
+export async function runClubSubscriberCount(supabase: ServerSupabase): Promise<number> {
+  const { count, error } = await supabase.from("run_club_subscribers").select("id", { count: "exact", head: true });
+  return error ? 0 : (count ?? 0);
+}
+
+/** Map link: the one set in the panel, otherwise a Google Maps search for the place. */
+export function mapLink(e: Pick<RunClubEvent, "map_url" | "place">): string {
+  return e.map_url || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.place)}`;
 }
 
 export interface RunClubSignup {

@@ -112,6 +112,7 @@ Administratorem danych osobowych przekazanych przez tę stronę jest {{sprzedawc
 - Formularz „Zapytaj o prowadzenie” i zapytania firmowe: imię i nazwisko, e-mail, cel treningowy oraz informacje, które sam podasz, aby odpowiedzieć na zgłoszenie i przygotować propozycję współpracy.
 - Zakup pakietu: płatność obsługuje Stripe (Stripe Payments Europe Ltd.), który przetwarza dane płatności jako odrębny administrator. My otrzymujemy imię i nazwisko, e-mail, nazwę pakietu i kwotę, aby zrealizować usługę i rozliczyć sprzedaż.
 - Darmowy plan „Zacznij biegać” i zapisy na Run Club: imię i e-mail, aby udostępnić plan lub potwierdzić zapis i skontaktować się w sprawie treningów. Zgodę możesz wycofać w każdej chwili.
+- Powiadomienia o nowych terminach Run Clubu („Powiadom mnie”): sam adres e-mail, aby wysłać wiadomość, gdy pojawi się nowy termin. Podstawą jest Twoja zgoda. Wypisać się możesz jednym kliknięciem z linku w każdej wiadomości albo pisząc do nas; adres usuwamy wtedy z listy.
 - Voucher prezentowy: imię i e-mail kupującego, imię obdarowanego i życzenia, które wpiszesz, aby wystawić i przesłać voucher; przy realizacji imię, nazwisko i e-mail obdarowanego, aby założyć konto.
 - Program poleceń: kod polecającego i informacja o zakupie z jego linku, aby przyznać rabat i nagrodę.
 - Konto w platformie VYRA (dla zawodników): dane potrzebne do prowadzenia treningu, w tym plan i wyniki treningów.
@@ -154,6 +155,7 @@ The controller of personal data submitted through this website is {{sprzedawca}}
 - The “Ask about coaching” form and company inquiries: your full name, email, training goal and any information you choose to give, to reply and prepare a proposal.
 - Buying a package: payments are handled by Stripe (Stripe Payments Europe Ltd.), which processes payment data as a separate controller. We receive your name, e-mail, the package and the amount to deliver the service and account for the sale.
 - The free “Start running” plan and Run Club sign-ups: your name and e-mail, to give you the plan or confirm your place and contact you about training. You can withdraw consent at any time.
+- New Run Club date notifications (“Notify me”): your e-mail address only, to tell you when a new date is out. The basis is your consent. Unsubscribe with one click from the link in every message or by writing to us; we then delete the address from the list.
 - Gift vouchers: the buyer’s name and e-mail, the recipient’s name and the message you enter, to issue and send the voucher; on redemption, the recipient’s name and e-mail to create the account.
 - Referral programme: the referrer’s code and the fact of a purchase through their link, to apply the discount and the reward.
 - A VYRA platform account (for athletes): the data needed for coaching, including your plan and training results.

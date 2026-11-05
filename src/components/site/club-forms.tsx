@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Bell, CalendarPlus, Check, Copy, MessageCircle, Send, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
 import { submitApplication } from "@/lib/actions/applications";
-import { signUpRunClub } from "@/lib/actions/club";
+import { signUpRunClub, subscribeRunClub } from "@/lib/actions/club";
 import { tl } from "@/lib/i18n/runtime";
 
 type Errors = Record<string, string[] | undefined>;
@@ -34,13 +34,134 @@ function Done({ title, body }: { title: string; body: string }) {
   );
 }
 
+export interface RunClubCal {
+  title: string;
+  starts_at: string;
+  place: string;
+  /** Text for the share message, e.g. "czwartek, 19 listopada · 18:30". */
+  when: string;
+}
+
+const gcalDate = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+
+/** Google Calendar and phone calendar (.ics) for one session. */
+export function AddToCalendar({ eventId, cal }: { eventId: string; cal: RunClubCal }) {
+  const start = new Date(cal.starts_at);
+  const end = new Date(start.getTime() + 75 * 60000);
+  const google =
+    "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    `&text=${encodeURIComponent(cal.title)}&dates=${gcalDate(start)}/${gcalDate(end)}` +
+    `&location=${encodeURIComponent(cal.place)}&details=${encodeURIComponent("VYRA Run Club · vyraathl.pl/run-club")}`;
+  const link = "inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-white transition hover:border-white/50";
+  return (
+    <div className="flex flex-wrap gap-2">
+      <a href={`/api/run-club/${eventId}/ics`} className={link}>
+        <CalendarPlus className="size-4" /> {tl("Dodaj do kalendarza", "Add to calendar")}
+      </a>
+      <a href={google} target="_blank" rel="noreferrer" className={link}>
+        Google Calendar
+      </a>
+    </div>
+  );
+}
+
+/** "Bring a friend": WhatsApp, Messenger, SMS, copy link, or the phone's own share sheet. */
+export function ShareRunClub({ eventId, cal, compact = false }: { eventId: string; cal: RunClubCal; compact?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const url = `https://vyraathl.pl/run-club#t-${eventId}`;
+  const text = tl(
+    `Biegniesz ze mną? ${cal.title}, ${cal.when}, ${cal.place}. Za darmo, każdy poziom: ${url}`,
+    `Run with me? ${cal.title}, ${cal.when}, ${cal.place}. Free, every level: ${url}`,
+  );
+  const enc = encodeURIComponent(text);
+  const item = "inline-flex items-center gap-2 rounded-full border border-white/15 px-3.5 py-2 text-[13px] text-white/80 transition hover:border-white/50 hover:text-white";
+  const native = () => {
+    if (typeof navigator !== "undefined" && navigator.share) navigator.share({ title: cal.title, text, url }).catch(() => {});
+  };
+  return (
+    <div className="grid gap-2">
+      {compact ? null : <p className="text-sm font-semibold text-white">{tl("Weź kogoś ze sobą", "Bring a friend")}</p>}
+      <div className="flex flex-wrap gap-2">
+        <a className={item} href={`https://wa.me/?text=${enc}`} target="_blank" rel="noreferrer">
+          <MessageCircle className="size-4" /> WhatsApp
+        </a>
+        <a className={`${item} sm:hidden`} href={`fb-messenger://share/?link=${encodeURIComponent(url)}`}>
+          <Send className="size-4" /> Messenger
+        </a>
+        <a className={`${item} sm:hidden`} href={`sms:?&body=${enc}`}>
+          SMS
+        </a>
+        <button
+          type="button"
+          className={item}
+          onClick={() => {
+            navigator.clipboard?.writeText(text).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            });
+          }}
+        >
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? tl("Skopiowano", "Copied") : tl("Kopiuj", "Copy")}
+        </button>
+        <button type="button" className={`${item} sm:hidden`} onClick={native}>
+          <Share2 className="size-4" /> {tl("Więcej", "More")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** "Let me know about new dates": one e-mail per new session, unsubscribe link in every e-mail. */
+export function RunClubNotify() {
+  const [v, setV] = useState({ email: "", consent: false, website: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [done, setDone] = useState(false);
+  const [pending, start] = useTransition();
+  if (done)
+    return <Done title={tl("Gotowe", "Done")} body={tl("Napiszemy, gdy pojawi się nowy termin. Wypisać się możesz jednym kliknięciem w każdym mailu.", "We’ll e-mail you when a new date is out. Unsubscribe with one click in any e-mail.")} />;
+  return (
+    <form
+      noValidate
+      className="relative grid gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          const res = await subscribeRunClub(v);
+          if (res.ok) setDone(true);
+          else setErrors(res.fieldErrors ?? { form: [res.error] });
+        });
+      }}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="grow">
+          <Field label="E-mail" htmlFor="rc-notify" error={errors.email?.[0]}>
+            <Input id="rc-notify" type="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
+          </Field>
+        </div>
+        <Button type="submit" variant="accent" disabled={pending} className="w-full sm:mt-7 sm:w-fit">
+          <Bell className="size-4" /> {pending ? tl("Zapisywanie…", "Saving…") : tl("Powiadom mnie", "Notify me")}
+        </Button>
+      </div>
+      <input tabIndex={-1} aria-hidden autoComplete="off" className="absolute left-[-9999px] h-0 w-0" value={v.website} onChange={(e) => setV({ ...v, website: e.target.value })} />
+      <label className="flex items-start gap-3 text-sm text-white/60">
+        <Checkbox checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} aria-invalid={!!errors.consent} className="mt-0.5" />
+        <span>
+          {tl("Chcę dostawać maile o nowych terminach Run Clubu. Mogę się wypisać w każdej chwili.", "I want e-mails about new Run Club dates. I can unsubscribe at any time.")}
+          {errors.consent?.[0] ? <span role="alert" className="mt-1 block text-[13px] text-problem">{errors.consent[0]}</span> : null}
+        </span>
+      </label>
+      {errors.form ? <p role="alert" className="text-sm text-problem">{errors.form[0]}</p> : null}
+    </form>
+  );
+}
+
 /** "Będę" sign-up for one Run Club event. */
 export function RunClubSignup({ eventId, full }: { eventId: string; full: boolean }) {
   const [v, setV] = useState({ full_name: "", email: "", consent: false, website: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
-  if (done) return <Done title={tl("Do zobaczenia!", "See you there!")} body={tl("Jesteś na liście. Przyjdź 10 minut wcześniej.", "You’re on the list. Come 10 minutes early.")} />;
+  if (done) return <Done title={tl("Do zobaczenia!", "See you there!")} body={tl("Jesteś na liście. Potwierdzenie wyślemy na maila. Dodaj trening do kalendarza i weź kogoś ze sobą.", "You’re on the list. We’ll e-mail a confirmation. Add the run to your calendar and bring a friend.")} />;
   if (full) return <p className="text-sm text-white/55">{tl("Brak wolnych miejsc na ten termin.", "This date is full.")}</p>;
   return (
     <form

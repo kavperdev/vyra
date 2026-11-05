@@ -816,3 +816,34 @@ select pg_temp.check((select count(*) from public.run_club_reminders(current_set
   and exists (select 1 from public.run_club_reminders(current_setting('vyra.test_secret')) where email = 'jan@x.pl'),
   'reminders only for tomorrow''s Run Club');
 reset role;
+
+-- ---------------------------------------------------------------- run club: counter, notify list, gallery
+reset role;
+update public.run_club_events set attendees = 0, distance_km = null;
+insert into public.run_club_events (title, starts_at, place, attendees, distance_km) values
+  ('Było', now() - interval '3 days', 'Park', 6, 5),
+  ('Też było', now() - interval '10 days', 'Park', 4, 6.5);
+set role anon;
+select pg_temp.check((select km from public.run_club_stats()) = 56 and (select people from public.run_club_stats()) = 10
+  and (select sessions from public.run_club_stats()) = 2, 'run club counter adds up people and kilometres');
+select public.run_club_subscribe('Nowy@X.pl');
+select public.run_club_subscribe('nowy@x.pl');
+do $$ begin
+  perform * from public.run_club_subscribers;
+  raise exception 'FAIL: visitors read the notify list';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read the notify list';
+end $$;
+do $$ begin
+  perform * from public.run_club_subscriber_list('wrong');
+  raise exception 'FAIL: subscriber list accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  subscriber list rejects a wrong secret';
+end $$;
+select pg_temp.check((select count(*) from public.run_club_subscriber_list(current_setting('vyra.test_secret')) where email = 'nowy@x.pl') = 1, 'one address on the notify list once');
+select pg_temp.check(public.run_club_unsubscribe(gen_random_uuid()) = false, 'a wrong token removes nobody');
+select pg_temp.check(public.run_club_unsubscribe((select token from public.run_club_subscriber_list(current_setting('vyra.test_secret')) where email = 'nowy@x.pl')) = true, 'the unsubscribe link works');
+do $$ begin
+  insert into public.run_club_photos (url) values ('https://x/y.jpg');
+  raise exception 'FAIL: visitors add gallery photos';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot add gallery photos';
+end $$;
+reset role;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
-import { RunClubEditor, TestimonialsEditor } from "@/components/content/club-editor";
+import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { PlansEditor } from "@/components/content/plans-editor";
 import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { requireRole } from "@/lib/auth";
 import { ARTICLE_CATEGORY_LABEL } from "@/lib/camps";
 import { listArticles, listCoachingPlans, listSiteTeam } from "@/lib/data/camps";
-import { listAmbassadors, listRunClubEvents, listRunClubSignups, listTestimonials } from "@/lib/data/club";
+import { listAmbassadors, listRunClubEvents, listRunClubPhotos, listRunClubSignups, listTestimonials, runClubStats, runClubSubscriberCount } from "@/lib/data/club";
 import { AmbassadorsEditor } from "@/components/content/ambassadors-editor";
 import { FeedbackInbox, type FeedbackRow } from "@/components/content/feedback-inbox";
 import { CompanyForm, LegalEditor } from "@/components/content/legal-editor";
@@ -32,6 +32,7 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
+  const [clubPhotos, subscriberCount, clubStats] = await Promise.all([listRunClubPhotos(supabase), runClubSubscriberCount(supabase), runClubStats(supabase)]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -94,11 +95,37 @@ export default async function SiteContentPage() {
         <CardHeader>
           <div className="grid gap-1">
             <CardTitle>VYRA Run Club</CardTitle>
-            <p className="text-[13px] text-muted">{tl("Terminy wspólnych treningów na stronie Run Club. Kliknij termin, żeby zobaczyć zapisanych.", "Group run dates on the Run Club page. Click a date to see who signed up.")}</p>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Terminy wspólnych treningów na stronie Run Club. Kliknij termin, żeby zobaczyć zapisanych. Po treningu wpisz, ile osób przyszło i ile km przebiegliście: licznik na stronie liczy się sam.",
+                "Group run dates on the Run Club page. Click a date to see who signed up. After the run, enter how many came and how many km you ran: the website counter updates itself.",
+              )}
+            </p>
+            <p className="text-[13px] text-muted">
+              {tl("Licznik", "Counter")}: {clubStats.sessions} {tl("treningów", "runs")} · {clubStats.people} {tl("obecności", "check-ins")} · {clubStats.km} km ·{" "}
+              {tl("Lista „Powiadom mnie”", "“Notify me” list")}: {subscriberCount}
+            </p>
           </div>
         </CardHeader>
         <CardContent>
-          <RunClubEditor events={events} signups={signups} />
+          <RunClubEditor events={events} signups={signups} subscribers={subscriberCount} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>{tl("Galeria Run Clubu", "Run Club gallery")}</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Zdjęcia z treningów na stronie Run Club. Sekcja pojawi się po dodaniu pierwszego. Wrzucaj tylko zdjęcia osób, które się na to zgodziły.",
+                "Photos from the runs on the Run Club page. The section appears once you add the first one. Only post people who agreed to it.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <RunClubPhotosEditor items={clubPhotos} />
         </CardContent>
       </Card>
 

@@ -160,14 +160,30 @@ export const MAILS = {
     };
   },
 
-  runClubSignup(o: { name: string; title: string; when: string; place: string; map: string | null }): MailContent {
+  runClubSignup(o: { name: string; title: string; when: string; place: string; map: string | null; eventId?: string }): MailContent {
+    const origin = publicOrigin();
     return {
       subject: `Masz miejsce: ${o.title}, ${o.when}`,
       preview: `${o.when} · ${o.place}`,
       title: hi(o.name),
       paragraphs: [`Twoje miejsce na ${o.title} jest zarezerwowane.`, `Kiedy: ${o.when}`, `Gdzie: ${o.place}`],
       cta: o.map ? { label: "Pokaż na mapie", url: o.map } : undefined,
-      after: ["Tempo dopasujemy do grupy, nikt nie zostaje sam. Dzień wcześniej przypomnę Ci o treningu."],
+      after: [
+        "Tempo dopasujemy do grupy, nikt nie zostaje sam. Dzień wcześniej przypomnę Ci o treningu.",
+        ...(o.eventId ? [`Dodaj do kalendarza: ${origin}/api/run-club/${o.eventId}/ics`, `Weź kogoś ze sobą, wyślij mu link: ${origin}/run-club#t-${o.eventId}`] : []),
+      ],
+    };
+  },
+
+  runClubNewDate(o: { title: string; when: string; place: string; pace: string | null; eventId: string; token: string }): MailContent {
+    const origin = publicOrigin();
+    return {
+      subject: `Nowy termin: ${o.title}, ${o.when}`,
+      preview: `${o.when} · ${o.place}. Zapisy otwarte.`,
+      title: "Cześć!",
+      paragraphs: [`Jest nowy termin wspólnego treningu: ${o.title}.`, `Kiedy: ${o.when}`, `Gdzie: ${o.place}`, ...(o.pace ? [`Tempo: ${o.pace}`] : [])],
+      cta: { label: "Zapisz się", url: `${origin}/run-club#t-${o.eventId}` },
+      after: ["Za darmo, dla każdego poziomu. Weź kogoś ze sobą.", `Nie chcesz więcej takich maili? Wypisz się: ${origin}/run-club/wypisz?t=${o.token}`],
     };
   },
 

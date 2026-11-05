@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { Mail, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
-import { deleteRunClubEvent, deleteTestimonial, saveRunClubEvent, saveTestimonial } from "@/lib/actions/club";
-import type { RunClubEvent, RunClubSignup, Testimonial } from "@/lib/data/club";
+import { PhotoUpload } from "@/components/content/photo-upload";
+import { deleteRunClubEvent, deleteRunClubPhoto, deleteTestimonial, notifyRunClubSubscribers, saveRunClubEvent, saveRunClubPhoto, saveTestimonial } from "@/lib/actions/club";
+import type { RunClubEvent, RunClubPhoto, RunClubSignup, Testimonial } from "@/lib/data/club";
 import { formatDate } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
 
@@ -31,7 +32,11 @@ function EventForm({ ev, onDone }: { ev: RunClubEvent | null; onDone?: () => voi
     description: ev?.description ?? "",
     capacity: ev?.capacity != null ? String(ev.capacity) : "",
     visible: ev?.visible ?? true,
+    meeting_note: ev?.meeting_note ?? "",
+    attendees: ev?.attendees != null ? String(ev.attendees) : "",
+    distance_km: ev?.distance_km != null ? String(ev.distance_km) : "",
   });
+  const past = ev ? new Date(ev.starts_at) < new Date() : false;
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [pending, start] = useTransition();
   const id = (k: string) => `${ev?.id ?? "new"}-${k}`;
@@ -74,9 +79,29 @@ function EventForm({ ev, onDone }: { ev: RunClubEvent | null; onDone?: () => voi
           <Input id={id("c")} inputMode="numeric" value={v.capacity} onChange={(e) => setV({ ...v, capacity: e.target.value })} />
         </Field>
       </div>
+      <Field label={tl("Punkt zbiórki", "Meeting point")} htmlFor={id("mn")} hint={tl("Np. przy fontannie od strony parkingu. Pokazuje się pod miejscem.", "E.g. by the fountain on the car-park side. Shown under the place.")}>
+        <Input id={id("mn")} value={v.meeting_note} onChange={(e) => setV({ ...v, meeting_note: e.target.value })} />
+      </Field>
       <Field label={tl("Opis", "Description")} htmlFor={id("ds")}>
         <Textarea id={id("ds")} rows={3} value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
       </Field>
+      <div className={`grid gap-3 rounded-md p-3 sm:grid-cols-2 ${past ? "bg-surface-2" : "border border-dashed border-border"}`}>
+        <p className="text-[13px] font-semibold sm:col-span-2">
+          {tl("Po treningu: do licznika na stronie", "After the run: for the website counter")}
+          {past ? null : <span className="font-normal text-muted"> · {tl("uzupełnij po treningu", "fill in after the run")}</span>}
+        </p>
+        <Field label={tl("Ile osób przyszło", "How many came")} htmlFor={id("at")} hint={tl("Razem z trenerami", "Coaches included")} error={errors.attendees?.[0]}>
+          <Input id={id("at")} inputMode="numeric" value={v.attendees} onChange={(e) => setV({ ...v, attendees: e.target.value })} />
+        </Field>
+        <Field label={tl("Km na osobę (średnio)", "Km per person (average)")} htmlFor={id("km")} hint={tl("Np. 5 albo 6,5", "E.g. 5 or 6.5")} error={errors.distance_km?.[0]}>
+          <Input id={id("km")} inputMode="decimal" value={v.distance_km} onChange={(e) => setV({ ...v, distance_km: e.target.value })} />
+        </Field>
+        {v.attendees && v.distance_km ? (
+          <p className="text-[13px] text-muted sm:col-span-2">
+            {tl("Do licznika", "Adds")}: {Math.round(Number(v.attendees) * Number(v.distance_km.replace(",", ".")) || 0)} km
+          </p>
+        ) : null}
+      </div>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={v.visible} onChange={(e) => setV({ ...v, visible: e.target.checked })} />
         {tl("Widoczny na stronie", "Visible on the website")}
@@ -112,7 +137,36 @@ function EventForm({ ev, onDone }: { ev: RunClubEvent | null; onDone?: () => voi
   );
 }
 
-export function RunClubEditor({ events, signups }: { events: RunClubEvent[]; signups: RunClubSignup[] }) {
+function NotifyButton({ eventId, subscribers }: { eventId: string; subscribers: number }) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-md border border-border p-3">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={pending || subscribers === 0}
+        onClick={() => {
+          if (!window.confirm(tl(`Wysłać mail o tym terminie do ${subscribers} osób z listy „Powiadom mnie”?`, `E-mail ${subscribers} people on the “Notify me” list about this date?`))) return;
+          start(async () => {
+            const res = await notifyRunClubSubscribers(eventId);
+            if (res.ok) toast.success(res.message ?? tl("Wysłano", "Sent"));
+            else toast.error(res.error);
+          });
+        }}
+      >
+        <Mail className="size-4" /> {pending ? tl("Wysyłanie…", "Sending…") : tl("Powiadom listę", "Notify the list")}
+      </Button>
+      <span className="text-[13px] text-muted">
+        {subscribers
+          ? tl(`${subscribers} os. na liście. Każdy dostanie ten termin tylko raz.`, `${subscribers} on the list. Each gets this date only once.`)
+          : tl("Nikt jeszcze nie zapisał się na powiadomienia.", "Nobody has signed up for notifications yet.")}
+      </span>
+    </div>
+  );
+}
+
+export function RunClubEditor({ events, signups, subscribers = 0 }: { events: RunClubEvent[]; signups: RunClubSignup[]; subscribers?: number }) {
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   return (
@@ -152,6 +206,7 @@ export function RunClubEditor({ events, signups }: { events: RunClubEvent[]; sig
                 ) : (
                   <p className="text-sm text-muted">{tl("Nikt się jeszcze nie zapisał.", "No sign-ups yet.")}</p>
                 )}
+                {e.visible && new Date(e.starts_at) > new Date() ? <NotifyButton eventId={e.id} subscribers={subscribers} /> : null}
                 <EventForm ev={e} onDone={() => setOpen(null)} />
               </>
             ) : null}
@@ -263,6 +318,78 @@ export function TestimonialsEditor({ items }: { items: Testimonial[] }) {
           <Plus className="size-4" /> {tl("Dodaj opinię", "Add testimonial")}
         </Button>
       )}
+    </div>
+  );
+}
+
+function PhotoForm({ item, onDone }: { item: RunClubPhoto | null; onDone?: () => void }) {
+  const router = useRouter();
+  const [v, setV] = useState({ url: item?.url ?? "", caption: item?.caption ?? "", sort: String(item?.sort ?? 0), visible: item?.visible ?? true });
+  const [pending, start] = useTransition();
+  const id = (k: string) => `ph-${item?.id ?? "new"}-${k}`;
+  return (
+    <form
+      noValidate
+      className="grid gap-3 rounded-lg border border-border p-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          const res = await saveRunClubPhoto(item?.id ?? null, v);
+          if (!res.ok) return void toast.error(res.fieldErrors?.url?.[0] ?? res.error);
+          toast.success(res.message ?? tl("Zapisano", "Saved"));
+          router.refresh();
+          if (!item) setV({ url: "", caption: "", sort: "0", visible: true });
+          onDone?.();
+        });
+      }}
+    >
+      <PhotoUpload value={v.url} onChange={(url) => setV({ ...v, url })} folder="run-club" />
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
+        <Field label={tl("Podpis", "Caption")} htmlFor={id("c")} hint={tl("Opcjonalnie, np. 19.11 · pierwszy trening", "Optional, e.g. 19 Nov · first run")}>
+          <Input id={id("c")} value={v.caption} onChange={(e) => setV({ ...v, caption: e.target.value })} />
+        </Field>
+        <Field label={tl("Kolejność", "Order")} htmlFor={id("s")}>
+          <Input id={id("s")} inputMode="numeric" value={v.sort} onChange={(e) => setV({ ...v, sort: e.target.value })} />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox checked={v.visible} onChange={(e) => setV({ ...v, visible: e.target.checked })} />
+        {tl("Widoczne na stronie", "Visible on the website")}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="sm" disabled={pending || !v.url}>
+          {item ? tl("Zapisz", "Save") : tl("Dodaj do galerii", "Add to gallery")}
+        </Button>
+        {item ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              if (!window.confirm(tl("Usunąć to zdjęcie z galerii?", "Remove this photo from the gallery?"))) return;
+              start(async () => {
+                const res = await deleteRunClubPhoto(item.id);
+                if (res.ok) router.refresh();
+                else toast.error(res.error);
+              });
+            }}
+          >
+            <Trash2 className="size-4" /> {tl("Usuń", "Delete")}
+          </Button>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+export function RunClubPhotosEditor({ items }: { items: RunClubPhoto[] }) {
+  return (
+    <div className="grid gap-3">
+      {items.map((p) => (
+        <PhotoForm key={p.id} item={p} />
+      ))}
+      <PhotoForm item={null} />
     </div>
   );
 }

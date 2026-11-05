@@ -1,6 +1,6 @@
 "use server";
 
-import { MAILS, sendMailOnce, whenPl } from "@/lib/mail";
+import { MAILS, mailConfigured, sendMailOnce, whenPl } from "@/lib/mail";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -35,7 +35,7 @@ export async function signUpRunClub(input: { event_id: string; full_name: string
     await sendMailOnce(
       `rcsign:${row.event_id}:${row.email}`,
       row.email,
-      MAILS.runClubSignup({ name: row.full_name, title: e.title, when: whenPl(e.starts_at), place: e.place, map: e.map_url }),
+      MAILS.runClubSignup({ name: row.full_name, title: e.title, when: whenPl(e.starts_at), place: e.place, map: e.map_url, eventId: row.event_id }),
     );
   return { ok: true };
 }
@@ -49,6 +49,15 @@ const eventSchema = z.object({
   description: z.string().trim().max(2000),
   capacity: z.string().trim().refine((v) => v === "" || /^\d{1,3}$/.test(v), "Liczba"),
   visible: z.boolean(),
+  meeting_note: z.string().trim().max(300).optional().default(""),
+  attendees: z.string().trim().refine((v) => v === "" || /^\d{1,3}$/.test(v), "Liczba osób").optional().default(""),
+  distance_km: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(",", "."))
+    .refine((v) => v === "" || (/^\d{1,2}(\.\d)?$/.test(v) && Number(v) <= 100), "Np. 6 albo 6.5")
+    .optional()
+    .default(""),
 });
 export type RunClubEventInput = z.input<typeof eventSchema>;
 
@@ -67,11 +76,15 @@ export async function saveRunClubEvent(id: string | null, input: RunClubEventInp
       description: v.description || null,
       capacity: v.capacity ? Number(v.capacity) : null,
       visible: v.visible,
+      meeting_note: v.meeting_note || null,
+      attendees: v.attendees ? Number(v.attendees) : null,
+      distance_km: v.distance_km ? Number(v.distance_km) : null,
     };
     const { error } = id ? await supabase.from("run_club_events").update(row).eq("id", id) : await supabase.from("run_club_events").insert(row);
     if (error) return dbError(error);
     revalidatePath("/coach/site");
     revalidatePath("/run-club");
+    revalidatePath("/");
     return { ok: true, message: "Zapisano." };
   });
 }
@@ -173,6 +186,81 @@ export async function deleteAmbassador(id: string): Promise<ActionResult> {
     const { error } = await supabase.from("ambassadors").delete().eq("id", id);
     if (error) return dbError(error);
     revalidatePath("/coach/site");
+    return { ok: true };
+  });
+}
+
+/** "Let me know about new dates" form on the website. */
+export async function subscribeRunClub(input: { email: string; consent: boolean; website?: string }): Promise<ActionResult> {
+  if (input.website) return { ok: true };
+  const { t } = await getT();
+  const parsed = z
+    .object({
+      email: z.string().trim().toLowerCase().email(t("Podaj poprawny adres e-mail", "Enter a valid email address")).max(254),
+      consent: z.literal(true, { errorMap: () => ({ message: t("Zaznacz zgodę", "Please tick the consent") }) }),
+    })
+    .safeParse(input);
+  if (!parsed.success) return validationError(parsed.error);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("run_club_subscribe", { p_email: parsed.data.email });
+  if (error) return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie.", "Couldn’t save that. Please try again.") };
+  return { ok: true };
+}
+
+/** Panel: e-mail everyone on the "notify me" list about one date. Each address gets it once. */
+export async function notifyRunClubSubscribers(eventId: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Stroną zarządzają założyciele." };
+    if (!mailConfigured()) return { ok: false, error: "Wysyłka maili nie jest skonfigurowana (RESEND_API_KEY)." };
+    const { data: ev } = await supabase.from("run_club_events").select("id, title, starts_at, place, map_url, pace, visible").eq("id", eventId).maybeSingle();
+    const e = ev as { id: string; title: string; starts_at: string; place: string; map_url: string | null; pace: string | null; visible: boolean } | null;
+    if (!e) return { ok: false, error: "Nie ma takiego terminu." };
+    if (!e.visible || new Date(e.starts_at) < new Date()) return { ok: false, error: "Termin musi być widoczny i w przyszłości." };
+    const { data, error } = await supabase.rpc("run_club_subscriber_list", { p_secret: process.env.VYRA_PURCHASE_SECRET ?? "" });
+    if (error) return dbError(error);
+    const list = (data ?? []) as { email: string; token: string }[];
+    let sent = 0;
+    for (const s of list) {
+      const ok = await sendMailOnce(
+        `rcnew:${e.id}:${s.email}`,
+        s.email,
+        MAILS.runClubNewDate({ title: e.title, when: whenPl(e.starts_at), place: e.place, pace: e.pace, eventId: e.id, token: s.token }),
+      );
+      if (ok) sent++;
+    }
+    return { ok: true, message: sent ? `Wysłano ${sent} ${sent === 1 ? "mail" : "maili"}.` : "Wszyscy z listy już dostali ten termin." };
+  });
+}
+
+const photoSchema = z.object({
+  url: z.string().trim().url("Wgraj zdjęcie").max(500),
+  caption: z.string().trim().max(160),
+  sort: z.string().trim().refine((v) => v === "" || /^-?\d+$/.test(v), "Liczba"),
+  visible: z.boolean(),
+});
+export type RunClubPhotoInput = z.input<typeof photoSchema>;
+
+export async function saveRunClubPhoto(id: string | null, input: RunClubPhotoInput): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Stroną zarządzają założyciele." };
+    const parsed = photoSchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+    const v = parsed.data;
+    const row = { url: v.url, caption: v.caption || null, sort: v.sort ? Number(v.sort) : 0, visible: v.visible };
+    const { error } = id ? await supabase.from("run_club_photos").update(row).eq("id", id) : await supabase.from("run_club_photos").insert(row);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath("/run-club");
+    return { ok: true, message: "Zapisano." };
+  });
+}
+
+export async function deleteRunClubPhoto(id: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const { error } = await supabase.from("run_club_photos").delete().eq("id", id);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath("/run-club");
     return { ok: true };
   });
 }
