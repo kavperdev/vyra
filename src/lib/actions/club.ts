@@ -5,11 +5,20 @@ import { MAILS, mailConfigured, sendMailOnce, whenPl } from "@/lib/mail";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getT } from "@/lib/i18n/server";
+import { readSource } from "@/lib/source";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/types";
 import { dbError, validationError, withUser } from "./helpers";
 
-export async function signUpRunClub(input: { event_id: string; full_name: string; email: string; consent: boolean; website?: string }): Promise<ActionResult> {
+export async function signUpRunClub(input: {
+  event_id: string;
+  full_name: string;
+  email: string;
+  consent: boolean;
+  photo_consent?: boolean;
+  kanal?: string | null;
+  website?: string;
+}): Promise<ActionResult> {
   if (input.website) return { ok: true };
   const { t } = await getT();
   const parsed = z
@@ -23,7 +32,14 @@ export async function signUpRunClub(input: { event_id: string; full_name: string
   if (!parsed.success) return validationError(parsed.error);
   const supabase = await createClient();
   const { consent: _consent, ...row } = parsed.data;
-  const { error } = await supabase.from("run_club_signups").insert(row);
+  const kanal = (input.kanal ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30);
+  const source = kanal || (await readSource());
+  const extra = { photo_consent: input.photo_consent === true, ...(source ? { source } : {}) };
+  let { error } = await supabase.from("run_club_signups").insert({ ...row, ...extra });
+  // Before migration 20261105000200 the extra columns do not exist: sign the person up anyway.
+  if (error && (error.code === "42703" || error.code === "PGRST204" || /photo_consent|source/.test(error.message ?? ""))) {
+    ({ error } = await supabase.from("run_club_signups").insert(row));
+  }
   if (error) {
     if (error.message.includes("duplicate")) return { ok: true };
     return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie.", "Couldn’t sign you up. Please try again.") };

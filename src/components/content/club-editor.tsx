@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Plus, Trash2 } from "lucide-react";
+import { Camera, Mail, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { PhotoUpload } from "@/components/content/photo-upload";
 import { deleteRunClubEvent, deleteRunClubPhoto, deleteTestimonial, notifyRunClubSubscribers, saveRunClubEvent, saveRunClubPhoto, saveTestimonial } from "@/lib/actions/club";
 import type { RunClubEvent, RunClubPhoto, RunClubSignup, Testimonial } from "@/lib/data/club";
 import { formatDate } from "@/lib/format";
+import { channelLabel } from "@/lib/run-club-channels";
 import { tl } from "@/lib/i18n/runtime";
 
 /** "2026-11-05T18:30" for <input type="datetime-local"> in the browser's time zone. */
@@ -193,16 +194,37 @@ export function RunClubEditor({ events, signups, subscribers = 0 }: { events: Ru
             {open === e.id ? (
               <>
                 {list.length ? (
-                  <ul className="grid gap-1 rounded-md bg-surface-2 p-3 text-sm">
-                    {list.map((s) => (
-                      <li key={s.id} className="flex flex-wrap justify-between gap-2">
-                        <span>{s.full_name}</span>
-                        <a href={`mailto:${s.email}`} className="text-muted underline-offset-4 hover:underline">
-                          {s.email}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="grid gap-2">
+                    <p className="text-[13px] text-muted">
+                      {tl("Skąd", "Channels")}:{" "}
+                      {Object.entries(
+                        list.reduce<Record<string, number>>((acc, s) => {
+                          const k = channelLabel(s.source);
+                          acc[k] = (acc[k] ?? 0) + 1;
+                          return acc;
+                        }, {}),
+                      )
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([k, n]) => `${k} ${n}`)
+                        .join(" · ")}
+                      {" · "}
+                      {tl("Zgoda na zdjęcia", "Photo consent")}: {list.filter((s) => s.photo_consent).length}/{list.length}
+                    </p>
+                    <ul className="grid gap-1 rounded-md bg-surface-2 p-3 text-sm">
+                      {list.map((s) => (
+                        <li key={s.id} className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="flex items-center gap-2">
+                            {s.full_name}
+                            {s.photo_consent ? <Camera className="size-3.5 text-muted" aria-label={tl("Zgoda na zdjęcia", "Photo consent")} /> : null}
+                            <span className="text-[12px] text-muted">{channelLabel(s.source)}</span>
+                          </span>
+                          <a href={`mailto:${s.email}`} className="text-muted underline-offset-4 hover:underline">
+                            {s.email}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted">{tl("Nikt się jeszcze nie zapisał.", "No sign-ups yet.")}</p>
                 )}

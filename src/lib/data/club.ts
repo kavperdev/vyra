@@ -60,6 +60,8 @@ export interface RunClubSignup {
   full_name: string;
   email: string;
   created_at: string;
+  source?: string | null;
+  photo_consent?: boolean | null;
 }
 
 export interface Testimonial {

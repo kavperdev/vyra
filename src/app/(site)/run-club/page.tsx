@@ -18,6 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
     ),
     robots: { index: true, follow: true },
     alternates: { canonical: "/run-club" },
+    openGraph: {
+      title: t("VYRA Run Club: biegamy razem", "VYRA Run Club: we run together"),
+      description: t("Darmowy wspólny trening co tydzień, dla każdego poziomu. Zapisz się na najbliższy termin.", "A free weekly group run for every level. Sign up for the next date."),
+      url: "/run-club",
+    },
   };
 }
 

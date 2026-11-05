@@ -31,3 +31,26 @@ export function CopyCode({ code }: { code: string }) {
     </button>
   );
 }
+
+/** "Copy text" button for a longer block, e.g. the press release. */
+export function CopyText({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setDone(true);
+          setTimeout(() => setDone(false), 2000);
+        } catch {
+          // the text stays on the page to copy by hand
+        }
+      }}
+      className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/60"
+    >
+      {done ? <Check className="size-4 text-[var(--accent)]" /> : <Copy className="size-4" />}
+      {done ? tl("Skopiowano", "Copied") : tl("Kopiuj cały tekst", "Copy the whole text")}
+    </button>
+  );
+}

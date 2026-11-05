@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ArrowRight, Bell, CalendarPlus, Check, Copy, MessageCircle, Send, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
@@ -156,8 +156,24 @@ export function RunClubNotify() {
 }
 
 /** "Będę" sign-up for one Run Club event. */
+/** Channel from a short link (/rc/<kanal> → /run-club?kanal=…), kept for this browser tab. */
+function useKanal(): string | null {
+  const [kanal, setKanal] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("kanal");
+      if (fromUrl) sessionStorage.setItem("vyra-kanal", fromUrl);
+      setKanal(fromUrl || sessionStorage.getItem("vyra-kanal"));
+    } catch {
+      // no storage: the server falls back to the site's own source cookie
+    }
+  }, []);
+  return kanal;
+}
+
 export function RunClubSignup({ eventId, full }: { eventId: string; full: boolean }) {
-  const [v, setV] = useState({ full_name: "", email: "", consent: false, website: "" });
+  const kanal = useKanal();
+  const [v, setV] = useState({ full_name: "", email: "", consent: false, photo_consent: false, website: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
@@ -170,7 +186,7 @@ export function RunClubSignup({ eventId, full }: { eventId: string; full: boolea
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const res = await signUpRunClub({ event_id: eventId, ...v });
+          const res = await signUpRunClub({ event_id: eventId, ...v, kanal });
           if (res.ok) setDone(true);
           else setErrors(res.fieldErrors ?? { form: [res.error] });
         });
@@ -186,6 +202,15 @@ export function RunClubSignup({ eventId, full }: { eventId: string; full: boolea
       </div>
       <input tabIndex={-1} aria-hidden autoComplete="off" className="absolute left-[-9999px] h-0 w-0" value={v.website} onChange={(e) => setV({ ...v, website: e.target.value })} />
       <Consent checked={v.consent} onChange={(consent) => setV({ ...v, consent })} error={errors.consent?.[0]} />
+      <label className="flex items-start gap-3 text-sm text-white/60">
+        <Checkbox checked={v.photo_consent} onChange={(e) => setV({ ...v, photo_consent: e.target.checked })} className="mt-0.5" />
+        <span>
+          {tl(
+            "Opcjonalnie: zgadzam się, żeby VYRA publikowała zdjęcia i filmy z treningu, na których jestem (strona, Instagram). Mogę to cofnąć w każdej chwili.",
+            "Optional: I agree that VYRA may publish photos and videos from the run that show me (website, Instagram). I can withdraw this at any time.",
+          )}
+        </span>
+      </label>
       {errors.form ? <p role="alert" className="text-sm text-problem">{errors.form[0]}</p> : null}
       <Button type="submit" variant="accent" disabled={pending} className="w-full sm:w-fit">
         {pending ? tl("Zapisywanie…", "Saving…") : tl("Będę", "I’m in")} <ArrowRight className="size-4" />

@@ -102,6 +102,12 @@ export default async function SiteContentPage() {
               )}
             </p>
             <p className="text-[13px] text-muted">
+              {tl(
+                "Linki do udostępniania (pokazują, skąd zapisali się ludzie): vyraathl.pl/rc/ig, /rc/fb, /rc/grupy, /rc/media, /rc/plakat, /rc/znajomi. Działa każde krótkie słowo po /rc/.",
+                "Share links (show where people signed up from): vyraathl.pl/rc/ig, /rc/fb, /rc/grupy, /rc/media, /rc/plakat, /rc/znajomi. Any short word after /rc/ works.",
+              )}
+            </p>
+            <p className="text-[13px] text-muted">
               {tl("Licznik", "Counter")}: {clubStats.sessions} {tl("treningów", "runs")} · {clubStats.people} {tl("obecności", "check-ins")} · {clubStats.km} km ·{" "}
               {tl("Lista „Powiadom mnie”", "“Notify me” list")}: {subscriberCount}
             </p>
