@@ -96,7 +96,7 @@ export default async function RunClubPage() {
                 { title: t("Zbiórka i rozgrzewka", "Meet and warm up"), body: t("Rozgrzewka z trenerem i 5 minut techniki biegu: jedno ćwiczenie tygodnia.", "A warm-up with the coach and 5 minutes of running drills: one drill of the week.") },
                 { title: t("Bieg w dwóch grupach", "Run in two groups"), body: t("30–40 minut. Grupa spokojna i szybsza, każda z prowadzącym. Nikt nie zostaje z tyłu.", "30–40 minutes. An easy group and a faster one, each with a leader. Nobody gets left behind.") },
                 { title: t("Rozciąganie i rada", "Stretch and a tip"), body: t("Pytania do trenera i jedna konkretna rada na najbliższy tydzień.", "Questions for the coach and one concrete tip for the coming week.") },
-                { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność z trenerem siłowym.", "A running-technique video, a 2K test with your VO2max, or strength and mobility with our strength coach.") },
+                { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność dla biegaczy.", "A running-technique video, a 2K test with your VO2max, or strength and mobility for runners.") },
               ]}
             />
           </div>
