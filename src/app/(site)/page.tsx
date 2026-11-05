@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import { CtaBand, Eyebrow, GhostLink, InstagramStrip, Manifest, PhotoBand, PrimaryLink, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { JsonLd } from "@/components/site/json-ld";
 import { publicOrigin } from "@/lib/env";
@@ -10,7 +10,8 @@ import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { listArticles, listCamps, listCoachingPlans, takenPlaces } from "@/lib/data/camps";
 import { PlanCards } from "@/components/site/plan-cards";
 import { stripeConfigured } from "@/lib/stripe";
-import { listTestimonials } from "@/lib/data/club";
+import { listRunClubEvents, listTestimonials, runClubCounts } from "@/lib/data/club";
+import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { getCompany } from "@/lib/data/site-settings";
 import type { T } from "@/lib/i18n/shared";
@@ -64,7 +65,7 @@ export default async function Home() {
   const { lang, t } = await getT();
   const company = await getCompany();
   const supabase = await createClient();
-  const [camps, taken, allArticles, testimonials, allPlans] = await Promise.all([
+  const [camps, taken, allArticles, testimonials, allPlans, clubEvents, clubCounts] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
@@ -74,7 +75,13 @@ export default async function Home() {
       .then((x) => x.filter((t) => t.visible))
       .catch(() => []),
     listCoachingPlans(supabase).catch(() => []),
+    listRunClubEvents(supabase, { upcoming: true })
+      .then((e) => e.filter((x) => x.visible))
+      .catch(() => []),
+    runClubCounts(supabase).catch(() => ({}) as Record<string, number>),
   ]);
+  const nextRuns = clubEvents.slice(0, 3);
+  const nextRun = nextRuns[0] ?? null;
   const plans = allPlans.filter((p) => p.visible);
   const monthly = plans.filter((p) => p.kind === "monthly");
   const minPrice = plans.length ? Math.min(...plans.map((p) => p.price_pln)) : null;
@@ -107,7 +114,7 @@ export default async function Home() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className={`${wrap} pb-14 pt-36 sm:pb-20`}>
           <div className="site-rise">
-            <Eyebrow accent>{t("Trening biegowy · prowadzenie online", "Running coaching · online")}</Eyebrow>
+            <Eyebrow accent>{t("VYRA Run Club · biegamy razem", "VYRA Run Club · we run together")}</Eyebrow>
           </div>
           <h1 className="display mt-6 text-[clamp(3.25rem,11vw,9rem)] uppercase leading-[0.9] text-white">
             <span className="block overflow-hidden">
@@ -125,19 +132,23 @@ export default async function Home() {
             <div className="site-rise grid gap-4" style={{ animationDelay: "400ms" }}>
               <p className="max-w-xl text-lg leading-relaxed text-white/75 sm:text-xl">
                 {t(
-                  "Biegaj jak zawodowiec, nawet jeśli dopiero zaczynasz. Plan od trenera rozpisany co do odcinka, analiza każdego treningu i aplikacja VYRA w telefonie.",
-                  "Run like a pro, even if you’re just starting. A coach-built plan down to every rep, analysis of every session and the VYRA app on your phone.",
+                  "Wspólne treningi z trenerem, co tydzień i dla każdego poziomu. Technika, grupa w Twoim tempie i ludzie, z którymi dojdziesz dalej niż biegając sam. Za darmo.",
+                  "Group sessions with a coach, every week and for every level. Technique, a group at your pace and people who take you further than running alone. Free.",
                 )}
               </p>
-              {minPrice != null ? (
-                <p className="text-sm text-white/50">
-                  {t(`Prowadzenie od ${minPrice.toLocaleString("pl-PL")} zł · płatność BLIK lub kartą`, `Coaching from PLN ${minPrice} · pay by BLIK or card`)}
+              {nextRun ? (
+                <p className="flex flex-wrap items-center gap-x-2 text-sm text-white/70">
+                  <span className="font-semibold text-white">{t("Najbliższy trening", "Next session")}:</span>
+                  <span>{formatDate(nextRun.starts_at, "EEEE, d MMMM · HH:mm")}</span>
+                  <span className="text-white/45">· {nextRun.place}</span>
                 </p>
-              ) : null}
+              ) : (
+                <p className="text-sm text-white/50">{t("Terminy ogłaszamy na stronie Run Clubu i na @vyra.athl", "Dates are announced on the Run Club page and @vyra.athl")}</p>
+              )}
             </div>
             <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href={plans.length ? "/prowadzenie#pakiety" : "/prowadzenie"}>{t("Zobacz pakiety", "See packages")}</PrimaryLink>
-              <GhostLink href="/zacznij-biegac">{t("Darmowy plan na start", "Free starter plan")}</GhostLink>
+              <PrimaryLink href="/run-club">{t("Zapisz się na trening", "Join a session")}</PrimaryLink>
+              <GhostLink href="/prowadzenie">{t("Prowadzenie online", "Online coaching")}</GhostLink>
             </div>
           </div>
         </div>
@@ -147,10 +158,10 @@ export default async function Home() {
       <section aria-label={t("Dlaczego VYRA", "Why VYRA")} className="border-b border-white/10 bg-[#070708]">
         <ul className={`${wrap} grid grid-cols-2 gap-px py-0 md:grid-cols-4`}>
           {[
-            [t("Plan co do odcinka", "Plan to the rep"), t("tempa i strefy z Twoich wyników", "paces and zones from your results")],
-            [t("Każdy trening omówiony", "Every session reviewed"), t("analiza i komentarz trenera", "coach analysis and comments")],
-            [t("Siła w planie", "Strength included"), t("trening siłowy pod bieganie", "strength work built for running")],
-            [t("Własna aplikacja", "Own app"), t("plan i postępy w telefonie", "plan and progress on your phone")],
+            [t("Za darmo", "Free"), t("wystarczy zapis na stronie", "just sign up on the site")],
+            [t("Z trenerem", "With a coach"), t("rozgrzewka, technika i rada na tydzień", "warm-up, drills and a tip for the week")],
+            [t("Każdy poziom", "Every level"), t("grupa spokojna i szybsza", "an easy group and a faster one")],
+            [t("Co tydzień", "Every week"), t("stały dzień, godzina i miejsce", "same day, time and place")],
           ].map(([a, b], i) => (
             <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
               <span className="font-semibold text-white">{a}</span>
@@ -160,13 +171,77 @@ export default async function Home() {
         </ul>
       </section>
 
-      {/* 3. SELF-SELECTION: every visitor finds their own door in 3 seconds. */}
+      {/* 3. RUN CLUB: what a session looks like and the next dates. */}
+      <section className={`${wrap} py-28 sm:py-36`}>
+        <SectionHead eyebrow="VYRA Run Club" title={t("Jak wygląda trening", "What a session looks like")}>
+          {t(
+            "Około godziny. Nie musisz umieć przebiec 5 km: grupa spokojna biega w tempie rozmowy, z marszem, kiedy trzeba.",
+            "About an hour. You don’t need to run 5K yet: the easy group runs at a talking pace, with walk breaks when needed.",
+          )}
+        </SectionHead>
+        <div className="mt-16">
+          <Steps
+            items={[
+              { title: t("Zbiórka i rozgrzewka", "Meet and warm up"), body: t("Rozgrzewka z trenerem i 5 minut techniki biegu: jedno ćwiczenie tygodnia.", "A warm-up with the coach and 5 minutes of running drills: one drill of the week.") },
+              { title: t("Bieg w dwóch grupach", "Run in two groups"), body: t("30–40 minut. Grupa spokojna i szybsza, każda z prowadzącym. Nikt nie zostaje z tyłu.", "30–40 minutes. An easy group and a faster one, each with a leader. Nobody gets left behind.") },
+              { title: t("Rozciąganie i rada", "Stretch and a tip"), body: t("Pytania do trenera i jedna konkretna rada na najbliższy tydzień.", "Questions for the coach and one concrete tip for the coming week.") },
+              { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność z trenerem siłowym.", "A running-technique video, a 2K test with your VO2max, or strength and mobility with our strength coach.") },
+            ]}
+          />
+        </div>
+        {nextRuns.length ? (
+          <div className="mt-14 grid gap-5 md:grid-cols-3">
+            {nextRuns.map((e, i) => {
+              const signed = clubCounts[e.id] ?? 0;
+              return (
+                <Reveal key={e.id} delay={i * 90}>
+                  <Link href="/run-club" className="group grid h-full content-between gap-6 rounded-2xl border border-white/10 bg-[#070708] p-7 transition-colors hover:border-white/30">
+                    <span className="grid gap-3">
+                      <Eyebrow accent>{formatDate(e.starts_at, "EEEE, d MMMM · HH:mm")}</Eyebrow>
+                      <span className="display text-2xl text-white">{e.title}</span>
+                      <span className="flex items-start gap-2 text-sm text-white/60">
+                        <MapPin className="mt-0.5 size-4 shrink-0" />
+                        {e.place}
+                      </span>
+                    </span>
+                    <span className="flex items-center justify-between gap-4 text-sm">
+                      <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/40">
+                        {t("Zapisanych", "Signed up")}: {signed}
+                        {e.capacity != null ? ` / ${e.capacity}` : ""}
+                      </span>
+                      <span className="inline-flex items-center gap-2 font-semibold text-white">
+                        {t("Zapisz się", "Sign up")} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </span>
+                    </span>
+                  </Link>
+                </Reveal>
+              );
+            })}
+          </div>
+        ) : (
+          <Reveal className="mt-14 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-[#070708] p-7">
+            <p className="text-white/70">{t("Pierwsze terminy ogłaszamy wkrótce na stronie Run Clubu i na @vyra.athl.", "First dates coming soon on the Run Club page and @vyra.athl.")}</p>
+            <GhostLink href="/run-club">{t("Strona Run Clubu", "Run Club page")}</GhostLink>
+          </Reveal>
+        )}
+      </section>
+
+      {/* 4. SELF-SELECTION: every visitor finds their own door in 3 seconds. */}
       <section className={`${wrap} py-28 sm:py-36`}>
         <SectionHead eyebrow={t("Od czego zacząć", "Where to start")} title={t("Gdzie jesteś teraz?", "Where are you right now?")}>
           {t("Wybierz, co najlepiej Cię opisuje. Każda droga prowadzi do tego samego standardu.", "Pick what describes you best. Every path leads to the same standard.")}
         </SectionHead>
         <div className="mt-16 grid gap-5 lg:grid-cols-3">
           {[
+            {
+              href: "/run-club",
+              img: "/site/night-city.jpg",
+              tag: t("Za darmo", "Free"),
+              title: t("Chcę biegać z ludźmi", "I want to run with people"),
+              body: t("VYRA Run Club: wspólne treningi z trenerem, co tydzień i dla każdego poziomu.", "VYRA Run Club: group sessions with a coach, every week and for every level."),
+              cta: t("Najbliższy trening", "Next session"),
+              highlight: true,
+            },
             {
               href: "/zacznij-biegac",
               img: "/site/tone-warm.jpg",
@@ -179,18 +254,9 @@ export default async function Home() {
               href: plans.length ? "/prowadzenie#pakiety" : "/prowadzenie",
               img: "/site/track.jpg",
               tag: minPrice != null ? t(`Od ${minPrice} zł`, `From PLN ${minPrice}`) : t("Prowadzenie", "Coaching"),
-              title: t("Biegam i chcę być szybszy", "I run and want to get faster"),
+              title: t("Chcę biegać z planem", "I want to train with a plan"),
               body: t("Indywidualny plan pod Twój cel i kalendarz, analiza każdego treningu i stały kontakt z trenerem.", "An individual plan for your goal and schedule, analysis of every session and ongoing contact with your coach."),
-              cta: t("Zobacz pakiety", "See packages"),
-              highlight: true,
-            },
-            {
-              href: "/run-club",
-              img: "/site/night-city.jpg",
-              tag: t("Za darmo", "Free"),
-              title: t("Chcę biegać z ludźmi", "I want to run with people"),
-              body: t("VYRA Run Club: wspólne treningi dla każdego poziomu, z rozgrzewką i grupami tempowymi.", "VYRA Run Club: group runs for every level, with a warm-up and pace groups."),
-              cta: t("Najbliższy trening", "Next group run"),
+              cta: t("Zobacz prowadzenie", "See coaching"),
             },
           ].map((c, i) => (
             <Reveal key={c.href} delay={i * 110}>
@@ -214,13 +280,13 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 4. IDENTITY: what it means to be part of VYRA. */}
+      {/* 5. IDENTITY: what it means to be part of VYRA. */}
       <Manifest t={t} />
 
       {/* 5. HOW IT WORKS: removes uncertainty before the price. */}
       <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow={t("Jak to działa", "How it works")} title={t("Od decyzji do pierwszego treningu w 4 krokach", "From decision to first session in 4 steps")}>
-          {t("Bez długich formularzy i czekania. Tak wygląda start z VYRA.", "No long forms, no waiting. This is how you start with VYRA.")}
+        <SectionHead eyebrow={t("Prowadzenie online", "Online coaching")} title={t("Chcesz biegać z planem? Start w 4 krokach", "Want to train with a plan? Start in 4 steps")}>
+          {t("Run Club to początek. Kiedy chcesz więcej, trener rozpisze Ci plan i będzie analizował każdy trening.", "Run Club is the start. When you want more, a coach writes your plan and reviews every session.")}
         </SectionHead>
         <div className="mt-16">
           <Steps
@@ -460,13 +526,13 @@ export default async function Home() {
       {/* 11. FINAL ASK with risk reversal. */}
       <CtaBand
         tone="warm"
-        title={t("Zostań częścią VYRA", "Become part of VYRA")}
+        title={t("Do zobaczenia na treningu", "See you at the next session")}
         lead={t(
-          "Nie wiesz, który pakiet? Napisz. Poznamy Twój cel i powiemy szczerze, czy i jak możemy pomóc. Odpowiadamy osobiście w ciągu jednego dnia roboczego, bez zobowiązań.",
-          "Not sure which package? Write to us. We’ll learn your goal and tell you honestly whether and how we can help. We reply personally within one working day, no commitment.",
+          "Zapisz się na najbliższy Run Club. Masz pytania o plan albo prowadzenie? Napisz, odpowiadamy osobiście w ciągu jednego dnia roboczego.",
+          "Sign up for the next Run Club. Questions about a plan or coaching? Write to us, we reply personally within one working day.",
         )}
-        href="/kontakt"
-        label={t("Porozmawiajmy", "Let’s talk")}
+        href="/run-club"
+        label={t("Zapisz się na Run Club", "Join Run Club")}
       />
     </>
   );

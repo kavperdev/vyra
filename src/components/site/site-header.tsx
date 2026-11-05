@@ -70,7 +70,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
             {panel.label}
           </Link>
           <Link
-            href="/prowadzenie#pakiety"
+            href="/run-club"
             className="hidden h-10 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white sm:inline-flex"
           >
             {en ? "Join" : "Dołącz"}
@@ -110,10 +110,16 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
             </div>
             <LangSwitch className="mt-6 w-fit" />
             <Link
-              href="/prowadzenie#pakiety"
+              href="/run-club"
               className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-white text-sm font-semibold text-black"
             >
-              {en ? "See packages" : "Zobacz pakiety"}
+              {en ? "Join a Run Club session" : "Zapisz się na Run Club"}
+            </Link>
+            <Link
+              href="/prowadzenie#pakiety"
+              className="mt-3 inline-flex h-12 items-center justify-center rounded-full border border-white/25 text-sm font-semibold text-white"
+            >
+              {en ? "See coaching packages" : "Zobacz prowadzenie"}
             </Link>
             <Link
               href={panel.href}

@@ -23,11 +23,11 @@ export const SITE: SiteSettings = {
   instagram: "@vyra.athl",
 };
 
-/** Main navigation, ordered like the visitor's decision: buy, try for free, join, explore. */
+/** Main navigation: Run Club first while the community is the main way in, coaching right after. */
 export const SITE_NAV = [
+  { href: "/run-club", label: "Run Club", en: "Run Club" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
   { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
-  { href: "/run-club", label: "Run Club", en: "Run Club" },
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
   { href: "/wiedza", label: "Wiedza", en: "Journal" },
