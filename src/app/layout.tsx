@@ -23,7 +23,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(publicOrigin()),
   title: { default: "VYRA", template: "%s · VYRA" },
-  description: "VYRA · ruch biegowy. Elite is standard.",
+  description: "VYRA · społeczność biegaczy, którzy trenują z wiedzą. Elite is standard.",
   applicationName: "VYRA",
   icons: {
     icon: [{ url: "/branding/vyra-icon.svg", type: "image/svg+xml" }, { url: "/icon.png", sizes: "32x32" }],

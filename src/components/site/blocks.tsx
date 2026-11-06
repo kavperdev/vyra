@@ -277,15 +277,15 @@ export function Manifest({ t }: { t: T }) {
           </Reveal>
           <Reveal delay={160} as="p" className="max-w-xl text-lg leading-relaxed text-white/65">
             {t(
-              "Standard VYRA nie zależy od tego, jak szybko biegasz. To sposób pracy: przemyślany plan, rzetelnie zapisany trening, regeneracja traktowana poważnie i konsekwencja tydzień po tygodniu. Ten sam dla debiutanta i dla zawodnika walczącego o rekord.",
-              "The VYRA standard does not depend on how fast you run. It is a way of working: a considered plan, every session logged honestly, recovery taken seriously and consistency week after week. The same for a first-timer and for an athlete chasing a record.",
+              "VYRA to amatorzy, którzy nie trenują na chybił trafił. Wiemy, po co jest każdy trening. Zapisujemy go uczciwie, odpoczywamy mądrze i wracamy tydzień po tygodniu. Nieważne, czy 5 km biegasz w 35 minut, czy w 17. Standard jest ten sam: wiedza zamiast zgadywania. Biegasz w klubie, w grupie albo sam? Jesteś u siebie.",
+              "VYRA is amateurs who don’t train by guesswork. We know why every session matters. We log it honestly, recover wisely and come back week after week. Whether you run 5K in 35 minutes or in 17, the standard is the same: know-how instead of guessing. Run with a club, a group or alone? You belong here.",
             )}
           </Reveal>
           <Reveal delay={240} className="flex flex-wrap gap-x-10 gap-y-4 border-t border-white/15 pt-6">
             {[
-              [t("Każdy poziom", "Every level"), t("ten sam standard", "the same standard")],
-              [t("Każdy trening", "Every session"), t("zapisany i omówiony", "logged and reviewed")],
-              [t("Każdy sezon", "Every season"), t("zaplanowany od startu", "planned from day one")],
+              [t("Wiedza", "Know-how"), t("zamiast zgadywania", "instead of guessing")],
+              [t("Razem", "Together"), t("każdy klub, jedna społeczność", "every club, one community")],
+              [t("Konsekwencja", "Consistency"), t("tydzień po tygodniu", "week after week")],
             ].map(([a, b]) => (
               <div key={a} className="grid gap-1">
                 <span className="text-sm font-semibold text-white">{a}</span>

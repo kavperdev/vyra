@@ -21,10 +21,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: { absolute: t("VYRA · Ruch biegowy · Elite is standard", "VYRA · A running movement · Elite is standard") },
+    title: { absolute: t("VYRA · Społeczność biegaczy, którzy trenują z wiedzą", "VYRA · Runners who train with know-how") },
     description: t(
-      "VYRA to ruch biegaczy, którzy podnoszą swój standard. Wspólne bieganie, wiedza o treningu i ludzie, z którymi dojdziesz dalej, niż biegając sam.",
-      "VYRA is a movement of runners who raise their own standard. Running together, training know-how and people who take you further than running alone.",
+      "VYRA to społeczność amatorów, którzy trenują z wiedzą, a nie na chybił trafił. Darmowa wiedza, wyzwania dla każdego klubu, Run Club i trener z planem w aplikacji. W całej Polsce.",
+      "VYRA is a community of amateurs who train with know-how, not by guesswork. Free knowledge, challenges for every club, Run Club and a coach with a plan in the app. Across Poland.",
     ),
     robots: { index: true, follow: true },
     openGraph: {
@@ -100,7 +100,7 @@ export default async function Home() {
           name: "VYRA",
           alternateName: "VYRA.ATHL",
           slogan: "Elite is standard",
-          description: "VYRA to polski ruch biegowy: społeczność biegaczy, którzy podnoszą swój standard. Wspólne treningi Run Club, wiedza o treningu, trenerzy i obozy dla biegaczy amatorów.",
+          description: "VYRA to polska społeczność amatorów, którzy trenują z wiedzą: darmowa wiedza o treningu, wyzwania dla każdego klubu, wspólne treningi Run Club, prowadzenie z trenerem w aplikacji i obozy.",
           url: origin,
           logo: `${origin}/branding/vyra-icon-512.png`,
           sport: "Running",
@@ -116,7 +116,7 @@ export default async function Home() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/30" />
         <div className={`${wrap} pb-14 pt-36 sm:pb-20`}>
           <div className="site-rise">
-            <Eyebrow accent>{t("VYRA Run Club · biegamy razem", "VYRA Run Club · we run together")}</Eyebrow>
+            <Eyebrow accent>{t("Społeczność biegaczy, którzy trenują z wiedzą", "A community of runners who train with know-how")}</Eyebrow>
           </div>
           <h1 className="display mt-6 text-[clamp(3.25rem,11vw,9rem)] uppercase leading-[0.9] text-white">
             <span className="block overflow-hidden">
@@ -134,13 +134,13 @@ export default async function Home() {
             <div className="site-rise grid gap-4" style={{ animationDelay: "400ms" }}>
               <p className="max-w-xl text-lg leading-relaxed text-white/75 sm:text-xl">
                 {t(
-                  "Wspólne treningi z trenerem, co tydzień i dla każdego poziomu. Technika, grupa w Twoim tempie i ludzie, z którymi dojdziesz dalej niż biegając sam. Za darmo.",
-                  "Group sessions with a coach, every week and for every level. Technique, a group at your pace and people who take you further than running alone. Free.",
+                  "Amatorzy, którzy trenują mądrze, a nie na chybił trafił. Uczymy się, biegamy razem i trenujemy z planem, w całej Polsce. Dołącz tak, jak Ci pasuje: od darmowej wiedzy, przez wyzwania i Run Club, po własnego trenera.",
+                  "Amateurs who train smart, not by guesswork. We learn, run together and train with a plan, across Poland. Join the way that suits you: from free knowledge, through challenges and Run Club, to your own coach.",
                 )}
               </p>
               {nextRun ? (
                 <p className="flex flex-wrap items-center gap-x-2 text-sm text-white/70">
-                  <span className="font-semibold text-white">{t("Najbliższy trening", "Next session")}:</span>
+                  <span className="font-semibold text-white">{t("Najbliższy Run Club", "Next Run Club")}:</span>
                   <span>{formatDate(nextRun.starts_at, "EEEE, d MMMM · HH:mm")}</span>
                   <span className="text-white/45">· {nextRun.place}</span>
                 </p>
@@ -149,21 +149,21 @@ export default async function Home() {
               )}
             </div>
             <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href="/run-club">{t("Zapisz się na trening", "Join a session")}</PrimaryLink>
-              <GhostLink href="/prowadzenie">{t("Prowadzenie online", "Online coaching")}</GhostLink>
+              <PrimaryLink href="#dolacz">{t("Dołącz do VYRA", "Join VYRA")}</PrimaryLink>
+              <GhostLink href="/run-club">{t("Najbliższy Run Club", "Next Run Club")}</GhostLink>
             </div>
           </div>
         </div>
       </section>
 
       {/* 2. PROOF AT A GLANCE */}
-      <section aria-label={t("Dlaczego VYRA", "Why VYRA")} className="border-b border-white/10 bg-[#070708]">
+      <section aria-label={t("Czym jest VYRA", "What VYRA is")} className="border-b border-white/10 bg-[#070708]">
         <ul className={`${wrap} grid grid-cols-2 gap-px py-0 md:grid-cols-4`}>
           {[
-            [t("Za darmo", "Free"), t("wystarczy zapis na stronie", "just sign up on the site")],
-            [t("Z trenerem", "With a coach"), t("rozgrzewka, technika i rada na tydzień", "warm-up, drills and a tip for the week")],
-            [t("Każdy poziom", "Every level"), t("tempo rozmowy", "a talking pace")],
-            [t("Co tydzień", "Every week"), t("stały dzień, godzina i miejsce", "same day, time and place")],
+            [t("Wiedza", "Knowledge"), t("artykuły, plan i narzędzia za darmo", "articles, a plan and tools for free")],
+            [t("Wyzwania", "Challenges"), t("cała Polska, każdy klub", "all of Poland, every club")],
+            [t("Run Club", "Run Club"), t("co tydzień, z trenerem", "every week, with a coach")],
+            [t("Prowadzenie", "Coaching"), t("plan i trener w aplikacji", "a plan and a coach in the app")],
           ].map(([a, b], i) => (
             <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
               <span className="font-semibold text-white">{a}</span>
@@ -173,7 +173,71 @@ export default async function Home() {
         </ul>
       </section>
 
-      {/* 3. RUN CLUB: what a session looks like and the next dates. */}
+      {/* 3. THREE WAYS IN: one idea, three depths. Every path is VYRA. */}
+      <section id="dolacz" className={`${wrap} scroll-mt-24 py-28 sm:py-36`}>
+        <SectionHead eyebrow={t("Dołącz do VYRA", "Join VYRA")} title={t("Jedna idea. Trzy drogi.", "One idea. Three ways in.")}>
+          {t(
+            "W VYRA jesteś, kiedy trenujesz z wiedzą. Możesz czytać i uczyć się, biegać z nami w wyzwaniach i na Run Clubie albo trenować z własnym trenerem. Każda droga to ta sama społeczność.",
+            "You’re part of VYRA when you train with know-how. Read and learn, run with us in challenges and at Run Club, or train with your own coach. Every path is the same community.",
+          )}
+        </SectionHead>
+        <div className="mt-16 grid gap-5 lg:grid-cols-3">
+          {[
+            {
+              href: "/wiedza",
+              img: "/site/tone-warm.jpg",
+              tag: t("Za darmo · cała Polska", "Free · all of Poland"),
+              kicker: "01 · " + t("Wiedza", "Knowledge"),
+              title: t("Ucz się trenować mądrze", "Learn to train smart"),
+              body: t("Artykuły o treningu, darmowy plan „Zacznij biegać” i kalkulator tempa. Wiedza, z której korzysta każdy biegacz VYRA.", "Training articles, the free “Start running” plan and a pace calculator. The knowledge every VYRA runner uses."),
+              cta: t("Czytaj i zacznij", "Read and start"),
+            },
+            {
+              href: "/wyzwania",
+              img: "/site/night-city.jpg",
+              tag: t("Za darmo · każdy klub", "Free · every club"),
+              kicker: "02 · " + t("Razem", "Together"),
+              title: t("Biegaj ze społecznością", "Run with the community"),
+              body: t("Wyzwania z rankingiem biegaczy i klubów z całej Polski, numer członka VYRA i co tydzień Run Club z trenerem na żywo.", "Challenges with runner and club rankings from all of Poland, a VYRA member number and a weekly live Run Club with a coach."),
+              cta: t("Dołącz do wyzwania", "Join a challenge"),
+              highlight: true,
+            },
+            {
+              href: plans.length ? "/prowadzenie#pakiety" : "/prowadzenie",
+              img: "/site/track.jpg",
+              tag: minPrice != null ? t(`Od ${minPrice} zł`, `From PLN ${minPrice}`) : t("Prowadzenie", "Coaching"),
+              kicker: "03 · " + t("Osobiście", "One to one"),
+              title: t("Trenuj z własnym trenerem", "Train with your own coach"),
+              body: t("Plan pod Twój cel w aplikacji VYRA, analiza każdego treningu i stały kontakt z trenerem. Do tego obozy.", "A plan for your goal in the VYRA app, analysis of every session and ongoing contact with your coach. Plus camps."),
+              cta: t("Zobacz prowadzenie", "See coaching"),
+            },
+          ].map((c, i) => (
+            <Reveal key={c.href} delay={i * 110}>
+              <Link
+                href={c.href}
+                className={`group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border p-8 sm:aspect-[4/4.4] ${c.highlight ? "border-white/35" : "border-white/10"}`}
+              >
+                <Image src={c.img} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
+                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/60 to-black/10" />
+                <span className={`mb-auto w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.highlight ? "bg-[var(--accent)] text-white" : "border border-white/25 text-white/80"}`}>
+                  {c.tag}
+                </span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">{c.kicker}</span>
+                <h3 className="display mt-2 text-3xl text-white">{c.title}</h3>
+                <p className="mt-3 text-white/70">{c.body}</p>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                  {c.cta} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. IDENTITY: the manifest. */}
+      <Manifest t={t} />
+
+      {/* 5. RUN CLUB: the local, live side of VYRA. */}
       <section className={`${wrap} py-28 sm:py-36`}>
         <SectionHead eyebrow="VYRA Run Club" title={t("Jak wygląda trening", "What a session looks like")}>
           {t(
@@ -233,62 +297,6 @@ export default async function Home() {
         )}
       </section>
 
-      {/* 4. SELF-SELECTION: every visitor finds their own door in 3 seconds. */}
-      <section className={`${wrap} py-28 sm:py-36`}>
-        <SectionHead eyebrow={t("Od czego zacząć", "Where to start")} title={t("Gdzie jesteś teraz?", "Where are you right now?")}>
-          {t("Wybierz, co najlepiej Cię opisuje. Każda droga prowadzi do tego samego standardu.", "Pick what describes you best. Every path leads to the same standard.")}
-        </SectionHead>
-        <div className="mt-16 grid gap-5 lg:grid-cols-3">
-          {[
-            {
-              href: "/run-club",
-              img: "/site/night-city.jpg",
-              tag: t("Za darmo", "Free"),
-              title: t("Chcę biegać z ludźmi", "I want to run with people"),
-              body: t("VYRA Run Club: wspólne treningi z trenerem, co tydzień i dla każdego poziomu.", "VYRA Run Club: group sessions with a coach, every week and for every level."),
-              cta: t("Najbliższy trening", "Next session"),
-              highlight: true,
-            },
-            {
-              href: "/zacznij-biegac",
-              img: "/site/tone-warm.jpg",
-              tag: t("Za darmo", "Free"),
-              title: t("Dopiero zaczynam", "I’m just starting"),
-              body: t("6-tygodniowy plan od zera do 25 minut biegu. Potem pakiet Start i pierwsze 5 km.", "A 6-week plan from zero to 25 minutes of running. Then the Start package and your first 5K."),
-              cta: t("Odbierz darmowy plan", "Get the free plan"),
-            },
-            {
-              href: plans.length ? "/prowadzenie#pakiety" : "/prowadzenie",
-              img: "/site/track.jpg",
-              tag: minPrice != null ? t(`Od ${minPrice} zł`, `From PLN ${minPrice}`) : t("Prowadzenie", "Coaching"),
-              title: t("Chcę biegać z planem", "I want to train with a plan"),
-              body: t("Indywidualny plan pod Twój cel i kalendarz, analiza każdego treningu i stały kontakt z trenerem.", "An individual plan for your goal and schedule, analysis of every session and ongoing contact with your coach."),
-              cta: t("Zobacz prowadzenie", "See coaching"),
-            },
-          ].map((c, i) => (
-            <Reveal key={c.href} delay={i * 110}>
-              <Link
-                href={c.href}
-                className={`group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border p-8 sm:aspect-[4/4.4] ${c.highlight ? "border-white/35" : "border-white/10"}`}
-              >
-                <Image src={c.img} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
-                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/60 to-black/10" />
-                <span className={`mb-auto w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.highlight ? "bg-[var(--accent)] text-white" : "border border-white/25 text-white/80"}`}>
-                  {c.tag}
-                </span>
-                <h3 className="display text-3xl text-white">{c.title}</h3>
-                <p className="mt-3 text-white/70">{c.body}</p>
-                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  {c.cta} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </span>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. IDENTITY: what it means to be part of VYRA. */}
-      <Manifest t={t} />
 
       {/* 5. HOW IT WORKS: removes uncertainty before the price. */}
       <section className={`${wrap} py-28 sm:py-36`}>
