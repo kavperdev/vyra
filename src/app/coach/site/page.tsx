@@ -6,6 +6,7 @@ import { ChallengeReview, ChallengesEditor } from "@/components/content/challeng
 import { VyraClubEditor } from "@/components/content/vyra-club-editor";
 import { VyraTeamEditor } from "@/components/content/vyra-team-editor";
 import { listTeamApplications, listTeamMembers } from "@/lib/data/team";
+import { instagramStatus } from "@/lib/instagram";
 import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyra-club";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { listChallengeParticipants, listChallenges, listPendingEntries } from "@/lib/data/challenges";
@@ -51,7 +52,7 @@ export default async function SiteContentPage() {
     clubSizes(supabase),
     listPendingEntries(supabase),
   ]);
-  const [teamMembers, teamApplications] = await Promise.all([listTeamMembers(supabase), listTeamApplications(supabase)]);
+  const [teamMembers, teamApplications, igStatus] = await Promise.all([listTeamMembers(supabase), listTeamApplications(supabase), instagramStatus()]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -135,6 +136,18 @@ export default async function SiteContentPage() {
         <CardContent>
           <RunClubEditor events={events} signups={signups} subscribers={subscriberCount} />
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>Instagram na stronie</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl("3 ostatnie posty z @vyra.athl na stronie głównej. Stan połączenia:", "The 3 newest @vyra.athl posts on the homepage. Connection:")}
+            </p>
+            <p className={`text-sm font-semibold ${igStatus.ok ? "text-done" : "text-problem"}`}>{igStatus.message}</p>
+          </div>
+        </CardHeader>
       </Card>
 
       <Card>

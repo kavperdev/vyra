@@ -27,37 +27,69 @@ export async function instagramToken(): Promise<{ token: string; updatedAt: stri
   return env ? { token: env, updatedAt: null } : null;
 }
 
-/** The 3 newest posts from the VYRA account (refreshed at most once an hour). Empty when not configured. */
-export const latestInstagramPosts = unstable_cache(
-  async (): Promise<IgPost[]> => {
-    const t = await instagramToken();
-    if (!t) return [];
-    try {
-      const res = await fetch(
-        `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink&limit=9&access_token=${encodeURIComponent(t.token)}`,
-        { cache: "no-store" },
-      );
-      if (!res.ok) {
-        console.error("[instagram]", res.status, (await res.text()).slice(0, 200));
-        return [];
+type FeedResult = { posts: IgPost[]; error: string | null; source: "db" | "env" | null };
+
+/** Asks Instagram for the newest posts. Never throws; says what went wrong. */
+async function fetchFeed(): Promise<FeedResult> {
+  const t = await instagramToken();
+  if (!t) return { posts: [], error: "Brak tokenu (INSTAGRAM_TOKEN w Vercelu).", source: null };
+  const source = t.updatedAt ? "db" : "env";
+  try {
+    const res = await fetch(
+      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink&limit=9&access_token=${encodeURIComponent(t.token.trim())}`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) {
+      const body = (await res.text()).slice(0, 300);
+      let msg = body;
+      try {
+        msg = (JSON.parse(body) as { error?: { message?: string } }).error?.message ?? body;
+      } catch {
+        // keep the raw text
       }
-      const json = (await res.json()) as { data?: { caption?: string; media_type: string; media_url?: string; thumbnail_url?: string; permalink: string }[] };
-      return (json.data ?? [])
-        .map((m) => ({
-          src: m.media_type === "VIDEO" ? (m.thumbnail_url ?? "") : (m.media_url ?? ""),
-          alt: (m.caption ?? "VYRA na Instagramie").split("\n")[0].slice(0, 120),
-          href: m.permalink,
-        }))
-        .filter((p) => p.src)
-        .slice(0, 3);
-    } catch (e) {
-      console.error("[instagram]", e);
-      return [];
+      return { posts: [], error: `Instagram odpowiedział ${res.status}: ${msg}`, source };
     }
+    const json = (await res.json()) as { data?: { caption?: string; media_type: string; media_url?: string; thumbnail_url?: string; permalink: string }[] };
+    const posts = (json.data ?? [])
+      .map((m) => ({
+        src: m.media_type === "VIDEO" ? (m.thumbnail_url ?? "") : (m.media_url ?? ""),
+        alt: (m.caption ?? "VYRA na Instagramie").split("\n")[0].slice(0, 120),
+        href: m.permalink,
+      }))
+      .filter((p) => p.src)
+      .slice(0, 3);
+    return { posts, error: posts.length ? null : "Instagram nie zwrócił żadnych zdjęć.", source };
+  } catch (e) {
+    return { posts: [], error: `Błąd połączenia: ${(e as Error).message}`, source };
+  }
+}
+
+/** Only a successful answer is kept for an hour; a failure is never cached, so a new token works at once. */
+const cachedFeed = unstable_cache(
+  async (): Promise<IgPost[]> => {
+    const r = await fetchFeed();
+    if (r.error || r.posts.length < 3) throw new Error(r.error ?? "too few posts");
+    return r.posts;
   },
-  ["instagram-latest"],
+  ["instagram-latest-v2"],
   { revalidate: 3600 },
 );
+
+/** The 3 newest posts from the VYRA account; empty when not configured or Instagram fails. */
+export async function latestInstagramPosts(): Promise<IgPost[]> {
+  try {
+    return await cachedFeed();
+  } catch {
+    return [];
+  }
+}
+
+/** Panel: current state of the Instagram connection, not cached. */
+export async function instagramStatus(): Promise<{ ok: boolean; message: string }> {
+  const r = await fetchFeed();
+  if (r.error) return { ok: false, message: r.error };
+  return { ok: true, message: `Działa: ${r.posts.length} ostatnie posty (token z ${r.source === "db" ? "bazy, odnowiony" : "Vercela"}).` };
+}
 
 /** Long-lived tokens last 60 days; the daily job renews it once a week. */
 export async function refreshInstagramToken(): Promise<string> {
