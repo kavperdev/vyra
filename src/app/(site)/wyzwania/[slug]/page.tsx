@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check } from "lucide-react";
 import { Eyebrow, PageHero, Reveal, SectionHead, wrap } from "@/components/site/blocks";
@@ -91,6 +92,24 @@ export default async function ChallengePage({ params }: Props) {
         </section>
       ) : null}
 
+      {c.prizes ? (
+        <section className="border-t border-white/10">
+          <div className={`${wrap} grid gap-8 py-20 sm:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]`}>
+            <SectionHead eyebrow={t("Nagrody", "Prizes")} title={t("Za co nagradzamy", "What we reward")} />
+            <div className="grid content-start gap-4">
+              <p className="whitespace-pre-line leading-relaxed text-white/75">{c.prizes}</p>
+              <p className="text-sm text-white/50">
+                {t("Pierwsza trójka tylko ze zweryfikowanymi biegami (zrzut ekranu przy każdym biegu). Szczegóły w ", "Top 3 only with verified runs (a screenshot with every run). Details in the ")}
+                <Link href="/wyzwania/regulamin" className="text-white underline underline-offset-4">
+                  {t("regulaminie wyzwań", "challenge rules")}
+                </Link>
+                .
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="border-t border-white/10 bg-[#070708]">
         <div className={`${wrap} grid gap-16 py-24 sm:py-32 lg:grid-cols-2`}>
           <div className="grid content-start gap-6">
@@ -124,6 +143,11 @@ export default async function ChallengePage({ params }: Props) {
                       <span className="font-mono text-sm text-white/45">{i + 1}</span>
                       <span className="min-w-0 truncate text-white">
                         {r.name} <span className="font-mono text-[12px] text-white/40">{pad(r.member_no)}</span>
+                        {r.km > 0 && (r.verified_km ?? 0) >= r.km ? (
+                          <span className="ml-1 text-[12px] text-white/70" title={t("Wszystkie biegi zweryfikowane", "All runs verified")}>
+                            ✓
+                          </span>
+                        ) : null}
                         {r.club ? <span className="text-sm text-white/45"> · {r.club}</span> : null}
                       </span>
                       <span className="flex items-center gap-2 font-mono tabular-nums text-white">

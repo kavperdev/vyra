@@ -909,3 +909,31 @@ exception when insufficient_privilege then raise notice 'ok  member posts are on
 end $$;
 select pg_temp.check(public.club_count() >= 2, 'club count is public');
 reset role;
+
+-- ---------------------------------------------------------------- challenges: verification and finisher code
+reset role;
+update public.challenges set finisher_code = 'STANDARD15', goal = 20 where id = 'c0000000-0000-0000-0000-000000000001';
+set role anon;
+do $$ begin
+  perform public.challenge_log((select token from t_join), current_date - 2, 5, 600, null);
+  raise exception 'FAIL: 2:00 min/km accepted';
+exception when invalid_parameter_value then raise notice 'ok  impossible pace is refused';
+end $$;
+select pg_temp.check((select status from public.challenge_log((select token from t_join), current_date - 2, 6, 1200, null)) = 'pending', 'a very fast run waits for a check');
+select pg_temp.check((public.challenge_me((select token from t_join))->>'finisher_code') = 'STANDARD15', 'the finisher code appears once the goal is reached');
+do $$ begin
+  perform public.challenge_verify('wrong', gen_random_uuid(), 'verified', null);
+  raise exception 'FAIL: verification without the secret';
+exception when insufficient_privilege then raise notice 'ok  only the server can mark runs verified';
+end $$;
+do $$ begin
+  perform public.challenge_log((select token from t_join), current_date - 2, 5, 1800, 'someone-else/x.jpg');
+  raise exception 'FAIL: proof from another folder accepted';
+exception when invalid_parameter_value then raise notice 'ok  proof must be in your own folder';
+end $$;
+reset role;
+update public.challenge_entries set status = 'rejected' where km = 6;
+set role anon;
+select pg_temp.check((select km from public.challenge_board('c0000000-0000-0000-0000-000000000001') where name = 'Ala') = 15.5, 'rejected runs do not count in the ranking');
+select pg_temp.check((public.challenge_me((select token from t_join))->>'finisher_code') is null, 'no finisher code below the goal');
+reset role;

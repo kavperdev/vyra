@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Eyebrow, wrap } from "@/components/site/blocks";
 import { LogRun, RemoveRun } from "@/components/site/challenge-forms";
-import { challengeState, fmtKm, myChallenge, todayPl } from "@/lib/data/challenges";
+import { challengeState, fmtDuration, fmtKm, fmtPace, myChallenge, todayPl } from "@/lib/data/challenges";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Moje wyzwanie", robots: { index: false, follow: false } };
+// Time for the automatic screenshot check after logging a run.
+export const maxDuration = 30;
 
 /** The participant's private page (link from the e-mail): log runs, see progress. */
 export default async function MyChallengePage({ searchParams }: { searchParams: Promise<{ t?: string; nowy?: string }> }) {
@@ -32,8 +34,15 @@ export default async function MyChallengePage({ searchParams }: { searchParams: 
 
   const c = me.challenge;
   const st = challengeState(c);
-  const km = me.entries.reduce((s, e) => s + e.km, 0);
-  const runs = me.entries.length;
+  const counted = me.entries.filter((e) => e.status !== "rejected");
+  const km = counted.reduce((s, e) => s + e.km, 0);
+  const runs = counted.length;
+  const statusLabel = {
+    ok: null,
+    verified: t("zweryfikowany", "verified"),
+    pending: t("do sprawdzenia", "being checked"),
+    rejected: t("odrzucony", "rejected"),
+  } as const;
   const value = c.kind === "runs" ? runs : km;
   const pct = c.goal ? Math.min(100, Math.round((value / c.goal) * 100)) : null;
   const today = todayPl();
@@ -85,6 +94,22 @@ export default async function MyChallengePage({ searchParams }: { searchParams: 
         {pct === 100 ? <p className="font-semibold text-white">{t("Cel osiągnięty. Standard to nawyk.", "Goal reached. Standard is a habit.")}</p> : null}
       </div>
 
+      {me.finisher_code ? (
+        <div className="grid gap-3 rounded-2xl border border-[var(--accent)]/50 bg-[var(--accent)]/10 p-6 sm:p-8">
+          <Eyebrow accent>{t("Twoja nagroda za ukończenie", "Your finisher reward")}</Eyebrow>
+          <p className="display text-4xl tracking-wider text-white">{me.finisher_code}</p>
+          <p className="text-white/70">
+            {t(
+              "Kod rabatowy na prowadzenie VYRA albo Pakiet Start. Wpisz go przy płatności.",
+              "A discount code for VYRA coaching or the Start package. Enter it at checkout.",
+            )}
+          </p>
+          <Link href="/prowadzenie#pakiety" className="w-fit font-semibold text-white underline underline-offset-4">
+            {t("Zobacz pakiety", "See packages")}
+          </Link>
+        </div>
+      ) : null}
+
       {st === "live" ? (
         <div className="grid gap-4">
           <h2 className="text-xl font-semibold text-white">{t("Dodaj bieg", "Add a run")}</h2>
@@ -103,9 +128,22 @@ export default async function MyChallengePage({ searchParams }: { searchParams: 
         {me.entries.length ? (
           <ul className="grid border-t border-white/10">
             {me.entries.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-4 border-b border-white/10 py-2">
-                <span className="text-white/80">{formatDate(e.day, "EEEE, d MMMM")}</span>
+              <li key={e.id} className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-white/10 py-2 ${e.status === "rejected" ? "opacity-50" : ""}`}>
+                <span className="grid">
+                  <span className="text-white/80">{formatDate(e.day, "EEEE, d MMMM")}</span>
+                  {statusLabel[e.status] ? (
+                    <span className={`text-[12px] ${e.status === "verified" ? "text-white" : e.status === "rejected" ? "text-problem" : "text-white/50"}`}>
+                      {e.status === "verified" ? "✓ " : ""}
+                      {statusLabel[e.status]}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="flex items-center gap-3">
+                  {e.seconds ? (
+                    <span className="font-mono text-[13px] tabular-nums text-white/55">
+                      {fmtDuration(e.seconds)} · {fmtPace(e.seconds, e.km)}
+                    </span>
+                  ) : null}
                   <span className="font-mono tabular-nums text-white">{fmtKm(e.km)} km</span>
                   {st === "live" ? <RemoveRun token={token} entryId={e.id} /> : null}
                 </span>

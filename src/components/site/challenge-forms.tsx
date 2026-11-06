@@ -6,6 +6,7 @@ import { ArrowRight, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form-controls";
 import { joinChallenge, logChallengeRun, unlogChallengeRun } from "@/lib/actions/challenges";
+import { createClient } from "@/lib/supabase/client";
 import { tl } from "@/lib/i18n/runtime";
 
 type Errors = Record<string, string[] | undefined>;
@@ -68,13 +69,28 @@ export function JoinChallenge({ challengeId, slug }: { challengeId: string; slug
   );
 }
 
-/** "Log a run" on the participant's own page. */
+const PROOF_MAX = 1280;
+
+/** Shrinks a screenshot to at most 1280 px JPEG so it uploads fast and stays under the size limit. */
+async function shrinkProof(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, PROOF_MAX / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("encode"))), "image/jpeg", 0.85));
+}
+
+/** "Log a run" on the participant's own page: distance, time and an optional screenshot. */
 export function LogRun({ token, today, min }: { token: string; today: string; min: string }) {
   const router = useRouter();
   const [day, setDay] = useState(today);
   const [km, setKm] = useState("");
+  const [time, setTime] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
   const [pending, start] = useTransition();
   return (
     <form
@@ -83,29 +99,64 @@ export function LogRun({ token, today, min }: { token: string; today: string; mi
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
+        setInfo(null);
         start(async () => {
-          const res = await logChallengeRun(token, day, km);
+          let proofPath: string | null = null;
+          if (file) {
+            try {
+              const blob = await shrinkProof(file).catch(() => file);
+              const path = `${token}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+              const { error: upErr } = await createClient().storage.from("challenge-proofs").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+              if (upErr) return void setError(tl("Nie udało się wgrać zrzutu. Spróbuj mniejszy plik albo zapisz bieg bez niego.", "Couldn’t upload the screenshot. Try a smaller file or save without it."));
+              proofPath = path;
+            } catch {
+              return void setError(tl("Nie udało się odczytać pliku.", "Couldn’t read the file."));
+            }
+          }
+          const res = await logChallengeRun({ token, day, km, time, proofPath });
           if (!res.ok) return void setError(res.error);
           setKm("");
-          setDone(true);
-          setTimeout(() => setDone(false), 2500);
+          setTime("");
+          setFile(null);
+          const st = res.data?.status;
+          setInfo(
+            st === "verified"
+              ? tl("Zapisane i zweryfikowane ✓", "Saved and verified ✓")
+              : st === "pending"
+                ? tl("Zapisane. Bieg czeka na sprawdzenie, liczy się już w liczniku.", "Saved. The run is waiting for a check and already counts.")
+                : tl("Zapisane.", "Saved."),
+          );
           router.refresh();
         });
       }}
     >
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Field label={tl("Dzień", "Day")} htmlFor="lr-day">
           <Input id="lr-day" type="date" value={day} min={min} max={today} onChange={(e) => setDay(e.target.value)} />
         </Field>
         <Field label={tl("Dystans (km)", "Distance (km)")} htmlFor="lr-km">
           <Input id="lr-km" inputMode="decimal" placeholder="5" value={km} onChange={(e) => setKm(e.target.value)} />
         </Field>
-        <Button type="submit" variant="accent" disabled={pending || !km}>
-          {done ? <Check className="size-4" /> : null}
-          {pending ? tl("Zapisywanie…", "Saving…") : done ? tl("Zapisane", "Saved") : tl("Dodaj bieg", "Add run")}
-        </Button>
+        <Field label={tl("Czas", "Time")} htmlFor="lr-time" hint={tl("np. 28:30 albo 1:05:00", "e.g. 28:30 or 1:05:00")}>
+          <Input id="lr-time" inputMode="numeric" placeholder="28:30" value={time} onChange={(e) => setTime(e.target.value)} />
+        </Field>
       </div>
+      <Field
+        label={tl("Zrzut ekranu z zegarka lub aplikacji (opcjonalnie)", "Screenshot from your watch or app (optional)")}
+        htmlFor="lr-proof"
+        hint={tl("Potrzebny, jeśli walczysz o miejsce w pierwszej trójce. Sprawdzamy go automatycznie.", "Needed if you’re going for the top 3. It’s checked automatically.")}
+      >
+        <Input id="lr-proof" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      </Field>
+      <Button type="submit" variant="accent" disabled={pending || !km || !time} className="w-full sm:w-fit">
+        {pending ? tl("Zapisywanie…", "Saving…") : tl("Dodaj bieg", "Add run")}
+      </Button>
       {error ? <p role="alert" className="text-sm text-problem">{error}</p> : null}
+      {info ? (
+        <p role="status" className="flex items-center gap-2 text-sm text-white">
+          <Check className="size-4" /> {info}
+        </p>
+      ) : null}
     </form>
   );
 }

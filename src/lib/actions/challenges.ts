@@ -6,6 +6,8 @@ import { MAILS, sendMailOnce } from "@/lib/mail";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/types";
+import { parseDuration } from "@/lib/data/challenges";
+import { compareProof, proofCheckConfigured, readProof } from "@/lib/verify-proof";
 import { dbError, validationError, withUser } from "./helpers";
 
 /** Join a challenge. The private link always goes by e-mail; a new participant also lands on it straight away. */
@@ -54,20 +56,42 @@ export async function joinChallenge(input: {
   return { ok: true, data: { token: null, memberNo: null } };
 }
 
-export async function logChallengeRun(token: string, day: string, km: string): Promise<ActionResult> {
+/** Log a run. Time is required for verification; a screenshot (already uploaded to the private bucket) is checked automatically when configured. */
+export async function logChallengeRun(input: { token: string; day: string; km: string; time: string; proofPath?: string | null }): Promise<ActionResult<{ status: string }>> {
   const { t } = await getT();
-  const n = Number(km.replace(",", "."));
+  const { token, day } = input;
+  const n = Number(input.km.replace(",", "."));
+  const seconds = parseDuration(input.time);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { ok: false, error: t("Wybierz dzień", "Pick a day") };
   if (!Number.isFinite(n) || n < 0.5 || n > 100) return { ok: false, error: t("Wpisz dystans od 0,5 do 100 km", "Enter 0.5 to 100 km") };
+  if (seconds == null || seconds < 60) return { ok: false, error: t("Wpisz czas biegu, np. 28:30 albo 1:05:00", "Enter the run time, e.g. 28:30 or 1:05:00") };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("challenge_log", { p_token: token, p_day: day, p_km: n });
+  const { data, error } = await supabase.rpc("challenge_log", { p_token: token, p_day: day, p_km: n, p_seconds: seconds, p_proof: input.proofPath || null });
   if (error) {
     if (/DAY_OUTSIDE/.test(error.message)) return { ok: false, error: t("Ten dzień jest poza wyzwaniem albo w przyszłości.", "That day is outside the challenge or in the future.") };
     if (/KM_RANGE/.test(error.message)) return { ok: false, error: t("Za dużo kilometrów jak na jeden dzień.", "Too many kilometres for one day.") };
+    if (/PACE_IMPOSSIBLE/.test(error.message)) return { ok: false, error: t("To tempo jest szybsze niż rekord świata. Sprawdź dystans i czas.", "That pace is faster than a world record. Check distance and time.") };
+    if (/TIME_RANGE/.test(error.message)) return { ok: false, error: t("Sprawdź czas biegu.", "Check the run time.") };
     return { ok: false, error: t("Nie udało się zapisać biegu.", "Couldn’t save the run.") };
   }
+  const row = (Array.isArray(data) ? data[0] : data) as { entry_id: string; status: string };
+  let status = row.status;
+  // Automatic screenshot check (only when the key is configured; otherwise a founder checks it in the panel).
+  if (input.proofPath && proofCheckConfigured()) {
+    const { data: file } = await supabase.storage.from("challenge-proofs").download(input.proofPath);
+    if (file) {
+      const b64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+      const reading = await readProof(b64, file.type || "image/jpeg");
+      if (reading) {
+        const verdict = compareProof(reading, { km: n, seconds, day });
+        const next = verdict.ok ? "verified" : "pending";
+        await supabase.rpc("challenge_verify", { p_secret: process.env.VYRA_PURCHASE_SECRET ?? "", p_entry: row.entry_id, p_status: next, p_note: verdict.note });
+        status = next;
+      }
+    }
+  }
   revalidatePath("/wyzwania", "layout");
-  return { ok: true };
+  return { ok: true, data: { status } };
 }
 
 export async function unlogChallengeRun(token: string, entryId: string): Promise<ActionResult> {
@@ -80,7 +104,12 @@ export async function unlogChallengeRun(token: string, entryId: string): Promise
 
 const challengeSchema = z
   .object({
-    slug: z.string().trim().toLowerCase().regex(/^[a-z0-9-]{3,60}$/, "Małe litery, cyfry i myślniki, np. styczen-2027"),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9-]{3,60}$/, "Małe litery, cyfry i myślniki, np. styczen-2027")
+      .refine((v) => !["moje", "regulamin"].includes(v), "Ten adres jest zajęty przez stronę"),
     title: z.string().trim().min(3, "Podaj nazwę").max(120),
     description: z.string().trim().max(2000),
     kind: z.enum(["km", "runs"]),
@@ -88,6 +117,14 @@ const challengeSchema = z
     starts_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data startu"),
     ends_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data końca"),
     visible: z.boolean(),
+    prizes: z.string().trim().max(2000).optional().default(""),
+    finisher_code: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .refine((v) => v === "" || /^[A-Z0-9-]{3,40}$/.test(v), "Wielkie litery i cyfry, np. STANDARD15")
+      .optional()
+      .default(""),
   })
   .refine((v) => v.ends_on >= v.starts_on, { message: "Koniec nie może być przed startem", path: ["ends_on"] });
 export type ChallengeInput = z.input<typeof challengeSchema>;
@@ -98,7 +135,7 @@ export async function saveChallenge(id: string | null, input: ChallengeInput): P
     const parsed = challengeSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const v = parsed.data;
-    const row = { ...v, description: v.description || null, goal: v.goal ? Number(v.goal.replace(",", ".")) : null };
+    const row = { ...v, description: v.description || null, goal: v.goal ? Number(v.goal.replace(",", ".")) : null, prizes: v.prizes || null, finisher_code: v.finisher_code || null };
     const { error } = id ? await supabase.from("challenges").update(row).eq("id", id) : await supabase.from("challenges").insert(row);
     if (error) return error.code === "23505" ? { ok: false, error: "Ten adres (slug) jest już zajęty." } : dbError(error);
     revalidatePath("/coach/site");
@@ -125,5 +162,39 @@ export async function removeChallengeParticipant(id: string): Promise<ActionResu
     revalidatePath("/coach/site");
     revalidatePath("/wyzwania", "layout");
     return { ok: true };
+  });
+}
+
+/** Panel: accept or reject a run waiting for a check. */
+export async function reviewChallengeEntry(id: string, status: "verified" | "rejected"): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Wyniki sprawdzają założyciele." };
+    const { error } = await supabase
+      .from("challenge_entries")
+      .update({ status, note: status === "verified" ? "Sprawdzone ręcznie" : "Odrzucone przy sprawdzeniu" })
+      .eq("id", id);
+    if (error) return dbError(error);
+    revalidatePath("/coach/site");
+    revalidatePath("/wyzwania", "layout");
+    return { ok: true };
+  });
+}
+
+/** Panel: delete screenshots of challenges that ended more than 14 days ago (privacy policy promise). */
+export async function deleteOldProofs(): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Tylko założyciele." };
+    const cutoff = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("challenge_entries")
+      .select("id, proof_path, challenge_participants!inner(challenges!inner(ends_on))")
+      .not("proof_path", "is", null)
+      .lt("challenge_participants.challenges.ends_on", cutoff);
+    if (error) return dbError(error);
+    const rows = (data ?? []) as unknown as { id: string; proof_path: string }[];
+    if (!rows.length) return { ok: true, message: "Nie ma starych zrzutów do usunięcia." };
+    await supabase.storage.from("challenge-proofs").remove(rows.map((r) => r.proof_path));
+    await supabase.from("challenge_entries").update({ proof_path: null }).in("id", rows.map((r) => r.id));
+    return { ok: true, message: `Usunięto ${rows.length} zrzutów.` };
   });
 }

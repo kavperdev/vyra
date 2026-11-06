@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
-import { deleteChallenge, removeChallengeParticipant, saveChallenge } from "@/lib/actions/challenges";
-import type { Challenge, ParticipantAdminRow } from "@/lib/data/challenges";
+import { deleteChallenge, deleteOldProofs, removeChallengeParticipant, reviewChallengeEntry, saveChallenge } from "@/lib/actions/challenges";
+import type { Challenge, ParticipantAdminRow, PendingEntry } from "@/lib/data/challenges";
 import { formatDate } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
 
@@ -25,6 +25,8 @@ function ChallengeForm({ c, onDone }: { c: Challenge | null; onDone?: () => void
     starts_on: c?.starts_on ?? "",
     ends_on: c?.ends_on ?? "",
     visible: c?.visible ?? false,
+    prizes: c?.prizes ?? "",
+    finisher_code: c?.finisher_code ?? "",
   });
   const [errors, setErrors] = useState<Errors>({});
   const [pending, start] = useTransition();
@@ -73,6 +75,21 @@ function ChallengeForm({ c, onDone }: { c: Challenge | null; onDone?: () => void
       </div>
       <Field label={tl("Opis", "Description")} htmlFor={id("d")} hint={tl("Pokazuje się pod nazwą na stronie wyzwania", "Shown under the title")}>
         <Textarea id={id("d")} rows={3} value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
+      </Field>
+      <Field
+        label={tl("Nagrody", "Prizes")}
+        htmlFor={id("p")}
+        hint={tl("Pokazują się na stronie wyzwania. Np. „Każdy, kto ukończy cel: -15% na prowadzenie. Najlepszy klub: -20% dla wszystkich członków. Top 3: miesiąc Foundation za darmo. Losowanie: miesiąc prowadzenia”.", "Shown on the challenge page.")}
+      >
+        <Textarea id={id("p")} rows={4} value={v.prizes} onChange={(e) => setV({ ...v, prizes: e.target.value })} />
+      </Field>
+      <Field
+        label={tl("Kod dla tych, którzy ukończą cel", "Code for finishers")}
+        htmlFor={id("fc")}
+        error={errors.finisher_code?.[0]}
+        hint={tl("Najpierw załóż ten kod w Stripe (Kupony → kody promocyjne). Pokaże się uczestnikowi po osiągnięciu celu.", "Create it in Stripe first. Shown to a participant once they reach the goal.")}
+      >
+        <Input id={id("fc")} value={v.finisher_code} onChange={(e) => setV({ ...v, finisher_code: e.target.value.toUpperCase() })} placeholder="STANDARD15" />
       </Field>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox checked={v.visible} onChange={(e) => setV({ ...v, visible: e.target.checked })} />
@@ -183,6 +200,87 @@ export function ChallengesEditor({ items, participants }: { items: Challenge[]; 
           <Plus className="size-4" /> {tl("Nowe wyzwanie", "New challenge")}
         </Button>
       )}
+    </div>
+  );
+}
+
+const fmt = (sec: number | null, km: number) => {
+  if (sec == null) return "brak czasu";
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
+  const p = Math.round(sec / km);
+  return `${h ? `${h}:${String(m).padStart(2, "0")}` : m}:${String(x).padStart(2, "0")} · ${Math.floor(p / 60)}:${String(p % 60).padStart(2, "0")}/km`;
+};
+
+function ReviewRow({ e }: { e: PendingEntry }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const act = (status: "verified" | "rejected") =>
+    start(async () => {
+      const res = await reviewChallengeEntry(e.id, status);
+      if (res.ok) router.refresh();
+      else toast.error(res.error);
+    });
+  return (
+    <li className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="grid gap-0.5 text-sm">
+        <span className="font-semibold">
+          #{String(e.member_no).padStart(3, "0")} {e.name} · {e.km} km · {fmt(e.seconds, e.km)}
+        </span>
+        <span className="text-muted">
+          {e.challenge_title} · {formatDate(e.day, "d MMM")}
+          {e.note ? ` · ${e.note}` : ""}
+        </span>
+        {e.proof_url ? (
+          <a href={e.proof_url} target="_blank" rel="noreferrer" className="w-fit text-[13px] underline underline-offset-4">
+            Zobacz zrzut ekranu
+          </a>
+        ) : (
+          <span className="text-[13px] text-muted">Bez zrzutu</span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" size="sm" disabled={pending} onClick={() => act("verified")}>
+          Zatwierdź
+        </Button>
+        <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => act("rejected")}>
+          Odrzuć
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+/** Runs waiting for a check: unusual entries and screenshots the automatic check could not confirm. */
+export function ChallengeReview({ items }: { items: PendingEntry[] }) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm font-semibold">Do sprawdzenia ({items.length})</p>
+      {items.length ? (
+        <ul className="grid gap-2">
+          {items.map((e) => (
+            <ReviewRow key={e.id} e={e} />
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted">Nic nie czeka na sprawdzenie.</p>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        className="w-fit"
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            const res = await deleteOldProofs();
+            if (res.ok) toast.success(res.message ?? "Gotowe");
+            else toast.error(res.error);
+          })
+        }
+      >
+        <Trash2 className="size-4" /> Usuń zrzuty z wyzwań zakończonych ponad 14 dni temu
+      </Button>
     </div>
   );
 }

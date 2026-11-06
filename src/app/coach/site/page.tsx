@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
-import { ChallengesEditor } from "@/components/content/challenge-editor";
+import { ChallengeReview, ChallengesEditor } from "@/components/content/challenge-editor";
 import { VyraClubEditor } from "@/components/content/vyra-club-editor";
 import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyra-club";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
-import { listChallengeParticipants, listChallenges } from "@/lib/data/challenges";
+import { listChallengeParticipants, listChallenges, listPendingEntries } from "@/lib/data/challenges";
 import { PlansEditor } from "@/components/content/plans-editor";
 import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,12 @@ export default async function SiteContentPage() {
     listChallenges(supabase),
     listChallengeParticipants(supabase),
   ]);
-  const [memberPosts, newsletterIssues, sizes] = await Promise.all([listMemberPosts(supabase), listNewsletterIssues(supabase), clubSizes(supabase)]);
+  const [memberPosts, newsletterIssues, sizes, pendingEntries] = await Promise.all([
+    listMemberPosts(supabase),
+    listNewsletterIssues(supabase),
+    clubSizes(supabase),
+    listPendingEntries(supabase),
+  ]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -159,7 +164,10 @@ export default async function SiteContentPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <ChallengesEditor items={challenges} participants={challengeParticipants} />
+          <div className="grid gap-8">
+            <ChallengesEditor items={challenges} participants={challengeParticipants} />
+            <ChallengeReview items={pendingEntries} />
+          </div>
         </CardContent>
       </Card>
 
