@@ -2,129 +2,83 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { sendMailOnce } from "@/lib/mail";
-import { getT } from "@/lib/i18n/server";
-import { SITE } from "@/lib/site";
-import { createClient } from "@/lib/supabase/server";
-import type { ActionResult } from "@/lib/types";
+import type { ActionResult, StaffRole } from "@/lib/types";
+import { toText } from "@/lib/validation/fields";
+import { emailField } from "@/lib/validation/forms";
 import { dbError, validationError, withUser } from "./helpers";
 
-const disciplines = ["ulica", "ultra", "triathlon", "hyrox", "inne"] as const;
+const STAFF_ROLES = ["founder", "running_coach", "strength_coach", "physio"] as const;
 
-/** Application to VYRA Team from the /team page. A short note goes to the VYRA inbox. */
-export async function applyToTeam(input: {
-  name: string;
-  email: string;
-  discipline: string;
-  city: string;
-  pbs: string;
-  about: string;
-  link: string;
-  consent: boolean;
-  website?: string;
-}): Promise<ActionResult> {
-  if (input.website) return { ok: true };
-  const { t } = await getT();
-  const parsed = z
-    .object({
-      name: z.string().trim().min(2, t("Podaj imię i nazwisko", "Enter your name")).max(80),
-      email: z.string().trim().toLowerCase().email(t("Podaj poprawny adres e-mail", "Enter a valid email address")).max(254),
-      discipline: z.enum(disciplines),
-      city: z.string().trim().max(60),
-      pbs: z.string().trim().min(3, t("Wpisz najważniejsze wyniki", "Enter your key results")).max(400),
-      about: z.string().trim().max(1200),
-      link: z.string().trim().max(300),
-      consent: z.literal(true, { errorMap: () => ({ message: t("Zaznacz zgodę", "Please tick the consent") }) }),
-    })
-    .safeParse(input);
-  if (!parsed.success) return validationError(parsed.error);
-  const v = parsed.data;
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("team_apply", {
-    p_name: v.name,
-    p_email: v.email,
-    p_discipline: v.discipline,
-    p_city: v.city,
-    p_pbs: v.pbs,
-    p_about: v.about,
-    p_link: v.link,
-  });
-  if (error) {
-    if (/TOO_MANY/.test(error.message)) return { ok: false, error: t("Twoje zgłoszenie już do nas dotarło. Odezwiemy się.", "We already have your application. We’ll be in touch.") };
-    return { ok: false, error: t("Nie udało się wysłać. Spróbuj ponownie.", "Couldn’t send. Please try again.") };
-  }
-  if (SITE.email) {
-    await sendMailOnce(`teamapp:${v.email}:${Date.now()}`, SITE.email, {
-      subject: `VYRA Team: zgłoszenie od ${v.name}`,
-      preview: `${v.discipline} · ${v.pbs.slice(0, 80)}`,
-      title: "Nowe zgłoszenie do VYRA Team",
-      paragraphs: [`${v.name} (${v.email})`, `Dyscyplina: ${v.discipline}${v.city ? ` · ${v.city}` : ""}`, `Wyniki: ${v.pbs}`, ...(v.about ? [v.about] : []), ...(v.link ? [`Link: ${v.link}`] : [])],
-      after: ["Wszystkie zgłoszenia są w panelu: Strona → VYRA Team."],
-    });
-  }
-  return { ok: true };
-}
-
-const memberSchema = z.object({
-  name: z.string().trim().min(2, "Imię i nazwisko").max(80),
-  discipline: z.enum(disciplines),
-  city: z.string().trim().max(60),
-  photo_url: z.string().trim().max(500),
-  bio: z.string().trim().max(1200),
-  pbs: z.string().trim().max(400),
-  goal: z.string().trim().max(160),
-  quote: z.string().trim().max(240),
-  instagram: z.string().trim().max(60),
-  tiktok: z.string().trim().max(60),
-  strava_url: z.string().trim().max(300).refine((v) => v === "" || /^https:\/\//.test(v), "Pełny link https://…"),
-  sort: z.string().trim().refine((v) => v === "" || /^-?\d+$/.test(v), "Liczba"),
-  visible: z.boolean(),
+const staffInviteSchema = z.object({
+  email: emailField,
+  full_name: z.string().trim().max(120),
+  staff_role: z.enum(STAFF_ROLES, { errorMap: () => ({ message: "Wybierz rolę" }) }),
 });
-export type TeamMemberInput = z.input<typeof memberSchema>;
 
-export async function saveTeamMember(id: string | null, input: TeamMemberInput): Promise<ActionResult> {
+const ERRORS: Record<string, string> = {
+  ONLY_FOUNDERS: "Tę operację może wykonać tylko założyciel.",
+  LAST_FOUNDER: "VYRA musi mieć co najmniej jednego założyciela.",
+  FOUNDERS_SEE_ALL: "Założyciele widzą wszystkich zawodników automatycznie.",
+  NOT_STAFF: "Ta osoba nie należy do zespołu.",
+  NOT_ATHLETE: "Nie znaleziono zawodnika.",
+};
+
+function teamError(message: string | undefined): ActionResult {
+  const key = Object.keys(ERRORS).find((k) => message?.includes(k));
+  if (key) return { ok: false, error: ERRORS[key] };
+  return dbError({ message });
+}
+
+export async function createStaffInvitation(input: {
+  email: string;
+  full_name: string;
+  staff_role: string;
+}): Promise<ActionResult<{ token: string }>> {
   return withUser("coach", async ({ supabase, user }) => {
-    if (user.profile.staff_role !== "founder") return { ok: false, error: "VYRA Team prowadzą założyciele." };
-    const parsed = memberSchema.safeParse(input);
+    if (user.profile.staff_role !== "founder") return { ok: false, error: ERRORS.ONLY_FOUNDERS };
+    const parsed = staffInviteSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
-    const v = parsed.data;
-    const handle = (h: string) => h.replace(/^@/, "") || null;
-    const row = {
-      ...v,
-      city: v.city || null,
-      photo_url: v.photo_url || null,
-      bio: v.bio || null,
-      pbs: v.pbs || null,
-      goal: v.goal || null,
-      quote: v.quote || null,
-      instagram: handle(v.instagram),
-      tiktok: handle(v.tiktok),
-      strava_url: v.strava_url || null,
-      sort: v.sort ? Number(v.sort) : 0,
-    };
-    const { error } = id ? await supabase.from("team_members").update(row).eq("id", id) : await supabase.from("team_members").insert(row);
-    if (error) return dbError(error);
-    revalidatePath("/coach/site");
-    revalidatePath("/team");
-    return { ok: true, message: "Zapisano." };
+    const { data: existing } = await supabase.from("profiles").select("id").ilike("email", parsed.data.email).maybeSingle();
+    if (existing) return { ok: false, error: "Ta osoba ma już konto w VYRA." };
+    const { data, error } = await supabase
+      .from("invitations")
+      .insert({
+        coach_id: user.id,
+        email: parsed.data.email,
+        full_name: toText(parsed.data.full_name),
+        staff_role: parsed.data.staff_role,
+      })
+      .select("token")
+      .single();
+    if (error) {
+      if (error.message.includes("duplicate")) return { ok: false, error: "Na ten adres wysłano już aktywne zaproszenie." };
+      return dbError(error);
+    }
+    revalidatePath("/coach/team");
+    return { ok: true, data: { token: (data as { token: string }).token } };
   });
 }
 
-export async function deleteTeamMember(id: string): Promise<ActionResult> {
+export async function setStaffAssignment(staffId: string, athleteId: string, assigned: boolean): Promise<ActionResult> {
   return withUser("coach", async ({ supabase }) => {
-    const { error } = await supabase.from("team_members").delete().eq("id", id);
-    if (error) return dbError(error);
-    revalidatePath("/coach/site");
-    revalidatePath("/team");
+    const { error } = await supabase.rpc("set_staff_assignment", {
+      p_staff: staffId,
+      p_athlete: athleteId,
+      p_assigned: assigned,
+    });
+    if (error) return teamError(error.message);
+    revalidatePath("/coach/team");
     return { ok: true };
   });
 }
 
-export async function deleteTeamApplication(id: string): Promise<ActionResult> {
+export async function setStaffRole(staffId: string, role: StaffRole): Promise<ActionResult> {
   return withUser("coach", async ({ supabase }) => {
-    const { error } = await supabase.from("team_applications").delete().eq("id", id);
-    if (error) return dbError(error);
-    revalidatePath("/coach/site");
+    if (!STAFF_ROLES.includes(role)) return { ok: false, error: "Nieznana rola." };
+    const { error } = await supabase.rpc("set_staff_role", { p_staff: staffId, p_role: role });
+    if (error) return teamError(error.message);
+    revalidatePath("/coach/team");
+    revalidatePath("/coach", "layout");
     return { ok: true };
   });
 }

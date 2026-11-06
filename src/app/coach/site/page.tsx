@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { ChallengeReview, ChallengesEditor } from "@/components/content/challenge-editor";
 import { VyraClubEditor } from "@/components/content/vyra-club-editor";
-import { TeamEditor } from "@/components/content/team-editor";
+import { VyraTeamEditor } from "@/components/content/vyra-team-editor";
 import { listTeamApplications, listTeamMembers } from "@/lib/data/team";
 import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyra-club";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { listChallengeParticipants, listChallenges, listPendingEntries } from "@/lib/data/challenges";
 import { PlansEditor } from "@/components/content/plans-editor";
-import { TeamEditor } from "@/components/content/team-editor";
+import { VyraTeamEditor } from "@/components/content/vyra-team-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,7 +150,7 @@ export default async function SiteContentPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <TeamEditor members={teamMembers} applications={teamApplications} />
+          <VyraTeamEditor members={teamMembers} applications={teamApplications} />
         </CardContent>
       </Card>
 

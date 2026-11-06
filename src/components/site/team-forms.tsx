@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
-import { applyToTeam } from "@/lib/actions/team";
+import { applyToTeam } from "@/lib/actions/vyra-team";
 import { tl } from "@/lib/i18n/runtime";
 
 type Errors = Record<string, string[] | undefined>;
