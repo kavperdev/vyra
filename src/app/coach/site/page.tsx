@@ -10,7 +10,7 @@ import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyr
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { listChallengeParticipants, listChallenges, listPendingEntries } from "@/lib/data/challenges";
 import { PlansEditor } from "@/components/content/plans-editor";
-import { VyraTeamEditor } from "@/components/content/vyra-team-editor";
+import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
