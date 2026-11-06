@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
+import { ChallengesEditor } from "@/components/content/challenge-editor";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
+import { listChallengeParticipants, listChallenges } from "@/lib/data/challenges";
 import { PlansEditor } from "@/components/content/plans-editor";
 import { TeamEditor } from "@/components/content/team-editor";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +34,13 @@ export default async function SiteContentPage() {
   const user = await requireRole("coach");
   if (user.profile.staff_role !== "founder") redirect("/coach");
   const supabase = await createClient();
-  const [clubPhotos, subscriberCount, clubStats] = await Promise.all([listRunClubPhotos(supabase), runClubSubscriberCount(supabase), runClubStats(supabase)]);
+  const [clubPhotos, subscriberCount, clubStats, challenges, challengeParticipants] = await Promise.all([
+    listRunClubPhotos(supabase),
+    runClubSubscriberCount(supabase),
+    runClubStats(supabase),
+    listChallenges(supabase),
+    listChallengeParticipants(supabase),
+  ]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -115,6 +123,23 @@ export default async function SiteContentPage() {
         </CardHeader>
         <CardContent>
           <RunClubEditor events={events} signups={signups} subscribers={subscriberCount} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>{tl("Wyzwania", "Challenges")}</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Wyzwania online dla każdego biegacza, z każdego klubu: vyraathl.pl/wyzwania. Kliknij wyzwanie, żeby zobaczyć uczestników. Usuń kogoś, jeśli wpisuje nieprawdziwe kilometry.",
+                "Online challenges for every runner from any club: vyraathl.pl/wyzwania. Click a challenge to see participants. Remove anyone logging fake kilometres.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ChallengesEditor items={challenges} participants={challengeParticipants} />
         </CardContent>
       </Card>
 

@@ -175,6 +175,24 @@ export const MAILS = {
     };
   },
 
+  challengeJoined(o: { name: string; title: string; memberNo: number; token: string; again?: boolean }): MailContent {
+    const origin = publicOrigin();
+    const link = `${origin}/wyzwania/moje?t=${o.token}`;
+    return {
+      subject: o.again ? `Twój link do wyzwania: ${o.title}` : `Jesteś w wyzwaniu: ${o.title} · VYRA #${String(o.memberNo).padStart(3, "0")}`,
+      preview: "Tu wpisujesz swoje biegi.",
+      title: `Cześć ${o.name}!`,
+      paragraphs: o.again
+        ? [`Oto Twój link do wyzwania „${o.title}”. Pod nim wpisujesz biegi i widzisz swój postęp.`]
+        : [
+            `Jesteś w wyzwaniu „${o.title}”. Twój numer w społeczności VYRA to #${String(o.memberNo).padStart(3, "0")}.`,
+            "Po każdym biegu wejdź w link poniżej i wpisz dystans. Zajmuje to 10 sekund. Link jest tylko Twój, nie udostępniaj go.",
+          ],
+      cta: { label: "Wpisz bieg", url: link },
+      after: ["Zapisz sobie ten mail albo dodaj link do ekranu głównego telefonu.", "Ranking i licznik całej społeczności znajdziesz na stronie wyzwania."],
+    };
+  },
+
   runClubNewDate(o: { title: string; when: string; place: string; pace: string | null; eventId: string; token: string }): MailContent {
     const origin = publicOrigin();
     return {

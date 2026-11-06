@@ -847,3 +847,46 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  visitors cannot add gallery photos';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- challenges: open to everyone, rankings, private log link
+reset role;
+insert into public.challenges (id, slug, title, kind, goal, starts_on, ends_on, visible) values
+  ('c0000000-0000-0000-0000-000000000001', 'test-styczen', 'Test', 'km', 100, current_date - 5, current_date + 20, true),
+  ('c0000000-0000-0000-0000-000000000002', 'ukryte', 'Ukryte', 'km', 100, current_date - 5, current_date + 20, false);
+set role anon;
+select pg_temp.check((select count(*) from public.challenges) = 1, 'visitors see only visible challenges');
+create temp table if not exists t_join as select * from public.challenge_join('c0000000-0000-0000-0000-000000000001', 'Ala@X.pl', 'Ala', 'Biegam bo lubię');
+select pg_temp.check((select is_new and token is not null from t_join), 'joining gives a private link');
+select pg_temp.check((select token is null and not is_new from public.challenge_join('c0000000-0000-0000-0000-000000000001', 'ala@x.pl', 'Ktoś', 'Inny')), 'joining again with the same e-mail does not reveal the link');
+do $$ begin
+  perform public.challenge_join('c0000000-0000-0000-0000-000000000002', 'b@x.pl', 'Bob', null);
+  raise exception 'FAIL: joined a hidden challenge';
+exception when invalid_parameter_value then raise notice 'ok  hidden challenges cannot be joined';
+end $$;
+select public.challenge_join('c0000000-0000-0000-0000-000000000001', 'ola@x.pl', 'Ola', 'biegam bo lubię');
+select public.challenge_log((select token from t_join), current_date - 1, 10);
+select public.challenge_log((select token from t_join), current_date, 5.5);
+do $$ begin
+  perform public.challenge_log((select token from t_join), current_date + 1, 5);
+  raise exception 'FAIL: logged a run in the future';
+exception when invalid_parameter_value then raise notice 'ok  no runs in the future';
+end $$;
+do $$ begin
+  perform public.challenge_log(gen_random_uuid(), current_date, 5);
+  raise exception 'FAIL: logged with a made-up link';
+exception when invalid_parameter_value then raise notice 'ok  a made-up link logs nothing';
+end $$;
+select pg_temp.check((select km from public.challenge_board('c0000000-0000-0000-0000-000000000001') where name = 'Ala') = 15.5, 'ranking adds up km');
+select pg_temp.check((select people from public.challenge_clubs('c0000000-0000-0000-0000-000000000001')) = 2, 'one club in any letter case');
+select pg_temp.check((select (public.challenge_me((select token from t_join))->>'member_no') is not null), 'the private page shows the VYRA number');
+do $$ begin
+  perform * from public.challenge_participants;
+  raise exception 'FAIL: visitors read participants';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read participants or e-mails';
+end $$;
+do $$ begin
+  perform * from public.vyra_members;
+  raise exception 'FAIL: visitors read members';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot read VYRA members';
+end $$;
+reset role;
