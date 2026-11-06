@@ -23,19 +23,19 @@ export const SITE: SiteSettings = {
   instagram: "@vyra.athl",
 };
 
-/** Main navigation: Run Club first while the community is the main way in, coaching right after. */
+/** Main navigation, in the order of the three ways in: together (club, challenges, Run Club, team), one to one (coaching), knowledge. */
 export const SITE_NAV = [
-  { href: "/run-club", label: "Run Club", en: "Run Club" },
-  { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
-  { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
-  { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
-  { href: "/wiedza", label: "Wiedza", en: "Journal" },
   { href: "/klub", label: "VYRA Club", en: "VYRA Club" },
+  { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
+  { href: "/run-club", label: "Run Club", en: "Run Club" },
+  { href: "/team", label: "VYRA Team", en: "VYRA Team" },
+  { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
+  { href: "/wiedza", label: "Wiedza", en: "Journal" },
 ] as const;
 
 /** Secondary links: in the mobile menu and the footer, not in the desktop bar. */
 export const SITE_NAV_MORE = [
-  { href: "/team", label: "VYRA Team", en: "VYRA Team" },
+  { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
   { href: "/voucher", label: "Voucher na prezent", en: "Gift voucher" },

@@ -315,7 +315,7 @@ export function Manifest({ t }: { t: T }) {
 }
 
 /** Three recent brand posts linking to Instagram. */
-export function InstagramStrip({ handle, posts, follow = "Obserwuj" }: { handle: string; posts: { src: string; alt: string }[]; follow?: string }) {
+export function InstagramStrip({ handle, posts, follow = "Obserwuj" }: { handle: string; posts: { src: string; alt: string; href?: string }[]; follow?: string }) {
   const url = `https://www.instagram.com/${handle.replace(/^@/, "")}/`;
   return (
     <section className="border-t border-white/10">
@@ -339,14 +339,25 @@ export function InstagramStrip({ handle, posts, follow = "Obserwuj" }: { handle:
         <div className="mt-14 grid grid-cols-3 gap-2 sm:gap-4">
           {posts.map((p, i) => (
             <Reveal key={p.src} delay={i * 100}>
-              <a href={url} target="_blank" rel="noreferrer" className="group relative block aspect-square overflow-hidden rounded-lg sm:rounded-2xl">
-                <Image
-                  src={p.src}
-                  alt={p.alt}
-                  fill
-                  sizes="(min-width: 1024px) 33vw, 33vw"
-                  className="object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-[1.05]"
-                />
+              <a href={p.href ?? url} target="_blank" rel="noreferrer" className="group relative block aspect-square overflow-hidden rounded-lg sm:rounded-2xl">
+                {p.src.startsWith("http") ? (
+                  // Instagram's own image addresses change, so they are shown as they come.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.src}
+                    alt={p.alt}
+                    loading="lazy"
+                    className="absolute inset-0 size-full object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-[1.05]"
+                  />
+                ) : (
+                  <Image
+                    src={p.src}
+                    alt={p.alt}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, 33vw"
+                    className="object-cover transition-transform duration-[1.4s] ease-out group-hover:scale-[1.05]"
+                  />
+                )}
               </a>
             </Reveal>
           ))}

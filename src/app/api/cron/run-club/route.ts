@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { MAILS, mailConfigured, sendMailOnce, whenPl } from "@/lib/mail";
+import { refreshInstagramToken } from "@/lib/instagram";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +15,10 @@ export async function GET(request: Request) {
   if (cron ? request.headers.get("authorization") !== `Bearer ${cron}` : !request.headers.get("user-agent")?.includes("vercel-cron")) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // Keep the Instagram feed token alive (renews once a week; harmless when not configured).
+  const instagram = await refreshInstagramToken().catch(() => "error");
   const secret = process.env.VYRA_PURCHASE_SECRET;
-  if (!secret || !mailConfigured()) return NextResponse.json({ sent: 0, reason: "mail not configured" });
+  if (!secret || !mailConfigured()) return NextResponse.json({ sent: 0, reason: "mail not configured", instagram });
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("run_club_reminders", { p_secret: secret });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

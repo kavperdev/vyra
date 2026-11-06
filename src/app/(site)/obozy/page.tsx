@@ -56,7 +56,7 @@ export default async function CampsPage() {
         tone="warm"
         eyebrow={hasCamps ? t("Obozy VYRA", "VYRA camps") : t("Obozy VYRA · Wkrótce", "VYRA camps · Coming soon")}
         title={t("Elitarne doświadczenie dla amatorów", "An elite experience for amateurs")}
-        lead={t("Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką zespołu specjalistów, w kameralnej grupie.", "The conditions professionals prepare in, open to amateurs. A few days with a team of specialists, in a small group.")}
+        lead={t("Warunki, w jakich przygotowują się zawodowcy, dostępne dla amatorów. Kilka dni pod opieką specjalistów, w kameralnej grupie. Pierwszy obóz VYRA planujemy na 2027 rok, a członkowie VYRA Club dowiedzą się o zapisach pierwsi.", "The conditions professionals prepare in, open to amateurs. A few days with specialists, in a small group. We’re planning the first VYRA camp for 2027, and VYRA Club members will hear about places first.")}
       >
         <a
           href={hasCamps ? "#terminy" : "#lista"}

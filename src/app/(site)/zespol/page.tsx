@@ -76,7 +76,7 @@ export default async function TeamPage() {
       <section className="border-t border-white/10 bg-[#070708]">
         <div className={`${wrap} py-28 sm:py-36`}>
           <SectionHead eyebrow={t("Jak pracujemy razem", "How we work together")} title={t("Jeden zawodnik, jeden plan, cały zespół", "One athlete, one plan, the whole team")}>
-            {t("Trener biegowy planuje sezon. Trener przygotowania siłowego buduje ciało, które ten plan wytrzyma. Fizjoterapeuta dba o to, żeby trening nie zatrzymał się przez uraz. Wszyscy widzą te same dane w platformie VYRA.", "The running coach plans the season. The strength coach builds a body that can handle it. The physiotherapist makes sure training isn’t stopped by injury. Everyone sees the same data in the VYRA platform.")}
+            {t("Trener planuje sezon pod Twój cel, a platforma VYRA pokazuje, jak idzie każdy trening. Przy obozach dołącza do nas specjalista od przygotowania siłowego, a zespół będzie rósł razem z VYRA.", "Your coach plans the season around your goal, and the VYRA platform shows how every session goes. For camps, a strength and conditioning specialist joins us, and the team will grow with VYRA.")}
           </SectionHead>
           <Reveal className="mt-14">
             <Eyebrow>Elite is standard</Eyebrow>

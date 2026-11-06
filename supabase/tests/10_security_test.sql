@@ -955,3 +955,19 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  visitors cannot change the team';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- Instagram token
+set role anon;
+do $$ begin
+  perform * from public.integration_tokens;
+  raise exception 'FAIL: visitors read tokens';
+exception when insufficient_privilege then raise notice 'ok  integration tokens are private';
+end $$;
+do $$ begin
+  perform * from public.integration_token_get('wrong', 'instagram');
+  raise exception 'FAIL: token read with a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  token needs the server secret';
+end $$;
+select public.integration_token_set(current_setting('vyra.test_secret'), 'instagram', 'abc');
+select pg_temp.check((select value from public.integration_token_get(current_setting('vyra.test_secret'), 'instagram')) = 'abc', 'the server can store and read the token');
+reset role;

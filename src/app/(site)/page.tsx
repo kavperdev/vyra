@@ -12,6 +12,9 @@ import { PlanCards } from "@/components/site/plan-cards";
 import { stripeConfigured } from "@/lib/stripe";
 import { listRunClubEvents, listTestimonials, runClubCounts, runClubStats } from "@/lib/data/club";
 import { RunClubCounter } from "@/components/site/run-club-stats";
+import { challengeBoard, challengeClubs, challengeState, fmtKm, listChallenges } from "@/lib/data/challenges";
+import { DISCIPLINES, listTeamMembers } from "@/lib/data/team";
+import { latestInstagramPosts } from "@/lib/instagram";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { getCompany } from "@/lib/data/site-settings";
@@ -66,7 +69,7 @@ export default async function Home() {
   const { lang, t } = await getT();
   const company = await getCompany();
   const supabase = await createClient();
-  const [camps, taken, allArticles, testimonials, allPlans, clubEvents, clubCounts, clubStats] = await Promise.all([
+  const [camps, taken, allArticles, testimonials, allPlans, clubEvents, clubCounts, clubStats, allChallenges, teamAll, igPosts] = await Promise.all([
     listCamps(supabase, { publicOnly: true })
       .then((c) => c.filter((x) => x.status === "published"))
       .catch(() => []),
@@ -81,7 +84,18 @@ export default async function Home() {
       .catch(() => []),
     runClubCounts(supabase).catch(() => ({}) as Record<string, number>),
     runClubStats(supabase).catch(() => ({ sessions: 0, people: 0, km: 0 })),
+    listChallenges(supabase).catch(() => []),
+    listTeamMembers(supabase).catch(() => []),
+    latestInstagramPosts().catch(() => []),
   ]);
+  const featured =
+    allChallenges.filter((c) => c.visible && challengeState(c) === "live")[0] ??
+    allChallenges.filter((c) => c.visible && challengeState(c) === "upcoming").sort((a, b) => a.starts_on.localeCompare(b.starts_on))[0] ??
+    null;
+  const [featuredBoard, featuredClubs] = featured
+    ? await Promise.all([challengeBoard(supabase, featured.id), challengeClubs(supabase, featured.id)])
+    : [[], []];
+  const team = teamAll.filter((m) => m.visible).slice(0, 3);
   const nextRuns = clubEvents.slice(0, 3);
   const nextRun = nextRuns[0] ?? null;
   const plans = allPlans.filter((p) => p.visible);
@@ -236,6 +250,88 @@ export default async function Home() {
 
       {/* 4. IDENTITY: the manifest. */}
       <Manifest t={t} />
+
+      {/* 4b. CHALLENGES: the nationwide, open side of VYRA. */}
+      <section className="border-t border-white/10">
+        <div className={`${wrap} grid gap-12 py-28 sm:py-36 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-end`}>
+          <div className="grid gap-6">
+            <Reveal>
+              <Eyebrow accent>
+                {featured
+                  ? `${t("Wyzwanie VYRA", "VYRA challenge")} · ${formatDate(featured.starts_on, "d MMM")} – ${formatDate(featured.ends_on, "d MMM")}`
+                  : t("Wyzwania VYRA", "VYRA challenges")}
+              </Eyebrow>
+            </Reveal>
+            <Reveal delay={80}>
+              <h2 className="display text-[clamp(2.25rem,5vw,4rem)] leading-[1.02] text-white">
+                {featured ? featured.title : t("Biegasz gdziekolwiek. Liczysz się tutaj.", "Run anywhere. Count here.")}
+              </h2>
+            </Reveal>
+            <Reveal delay={140}>
+              <p className="max-w-xl text-lg leading-relaxed text-white/65">
+                {t(
+                  "Wspólne wyzwania dla biegaczy z całej Polski, z każdego klubu albo bez. Biegasz u siebie, wpisujesz biegi, a my liczymy całą społeczność i ranking klubów.",
+                  "Shared challenges for runners from all over Poland, from any club or none. Run where you are, log your runs, and we count the whole community and the club ranking.",
+                )}
+              </p>
+            </Reveal>
+            <Reveal delay={200} className="flex flex-wrap gap-3">
+              {featured ? (
+                <PrimaryLink href={`/wyzwania/${featured.slug}`}>{t("Dołącz do wyzwania", "Join the challenge")}</PrimaryLink>
+              ) : (
+                <PrimaryLink href="/klub">{t("Dołącz do VYRA Club", "Join VYRA Club")}</PrimaryLink>
+              )}
+              <GhostLink href="/wyzwania">{t("Wszystkie wyzwania", "All challenges")}</GhostLink>
+            </Reveal>
+          </div>
+          {featured && featuredBoard.length ? (
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+              {[
+                { v: fmtKm(featuredBoard.reduce((a, r) => a + r.km, 0)), l: t("km razem", "km together") },
+                { v: String(featuredBoard.length), l: t("biegaczy", "runners") },
+                { v: String(featuredClubs.length), l: t("klubów", "clubs") },
+              ].map((x, i) => (
+                <Reveal key={x.l} delay={i * 80} className="grid gap-2 bg-black p-5 sm:p-7">
+                  <span className="display text-3xl tabular-nums text-white sm:text-5xl">{x.v}</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/50">{x.l}</span>
+                </Reveal>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* 4c. VYRA TEAM: shown once the first athlete is on the roster. */}
+      {team.length ? (
+        <section className="border-t border-white/10 bg-[#070708]">
+          <div className={`${wrap} py-28 sm:py-36`}>
+            <SectionHead eyebrow="VYRA Team" title={t("Reprezentacja", "The team")}>
+              {t("Amatorzy, którzy biegają na poziomie zarezerwowanym zwykle dla zawodowców. I trenują z wiedzą.", "Amateurs who run at a level usually reserved for professionals. And train with know-how.")}
+            </SectionHead>
+            <div className="mt-14 grid gap-5 sm:grid-cols-3">
+              {team.map((m, i) => (
+                <Reveal key={m.id} delay={i * 100}>
+                  <Link href="/team" className="group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border border-white/10 p-6">
+                    {m.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={m.photo_url} alt={m.name} loading="lazy" className="absolute inset-0 -z-20 size-full object-cover transition-transform duration-[1.4s] group-hover:scale-[1.04]" />
+                    ) : null}
+                    <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                    <span className="w-fit rounded-full bg-[var(--accent)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+                      {lang === "en" ? DISCIPLINES[m.discipline].en : DISCIPLINES[m.discipline].pl}
+                    </span>
+                    <h3 className="display mt-3 text-3xl text-white">{m.name}</h3>
+                    {m.pbs ? <span className="mt-1 font-mono text-sm text-white/70">{m.pbs.split(/\n|,/)[0].trim()}</span> : null}
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal className="mt-10">
+              <GhostLink href="/team">{t("Poznaj skład", "Meet the team")}</GhostLink>
+            </Reveal>
+          </div>
+        </section>
+      ) : null}
 
       {/* 5. RUN CLUB: the local, live side of VYRA. */}
       <section className={`${wrap} py-28 sm:py-36`}>
@@ -531,11 +627,15 @@ export default async function Home() {
       <InstagramStrip
         handle={company.instagram}
         follow={t("Obserwuj", "Follow")}
-        posts={[
-          { src: "/site/ig-standard.jpg", alt: "VYRA Standard Series: Elite is standard" },
-          { src: "/site/ig-neon.jpg", alt: "Neon VYRA: Elite is standard" },
-          { src: "/site/ig-evolve.jpg", alt: "VYRA Standard Series: Run. Train. Evolve." },
-        ]}
+        posts={
+          igPosts.length === 3
+            ? igPosts
+            : [
+                { src: "/site/ig-standard.jpg", alt: "VYRA Standard Series: Elite is standard" },
+                { src: "/site/ig-neon.jpg", alt: "Neon VYRA: Elite is standard" },
+                { src: "/site/ig-evolve.jpg", alt: "VYRA Standard Series: Run. Train. Evolve." },
+              ]
+        }
       />
 
       {/* 11. FINAL ASK with risk reversal. */}
