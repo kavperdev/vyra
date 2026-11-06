@@ -890,3 +890,22 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  visitors cannot read VYRA members';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- VYRA Club: membership, members' page, newsletter switch
+reset role;
+insert into public.member_posts (kind, title, body) values ('plan', 'Plan listopada', 'Trzy biegi w tygodniu');
+set role anon;
+create temp table if not exists t_club as select * from public.club_join('nowa@x.pl', 'Ewa', true, 'test');
+select pg_temp.check((select is_new and token is not null from t_club), 'joining the club gives a private link');
+select pg_temp.check((select token is null from public.club_join('nowa@x.pl', 'Ktoś', false, 'test')), 'joining again does not reveal the link');
+select pg_temp.check((select is_new from public.club_join('ala@x.pl', 'Ala', false, 'test')), 'a challenge participant can join the club once');
+select pg_temp.check((public.member_area((select token from t_club))->'posts'->0->>'title') = 'Plan listopada', 'members see member posts');
+select pg_temp.check(public.member_area(gen_random_uuid()) is null, 'a made-up link shows nothing');
+select pg_temp.check(public.member_newsletter((select token from t_club), false) = false, 'newsletter can be switched off from the link');
+do $$ begin
+  perform * from public.member_posts;
+  raise exception 'FAIL: visitors read member posts';
+exception when insufficient_privilege then raise notice 'ok  member posts are only behind the link';
+end $$;
+select pg_temp.check(public.club_count() >= 2, 'club count is public');
+reset role;

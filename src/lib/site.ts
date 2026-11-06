@@ -29,12 +29,13 @@ export const SITE_NAV = [
   { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
   { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
-  { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/wiedza", label: "Wiedza", en: "Journal" },
+  { href: "/klub", label: "VYRA Club", en: "VYRA Club" },
 ] as const;
 
 /** Secondary links: in the mobile menu and the footer, not in the desktop bar. */
 export const SITE_NAV_MORE = [
+  { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
   { href: "/voucher", label: "Voucher na prezent", en: "Gift voucher" },
   { href: "/zespol", label: "Zespół", en: "Team" },

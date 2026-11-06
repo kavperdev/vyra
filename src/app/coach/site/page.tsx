@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { ChallengesEditor } from "@/components/content/challenge-editor";
+import { VyraClubEditor } from "@/components/content/vyra-club-editor";
+import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyra-club";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { listChallengeParticipants, listChallenges } from "@/lib/data/challenges";
 import { PlansEditor } from "@/components/content/plans-editor";
@@ -41,6 +43,7 @@ export default async function SiteContentPage() {
     listChallenges(supabase),
     listChallengeParticipants(supabase),
   ]);
+  const [memberPosts, newsletterIssues, sizes] = await Promise.all([listMemberPosts(supabase), listNewsletterIssues(supabase), clubSizes(supabase)]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -123,6 +126,23 @@ export default async function SiteContentPage() {
         </CardHeader>
         <CardContent>
           <RunClubEditor events={events} signups={signups} subscribers={subscriberCount} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>VYRA Club</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Darmowe członkostwo (vyraathl.pl/klub). Wpisy widzą tylko członkowie w swojej strefie. Raz w tygodniu wyślij „Standard”: jedna rzecz o mądrym treningu, wyniki społeczności, jedno zaproszenie.",
+                "Free membership (vyraathl.pl/klub). Posts are visible only to members. Send “Standard” weekly: one thing about smart training, community results, one invitation.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <VyraClubEditor posts={memberPosts} issues={newsletterIssues} sizes={sizes} />
         </CardContent>
       </Card>
 

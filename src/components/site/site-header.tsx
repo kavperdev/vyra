@@ -70,7 +70,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
             {panel.label}
           </Link>
           <Link
-            href="/run-club"
+            href="/klub"
             className="hidden h-10 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white sm:inline-flex"
           >
             {en ? "Join" : "Dołącz"}
@@ -110,10 +110,10 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
             </div>
             <LangSwitch className="mt-6 w-fit" />
             <Link
-              href="/run-club"
+              href="/klub"
               className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-white text-sm font-semibold text-black"
             >
-              {en ? "Join a Run Club session" : "Zapisz się na Run Club"}
+              {en ? "Join VYRA Club, free" : "Dołącz do VYRA Club, za darmo"}
             </Link>
             <Link
               href="/prowadzenie#pakiety"

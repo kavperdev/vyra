@@ -102,6 +102,43 @@ const first = (name: string | null | undefined) => (name ?? "").trim().split(/\s
 const hi = (name: string | null | undefined) => (first(name) ? `Cześć ${first(name)}!` : "Cześć!");
 
 /** Ready-made e-mails. Polish only: the brand's customers are Polish-speaking. */
+/**
+ * Sends many e-mails at once through Resend's batch endpoint (100 per request), e.g. the newsletter.
+ * Each item has its own content (personal unsubscribe link). Returns how many were accepted. Never throws.
+ */
+export async function sendMailBatch(items: { to: string; m: MailContent; unsubscribe?: string }[]): Promise<number> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return 0;
+  let sent = 0;
+  for (let i = 0; i < items.length; i += 100) {
+    const chunk = items.slice(i, i + 100).filter((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.to));
+    if (!chunk.length) continue;
+    try {
+      const res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(
+          chunk.map((x) => ({
+            from: process.env.MAIL_FROM || "VYRA <kontakt@vyraathl.pl>",
+            to: [x.to],
+            reply_to: process.env.MAIL_REPLY_TO || "kontakt@vyraathl.pl",
+            subject: x.m.subject,
+            html: html(x.m),
+            text: text(x.m),
+            ...(x.unsubscribe ? { headers: { "List-Unsubscribe": `<${x.unsubscribe}>` } } : {}),
+          })),
+        ),
+        cache: "no-store",
+      });
+      if (res.ok) sent += chunk.length;
+      else console.error("[mail batch]", res.status, (await res.text()).slice(0, 300));
+    } catch (e) {
+      console.error("[mail batch]", e);
+    }
+  }
+  return sent;
+}
+
 export const MAILS = {
   purchase(o: { name: string | null; plan: string; token: string | null }): MailContent {
     const origin = publicOrigin();
@@ -190,6 +227,40 @@ export const MAILS = {
           ],
       cta: { label: "Wpisz bieg", url: link },
       after: ["Zapisz sobie ten mail albo dodaj link do ekranu głównego telefonu.", "Ranking i licznik całej społeczności znajdziesz na stronie wyzwania."],
+    };
+  },
+
+  clubWelcome(o: { name: string; memberNo: number; token: string; again?: boolean }): MailContent {
+    const origin = publicOrigin();
+    const no = `#${String(o.memberNo).padStart(3, "0")}`;
+    return {
+      subject: o.again ? "Twój link do VYRA Club" : `Witaj w VYRA Club · ${no}`,
+      preview: o.again ? "Wejdź do strefy członka." : "Twój numer i strefa członka.",
+      title: o.again ? `Cześć ${o.name}!` : `Witaj w VYRA, ${o.name}!`,
+      paragraphs: o.again
+        ? ["Oto Twój link do strefy członka VYRA Club."]
+        : [
+            `Twój numer w społeczności VYRA to ${no}. Zostaje z Tobą na zawsze.`,
+            "W strefie członka znajdziesz plan miesiąca, zapowiedzi zanim pojawią się publicznie i zaproszenia na wydarzenia tylko dla członków. Link jest tylko Twój.",
+          ],
+      cta: { label: "Wejdź do strefy członka", url: `${origin}/klub/strefa?t=${o.token}` },
+      after: ["Trenujemy z wiedzą, nie na chybił trafił. Dobrze, że jesteś."],
+    };
+  },
+
+  newsletter(o: { subject: string; body: string; cta?: { label: string; url: string } | null; token: string }): MailContent {
+    const origin = publicOrigin();
+    const paragraphs = o.body
+      .split(/\n\s*\n/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return {
+      subject: o.subject,
+      preview: paragraphs[0]?.slice(0, 120) ?? o.subject,
+      title: o.subject,
+      paragraphs,
+      ...(o.cta ? { cta: o.cta } : {}),
+      after: [`Strefa członka: ${origin}/klub/strefa?t=${o.token}`, `Nie chcesz dostawać „Standardu”? Wypisz się: ${origin}/klub/newsletter?t=${o.token}&off=1`],
     };
   },
 

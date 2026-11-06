@@ -149,8 +149,8 @@ export default async function Home() {
               )}
             </div>
             <div className="site-rise flex flex-wrap gap-3" style={{ animationDelay: "520ms" }}>
-              <PrimaryLink href="#dolacz">{t("Dołącz do VYRA", "Join VYRA")}</PrimaryLink>
-              <GhostLink href="/run-club">{t("Najbliższy Run Club", "Next Run Club")}</GhostLink>
+              <PrimaryLink href="/klub">{t("Dołącz do VYRA", "Join VYRA")}</PrimaryLink>
+              <GhostLink href="#dolacz">{t("Trzy drogi", "Three ways in")}</GhostLink>
             </div>
           </div>
         </div>
