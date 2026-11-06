@@ -937,3 +937,21 @@ set role anon;
 select pg_temp.check((select km from public.challenge_board('c0000000-0000-0000-0000-000000000001') where name = 'Ala') = 15.5, 'rejected runs do not count in the ranking');
 select pg_temp.check((public.challenge_me((select token from t_join))->>'finisher_code') is null, 'no finisher code below the goal');
 reset role;
+
+-- ---------------------------------------------------------------- VYRA Team
+reset role;
+insert into public.team_members (name, discipline, visible) values ('Widoczny', 'ulica', true), ('Ukryty', 'ultra', false);
+set role anon;
+select pg_temp.check((select count(*) from public.team_members) = 1, 'visitors see only visible team members');
+select public.team_apply('Jan', 'jan@x.pl', 'ultra', 'Lublin', '50 km 4:30', null, null);
+do $$ begin
+  perform * from public.team_applications;
+  raise exception 'FAIL: visitors read applications';
+exception when insufficient_privilege then raise notice 'ok  applications are private';
+end $$;
+do $$ begin
+  insert into public.team_members (name) values ('Hacker');
+  raise exception 'FAIL: visitors add team members';
+exception when insufficient_privilege then raise notice 'ok  visitors cannot change the team';
+end $$;
+reset role;

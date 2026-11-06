@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { ChallengeReview, ChallengesEditor } from "@/components/content/challenge-editor";
 import { VyraClubEditor } from "@/components/content/vyra-club-editor";
+import { TeamEditor } from "@/components/content/team-editor";
+import { listTeamApplications, listTeamMembers } from "@/lib/data/team";
 import { clubSizes, listMemberPosts, listNewsletterIssues } from "@/lib/data/vyra-club";
 import { RunClubEditor, RunClubPhotosEditor, TestimonialsEditor } from "@/components/content/club-editor";
 import { listChallengeParticipants, listChallenges, listPendingEntries } from "@/lib/data/challenges";
@@ -49,6 +51,7 @@ export default async function SiteContentPage() {
     clubSizes(supabase),
     listPendingEntries(supabase),
   ]);
+  const [teamMembers, teamApplications] = await Promise.all([listTeamMembers(supabase), listTeamApplications(supabase)]);
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
@@ -131,6 +134,23 @@ export default async function SiteContentPage() {
         </CardHeader>
         <CardContent>
           <RunClubEditor events={events} signups={signups} subscribers={subscriberCount} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="grid gap-1">
+            <CardTitle>VYRA Team</CardTitle>
+            <p className="text-[13px] text-muted">
+              {tl(
+                "Reprezentacja VYRA na stronie vyraathl.pl/team. Dodawaj tylko osoby, które zgodziły się na piśmie (umowa VYRA Team), a przy niepełnoletnich także ich rodzic. Niżej zgłoszenia z formularza naboru.",
+                "The VYRA team on vyraathl.pl/team. Only add people who agreed in writing (and a parent for minors). Applications from the form are below.",
+              )}
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TeamEditor members={teamMembers} applications={teamApplications} />
         </CardContent>
       </Card>
 
