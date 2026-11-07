@@ -1037,3 +1037,21 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  foreign coach cannot add an injury';
 end $$;
 select pg_temp.as_admin();
+
+-- ---------------------------------------------------------------- assistant learns from the coach
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+update public.coach_methods set body = repeat('x', 15000) where coach_id = auth.uid();
+select pg_temp.check((select char_length(body) from public.coach_methods where coach_id = auth.uid()) = 15000, 'a full-length method fits');
+insert into public.assistant_feedback (coach_id, athlete_id, verdict, note, general)
+  values ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000a1', 'bad', 'próg za szybko', true);
+select pg_temp.check((select count(*) from public.assistant_feedback) = 1, 'coach saves a lesson');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.assistant_feedback) = 0, 'athlete does not see lessons');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.check((select count(*) from public.assistant_feedback) = 0, 'other coach does not see lessons');
+do $$ begin
+  insert into public.assistant_feedback (coach_id, athlete_id, verdict) values ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000a1', 'good');
+  raise exception 'FAIL: lesson about a foreign athlete';
+exception when insufficient_privilege then raise notice 'ok  no lessons about foreign athletes';
+end $$;
+select pg_temp.as_admin();

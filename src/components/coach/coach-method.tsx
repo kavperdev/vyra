@@ -7,33 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/form-controls";
 import { saveCoachMethod } from "@/lib/actions/assistant";
 import { tl } from "@/lib/i18n/runtime";
-
-/** Starting point to edit: a threshold-based week for amateurs. The coach rewrites it into their own method. */
-const TEMPLATE = `STRUKTURA TYGODNIA
-- 2 akcenty w tygodniu (np. wtorek i czwartek) + długie wybieganie w weekend. Reszta naprawdę spokojnie.
-- Co najmniej 80% objętości w strefie spokojnej (Z1–Z2, swobodna rozmowa). Spokojne dni mają być spokojne.
-- Po akcencie zawsze dzień spokojny albo wolny.
-
-AKCENTY: PRÓG W KONTROLOWANEJ INTENSYWNOŚCI
-- Podstawą są odcinki progowe: 5–8 × 1 km, 4–5 × 2 km, 3 × 3 km albo 6–10 × 6 min, przerwy krótkie 60–90 s truchtem.
-- Tempo progowe: ok. tempo, które zawodnik utrzyma przez godzinę biegu, RPE 7 („komfortowo ciężko”). Lepiej zostawić zapas niż przekroczyć próg.
-- Łączna praca progowa w jednym akcencie: 20–40 min (początkujący 15–20 min).
-- Szybkie interwały (VO2max) oszczędnie: głównie w fazie szczytu, najwyżej raz w tygodniu.
-- Przebieżki 4–6 × 80–100 m na luzie 1–2 razy w tygodniu po spokojnym biegu.
-
-DŁUGIE WYBIEGANIE
-- Do 25–30% tygodniowego kilometrażu, najwyżej ok. 2:30 h.
-- W budowaniu i szczycie: ostatnie 15–30 min w tempie startowym.
-
-PROGRESJA I REGENERACJA
-- Kilometraż rośnie o 5–10% tygodniowo, co 3–4 tydzień tydzień lżejszy (o 20–30% mniej).
-- Gdy samopoczucie jest słabe 2 dni z rzędu albo coś boli: akcent zamieniamy na spokojny bieg albo wolne.
-
-SIŁA
-- 2 razy w tygodniu po ok. 30 min, w dniu akcentu po bieganiu albo w dzień spokojny. Nie dzień przed akcentem.
-
-PRZED STARTEM
-- 10–14 dni przed startem docelowym objętość niżej o 30–50%, zostają krótkie akcenty w tempie startowym.`;
+import { VYRA_METHOD } from "@/lib/training/vyra-method-text";
 
 /** "Moja metoda": the principles the coach assistant follows when it analyses athletes and suggests sessions. */
 export function CoachMethodCard({ initial, inherited }: { initial: string; inherited: boolean }) {
@@ -50,8 +24,12 @@ export function CoachMethodCard({ initial, inherited }: { initial: string; inher
               "The principles you train by. The coach assistant follows them in every analysis and session suggestion. Write plainly: week structure, key sessions, paces, long run, progression, strength, taper. Safety rules (pain, too fast a volume increase) always apply.",
             )}
           </CardDescription>
-          {inherited ? (
-            <p className="text-[12.5px] text-accent">{tl("Nie masz jeszcze własnej metody: asystent używa metody założyciela zespołu.", "You have no method of your own yet: the assistant uses the team founder’s method.")}</p>
+          {!initial.trim() ? (
+            <p className="text-[12.5px] text-accent">
+              {inherited
+                ? tl("Nie masz jeszcze własnej metody: asystent używa metody założyciela zespołu.", "You have no method of your own yet: the assistant uses the team founder’s method.")
+                : tl("Pole jest puste: asystent używa wbudowanej Metody treningowej VYRA. Wpisz tu własną, jeśli chcesz ją zastąpić.", "Empty: the assistant uses the built-in VYRA training method. Write your own here to replace it.")}
+            </p>
           ) : null}
         </div>
       </CardHeader>
@@ -60,15 +38,15 @@ export function CoachMethodCard({ initial, inherited }: { initial: string; inher
           value={body}
           onChange={(e) => setBody(e.target.value)}
           className="min-h-80 font-mono text-[13px] leading-relaxed"
-          maxLength={6000}
+          maxLength={20000}
           placeholder={tl("Np. 2 akcenty w tygodniu, głównie progowe odcinki 1–3 km…", "E.g. 2 key sessions a week, mostly threshold reps of 1–3 km…")}
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[12px] text-muted">{body.length} / 6000</span>
+          <span className="text-[12px] text-muted">{body.length} / 20 000</span>
           <div className="flex flex-wrap gap-2">
             {!body.trim() ? (
-              <Button type="button" variant="outline" onClick={() => setBody(TEMPLATE)}>
-                {tl("Wstaw wzór do edycji", "Insert a template to edit")}
+              <Button type="button" variant="outline" onClick={() => setBody(VYRA_METHOD)}>
+                {tl("Wstaw metodę VYRA do edycji", "Insert the VYRA method to edit")}
               </Button>
             ) : null}
             <Button

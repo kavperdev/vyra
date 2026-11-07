@@ -17,7 +17,9 @@ import { raceCountdown } from "@/lib/training/race";
 import { RacePredictionCard } from "@/components/athlete/race-prediction";
 import { AnalyzeButton, InsightView } from "@/components/coach/assistant-panel";
 import { assistantConfigured, type Insight } from "@/lib/coach-assistant";
-import { predictRaces } from "@/lib/training/prediction";
+import { predictRaces, weeklyKmBefore } from "@/lib/training/prediction";
+import { MethodCard } from "@/components/coach/method-card";
+import { methodSnapshot } from "@/lib/training/method";
 import { InjuriesSection } from "@/components/athlete/injuries";
 import { listInjuries, painHistory } from "@/lib/data/injuries";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
@@ -207,10 +209,17 @@ async function TabContent({
   }
 
   if (tab === "assistant") {
-    const [year, records, goals, latest] = await Promise.all([
+    const [year, records, goals, injuries, readiness, latest] = await Promise.all([
       listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
       listRecords(supabase, athleteId).catch(() => []),
       listGoals(supabase, athleteId).catch(() => []),
+      listInjuries(supabase, athleteId),
+      supabase
+        .from("readiness")
+        .select("day, sleep, energy, pain, pain_area")
+        .eq("athlete_id", athleteId)
+        .gte("day", addDaysISO(today, -21))
+        .then((r) => (r.data ?? []) as { day: string; sleep: number; energy: number; pain: boolean; pain_area: string | null }[]),
       supabase
         .from("coach_insights")
         .select("id, content, created_at")
@@ -222,10 +231,30 @@ async function TabContent({
     ]);
     const configured = assistantConfigured();
     const race = raceCountdown(goals, today);
+    const prediction = predictRaces(year, records, today);
+    const ratings: Record<string, "good" | "bad"> = {};
+    if (latest) {
+      const { data: fb } = await supabase.from("assistant_feedback").select("suggestion, verdict").eq("insight_id", latest.id);
+      for (const r of (fb ?? []) as { suggestion: number | null; verdict: "good" | "bad" }[]) ratings[r.suggestion == null ? "all" : String(r.suggestion)] = r.verdict;
+    }
+    const method = methodSnapshot({
+      past: year,
+      goals,
+      today,
+      prediction,
+      weeklyKm: prediction?.weeklyKm ?? weeklyKmBefore(year, today),
+      birthYear: athlete.profile?.birth_year ?? null,
+      maxHr: athlete.profile?.max_hr ?? null,
+      intake: athlete.profile?.intake,
+      injuries,
+      readiness,
+      mainGoal: race?.goal ?? null,
+    });
     return (
       <div className="grid gap-6">
         {race ? <RaceCountdownCard race={race} goalsHref={`${base}?tab=records`} /> : null}
-        <RacePredictionCard prediction={predictRaces(year, records, today)} sessionHref={(id) => `/coach/sessions/${id}`} />
+        <MethodCard m={method} today={today} />
+        <RacePredictionCard prediction={prediction} sessionHref={(id) => `/coach/sessions/${id}`} />
         <Card>
           <CardHeader>
             <div className="grid gap-1">
@@ -250,7 +279,16 @@ async function TabContent({
             </CardContent>
           ) : null}
         </Card>
-        {latest ? <InsightView insight={latest.content} insightId={latest.id} createdAt={latest.created_at} athleteId={athleteId} planner={planner && athlete.link_status === "active"} /> : null}
+        {latest ? (
+          <InsightView
+            insight={latest.content}
+            insightId={latest.id}
+            createdAt={latest.created_at}
+            athleteId={athleteId}
+            planner={planner && athlete.link_status === "active"}
+            ratings={ratings}
+          />
+        ) : null}
       </div>
     );
   }

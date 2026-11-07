@@ -30,7 +30,7 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
 
     const today = todayISO(user.profile.timezone);
     const firstName = (athlete.full_name || "Zawodnik").split(/\s+/)[0];
-    const [context, method] = await Promise.all([buildContext(supabase, athleteId, firstName, today), coachMethod(supabase, user.id).catch(() => "")]);
+    const [context, method] = await Promise.all([buildContext(supabase, athleteId, firstName, today, user.id), coachMethod(supabase, user.id).catch(() => "")]);
     const insight = await runAssistant(context, today, method);
     if (!insight) return { ok: false, error: "Nie udało się przygotować analizy. Spróbuj za chwilę." };
 
@@ -45,7 +45,7 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
   });
 }
 
-const METHOD_MAX = 6000;
+const METHOD_MAX = 20000;
 
 /** Saves "Moja metoda": the principles the assistant follows when it plans for this coach's athletes. */
 export async function saveCoachMethod(body: string): Promise<ActionResult> {
@@ -56,5 +56,35 @@ export async function saveCoachMethod(body: string): Promise<ActionResult> {
     if (error) return dbError(error);
     revalidatePath("/coach/settings");
     return { ok: true, message: text ? "Zapisano metodę. Asystent będzie się jej trzymał." : "Usunięto metodę." };
+  });
+}
+
+/**
+ * The coach rates the analysis (suggestion = null) or one suggested session, optionally with a correction.
+ * The assistant reads these as lessons in later analyses: for this athlete, or for all athletes when general.
+ */
+export async function rateAssistant(input: {
+  insightId: string;
+  athleteId: string;
+  suggestion: number | null;
+  verdict: "good" | "bad";
+  note: string;
+  general: boolean;
+}): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    const note = (input.note ?? "").trim().slice(0, 1000);
+    if (input.verdict === "bad" && note.length < 3) return { ok: false, error: "Napisz krótko, co było nie tak. Asystent się tego nauczy." };
+    const { error } = await supabase.from("assistant_feedback").insert({
+      coach_id: user.id,
+      athlete_id: input.athleteId,
+      insight_id: input.insightId,
+      suggestion: input.suggestion,
+      verdict: input.verdict,
+      note: note || null,
+      general: !!input.general,
+    });
+    if (error) return dbError(error);
+    revalidatePath(`/coach/athletes/${input.athleteId}`);
+    return { ok: true, message: note ? "Zapisane. Asystent weźmie to pod uwagę w kolejnych analizach." : "Dzięki, zapisane." };
   });
 }

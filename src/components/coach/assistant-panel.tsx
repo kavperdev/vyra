@@ -1,14 +1,15 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, RefreshCw, Sparkles } from "lucide-react";
+import { CalendarPlus, RefreshCw, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { analyzeAthlete } from "@/lib/actions/assistant";
+import { analyzeAthlete, rateAssistant } from "@/lib/actions/assistant";
+import { Checkbox, Textarea } from "@/components/ui/form-controls";
 import type { Insight } from "@/lib/coach-assistant";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
@@ -37,6 +38,75 @@ export function AnalyzeButton({ athleteId, hasInsight }: { athleteId: string; ha
   );
 }
 
+/** Thumbs up/down with a correction; the assistant reads these as lessons next time. */
+function Rate({ insightId, athleteId, suggestion, rated }: { insightId: string; athleteId: string; suggestion: number | null; rated?: "good" | "bad" }) {
+  const [verdict, setVerdict] = useState<"good" | "bad" | null>(null);
+  const [note, setNote] = useState("");
+  const [general, setGeneral] = useState(false);
+  const [done, setDone] = useState<"good" | "bad" | undefined>(rated);
+  const [pending, start] = useTransition();
+  const send = (v: "good" | "bad", text: string) =>
+    start(async () => {
+      const res = await rateAssistant({ insightId, athleteId, suggestion, verdict: v, note: text, general });
+      if (res.ok) {
+        setDone(v);
+        setVerdict(null);
+        toast.success(res.message);
+      } else toast.error(res.error);
+    });
+  if (done && !verdict) {
+    return (
+      <span className="flex items-center gap-2 text-[12px] text-muted">
+        {done === "good" ? <ThumbsUp className="size-3.5 text-done" /> : <ThumbsDown className="size-3.5 text-problem" />}
+        {tl("Ocenione", "Rated")}
+        <button type="button" className="underline-offset-2 hover:underline" onClick={() => setVerdict("bad")}>
+          {tl("dodaj uwagę", "add a note")}
+        </button>
+      </span>
+    );
+  }
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center gap-1">
+        <span className="mr-1 text-[12px] text-muted">{suggestion == null ? tl("Oceń analizę:", "Rate the analysis:") : tl("Trafione?", "Good call?")}</span>
+        <Button size="icon-sm" variant="ghost" aria-label={tl("Dobrze", "Good")} disabled={pending} onClick={() => (verdict === "good" ? send("good", note) : setVerdict("good"))}>
+          <ThumbsUp className="size-3.5" />
+        </Button>
+        <Button size="icon-sm" variant="ghost" aria-label={tl("Źle", "Bad")} disabled={pending} onClick={() => setVerdict("bad")}>
+          <ThumbsDown className="size-3.5" />
+        </Button>
+      </div>
+      {verdict ? (
+        <div className="grid gap-2 rounded-lg border border-border p-3">
+          <Textarea
+            className="min-h-16 text-[13px]"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={1000}
+            placeholder={
+              verdict === "bad"
+                ? tl("Co jest nie tak i jak powinno być? Np. „za szybki próg, u niego 4:25–4:35”, „po długim zawsze wolne”", "What’s wrong and how should it be?")
+                : tl("Opcjonalnie: co tu jest dobre, czego się trzymać", "Optional: what’s good here, what to keep")
+            }
+          />
+          <label className="flex items-center gap-2 text-[12.5px]">
+            <Checkbox checked={general} onChange={(e) => setGeneral(e.target.checked)} />
+            {tl("To zasada ogólna: stosuj u wszystkich moich zawodników", "General rule: apply to all my athletes")}
+          </label>
+          <div className="flex gap-2">
+            <Button size="sm" disabled={pending} onClick={() => send(verdict, note)}>
+              {tl("Zapisz lekcję", "Save lesson")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setVerdict(null)}>
+              {tl("Anuluj", "Cancel")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const riskTone = { low: "neutral", medium: "warning", high: "problem" } as const;
 const riskLabel = () => ({ low: tl("niskie", "low"), medium: tl("średnie", "medium"), high: tl("wysokie", "high") });
 
@@ -47,12 +117,15 @@ export function InsightView({
   createdAt,
   athleteId,
   planner,
+  ratings = {},
 }: {
   insight: Insight;
   insightId: string;
   createdAt: string;
   athleteId: string;
   planner: boolean;
+  /** Existing ratings of this analysis: key "all" or the suggestion index. */
+  ratings?: Record<string, "good" | "bad">;
 }) {
   return (
     <div className="grid gap-6">
@@ -109,6 +182,7 @@ export function InsightView({
               </div>
             ) : null}
           </div>
+          <Rate insightId={insightId} athleteId={athleteId} suggestion={null} rated={ratings.all} />
         </CardContent>
       </Card>
 
@@ -184,6 +258,7 @@ export function InsightView({
                       </p>
                     ) : null}
                   </div>
+                  <Rate insightId={insightId} athleteId={athleteId} suggestion={i} rated={ratings[String(i)]} />
                   {planner ? (
                     <Button asChild size="sm" variant="outline" className="justify-self-start">
                       <Link href={`/coach/sessions/new?athlete=${athleteId}&date=${s.date}&suggestion=${insightId}.${i}`}>
