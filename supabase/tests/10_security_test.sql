@@ -971,3 +971,26 @@ end $$;
 select public.integration_token_set(current_setting('vyra.test_secret'), 'instagram', 'abc');
 select pg_temp.check((select value from public.integration_token_get(current_setting('vyra.test_secret'), 'instagram')) = 'abc', 'the server can store and read the token');
 reset role;
+
+-- ---------------------------------------------------------------- coach assistant
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.coach_insights (athlete_id, created_by, content)
+  values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000c1', '{"summary":"ok"}');
+select pg_temp.check((select count(*) from public.coach_insights) = 1, 'coach stores and reads an analysis of own athlete');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.coach_insights) = 0, 'athlete does not see the coach analysis');
+do $$ begin
+  insert into public.coach_insights (athlete_id, created_by, content)
+    values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a1', '{}');
+  raise exception 'FAIL: athlete wrote an analysis';
+exception when insufficient_privilege then raise notice 'ok  athlete cannot write an analysis';
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.check((select count(*) from public.coach_insights) = 0, 'foreign coach does not see the analysis');
+do $$ begin
+  insert into public.coach_insights (athlete_id, created_by, content)
+    values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000c2', '{}');
+  raise exception 'FAIL: foreign coach wrote an analysis';
+exception when insufficient_privilege then raise notice 'ok  foreign coach cannot write an analysis';
+end $$;
+select pg_temp.as_admin();

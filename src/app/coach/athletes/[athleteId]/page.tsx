@@ -14,6 +14,10 @@ import { HistoryTable } from "@/components/athlete/history-table";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
 import { RaceCountdownCard } from "@/components/athlete/race-countdown";
 import { raceCountdown } from "@/lib/training/race";
+import { RacePredictionCard } from "@/components/athlete/race-prediction";
+import { AnalyzeButton, InsightView } from "@/components/coach/assistant-panel";
+import { assistantConfigured, type Insight } from "@/lib/coach-assistant";
+import { predictRaces } from "@/lib/training/prediction";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
 import { IntakeView } from "@/components/coach/intake-view";
 import { SessionList } from "@/components/training/session-bits";
@@ -32,6 +36,9 @@ import { canPlan, type SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
 import { tl } from "@/lib/i18n/runtime";
 
+// The assistant tab calls the model, which can take up to a minute.
+export const maxDuration = 60;
+
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return { title: t("Zawodnik", "Athlete") };
@@ -39,6 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const tabs = () => [
   ["overview", tl("Przegląd", "Overview")],
+  ["assistant", tl("Asystent", "Assistant")],
   ["calendar", tl("Kalendarz", "Calendar")],
   ["plan", "Plan"],
   ["running", tl("Bieganie", "Running")],
@@ -191,6 +199,49 @@ async function TabContent({
           <SectionTitle>{tl("Ostatnie wyniki", "Recent results")}</SectionTitle>
           <SessionList sessions={done.slice(0, 6)} hrefFor={hrefFor} today={today} empty={<EmptyState title={tl("Brak wyników", "No results")} description={tl("Zawodnik nie zapisał jeszcze żadnego treningu.", "The athlete hasn’t logged any sessions yet.")} />} />
         </section>
+      </div>
+    );
+  }
+
+  if (tab === "assistant") {
+    const [year, records, latest] = await Promise.all([
+      listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
+      listRecords(supabase, athleteId).catch(() => []),
+      supabase
+        .from("coach_insights")
+        .select("id, content, created_at")
+        .eq("athlete_id", athleteId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then((r) => (r.data as { id: string; content: Insight; created_at: string } | null) ?? null),
+    ]);
+    const configured = assistantConfigured();
+    return (
+      <div className="grid gap-6">
+        <RacePredictionCard prediction={predictRaces(year, records, today)} sessionHref={hrefFor} />
+        <Card>
+          <CardHeader>
+            <div className="grid gap-1">
+              <CardTitle>{tl("Asystent trenera", "Coach assistant")}</CardTitle>
+              <p className="max-w-2xl text-sm text-muted">
+                {tl(
+                  "Czyta ostatnie 6 tygodni: plan i wykonanie, RPE, komentarze, samopoczucie, cele, rekordy i prognozę. Zwraca krótką analizę i propozycje treningów na 2 tygodnie. Widzą to tylko trenerzy, zawodnik nie.",
+                  "Reads the last 6 weeks: plan and execution, RPE, comments, readiness, goals, records and prediction. Returns a short analysis and session ideas for 2 weeks. Only coaches see it, not the athlete.",
+                )}
+              </p>
+            </div>
+            {configured ? <AnalyzeButton athleteId={athleteId} hasInsight={!!latest} /> : null}
+          </CardHeader>
+          {!configured ? (
+            <CardContent>
+              <p className="rounded-lg bg-surface-2 p-4 text-sm text-muted">
+                {tl("Asystent wymaga klucza ANTHROPIC_API_KEY w ustawieniach Vercel (Environment Variables, jako Sensitive). Po dodaniu zrób redeploy.", "The assistant needs ANTHROPIC_API_KEY in Vercel settings (Environment Variables, as Sensitive). Redeploy after adding it.")}
+              </p>
+            </CardContent>
+          ) : null}
+        </Card>
+        {latest ? <InsightView insight={latest.content} insightId={latest.id} createdAt={latest.created_at} athleteId={athleteId} planner={planner && athlete.link_status === "active"} /> : null}
       </div>
     );
   }

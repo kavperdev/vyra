@@ -123,6 +123,7 @@ Administratorem danych osobowych przekazanych przez tę stronę jest {{sprzedawc
 - Konto w platformie VYRA (dla zawodników): dane potrzebne do prowadzenia treningu, w tym plan i wyniki treningów.
 - Opinia o współpracy: ocena i opinia, którą sam wpiszesz w aplikacji. Publikujemy ją na stronie i w mediach społecznościowych VYRA tylko za Twoją zgodą, z podpisem, który wybierzesz.
 - Ankieta startowa i poranna ocena gotowości: informacje o zdrowiu, kontuzjach i samopoczuciu, które sam podasz, aby trener mógł bezpiecznie ułożyć plan. Widzi je tylko Twój trener.
+- Analiza treningu dla trenera: trener może przygotować automatyczne podsumowanie Twoich ostatnich treningów i propozycje kolejnych. Dane treningowe (bez nazwiska i adresu e-mail) przetwarza wtedy zewnętrzny dostawca usług technicznych, tylko w tym celu. Wynik widzi tylko Twój trener, a o planie zawsze decyduje trener.
 
 ## Podstawa przetwarzania
 
@@ -171,6 +172,7 @@ The controller of personal data submitted through this website is {{sprzedawca}}
 - A VYRA platform account (for athletes): the data needed for coaching, including your plan and training results.
 - Feedback: the rating and opinion you enter in the app. We publish it on the website and VYRA social media only with your consent, under the name you choose.
 - The starting questionnaire and morning readiness check: information about your health, injuries and wellbeing that you choose to give, so your coach can plan safely. Only your coach sees it.
+- Training analysis for your coach: your coach can prepare an automatic summary of your recent training and ideas for next sessions. Your training data (without surname or e-mail) is then processed by an external technical service provider for this purpose only. Only your coach sees the result, and your coach always decides on the plan.
 
 ## Legal basis
 

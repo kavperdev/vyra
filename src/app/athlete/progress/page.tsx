@@ -5,8 +5,10 @@ import { AthleteAnalytics, PeriodFilter, parsePeriod } from "@/components/charts
 import { StrengthHistory } from "@/components/training/strength-history";
 import { requireRole } from "@/lib/auth";
 import { addDaysISO, todayISO } from "@/lib/dates";
-import { strengthHistory } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
+import { listRecords, strengthHistory } from "@/lib/data/people";
+import { RacePredictionCard } from "@/components/athlete/race-prediction";
+import { predictRaces } from "@/lib/training/prediction";
 import { periodStart } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,15 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
     }),
     strengthHistory(supabase, user.id, periodStart(today, Math.max(weeks, 26))),
   ]);
+  // Prediction always looks at the last year of running, whatever period or view is chosen.
+  const prediction =
+    view === "strength"
+      ? null
+      : predictRaces(
+          await listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
+          await listRecords(supabase, user.id).catch(() => []),
+          today,
+        );
 
   return (
     <div className="grid gap-6">
@@ -52,6 +63,7 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
           </Link>
         ))}
       </nav>
+      {view !== "strength" ? <RacePredictionCard prediction={prediction} sessionHref={(id) => `/athlete/sessions/${id}`} /> : null}
       <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={view} />
       {view !== "running" ? (
         <section className="grid gap-3">
