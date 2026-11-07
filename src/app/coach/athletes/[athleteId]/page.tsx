@@ -219,7 +219,7 @@ async function TabContent({
     const configured = assistantConfigured();
     return (
       <div className="grid gap-6">
-        <RacePredictionCard prediction={predictRaces(year, records, today)} sessionHref={hrefFor} />
+        <RacePredictionCard prediction={predictRaces(year, records, today)} sessionHref={(id) => `/coach/sessions/${id}`} />
         <Card>
           <CardHeader>
             <div className="grid gap-1">
