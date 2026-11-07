@@ -473,7 +473,7 @@ function apiProblem(status: number, body: string): string {
   })().slice(0, 200);
   if (status === 401) return "klucz ANTHROPIC_API_KEY jest nieprawidłowy (sprawdź, czy wkleiłeś cały)";
   if (status === 400 && /credit|balance/i.test(msg)) return "brak środków na koncie Anthropic (Billing)";
-  if (status === 404 || /model/i.test(msg)) return `model „${assistantModel()}” jest niedostępny (${msg})`;
+  if (status === 404 || /not_found|model.*(not found|does not exist)/i.test(msg)) return `model „${assistantModel()}” jest niedostępny (${msg})`;
   if (status === 429) return "za dużo zapytań naraz, spróbuj za minutę";
   if (status === 529 || status >= 500) return "serwery Anthropic są przeciążone, spróbuj za kilka minut";
   return `błąd ${status}: ${msg}`;
@@ -487,7 +487,7 @@ export async function runAssistant(context: string, today: string, method = ""):
   const key = (process.env.ANTHROPIC_API_KEY ?? "").trim().replace(/^["']+|["']+$/g, "");
   if (!key) return { error: "brak klucza ANTHROPIC_API_KEY w Vercel" };
   const system = [
-    { type: "text", text: SYSTEM.replace("Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy):", "Odpowiedź zapisz narzędziem zapisz_analize, w tym kształcie:") },
+    { type: "text", text: SYSTEM.replace("Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy):", "Odpowiedź zapisz WYŁĄCZNIE wywołaniem narzędzia zapisz_analize (bez tekstu przed ani po), w tym kształcie:") },
     // The method is long and the same for every athlete: cached between analyses.
     { type: "text", text: `METODA TRENERA (według niej planujesz):\n${(method || VYRA_METHOD).slice(0, 20000)}`, cache_control: { type: "ephemeral" } },
   ];
@@ -501,7 +501,9 @@ export async function runAssistant(context: string, today: string, method = ""):
         max_tokens: 16000,
         system,
         tools: [ANSWER_TOOL],
-        tool_choice: { type: "tool", name: ANSWER_TOOL.name },
+        // Some models refuse a forced tool; "auto" plus the instruction below gets the same result,
+        // and a plain JSON answer is still read if the model writes it as text.
+        tool_choice: { type: "auto" },
         messages: [{ role: "user", content: context }],
       }),
       cache: "no-store",
