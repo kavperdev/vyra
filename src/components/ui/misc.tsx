@@ -1,5 +1,7 @@
 import Link from "next/link";
 import * as React from "react";
+import { Suspense } from "react";
+import { ScrollActiveTab } from "@/components/ui/scroll-active";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 
@@ -126,8 +128,20 @@ export function Skeleton({ className }: { className?: string }) {
 
 /** Link-based tabs: server-rendered, shareable URLs, works without JavaScript. */
 export function LinkTabs({ tabs, active, className }: { tabs: { key: string; label: string; href: string }[]; active: string; className?: string }) {
+  const id = tabs.map((t) => t.key).join("-");
   return (
-    <nav className={cn("-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0", className)} aria-label="Sekcje">
+    <nav
+      data-tabs={id}
+      className={cn(
+        // On phones: scrolls sideways with soft edges, and the active tab is brought into view.
+        "-mx-4 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)] [scrollbar-width:none] sm:mx-0 sm:px-0 sm:[mask-image:none] [&::-webkit-scrollbar]:hidden",
+        className,
+      )}
+      aria-label="Sekcje"
+    >
+      <Suspense fallback={null}>
+        <ScrollActiveTab id={id} />
+      </Suspense>
       <ul className="flex min-w-max gap-1 border-b border-border">
         {tabs.map((t) => (
           <li key={t.key}>

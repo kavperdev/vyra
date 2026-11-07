@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { addDaysISO } from "@/lib/dates";
 import { formatDate, formatDuration, formatPace } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
+import { ZonesList } from "@/components/training/zones-list";
 import { LEVEL_LABEL, LEVEL_WEEK, PERIOD_LABEL, PERIOD_RULES, type MethodSnapshot } from "@/lib/training/method";
 
 /** The athlete through the method: level, current zones, period, and the method's warning signals. */
@@ -63,23 +64,7 @@ export function MethodCard({ m, today }: { m: MethodSnapshot; today: string }) {
             <p className="text-[12.5px] leading-relaxed text-muted">
               {tl("Źródła", "Sources")}: {m.form.sources.map((x) => `${x.title} ${formatDate(x.date, "d MMM")} (${x.share}%)`).join(" · ")}
             </p>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-left text-[13px]">
-                <tbody>
-                  {m.zones.map((z) => (
-                    <tr key={z.name} className="border-b border-border/60 align-top last:border-0">
-                      <td className="py-1.5 pr-3 font-medium">{z.name}</td>
-                      <td className="py-1.5 pr-3 font-mono tabular-nums">
-                        {formatPace(z.from)}–{formatPace(z.to)} /km
-                        {z.note ? <span className="block font-sans text-[11.5px] text-muted">{z.note}</span> : null}
-                      </td>
-                      <td className="py-1.5 pr-3 font-mono tabular-nums text-muted">{z.hr}</td>
-                      <td className="py-1.5 text-muted">{z.feel}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ZonesList zones={m.zones} />
             <p className="text-[12.5px] leading-relaxed text-muted">
               {tl("Tętno", "Heart rate")}: {m.hrBasis ?? tl("brak danych. Wpisz w profilu tętno progowe (LTHR) albo maksymalne, albo zrób test 30 min.", "no data. Add threshold (LTHR) or max HR in the profile, or run a 30-min test.")}
               {m.observed ? tl(` · Próg na treningach: ${formatPace(m.observed.pace)}/km${m.observed.avgHr ? ` przy HR ${m.observed.avgHr}` : ""} (${m.observed.sessions} sesji)`, ` · Threshold in training: ${formatPace(m.observed.pace)}/km${m.observed.avgHr ? ` at HR ${m.observed.avgHr}` : ""}`) : ""}

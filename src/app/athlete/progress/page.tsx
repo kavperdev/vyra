@@ -6,10 +6,10 @@ import { StrengthHistory } from "@/components/training/strength-history";
 import { requireRole } from "@/lib/auth";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { listSessions } from "@/lib/data/sessions";
-import { listRecords, strengthHistory } from "@/lib/data/people";
+import { strengthHistory } from "@/lib/data/people";
 import { RacePredictionCard } from "@/components/athlete/race-prediction";
-import { predictRaces } from "@/lib/training/prediction";
-import { loadThresholdReps } from "@/lib/training/form";
+import { athleteForm } from "@/lib/training/athlete-form";
+import { MyZonesCard } from "@/components/athlete/my-zones";
 import { periodStart } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -44,15 +44,8 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
     }),
     strengthHistory(supabase, user.id, periodStart(today, Math.max(weeks, 26))),
   ]);
-  // Prediction always looks at the last year of running, whatever period or view is chosen.
-  const prediction =
-    view === "strength"
-      ? null
-      : await (async () => {
-          const year = await listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(today, -365), to: today, kinds: ["running"] });
-          const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
-          return predictRaces(year, await listRecords(supabase, user.id).catch(() => []), today, reps);
-        })();
+  // Prediction and zones always look at the last year of running, whatever period or view is chosen.
+  const form = view === "strength" ? null : await athleteForm(supabase, user.id, today);
 
   return (
     <div className="grid gap-6">
@@ -64,7 +57,12 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
           </Link>
         ))}
       </nav>
-      {view !== "strength" ? <RacePredictionCard prediction={prediction} sessionHref={(id) => `/athlete/sessions/${id}`} /> : null}
+      {form ? (
+        <>
+          <MyZonesCard m={form.method} />
+          <RacePredictionCard prediction={form.prediction} sessionHref={(id) => `/athlete/sessions/${id}`} />
+        </>
+      ) : null}
       <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={view} />
       {view !== "running" ? (
         <section className="grid gap-3">

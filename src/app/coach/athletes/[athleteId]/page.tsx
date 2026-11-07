@@ -17,10 +17,8 @@ import { raceCountdown } from "@/lib/training/race";
 import { RacePredictionCard } from "@/components/athlete/race-prediction";
 import { AnalyzeButton, InsightView } from "@/components/coach/assistant-panel";
 import { assistantConfigured, type Insight } from "@/lib/coach-assistant";
-import { predictRaces, weeklyKmBefore } from "@/lib/training/prediction";
 import { MethodCard } from "@/components/coach/method-card";
-import { methodSnapshot } from "@/lib/training/method";
-import { loadThresholdReps } from "@/lib/training/form";
+import { athleteForm } from "@/lib/training/athlete-form";
 import { InjuriesSection } from "@/components/athlete/injuries";
 import { listInjuries, painHistory } from "@/lib/data/injuries";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
@@ -54,12 +52,12 @@ const tabs = () => [
   ["assistant", tl("Asystent", "Assistant")],
   ["calendar", tl("Kalendarz", "Calendar")],
   ["plan", "Plan"],
+  ["health", tl("Zdrowie", "Health")],
+  ["records", tl("Rekordy i cele", "Records & goals")],
+  ["history", tl("Historia", "History")],
+  ["analytics", tl("Analityka", "Analytics")],
   ["running", tl("Bieganie", "Running")],
   ["strength", tl("Siła", "Strength")],
-  ["analytics", tl("Analityka", "Analytics")],
-  ["records", tl("Rekordy i cele", "Records & goals")],
-  ["health", tl("Zdrowie", "Health")],
-  ["history", tl("Historia", "History")],
   ["notes", tl("Notatki", "Notes")],
   ["settings", tl("Ustawienia", "Settings")],
 ] as const;
@@ -210,17 +208,10 @@ async function TabContent({
   }
 
   if (tab === "assistant") {
-    const [year, records, goals, injuries, readiness, latest] = await Promise.all([
-      listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
-      listRecords(supabase, athleteId).catch(() => []),
+    // Everything in parallel: form and zones, goals for the countdown, the latest analysis and its ratings.
+    const [{ prediction, method }, goals, latest] = await Promise.all([
+      athleteForm(supabase, athleteId, today),
       listGoals(supabase, athleteId).catch(() => []),
-      listInjuries(supabase, athleteId),
-      supabase
-        .from("readiness")
-        .select("day, sleep, energy, pain, pain_area")
-        .eq("athlete_id", athleteId)
-        .gte("day", addDaysISO(today, -21))
-        .then((r) => (r.data ?? []) as { day: string; sleep: number; energy: number; pain: boolean; pain_area: string | null }[]),
       supabase
         .from("coach_insights")
         .select("id, content, created_at")
@@ -232,28 +223,11 @@ async function TabContent({
     ]);
     const configured = assistantConfigured();
     const race = raceCountdown(goals, today);
-    const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
-    const prediction = predictRaces(year, records, today, reps);
     const ratings: Record<string, "good" | "bad"> = {};
     if (latest) {
       const { data: fb } = await supabase.from("assistant_feedback").select("suggestion, verdict").eq("insight_id", latest.id);
       for (const r of (fb ?? []) as { suggestion: number | null; verdict: "good" | "bad" }[]) ratings[r.suggestion == null ? "all" : String(r.suggestion)] = r.verdict;
     }
-    const method = methodSnapshot({
-      past: year,
-      records,
-      reps,
-      goals,
-      today,
-      prediction,
-      weeklyKm: prediction?.weeklyKm ?? weeklyKmBefore(year, today),
-      birthYear: athlete.profile?.birth_year ?? null,
-      profile: athlete.profile ? { lthr: athlete.profile.lthr, max_hr: athlete.profile.max_hr, resting_hr: athlete.profile.resting_hr } : null,
-      intake: athlete.profile?.intake,
-      injuries,
-      readiness,
-      mainGoal: race?.goal ?? null,
-    });
     return (
       <div className="grid gap-6">
         {race ? <RaceCountdownCard race={race} goalsHref={`${base}?tab=records`} /> : null}

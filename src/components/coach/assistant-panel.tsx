@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, RefreshCw, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
@@ -15,26 +15,50 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
 import { categoryLabel } from "@/lib/training/categories";
 
+const STEPS = () => [
+  tl("Czytam profil, ankietę i kontuzje…", "Reading profile, questionnaire and injuries…"),
+  tl("Liczę formę, strefy i okres według metody…", "Computing form, zones and period by the method…"),
+  tl("Analizuję 20 tygodni cyklu…", "Analysing 20 weeks of the cycle…"),
+  tl("Sprawdzam ostatnie akcenty i reakcję zawodnika…", "Checking recent sessions and response…"),
+  tl("Układam zarys cyklu do startu…", "Building the cycle outline…"),
+  tl("Dobieram treningi na 14 dni…", "Choosing sessions for 14 days…"),
+  tl("Jeszcze chwila, sprawdzam bezpieczeństwo planu…", "Almost there, checking plan safety…"),
+];
+
 export function AnalyzeButton({ athleteId, hasInsight }: { athleteId: string; hasInsight: boolean }) {
   const [pending, start] = useTransition();
+  const [step, setStep] = useState(0);
   const router = useRouter();
+  useEffect(() => {
+    if (!pending) return setStep(0);
+    // The analysis takes 1–2 minutes: show what is happening instead of a silent spinner.
+    const t = setInterval(() => setStep((s) => Math.min(s + 1, STEPS().length - 1)), 14_000);
+    return () => clearInterval(t);
+  }, [pending]);
   return (
-    <Button
-      variant={hasInsight ? "outline" : "default"}
-      disabled={pending}
-      onClick={() =>
-        start(async () => {
-          const res = await analyzeAthlete(athleteId);
-          if (res.ok) {
-            toast.success(res.message ?? tl("Analiza gotowa.", "Analysis ready."));
-            router.refresh();
-          } else toast.error(res.error);
-        })
-      }
-    >
-      {hasInsight ? <RefreshCw className={pending ? "size-4 animate-spin" : "size-4"} /> : <Sparkles className="size-4" />}
-      {pending ? tl("Analizuję… (1–2 min)", "Analysing… (1–2 min)") : hasInsight ? tl("Przeanalizuj ponownie", "Analyse again") : tl("Przeanalizuj zawodnika", "Analyse athlete")}
-    </Button>
+    <div className="grid justify-items-start gap-1.5">
+      <Button
+        variant={hasInsight ? "outline" : "default"}
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            const res = await analyzeAthlete(athleteId);
+            if (res.ok) {
+              toast.success(res.message ?? tl("Analiza gotowa.", "Analysis ready."));
+              router.refresh();
+            } else toast.error(res.error);
+          })
+        }
+      >
+        {hasInsight ? <RefreshCw className={pending ? "size-4 animate-spin" : "size-4"} /> : <Sparkles className={pending ? "size-4 animate-pulse" : "size-4"} />}
+        {pending ? tl("Analizuję…", "Analysing…") : hasInsight ? tl("Przeanalizuj ponownie", "Analyse again") : tl("Przeanalizuj zawodnika", "Analyse athlete")}
+      </Button>
+      {pending ? (
+        <p className="text-[12.5px] text-muted" aria-live="polite">
+          {STEPS()[step]} {tl("(zwykle 1–2 min, nie zamykaj strony)", "(usually 1–2 min, keep this page open)")}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -194,8 +218,29 @@ export function InsightView({
               <CardDescription>{tl("Tydzień po tygodniu do startu. Podpowiedzi poniżej to pierwsze kroki tego zarysu.", "Week by week to the race. The suggestions below are its first steps.")}</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-[13px]">
+          <CardContent>
+            {/* Phones: one card per week. */}
+            <ol className="grid gap-2 md:hidden">
+              {insight.cycle.map((w) => (
+                <li key={w.week_start} className="grid gap-1 rounded-lg bg-surface-2 px-3 py-2.5 text-[13px]">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold">
+                      {formatDate(w.week_start, "d MMM")} · {w.phase}
+                    </span>
+                    <span className="font-mono tabular-nums">{w.km != null ? `${w.km} km` : "–"}</span>
+                  </div>
+                  {w.key_sessions ? <p>{w.key_sessions}</p> : null}
+                  {w.long_run ? (
+                    <p className="text-muted">
+                      {tl("Długie", "Long")}: {w.long_run}
+                    </p>
+                  ) : null}
+                  {w.focus ? <p className="text-muted">{w.focus}</p> : null}
+                </li>
+              ))}
+            </ol>
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-left text-[13px]">
               <thead className="text-[11.5px] uppercase tracking-wide text-muted">
                 <tr className="border-b border-border">
                   <th className="py-2 pr-3 font-medium">{tl("Tydzień", "Week")}</th>
@@ -219,6 +264,7 @@ export function InsightView({
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       ) : null}

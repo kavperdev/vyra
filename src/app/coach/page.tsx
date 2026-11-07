@@ -38,6 +38,7 @@ function attentionFor(
   today: string,
   readiness: Readiness[],
   noIntake: Set<string>,
+  injuries: { athlete_id: string; name: string; status: string }[] = [],
 ): Attention[] {
   const from14 = addDaysISO(today, -14);
   const from7 = addDaysISO(today, -7);
@@ -51,6 +52,9 @@ function attentionFor(
     if (pain) reasons.push(tl(`zgłoszony ból${pain.pain_area ? `: ${pain.pain_area}` : ""} (${formatDate(pain.day, "d MMM")})`, `pain reported${pain.pain_area ? `: ${pain.pain_area}` : ""} (${formatDate(pain.day, "d MMM")})`));
     const low = checkins.filter((r) => !r.pain && readinessLevel(r) === "low").length;
     if (low >= 2) reasons.push(tl(`niska gotowość ${low} dni z 3`, `low readiness on ${low} of 3 days`));
+    for (const i of injuries.filter((x) => x.athlete_id === a.id)) {
+      reasons.push(i.status === "active" ? tl(`aktywna kontuzja: ${i.name}`, `active injury: ${i.name}`) : tl(`nawracająca kontuzja: ${i.name}`, `recurring injury: ${i.name}`));
+    }
     if (noIntake.has(a.id)) reasons.push(tl("nie wypełnił ankiety startowej", "starting questionnaire not filled in"));
     const missing = recent.filter((s) => displayStatus(s.status, s.scheduled_date, today) === "needs_update").length;
     const skipped = recent.filter((s) => s.status === "skipped").length;
@@ -99,7 +103,7 @@ export default async function CoachDashboard() {
 
   const ids = athletes.map((a) => a.id);
   const from = periodStart(today, 8);
-  const [sessions, comments, readinessRecent, intakeRows] = await Promise.all([
+  const [sessions, comments, readinessRecent, intakeRows, injuryRows] = await Promise.all([
     listSessions(supabase, { athleteIds: ids, from, to: addDaysISO(today, 14) }),
     listRecentComments(supabase, { onlyRole: "athlete", limit: 5 }),
     supabase
@@ -114,6 +118,13 @@ export default async function CoachDashboard() {
       .select("athlete_id, intake_done_at")
       .in("athlete_id", ids)
       .then((r) => (r.error ? [] : ((r.data ?? []) as { athlete_id: string; intake_done_at: string | null }[]))),
+    // Active and recurring injuries (hidden if the migration has not run).
+    supabase
+      .from("athlete_injuries")
+      .select("athlete_id, name, status")
+      .in("athlete_id", ids)
+      .in("status", ["active", "recurring"])
+      .then((r) => (r.error ? [] : ((r.data ?? []) as { athlete_id: string; name: string; status: string }[]))),
   ]);
   const readinessRows = readinessRecent ? readinessRecent.filter((r) => r.day === today) : null;
   const noIntake = new Set(intakeRows.filter((r) => !r.intake_done_at).map((r) => r.athlete_id));
@@ -127,7 +138,7 @@ export default async function CoachDashboard() {
   const comp = completionStats(sessions, addDaysISO(today, -27), today);
   const buckets = weeklyBuckets(sessions, today, 8);
   const weekKm = buckets[buckets.length - 1]?.actualKm ?? 0;
-  const attention = attentionFor(athletes, sessions, today, readinessRecent ?? [], noIntake);
+  const attention = attentionFor(athletes, sessions, today, readinessRecent ?? [], noIntake, injuryRows);
   const recentDone = sessions
     .filter((s) => s.execution && s.execution.status !== "in_progress")
     .sort((a, b) => (b.execution!.performed_on + b.scheduled_date).localeCompare(a.execution!.performed_on + a.scheduled_date))
