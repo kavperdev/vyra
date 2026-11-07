@@ -33,5 +33,13 @@ export function ThemeToggle() {
 
 export function AppToaster() {
   const { resolvedTheme } = useTheme();
-  return <Toaster position="top-center" theme={resolvedTheme === "light" ? "light" : "dark"} richColors closeButton />;
+  return <Toaster
+      position="top-center"
+      theme={resolvedTheme === "light" ? "light" : "dark"}
+      richColors
+      closeButton
+      // Below the phone's status bar and notch in the installed app (otherwise the toast covers the clock).
+      mobileOffset={{ top: "calc(env(safe-area-inset-top) + 10px)", left: "12px", right: "12px" }}
+      offset={{ top: "calc(env(safe-area-inset-top) + 16px)" }}
+    />;
 }

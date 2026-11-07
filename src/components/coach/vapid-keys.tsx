@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Copy, KeyRound } from "lucide-react";
+import { Check, CircleCheck, CircleX, Copy, KeyRound, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { generateVapidKeys, sendTestMail } from "@/lib/actions/push";
+import { diagnosePush, generateVapidKeys, sendTestMail, type PushReport } from "@/lib/actions/push";
 import { tl } from "@/lib/i18n/runtime";
 
 function CopyRow({ label, value }: { label: string; value: string }) {
@@ -107,6 +107,56 @@ export function MailTest() {
         >
           {pending ? tl("Wysyłanie…", "Sending…") : tl("Wyślij testowy e-mail", "Send a test e-mail")}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Founder only: checks every step a push travels and says which one fails, with the fix. */
+export function PushDiagnostics() {
+  const [pending, start] = useTransition();
+  const [checks, setChecks] = useState<PushReport["checks"] | null>(null);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Stethoscope className="size-4" /> {tl("Diagnostyka powiadomień", "Notification diagnostics")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-[minmax(0,1fr)] gap-3">
+        <p className="text-sm text-muted">
+          {tl(
+            "Wysyła prawdziwe powiadomienie do Ciebie przez całą drogę (baza → aplikacja → telefon) i sprawdza każdy krok. Zrób to na telefonie z włączonymi powiadomieniami, potem zamknij aplikację i poczekaj na „Test VYRA”.",
+            "Sends you a real notification along the whole path (database → app → phone) and checks each step.",
+          )}
+        </p>
+        <Button
+          className="w-full sm:w-fit"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              setChecks(null);
+              const res = await diagnosePush();
+              if (res.ok) setChecks(res.data?.checks ?? []);
+              else toast.error(res.error);
+            })
+          }
+        >
+          {pending ? tl("Sprawdzam… (do 10 s)", "Checking… (up to 10 s)") : tl("Sprawdź powiadomienia", "Check notifications")}
+        </Button>
+        {checks ? (
+          <ul className="grid gap-2">
+            {checks.map((c, i) => (
+              <li key={i} className="grid gap-1 rounded-lg border border-border p-3 text-[13.5px]">
+                <span className="flex items-start gap-2">
+                  {c.ok ? <CircleCheck className="mt-0.5 size-4 shrink-0 text-done" /> : <CircleX className="mt-0.5 size-4 shrink-0 text-problem" />}
+                  <span className="min-w-0 break-words">{c.label}</span>
+                </span>
+                {c.fix ? <span className="pl-6 text-[12.5px] text-muted break-words">{c.fix}</span> : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </CardContent>
     </Card>
   );

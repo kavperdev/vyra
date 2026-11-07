@@ -391,7 +391,7 @@ function StrengthEntry({
         return (
           <Card key={r.exercise_id}>
             <CardHeader>
-              <div className="grid gap-0.5">
+              <div className="grid min-w-0 flex-1 gap-0.5">
                 <CardTitle>{r.exercise_name}</CardTitle>
                 <p className="text-[12px] text-muted">
                   {[plan?.muscle_group, plan?.rest_s ? `przerwa ${formatDuration(plan.rest_s)}` : null, plan?.tempo ? `tempo ${plan.tempo}` : null]
@@ -399,7 +399,7 @@ function StrengthEntry({
                     .join(" · ")}
                 </p>
               </div>
-              <Select aria-label={`Status: ${r.exercise_name}`} className="h-9 w-40" {...register(`exercises.${i}.status`)}>
+              <Select aria-label={`Status: ${r.exercise_name}`} className="h-10 w-full sm:w-48" {...register(`exercises.${i}.status`)}>
                 <option value="pending">{tl("Do uzupełnienia", "To update")}</option>
                 <option value="done">{tl("Wykonane", "Done")}</option>
                 <option value="partial">{tl("Częściowo", "Partly")}</option>

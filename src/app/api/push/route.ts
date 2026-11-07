@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
             link: j.link ?? "/panel",
             tag: id,
           }),
-          { TTL: 60 * 60 * 24 },
+          // High urgency: delivered right away even when the phone is locked or the app is closed.
+          { TTL: 60 * 60 * 24, urgency: "high" },
         );
         sent++;
       } catch (e) {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
 import { AccountSettings } from "@/components/shared/account-settings";
-import { MailTest, VapidKeys } from "@/components/coach/vapid-keys";
+import { MailTest, PushDiagnostics, VapidKeys } from "@/components/coach/vapid-keys";
 import { CoachMethodCard } from "@/components/coach/coach-method";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -33,6 +33,7 @@ export default async function CoachSettingsPage() {
       {planner ? <CoachMethodCard initial={own} inherited={inherited} /> : null}
       <AccountSettings fullName={user.profile.full_name} email={user.email} />
       {user.profile.staff_role === "founder" ? <MailTest /> : null}
+      {user.profile.staff_role === "founder" ? <PushDiagnostics /> : null}
       {user.profile.staff_role === "founder" ? <VapidKeys /> : null}
     </div>
   );

@@ -76,7 +76,7 @@ export async function sendTestPush(): Promise<ActionResult> {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           JSON.stringify({ title: "VYRA", body: "Powiadomienia działają na tym urządzeniu.", link: "/panel", tag: "test" }),
-          { TTL: 600 },
+          { TTL: 600, urgency: "high" },
         );
         sent++;
       } catch (e) {
@@ -136,5 +136,90 @@ export async function sendTestMail(): Promise<ActionResult> {
       return { ok: false, error: `Resend: ${m}` };
     }
     return { ok: true, message: `Wysłano test na ${user.email}. Sprawdź też Spam.` };
+  });
+}
+
+export interface PushReport {
+  checks: { ok: boolean; label: string; fix?: string }[];
+}
+
+/**
+ * Founder only: follows a real notification all the way (database → /api/push → phone) and says
+ * in plain words which step fails.
+ */
+export async function diagnosePush(): Promise<ActionResult<PushReport>> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Tylko dla założycieli." };
+    const checks: PushReport["checks"] = [];
+
+    const keys = vapidKeys();
+    let keysOk = !!keys;
+    if (keys) {
+      try {
+        webpush.setVapidDetails(vapidSubject(), keys.publicKey, keys.privateKey);
+      } catch (e) {
+        keysOk = false;
+        checks.push({ ok: false, label: `Klucze VAPID są nieprawidłowe: ${vapidProblem(e)}`, fix: "Wygeneruj nowe klucze niżej, wklej do Vercel, zrób redeploy i włącz powiadomienia na telefonie od nowa." });
+      }
+    }
+    if (!keys) checks.push({ ok: false, label: "Brak kluczy VAPID w Vercel", fix: "Wygeneruj klucze niżej, dodaj NEXT_PUBLIC_VAPID_PUBLIC_KEY i VAPID_PRIVATE_KEY w Vercel, zrób redeploy." });
+    else if (keysOk) checks.push({ ok: true, label: "Klucze VAPID na serwerze są poprawne" });
+
+    const { data: diag, error } = await supabase.rpc("push_diagnose");
+    if (error) {
+      checks.push({ ok: false, label: "Brak diagnostyki w bazie", fix: "Uruchom w Supabase migrację 20261108000500_push_diagnostics.sql." });
+      return { ok: true, data: { checks } };
+    }
+    const d = diag as { pg_net: boolean; endpoint: string | null; my_devices: number; all_devices: number; responses: { status: number | null; body: string | null; error: string | null }[] };
+    checks.push(
+      d.pg_net
+        ? { ok: true, label: "Baza może wysyłać powiadomienia (pg_net włączone)" }
+        : { ok: false, label: "W bazie wyłączone pg_net, więc baza nie wysyła żadnych powiadomień", fix: "Supabase → Database → Extensions → wyszukaj pg_net → włącz. Potem uruchom ponownie migrację 20261101000500_push_and_camp_app.sql." },
+    );
+    checks.push(
+      d.endpoint && /^https:\/\/\S+\/api\/push$/.test(d.endpoint)
+        ? { ok: true, label: `Adres wysyłki: ${d.endpoint}` }
+        : { ok: false, label: `Zły adres wysyłki: ${d.endpoint ?? "brak"}`, fix: "W Supabase SQL: update app_config set value = 'https://www.vyraathl.pl/api/push' where key = 'push_endpoint';" },
+    );
+    checks.push(
+      d.my_devices > 0
+        ? { ok: true, label: `Twoje urządzenia z włączonymi powiadomieniami: ${d.my_devices} (wszystkich w zespole: ${d.all_devices})` }
+        : { ok: false, label: "To konto nie ma żadnego urządzenia z powiadomieniami", fix: "Na telefonie otwórz VYRA z ikony na ekranie głównym → Ustawienia → Włącz powiadomienia." },
+    );
+
+    // Full path: a real notification for yourself, then check that the app picked it up.
+    const { data: id, error: e2 } = await supabase.rpc("push_selftest");
+    if (e2 || !id) {
+      checks.push({ ok: false, label: "Nie udało się utworzyć testowego powiadomienia", fix: "Uruchom migrację 20261108000500_push_diagnostics.sql." });
+      return { ok: true, data: { checks } };
+    }
+    let pushed = false;
+    for (let i = 0; i < 8 && !pushed; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const { data: n } = await supabase.from("notifications").select("pushed_at").eq("id", id as string).maybeSingle();
+      pushed = !!(n as { pushed_at: string | null } | null)?.pushed_at;
+    }
+    if (pushed) {
+      checks.push({ ok: true, label: "Pełna droga działa: baza wysłała, aplikacja przekazała do telefonu. Powinieneś dostać „Test VYRA”." });
+    } else {
+      const { data: after } = await supabase.rpc("push_diagnose");
+      const last = ((after as typeof d | null)?.responses ?? d.responses)[0];
+      const why = !last
+        ? "baza nie dostała jeszcze żadnej odpowiedzi od aplikacji"
+        : last.error
+          ? `błąd połączenia: ${last.error}`
+          : `aplikacja odpowiedziała kodem ${last.status}${last.body ? `: ${last.body}` : ""}`;
+      checks.push({
+        ok: false,
+        label: `Powiadomienie z bazy nie dotarło do aplikacji (${why})`,
+        fix:
+          last?.status === 308 || last?.status === 307 || last?.status === 301
+            ? "Adres wysyłki przekierowuje (np. bez www → z www). Ustaw w app_config dokładnie ten adres, pod którym działa strona."
+            : last?.status === 401 || last?.status === 403
+              ? "Vercel blokuje wywołanie (np. ochrona wdrożeń). Wyłącz Deployment Protection dla produkcji albo dodaj wyjątek dla /api/push."
+              : "Sprawdź ponownie za minutę. Jeśli dalej nie działa, wyślij mi zrzut tego ekranu.",
+      });
+    }
+    return { ok: true, data: { checks } };
   });
 }

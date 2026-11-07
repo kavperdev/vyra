@@ -52,7 +52,7 @@ export default async function ReferPage() {
             <Gift className="size-4 text-accent" /> {tl("Twój link", "Your link")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid grid-cols-[minmax(0,1fr)] gap-4">
           <ReferralShare
             url={url}
             text={tl(
