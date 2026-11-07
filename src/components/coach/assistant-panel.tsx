@@ -163,7 +163,7 @@ export function InsightView({
           </div>
         </CardHeader>
         <CardContent className="grid gap-5">
-          <p className="text-[14.5px] leading-relaxed">{insight.summary}</p>
+          <p className="whitespace-pre-line break-words text-[14.5px] leading-relaxed">{insight.summary}</p>
           {insight.injury_guard ? (
             <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
               <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.15em] text-warning">{tl("Ochrona przed kontuzjami", "Injury protection")}</p>

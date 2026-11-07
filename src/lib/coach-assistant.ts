@@ -416,50 +416,130 @@ Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy):
 {"summary":"3–5 zdań: poziom i okres według metody, gdzie jesteśmy w cyklu, jak zawodnik reaguje, najważniejszy wniosek","positives":["do 3"],"risks":[{"level":"low|medium|high","text":"..."}],"injury_guard":"jak plan chroni przed kontuzjami tego zawodnika, konkretnie (albo null)","focus":"1–2 zdania: priorytet na 2 tygodnie","cycle":[{"week_start":"YYYY-MM-DD (poniedziałek)","phase":"baza|rozwój progu|okres startowy|taper|start|roztrenowanie|tydzień lżejszy","km":40,"long_run":"np. 16 km spokojnie, ostatnie 15 min progu","focus":"cel tygodnia","key_sessions":"akcenty tygodnia, np. 5×2 km/60 s @4:05; 20×1 min/30 s"}],"suggestions":[{"date":"YYYY-MM-DD","category":"threshold","title":"krótka nazwa","distance_km":12,"duration_min":null,"pace_from":"4:00","pace_to":"4:08","zone":"Z3","description":"instrukcja dla zawodnika ze strukturą, tempem, tętnem i odczuciem","why":"dlaczego: odniesienie do okresu, reakcji zawodnika i metody"}]}
 Pola, których nie ustalasz, ustaw na null. pace_from to szybsza granica.`;
 
-/** Asks the model. Returns null when the assistant is not configured or the answer could not be used. */
-export async function runAssistant(context: string, today: string, method = ""): Promise<Insight | null> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
+/** JSON schema of the answer: the model fills it in as a tool call, so the result is always well-formed. */
+const ANSWER_TOOL = {
+  name: "zapisz_analize",
+  description: "Zapisz analizę zawodnika, zarys cyklu i propozycje treningów.",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary: { type: "string" },
+      positives: { type: "array", items: { type: "string" } },
+      risks: { type: "array", items: { type: "object", properties: { level: { type: "string", enum: ["low", "medium", "high"] }, text: { type: "string" } }, required: ["level", "text"] } },
+      injury_guard: { type: ["string", "null"] },
+      focus: { type: "string" },
+      cycle: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { week_start: { type: "string" }, phase: { type: "string" }, km: { type: ["number", "null"] }, long_run: { type: "string" }, focus: { type: "string" }, key_sessions: { type: "string" } },
+          required: ["week_start", "phase"],
+        },
+      },
+      suggestions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            date: { type: "string" },
+            category: { type: "string" },
+            title: { type: "string" },
+            distance_km: { type: ["number", "null"] },
+            duration_min: { type: ["number", "null"] },
+            pace_from: { type: ["string", "null"] },
+            pace_to: { type: ["string", "null"] },
+            zone: { type: ["string", "null"] },
+            description: { type: "string" },
+            why: { type: "string" },
+          },
+          required: ["date", "category", "title", "description", "why"],
+        },
+      },
+    },
+    required: ["summary", "positives", "risks", "focus", "cycle", "suggestions"],
+  },
+};
+
+export type AssistantResult = { insight: Insight } | { error: string; raw?: string };
+
+/** Plain-language reason from an API error response. */
+function apiProblem(status: number, body: string): string {
+  const msg = (() => {
+    try {
+      return (JSON.parse(body) as { error?: { message?: string } }).error?.message ?? body;
+    } catch {
+      return body;
+    }
+  })().slice(0, 200);
+  if (status === 401) return "klucz ANTHROPIC_API_KEY jest nieprawidłowy (sprawdź, czy wkleiłeś cały)";
+  if (status === 400 && /credit|balance/i.test(msg)) return "brak środków na koncie Anthropic (Billing)";
+  if (status === 404 || /model/i.test(msg)) return `model „${assistantModel()}” jest niedostępny (${msg})`;
+  if (status === 429) return "za dużo zapytań naraz, spróbuj za minutę";
+  if (status === 529 || status >= 500) return "serwery Anthropic są przeciążone, spróbuj za kilka minut";
+  return `błąd ${status}: ${msg}`;
+}
+
+/**
+ * Asks the model. The answer comes as a forced tool call (always valid JSON), with enough room that a long
+ * cycle outline is never cut off. When the answer cannot be used, the raw text is returned so it is not lost.
+ */
+export async function runAssistant(context: string, today: string, method = ""): Promise<AssistantResult> {
+  const key = (process.env.ANTHROPIC_API_KEY ?? "").trim().replace(/^["']+|["']+$/g, "");
+  if (!key) return { error: "brak klucza ANTHROPIC_API_KEY w Vercel" };
+  const system = [
+    { type: "text", text: SYSTEM.replace("Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy):", "Odpowiedź zapisz narzędziem zapisz_analize, w tym kształcie:") },
+    // The method is long and the same for every athlete: cached between analyses.
+    { type: "text", text: `METODA TRENERA (według niej planujesz):\n${(method || VYRA_METHOD).slice(0, 20000)}`, cache_control: { type: "ephemeral" } },
+  ];
+  let res: Response;
   try {
-    const system = [
-      { type: "text", text: SYSTEM },
-      // The method is long and the same for every athlete: cached between analyses.
-      { type: "text", text: `METODA TRENERA (według niej planujesz):\n${(method || VYRA_METHOD).slice(0, 20000)}`, cache_control: { type: "ephemeral" } },
-    ];
-    const call = (thinking: boolean) =>
-      fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-        body: JSON.stringify({
-          model: assistantModel(),
-          max_tokens: thinking ? 12000 : 7000,
-          // Time to reason through safety, level, period and the athlete's response before answering.
-          ...(thinking ? { thinking: { type: "enabled", budget_tokens: 4000 } } : {}),
-          system,
-          messages: [{ role: "user", content: context }],
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(240_000),
-      });
-    let res = await call(true);
-    if (res.status === 400) {
-      // A model without extended thinking: ask again without it.
-      console.error("[assistant] thinking refused:", (await res.text()).slice(0, 200));
-      res = await call(false);
-    }
-    if (!res.ok) {
-      console.error("[assistant]", res.status, (await res.text()).slice(0, 300));
-      return null;
-    }
-    const json = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const text = json.content?.filter((c) => c.type === "text").map((c) => c.text ?? "").join("") ?? "";
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return null;
-    return cleanInsight(JSON.parse(m[0]), today);
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model: assistantModel(),
+        max_tokens: 16000,
+        system,
+        tools: [ANSWER_TOOL],
+        tool_choice: { type: "tool", name: ANSWER_TOOL.name },
+        messages: [{ role: "user", content: context }],
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(250_000),
+    });
   } catch (e) {
-    console.error("[assistant]", e);
-    return null;
+    console.error("[assistant] fetch", e);
+    return { error: (e as Error).name === "TimeoutError" ? "odpowiedź trwała za długo, spróbuj ponownie" : "brak połączenia z Anthropic" };
   }
+  const body = await res.text();
+  if (!res.ok) {
+    console.error("[assistant]", res.status, body.slice(0, 400));
+    return { error: apiProblem(res.status, body) };
+  }
+  let json: { content?: { type: string; text?: string; input?: unknown }[]; stop_reason?: string };
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return { error: "nieczytelna odpowiedź serwera", raw: body.slice(0, 20000) };
+  }
+  const tool = json.content?.find((c) => c.type === "tool_use");
+  const text = json.content?.filter((c) => c.type === "text").map((c) => c.text ?? "").join("\n") ?? "";
+  let parsed: unknown = tool?.input ?? null;
+  if (!parsed && text) {
+    const m = text.match(/\{[\s\S]*\}/);
+    try {
+      parsed = m ? JSON.parse(m[0]) : null;
+    } catch {
+      parsed = null;
+    }
+  }
+  const insight = parsed ? cleanInsight(parsed, today) : null;
+  if (insight) return { insight };
+  console.error("[assistant] unusable answer", json.stop_reason, body.slice(0, 400));
+  return {
+    error: json.stop_reason === "max_tokens" ? "odpowiedź była za długa i została ucięta" : "odpowiedź miała zły format",
+    raw: tool?.input ? JSON.stringify(tool.input, null, 1).slice(0, 20000) : text.slice(0, 20000) || body.slice(0, 20000),
+  };
 }
 
 const str = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");

@@ -16,14 +16,18 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
     const athlete = await getAthlete(supabase, user.id, athleteId);
     if (!athlete) return { ok: false, error: "Nie znaleziono zawodnika." };
 
-    // One analysis per athlete every 2 minutes is plenty and keeps costs predictable.
-    const { data: recent } = await supabase
+    // Check that everything the result needs exists BEFORE the paid call: a missing table must not cost money.
+    const { data: recent, error: tableError } = await supabase
       .from("coach_insights")
       .select("id, created_at")
       .eq("athlete_id", athleteId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (tableError) {
+      return { ok: false, error: "Baza nie ma jeszcze tabeli na analizy. Uruchom w Supabase migracje 20261108000100–20261108000400 (po kolei), potem spróbuj ponownie. Nic nie zostało pobrane." };
+    }
+    // One analysis per athlete every 2 minutes is plenty and keeps costs predictable.
     if (recent && Date.now() - Date.parse(recent.created_at as string) < 120_000) {
       return { ok: true, data: { id: recent.id as string }, message: "Analiza jest świeża, pokazuję ostatnią." };
     }
@@ -31,15 +35,27 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
     const today = todayISO(user.profile.timezone);
     const firstName = (athlete.full_name || "Zawodnik").split(/\s+/)[0];
     const [context, method] = await Promise.all([buildContext(supabase, athleteId, firstName, today, user.id), coachMethod(supabase, user.id).catch(() => "")]);
-    const insight = await runAssistant(context, today, method);
-    if (!insight) return { ok: false, error: "Nie udało się przygotować analizy. Spróbuj za chwilę." };
+    const result = await runAssistant(context, today, method);
+
+    // A paid answer is never thrown away: if it could not be read as a full analysis, keep its text.
+    const content =
+      "insight" in result
+        ? result.insight
+        : result.raw
+          ? { summary: `Analiza nie dała się w pełni odczytać (${result.error}). Surowa odpowiedź poniżej:\n\n${result.raw}`.slice(0, 20000), positives: [], risks: [], focus: "", suggestions: [] }
+          : null;
+    if (!content) return { ok: false, error: `Nie udało się przygotować analizy: ${"error" in result ? result.error : "nieznany błąd"}.` };
 
     const { data, error } = await supabase
       .from("coach_insights")
-      .insert({ athlete_id: athleteId, created_by: user.id, model: assistantModel(), content: insight })
+      .insert({ athlete_id: athleteId, created_by: user.id, model: assistantModel(), content })
       .select("id")
       .single();
     if (error) return dbError(error);
+    if (!("insight" in result)) {
+      revalidatePath(`/coach/athletes/${athleteId}`);
+      return { ok: true, data: { id: data.id as string }, message: `Analiza zapisana bez pełnej struktury (${result.error}). Tekst jest widoczny w zakładce.` };
+    }
     revalidatePath(`/coach/athletes/${athleteId}`);
     return { ok: true, data: { id: data.id as string }, message: "Analiza gotowa." };
   });
