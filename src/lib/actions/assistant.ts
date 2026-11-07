@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assistantConfigured, assistantModel, buildContext, runAssistant } from "@/lib/coach-assistant";
+import { assistantConfigured, assistantModel, buildContext, coachMethod, runAssistant } from "@/lib/coach-assistant";
 import { getAthlete } from "@/lib/data/people";
 import { todayISO } from "@/lib/dates";
 import type { ActionResult } from "@/lib/types";
@@ -30,8 +30,8 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
 
     const today = todayISO(user.profile.timezone);
     const firstName = (athlete.full_name || "Zawodnik").split(/\s+/)[0];
-    const context = await buildContext(supabase, athleteId, firstName, today);
-    const insight = await runAssistant(context, today);
+    const [context, method] = await Promise.all([buildContext(supabase, athleteId, firstName, today), coachMethod(supabase, user.id).catch(() => "")]);
+    const insight = await runAssistant(context, today, method);
     if (!insight) return { ok: false, error: "Nie udało się przygotować analizy. Spróbuj za chwilę." };
 
     const { data, error } = await supabase
@@ -42,5 +42,19 @@ export async function analyzeAthlete(athleteId: string): Promise<ActionResult<{ 
     if (error) return dbError(error);
     revalidatePath(`/coach/athletes/${athleteId}`);
     return { ok: true, data: { id: data.id as string }, message: "Analiza gotowa." };
+  });
+}
+
+const METHOD_MAX = 6000;
+
+/** Saves "Moja metoda": the principles the assistant follows when it plans for this coach's athletes. */
+export async function saveCoachMethod(body: string): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    const text = (body ?? "").trim();
+    if (text.length > METHOD_MAX) return { ok: false, error: `Metoda może mieć najwyżej ${METHOD_MAX} znaków.` };
+    const { error } = await supabase.from("coach_methods").upsert({ coach_id: user.id, body: text, updated_at: new Date().toISOString() });
+    if (error) return dbError(error);
+    revalidatePath("/coach/settings");
+    return { ok: true, message: text ? "Zapisano metodę. Asystent będzie się jej trzymał." : "Usunięto metodę." };
   });
 }

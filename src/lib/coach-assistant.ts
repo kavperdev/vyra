@@ -1,12 +1,13 @@
 import "server-only";
-import { addDaysISO } from "@/lib/dates";
-import { getAthleteProfile, listCoachNotes, listGoals, listRecords } from "@/lib/data/people";
+import { addDaysISO, weekStartISO } from "@/lib/dates";
+import { getAthleteProfile, listCoachNotes, listGoals, listPlans, listRecords } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { formatDuration, formatPace, parsePace } from "@/lib/format";
 import type { ServerSupabase } from "@/lib/supabase/server";
 import { weeklyBuckets } from "@/lib/training/analytics";
 import { CATEGORIES } from "@/lib/training/categories";
 import { predictRaces } from "@/lib/training/prediction";
+import { raceCountdown, type RacePhase } from "@/lib/training/race";
 import { isDone } from "@/lib/training/status";
 
 /** What the coach sees: a short read of the athlete and sessions to consider for the next two weeks. */
@@ -41,11 +42,28 @@ const RUN_CATEGORIES = CATEGORIES.filter((c) => c.kind === "running").map((c) =>
 const clip = (s: string | null | undefined, n: number) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const km = (m: number | null | undefined) => (m ? (m / 1000).toFixed(1) : "-");
 
+const PHASE_TEXT: Record<RacePhase, string> = {
+  base: "BAZA (ponad 14 tyg. do startu): budowanie objętości i tlenowej bazy, akcenty progowe w kontrolowanej intensywności, siła",
+  build: "BUDOWANIE (6–14 tyg. do startu): więcej pracy specyficznej, progi dłuższe, pierwsze odcinki w tempie startowym",
+  peak: "SZCZYT (2–6 tyg. do startu): trening specyficzny pod dystans, tempo startowe, najdłuższe kluczowe jednostki",
+  taper: "TAPERING (ostatnie 14 dni): objętość niżej o 30–50%, krótkie akcenty dla świeżości, bez nowych bodźców",
+  race: "START (dziś lub już minął)",
+};
+
+const QUALITY = new Set(["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"]);
+
+/** The coach's own method; a coach without one uses the founder's (team default). */
+export async function coachMethod(supabase: ServerSupabase, coachId: string): Promise<string> {
+  const { data } = await supabase.from("coach_methods").select("coach_id, body");
+  const rows = ((data ?? []) as { coach_id: string; body: string }[]).filter((r) => r.body.trim());
+  return (rows.find((r) => r.coach_id === coachId) ?? rows[0])?.body.trim() ?? "";
+}
+
 /** Plain-text summary of everything relevant about the athlete, without e-mail or surname. */
 export async function buildContext(supabase: ServerSupabase, athleteId: string, firstName: string, today: string): Promise<string> {
   const from = addDaysISO(today, -42);
-  const [sessions, year, profile, goals, records, notes, readiness] = await Promise.all([
-    listSessions(supabase, { athleteIds: [athleteId], from, to: addDaysISO(today, 14) }),
+  const [long, year, profile, goals, records, notes, readiness, plans] = await Promise.all([
+    listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -140), to: addDaysISO(today, 14) }),
     listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
     getAthleteProfile(supabase, athleteId),
     listGoals(supabase, athleteId).catch(() => []),
@@ -58,7 +76,9 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
       .gte("day", addDaysISO(today, -14))
       .order("day")
       .then((r) => (r.data ?? []) as { day: string; sleep: number; energy: number; soreness: number; pain: boolean; pain_area: string | null; note: string | null }[]),
+    listPlans(supabase, athleteId).catch(() => []),
   ]);
+  const sessions = long.filter((x) => x.scheduled_date >= from);
 
   const lines: string[] = [];
   lines.push(`Dzisiaj: ${today}. Zawodnik: ${firstName}.`);
@@ -77,13 +97,55 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
     }
   }
 
-  const active = goals.filter((g) => g.status === "active");
-  if (active.length) lines.push(`Aktywne cele: ${active.map((g) => `${g.name}${g.deadline ? ` (do ${g.deadline})` : ""}${g.target_value != null ? `, cel ${g.target_value}${g.unit ?? ""}` : ""}`).join("; ")}`);
+  const goalText = (g: (typeof goals)[number]) =>
+    `${g.name}${g.deadline ? ` (${g.deadline})` : ""}${g.target_value != null ? `, cel ${g.unit === "s" ? formatDuration(g.target_value) : `${g.target_value}${g.unit ?? ""}`}` : ""}${g.description ? `, ${clip(g.description, 200)}` : ""}`;
+  const race = raceCountdown(goals, today);
+  if (race) {
+    lines.push(
+      `START DOCELOWY${race.goal.is_main ? " (A)" : " (najbliższy cel z datą, nieoznaczony jako A)"}: ${goalText(race.goal)}. Za ${race.daysLeft} dni, tydzień ${race.week} z ${race.totalWeeks} przygotowań. Faza: ${PHASE_TEXT[race.phase]}.`,
+    );
+  } else {
+    lines.push("Brak startu docelowego z datą: planuj rozwój ogólny (faza bazy), bez szczytowania formy.");
+  }
+  const others = goals.filter((g) => g.status === "active" && g.id !== race?.goal.id);
+  if (others.length) lines.push(`Inne aktywne cele (pośrednie, starty B/C): ${others.map(goalText).join("; ")}`);
+  const currentPlans = plans.filter((p) => !p.end_date || p.end_date >= addDaysISO(today, -14)).slice(0, 2);
+  for (const p of currentPlans) {
+    lines.push(`Plan treningowy: „${clip(p.name, 120)}” ${p.start_date}–${p.end_date ?? "bez końca"}${p.goal ? `, cel planu: ${clip(p.goal, 200)}` : ""}${p.description ? `, opis: ${clip(p.description, 600)}` : ""}`);
+  }
   const runRecords = records.filter((r) => r.kind === "running" && r.unit === "s").slice(0, 8);
   if (runRecords.length) lines.push(`Rekordy: ${runRecords.map((r) => `${r.label} ${formatDuration(Number(r.value))} (${r.achieved_on})`).join("; ")}`);
 
   const p = predictRaces(year, records, today);
   if (p) lines.push(`Prognoza wyników (VDOT ${p.vdot}): ${p.times.map((t) => `${t.label} ${formatDuration(t.seconds)}`).join(", ")}. Średnio ${p.weeklyKm} km/tydz. w ostatnich 6 tyg.`);
+
+  // 20 weeks in short: how the cycle has been built so far.
+  lines.push("Ostatnie 20 tygodni w skrócie (start tygodnia: km wykonane, biegi, najdłuższy bieg, akcenty, siła, śr. RPE):");
+  const weeks = new Map<string, { km: number; runs: number; longest: number; quality: number; strength: number; rpe: number[] }>();
+  for (const s of long) {
+    const e = s.execution;
+    if (!e || !isDone(e.status) || e.performed_on > today) continue;
+    const w = weekStartISO(e.performed_on);
+    const b = weeks.get(w) ?? { km: 0, runs: 0, longest: 0, quality: 0, strength: 0, rpe: [] };
+    if (s.kind === "running") {
+      const k = (e.distance_m ?? 0) / 1000;
+      b.km += k;
+      b.runs += 1;
+      b.longest = Math.max(b.longest, k);
+      if (QUALITY.has(s.category)) b.quality += 1;
+    } else if (s.kind === "strength") b.strength += 1;
+    if (e.rpe) b.rpe.push(Number(e.rpe));
+    weeks.set(w, b);
+  }
+  for (let i = 19; i >= 0; i--) {
+    const w = weekStartISO(addDaysISO(today, -7 * i));
+    const b = weeks.get(w);
+    lines.push(
+      b
+        ? `${w}: ${b.km.toFixed(1)} km, ${b.runs} biegów, najdłuższy ${b.longest.toFixed(1)} km, akcenty ${b.quality}, siła ${b.strength}, RPE ${b.rpe.length ? (b.rpe.reduce((a, x) => a + x, 0) / b.rpe.length).toFixed(1) : "-"}`
+        : `${w}: brak wykonanych treningów`,
+    );
+  }
 
   const buckets = weeklyBuckets(sessions, today, 6);
   lines.push(
@@ -115,21 +177,28 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
 
 const SYSTEM = `Jesteś asystentem trenera biegania w VYRA. Trener prowadzi amatorów. Na podstawie danych zawodnika przygotuj krótką, konkretną analizę i propozycje treningów na najbliższe 14 dni, które trener sprawdzi i ewentualnie doda do planu.
 
+Jak myśleć:
+- Zacznij od startu docelowego, liczby dni do niego i fazy przygotowań. Każda propozycja ma pasować do tej fazy.
+- Oceń cykl na podstawie 20 tygodni: czy objętość rosła stopniowo, czy były tygodnie lżejsze, jak często były akcenty i długie wybiegania.
+- Ostatnie 6 tygodni czytaj trening po treningu: realizacja, tempa względem planu, RPE, komentarze, samopoczucie.
+- Jeśli trener podał swoją metodę, stosuj ją w pierwszej kolejności przy doborze akcentów, temp i struktury tygodnia. Zasady poniżej (zwłaszcza bezpieczeństwo) mają zawsze pierwszeństwo.
+
 Zasady:
 - Pisz po polsku, rzeczowo, jak doświadczony trener do trenera. Bez lania wody.
 - Opieraj się tylko na danych. Gdy danych jest mało, powiedz to wprost.
 - Bezpieczeństwo: tygodniowy kilometraż rośnie najwyżej o ok. 10%. Co najmniej 80% objętości spokojnie. Maks. 2 akcenty (trening jakościowy) w tygodniu. Po akcencie dzień spokojny lub wolny.
+- Co 3–4 tygodnie tydzień lżejszy, jeśli w danych go nie było, zaproponuj go.
 - Jeśli zawodnik zgłasza ból lub bardzo słabe samopoczucie, zaproponuj odciążenie i konsultację z fizjoterapeutą. Nie stawiaj diagnoz.
 - Tempa dobieraj do prognozy wyników i ostatnich treningów. Easy i long run w tempie konwersacyjnym.
 - Propozycje tylko na dni, na które nic nie jest jeszcze zaplanowane, w przedziale od jutra do 14 dni. 3–6 propozycji.
 - Kategorie treningu (pole category) wybieraj wyłącznie z listy: ${RUN_CATEGORIES.join(", ")}.
 
 Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy) w tym kształcie:
-{"summary":"2–4 zdania o formie i realizacji planu","positives":["do 3 punktów"],"risks":[{"level":"low|medium|high","text":"..."}],"focus":"1–2 zdania: priorytet na najbliższe 2 tygodnie","suggestions":[{"date":"YYYY-MM-DD","category":"easy","title":"krótka nazwa","distance_km":8,"duration_min":null,"pace_from":"5:30","pace_to":"5:50","zone":"Z2","description":"instrukcja dla zawodnika, z rozgrzewką i strukturą","why":"dlaczego ten trening, dla trenera"}]}
+{"summary":"2–4 zdania: gdzie jesteśmy w cyklu (faza, dni do startu), forma i realizacja planu","positives":["do 3 punktów"],"risks":[{"level":"low|medium|high","text":"..."}],"focus":"1–2 zdania: priorytet na najbliższe 2 tygodnie","suggestions":[{"date":"YYYY-MM-DD","category":"easy","title":"krótka nazwa","distance_km":8,"duration_min":null,"pace_from":"5:30","pace_to":"5:50","zone":"Z2","description":"instrukcja dla zawodnika, z rozgrzewką i strukturą","why":"dlaczego ten trening, dla trenera"}]}
 Pola, których nie ustalasz, ustaw na null. pace_from to szybsza granica.`;
 
 /** Asks the model. Returns null when the assistant is not configured or the answer could not be used. */
-export async function runAssistant(context: string, today: string): Promise<Insight | null> {
+export async function runAssistant(context: string, today: string, method = ""): Promise<Insight | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
   try {
@@ -139,7 +208,7 @@ export async function runAssistant(context: string, today: string): Promise<Insi
       body: JSON.stringify({
         model: assistantModel(),
         max_tokens: 3000,
-        system: SYSTEM,
+        system: method ? `${SYSTEM}\n\nMETODA TRENERA (stosuj ją przy planowaniu):\n${method.slice(0, 6000)}` : SYSTEM,
         messages: [{ role: "user", content: context }],
       }),
       cache: "no-store",

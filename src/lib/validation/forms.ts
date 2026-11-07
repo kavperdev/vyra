@@ -100,6 +100,7 @@ export const goalSchema = z.object({
   lower_is_better: z.boolean(),
   deadline: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Wybierz datę"),
   status: z.enum(["active", "achieved", "abandoned"]),
+  is_main: z.boolean().optional(),
 });
 
 export const templateMetaSchema = z.object({

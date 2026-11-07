@@ -994,3 +994,27 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  foreign coach cannot write an analysis';
 end $$;
 select pg_temp.as_admin();
+
+-- ---------------------------------------------------------------- main race and coach method
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.coach_methods (coach_id, body) values ('00000000-0000-0000-0000-0000000000c1', '2 akcenty progowe');
+select pg_temp.check((select body from public.coach_methods where coach_id = auth.uid()) = '2 akcenty progowe', 'coach saves own method');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.coach_methods) = 0, 'athlete does not see coach methods');
+do $$ begin
+  insert into public.coach_methods (coach_id, body) values ('00000000-0000-0000-0000-0000000000a1', 'x');
+  raise exception 'FAIL: athlete saved a method';
+exception when insufficient_privilege then raise notice 'ok  athlete cannot save a method';
+end $$;
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+do $$ begin
+  update public.coach_methods set body = 'hack' where coach_id = '00000000-0000-0000-0000-0000000000c1';
+end $$;
+select pg_temp.as_admin();
+select pg_temp.check((select body from public.coach_methods where coach_id = '00000000-0000-0000-0000-0000000000c1') = '2 akcenty progowe', 'another coach cannot change the method');
+insert into public.athlete_goals (athlete_id, name, is_main) values ('00000000-0000-0000-0000-0000000000a1', 'Półmaraton', true);
+do $$ begin
+  insert into public.athlete_goals (athlete_id, name, is_main) values ('00000000-0000-0000-0000-0000000000a1', 'Drugi start A', true);
+  raise exception 'FAIL: two main races';
+exception when unique_violation then raise notice 'ok  only one main race per athlete';
+end $$;

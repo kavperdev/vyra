@@ -289,6 +289,8 @@ export interface AthleteGoal {
   lower_is_better: boolean;
   deadline: string | null;
   status: GoalStatus;
+  /** Main race (A start); absent before migration 20261108000200. */
+  is_main?: boolean;
   created_at: string;
 }
 

@@ -22,11 +22,12 @@ export function phaseFor(daysLeft: number): RacePhase {
   return "base";
 }
 
-/** The nearest active goal with a date that is today or later: the athlete's target race. */
+/** The athlete's target race: the main race (A start) if marked, otherwise the nearest active goal with a date from today on. */
 export function raceCountdown(goals: AthleteGoal[], today: string): RaceCountdown | null {
-  const next = goals
+  const upcoming = goals
     .filter((g) => g.status === "active" && g.deadline && g.deadline >= today)
-    .sort((a, b) => a.deadline!.localeCompare(b.deadline!))[0];
+    .sort((a, b) => a.deadline!.localeCompare(b.deadline!));
+  const next = upcoming.find((g) => g.is_main) ?? upcoming[0];
   if (!next) return null;
   const start = Math.min(day(next.created_at), day(today));
   const end = day(next.deadline!);

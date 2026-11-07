@@ -204,9 +204,10 @@ async function TabContent({
   }
 
   if (tab === "assistant") {
-    const [year, records, latest] = await Promise.all([
+    const [year, records, goals, latest] = await Promise.all([
       listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
       listRecords(supabase, athleteId).catch(() => []),
+      listGoals(supabase, athleteId).catch(() => []),
       supabase
         .from("coach_insights")
         .select("id, content, created_at")
@@ -217,8 +218,10 @@ async function TabContent({
         .then((r) => (r.data as { id: string; content: Insight; created_at: string } | null) ?? null),
     ]);
     const configured = assistantConfigured();
+    const race = raceCountdown(goals, today);
     return (
       <div className="grid gap-6">
+        {race ? <RaceCountdownCard race={race} goalsHref={`${base}?tab=records`} /> : null}
         <RacePredictionCard prediction={predictRaces(year, records, today)} sessionHref={(id) => `/coach/sessions/${id}`} />
         <Card>
           <CardHeader>
@@ -226,9 +229,12 @@ async function TabContent({
               <CardTitle>{tl("Asystent trenera", "Coach assistant")}</CardTitle>
               <p className="max-w-2xl text-sm text-muted">
                 {tl(
-                  "Czyta ostatnie 6 tygodni: plan i wykonanie, RPE, komentarze, samopoczucie, cele, rekordy i prognozę. Zwraca krótką analizę i propozycje treningów na 2 tygodnie. Widzą to tylko trenerzy, zawodnik nie.",
-                  "Reads the last 6 weeks: plan and execution, RPE, comments, readiness, goals, records and prediction. Returns a short analysis and session ideas for 2 weeks. Only coaches see it, not the athlete.",
-                )}
+                  "Bierze pod uwagę start docelowy (A), dni do startu i fazę przygotowań, plan treningowy, 20 tygodni w skrócie, ostatnie 6 tygodni trening po treningu (plan, wykonanie, RPE, komentarze), samopoczucie, cele, rekordy i prognozę. Planuje według Twojej metody. Widzą to tylko trenerzy, zawodnik nie.",
+                  "Considers the main race (A), days to go and training phase, the plan, 20 weeks in short, the last 6 weeks session by session (plan, execution, RPE, comments), readiness, goals, records and prediction. Plans by your method. Only coaches see it, not the athlete.",
+                )}{" "}
+                <Link href="/coach/settings" className="text-foreground underline-offset-2 hover:underline">
+                  {tl("Ustaw „Moją metodę”", "Set “My method”")}
+                </Link>
               </p>
             </div>
             {configured ? <AnalyzeButton athleteId={athleteId} hasInsight={!!latest} /> : null}

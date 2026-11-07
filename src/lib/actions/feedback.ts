@@ -104,7 +104,13 @@ export async function saveGoal(input: Record<string, string | boolean>): Promise
       deadline: v.deadline || null,
       status: v.status,
     };
-    const res = v.id ? await supabase.from("athlete_goals").update(row).eq("id", v.id) : await supabase.from("athlete_goals").insert(row);
+    const write = (r: Record<string, unknown>) =>
+      v.id ? supabase.from("athlete_goals").update(r).eq("id", v.id).select("id").single() : supabase.from("athlete_goals").insert(r).select("id").single();
+    // Only one main race per athlete: clear the flag on the others first.
+    if (v.is_main) await supabase.from("athlete_goals").update({ is_main: false }).eq("athlete_id", v.athlete_id).eq("is_main", true);
+    let res = await write(v.is_main === undefined ? row : { ...row, is_main: v.is_main });
+    // Before migration 20261108000200 the column does not exist yet: save without it.
+    if (res.error && /is_main/.test(res.error.message)) res = await write(row);
     if (res.error) return dbError(res.error);
     revalidatePath("/", "layout");
     return { ok: true, message: "Zapisano cel." };

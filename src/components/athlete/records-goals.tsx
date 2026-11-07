@@ -310,6 +310,7 @@ const emptyGoal = (athleteId: string): GoalDraft => ({
   lower_is_better: false,
   deadline: "",
   status: "active",
+  is_main: false,
 });
 
 function show(v: number | null, unit: string | null) {
@@ -339,7 +340,10 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
               <div key={g.id} className="grid gap-2 rounded-md border border-border p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="grid gap-0.5">
-                    <p className="font-semibold">{g.name}</p>
+                    <p className="flex flex-wrap items-center gap-2 font-semibold">
+                      {g.name}
+                      {g.is_main ? <Badge tone="accent">{tl("start docelowy", "main race")}</Badge> : null}
+                    </p>
                     {g.description ? <p className="text-[13px] text-muted">{g.description}</p> : null}
                   </div>
                   <div className="flex items-center gap-1">
@@ -363,6 +367,7 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
                           lower_is_better: g.lower_is_better,
                           deadline: g.deadline ?? "",
                           status: g.status,
+                          is_main: !!g.is_main,
                         })
                       }
                     >
@@ -453,6 +458,15 @@ export function GoalsSection({ athleteId, goals }: { athleteId: string; goals: A
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={Boolean(editing.lower_is_better)} onChange={(e) => setEditing({ ...editing, lower_is_better: e.target.checked })} />
                 {tl("Mniejsza wartość jest lepsza (np. czas)", "Lower is better (e.g. time)")}
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={Boolean(editing.is_main)} onChange={(e) => setEditing({ ...editing, is_main: e.target.checked })} />
+                <span>
+                  {tl("Start docelowy (A)", "Main race (A)")}
+                  <span className="block text-[12.5px] text-muted">
+                    {tl("Najważniejszy start sezonu. Według niego liczymy fazę treningu i odliczanie, a asystent planuje pod ten start. Może być tylko jeden.", "The season’s key race. Phase, countdown and the assistant’s suggestions follow it. Only one per athlete.")}
+                  </span>
+                </span>
               </label>
               <Button type="submit" disabled={pending}>{pending ? tl("Zapisywanie…", "Saving…") : tl("Zapisz cel", "Save goal")}</Button>
             </form>
