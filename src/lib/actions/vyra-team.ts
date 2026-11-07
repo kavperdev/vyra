@@ -55,11 +55,11 @@ export async function applyToTeam(input: {
   }
   if (SITE.email) {
     await sendMailOnce(`teamapp:${v.email}:${Date.now()}`, SITE.email, {
-      subject: `VYRA Team: zgłoszenie od ${v.name}`,
+      subject: `VYRA Athletics: zgłoszenie od ${v.name}`,
       preview: `${v.discipline} · ${v.pbs.slice(0, 80)}`,
-      title: "Nowe zgłoszenie do VYRA Team",
+      title: "Nowe zgłoszenie do VYRA Athletics",
       paragraphs: [`${v.name} (${v.email})`, `Dyscyplina: ${v.discipline}${v.city ? ` · ${v.city}` : ""}`, `Wyniki: ${v.pbs}`, ...(v.about ? [v.about] : []), ...(v.link ? [`Link: ${v.link}`] : [])],
-      after: ["Wszystkie zgłoszenia są w panelu: Strona → VYRA Team."],
+      after: ["Wszystkie zgłoszenia są w panelu: Strona → Zawodnicy."],
     });
   }
   return { ok: true };
@@ -84,7 +84,7 @@ export type TeamMemberInput = z.input<typeof memberSchema>;
 
 export async function saveTeamMember(id: string | null, input: TeamMemberInput): Promise<ActionResult> {
   return withUser("coach", async ({ supabase, user }) => {
-    if (user.profile.staff_role !== "founder") return { ok: false, error: "VYRA Team prowadzą założyciele." };
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Zawodnikami zarządzają założyciele." };
     const parsed = memberSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const v = parsed.data;

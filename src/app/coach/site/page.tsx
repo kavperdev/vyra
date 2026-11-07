@@ -153,10 +153,10 @@ export default async function SiteContentPage() {
       <Card>
         <CardHeader>
           <div className="grid gap-1">
-            <CardTitle>VYRA Team</CardTitle>
+            <CardTitle>Zawodnicy (VYRA Athletics)</CardTitle>
             <p className="text-[13px] text-muted">
               {tl(
-                "Reprezentacja VYRA na stronie vyraathl.pl/team. Dodawaj tylko osoby, które zgodziły się na piśmie (umowa VYRA Team), a przy niepełnoletnich także ich rodzic. Niżej zgłoszenia z formularza naboru.",
+                "Zawodnicy VYRA Athletics na stronie vyraathl.pl/team. Kolejność to numer zawodnika (1 = 01). Dodawaj tylko osoby, które zgodziły się na piśmie (umowa VYRA Team), a przy niepełnoletnich także ich rodzic. Niżej zgłoszenia z formularza naboru.",
                 "The VYRA team on vyraathl.pl/team. Only add people who agreed in writing (and a parent for minors). Applications from the form are below.",
               )}
             </p>

@@ -69,7 +69,7 @@ export function TeamApply() {
       <label className="flex items-start gap-3 text-sm text-white/60">
         <Checkbox checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} aria-invalid={!!errors.consent} className="mt-0.5" />
         <span>
-          {tl("Zgadzam się, żeby VYRA przetwarzała dane z tego formularza w celu rozpatrzenia zgłoszenia do VYRA Team.", "I agree that VYRA processes this form’s data to review my VYRA Team application.")}
+          {tl("Zgadzam się, żeby VYRA przetwarzała dane z tego formularza w celu rozpatrzenia zgłoszenia do drużyny VYRA Athletics.", "I agree that VYRA processes this form’s data to review my VYRA Athletics application.")}
           {errors.consent?.[0] ? <span role="alert" className="mt-1 block text-[13px] text-problem">{errors.consent[0]}</span> : null}
         </span>
       </label>

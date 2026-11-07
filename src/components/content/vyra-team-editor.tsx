@@ -96,7 +96,7 @@ function MemberForm({ m, onDone }: { m: TeamMember | null; onDone?: () => void }
         <Field label="Strava (link)" htmlFor={id("st")} error={errors.strava_url?.[0]}>
           <Input id={id("st")} value={v.strava_url} onChange={(e) => setV({ ...v, strava_url: e.target.value })} />
         </Field>
-        <Field label="Kolejność" htmlFor={id("o")}>
+        <Field label="Nr zawodnika" htmlFor={id("o")}>
           <Input id={id("o")} inputMode="numeric" value={v.sort} onChange={(e) => setV({ ...v, sort: e.target.value })} />
         </Field>
       </div>

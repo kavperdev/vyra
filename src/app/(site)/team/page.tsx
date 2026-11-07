@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return {
-    title: "VYRA Team",
+    title: t("Zawodnicy VYRA Athletics", "VYRA Athletics athletes"),
     description: t(
       "Reprezentacja VYRA: amatorzy, którzy biegają na poziomie zarezerwowanym zwykle dla zawodowców. Pracują, uczą się i trenują z wiedzą.",
       "The VYRA team: amateurs who run at a level usually reserved for professionals. They work, study and train with know-how.",
@@ -27,8 +27,8 @@ export default async function TeamPage() {
       n: "01",
       title: t("Wiedza, nie przypadek", "Know-how, not luck"),
       body: t(
-        "Każdy wynik w VYRA Team stoi na przemyślanym treningu. Pokazujemy, jak trenujemy, a nie tylko, ile biegamy.",
-        "Every result in VYRA Team rests on considered training. We show how we train, not just how much we run.",
+        "Każdy wynik zawodników VYRA stoi na przemyślanym treningu. Pokazujemy, jak trenujemy, a nie tylko, ile biegamy.",
+        "Every VYRA athlete’s result rests on considered training. We show how we train, not just how much we run.",
       ),
     },
     {
@@ -53,8 +53,8 @@ export default async function TeamPage() {
     <>
       <PageHero
         image="/site/night-city.jpg"
-        eyebrow="VYRA Team"
-        title={t("Reprezentacja", "The team")}
+        eyebrow="VYRA Athletics"
+        title={t("Zawodnicy VYRA", "VYRA athletes")}
         lead={t(
           "Amatorzy, którzy biegają na poziomie zarezerwowanym zwykle dla zawodowców. Pracują, uczą się i trenują z wiedzą. Pokazują, że elite is standard.",
           "Amateurs who run at a level usually reserved for professionals. They work, study and train with know-how. Proof that elite is standard.",
@@ -83,6 +83,7 @@ export default async function TeamPage() {
                     <span className="w-fit rounded-full bg-[var(--accent)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
                       {lang === "en" ? DISCIPLINES[m.discipline].en : DISCIPLINES[m.discipline].pl}
                     </span>
+                    {m.sort > 0 ? <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">VYRA Athletics · {String(m.sort).padStart(2, "0")}</span> : null}
                     <h3 className="display mt-2 text-3xl text-white">{m.name}</h3>
                     {m.city ? <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-white/60">{m.city}</span> : null}
                   </div>
@@ -158,7 +159,7 @@ export default async function TeamPage() {
             <li>{t("Nie musisz prowadzić mediów społecznościowych. Treści robimy razem.", "You don’t need social media. We make the content together.")}</li>
           </ul>
           <p className="text-sm text-white/50">
-            {t("Członkowie VYRA Team dostają m.in. sesje zdjęciowe i nagrania ze startów, dostęp do platformy VYRA i pierwszeństwo w limitowanych rzeczach VYRA.", "Team members get photo and video from races, access to the VYRA platform and first access to limited VYRA items, among other things.")}
+            {t("Zawodnicy VYRA dostają m.in. sesje zdjęciowe i nagrania ze startów, dostęp do platformy VYRA i pierwszeństwo w limitowanych rzeczach VYRA.", "VYRA athletes get photo and video from races, access to the VYRA platform and first access to limited VYRA items, among other things.")}
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#070708] p-6 sm:p-8">

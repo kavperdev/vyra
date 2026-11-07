@@ -28,7 +28,7 @@ export const SITE_NAV = [
   { href: "/klub", label: "VYRA Club", en: "VYRA Club" },
   { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
   { href: "/run-club", label: "Run Club", en: "Run Club" },
-  { href: "/team", label: "VYRA Team", en: "VYRA Team" },
+  { href: "/team", label: "Zawodnicy", en: "Athletes" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
   { href: "/wiedza", label: "Wiedza", en: "Journal" },
 ] as const;

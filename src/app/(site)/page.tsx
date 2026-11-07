@@ -305,7 +305,7 @@ export default async function Home() {
       {team.length ? (
         <section className="border-t border-white/10 bg-[#070708]">
           <div className={`${wrap} py-28 sm:py-36`}>
-            <SectionHead eyebrow="VYRA Team" title={t("Reprezentacja", "The team")}>
+            <SectionHead eyebrow="VYRA Athletics" title={t("Zawodnicy VYRA", "VYRA athletes")}>
               {t("Amatorzy, którzy biegają na poziomie zarezerwowanym zwykle dla zawodowców. I trenują z wiedzą.", "Amateurs who run at a level usually reserved for professionals. And train with know-how.")}
             </SectionHead>
             <div className="mt-14 grid gap-5 sm:grid-cols-3">
@@ -327,7 +327,7 @@ export default async function Home() {
               ))}
             </div>
             <Reveal className="mt-10">
-              <GhostLink href="/team">{t("Poznaj skład", "Meet the team")}</GhostLink>
+              <GhostLink href="/team">{t("Poznaj zawodników", "Meet the athletes")}</GhostLink>
             </Reveal>
           </div>
         </section>
