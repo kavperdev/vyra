@@ -38,6 +38,7 @@ export const SITE_NAV_MORE = [
   { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
+  { href: "/tapety", label: "Tapety", en: "Wallpapers" },
   { href: "/voucher", label: "Voucher na prezent", en: "Gift voucher" },
   { href: "/zespol", label: "Zespół", en: "Team" },
   { href: "/dla-firm", label: "Dla firm", en: "For companies" },
