@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Regulamin wyzwań",
   description: "Zasady udziału w wyzwaniach VYRA: zapis, wpisywanie biegów, weryfikacja wyników, rankingi i nagrody.",
   alternates: { canonical: "/wyzwania/regulamin" },
+  robots: { index: true, follow: true },
 };
 
 const SECTIONS: { title: string; items: string[] }[] = [

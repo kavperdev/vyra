@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "Free membership of a community of runners who train with know-how. A member number, the plan of the month, early access and members-only events.",
     ),
     alternates: { canonical: "/klub" },
+    robots: { index: true, follow: true },
   };
 }
 

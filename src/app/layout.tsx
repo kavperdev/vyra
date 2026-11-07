@@ -26,7 +26,14 @@ export const metadata: Metadata = {
   description: "VYRA · społeczność biegaczy, którzy trenują z wiedzą. Elite is standard.",
   applicationName: "VYRA",
   icons: {
-    icon: [{ url: "/branding/vyra-icon.svg", type: "image/svg+xml" }, { url: "/icon.png", sizes: "32x32" }],
+    // Google shows the favicon next to search results: it wants a square of 48 px or a multiple of 48.
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/branding/vyra-icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/branding/vyra-icon-96.png", sizes: "96x96", type: "image/png" },
+      { url: "/branding/vyra-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/branding/vyra-icon.svg", type: "image/svg+xml" },
+    ],
     apple: "/apple-icon.png",
   },
   robots: { index: false, follow: false },

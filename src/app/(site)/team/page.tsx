@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "The VYRA team: amateurs who run at a level usually reserved for professionals. They work, study and train with know-how.",
     ),
     alternates: { canonical: "/team" },
+    robots: { index: true, follow: true },
   };
 }
 

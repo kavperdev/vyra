@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: c.title,
     description: `Wyzwanie VYRA dla każdego biegacza, z każdego klubu. ${formatDate(c.starts_on, "d MMMM")} – ${formatDate(c.ends_on, "d MMMM yyyy")}. Za darmo.`,
     alternates: { canonical: `/wyzwania/${c.slug}` },
+    robots: { index: true, follow: true },
   };
 }
 

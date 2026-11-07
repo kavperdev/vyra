@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("Dla mediów", "Press"),
     description: t("Informacja prasowa, zdjęcia, logo i kontakt VYRA Run Club.", "Press release, photos, logo and contact for VYRA Run Club."),
     alternates: { canonical: "/prasa" },
+    robots: { index: true, follow: true },
   };
 }
 

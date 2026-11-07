@@ -9,6 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("Tapety VYRA", "VYRA wallpapers"),
     description: t("Darmowe tapety VYRA na telefon i komputer do pobrania.", "Free VYRA wallpapers for your phone and computer."),
     alternates: { canonical: "/tapety" },
+    robots: { index: true, follow: true },
   };
 }
 

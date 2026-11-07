@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t("Wyzwania", "Challenges"),
     description: t("Wyzwania biegowe VYRA dla każdego biegacza, z każdego klubu i miasta. Za darmo.", "VYRA running challenges for every runner, from any club or city. Free."),
     alternates: { canonical: "/wyzwania" },
+    robots: { index: true, follow: true },
   };
 }
 
