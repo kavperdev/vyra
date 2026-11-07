@@ -194,7 +194,7 @@ export default async function RunClubPage() {
                 { title: t("Zbiórka i rozgrzewka", "Meet and warm up"), body: t("Rozgrzewka z trenerem i 5 minut techniki biegu: jedno ćwiczenie tygodnia.", "A warm-up with the coach and 5 minutes of running drills: one drill of the week.") },
                 { title: t("Wspólny bieg", "Run together"), body: t("Około 5 km w jednej grupie, w tempie ok. 6:30–7:00 min/km. Tempo dopasowujemy do osób na miejscu. Nikt nie zostaje z tyłu.", "About 5 km as one group at about 6:30–7:00 min/km, adjusted to who shows up. Nobody gets left behind.") },
                 { title: t("Rozciąganie i rada", "Stretch and a tip"), body: t("Pytania do trenera i jedna konkretna rada na najbliższy tydzień.", "Questions for the coach and one concrete tip for the coming week.") },
-                { title: t("Raz w miesiącu więcej", "Once a month, more"), body: t("Nagranie techniki biegu, test na 2 km z wynikiem VO2max albo siła i mobilność dla biegaczy.", "A running-technique video, a 2K test with your VO2max, or strength and mobility for runners.") },
+                { title: t("Zostajesz w VYRA", "You stay in VYRA"), body: t("Zdjęcia z treningu (tylko jeśli się zgodzisz), relacja na Instagramie i informacja o kolejnych spotkaniach prosto na maila.", "Photos from the session (only if you agree), a recap on Instagram and the next dates straight to your inbox.") },
               ]}
             />
           </div>
