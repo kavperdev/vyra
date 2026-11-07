@@ -1,12 +1,14 @@
 import "server-only";
 import { addDaysISO, weekStartISO } from "@/lib/dates";
 import { getAthleteProfile, listCoachNotes, listGoals, listPlans, listRecords } from "@/lib/data/people";
-import { listSessions } from "@/lib/data/sessions";
+import { listInjuries, painHistory } from "@/lib/data/injuries";
+import { listRecentComments, listSessions } from "@/lib/data/sessions";
+import { INTAKE_SECTIONS, intakeValue } from "@/lib/intake";
 import { formatDuration, formatPace, parsePace } from "@/lib/format";
 import type { ServerSupabase } from "@/lib/supabase/server";
 import { weeklyBuckets } from "@/lib/training/analytics";
 import { CATEGORIES } from "@/lib/training/categories";
-import { predictRaces } from "@/lib/training/prediction";
+import { predictRaces, timeFor } from "@/lib/training/prediction";
 import { raceCountdown, type RacePhase } from "@/lib/training/race";
 import { isDone } from "@/lib/training/status";
 
@@ -16,7 +18,20 @@ export interface Insight {
   positives: string[];
   risks: { level: "low" | "medium" | "high"; text: string }[];
   focus: string;
+  /** How the plan protects this athlete's injuries; absent in analyses made before it existed. */
+  injury_guard?: string | null;
+  /** Week-by-week outline to the race (up to 12 weeks). */
+  cycle?: CycleWeek[];
   suggestions: Suggestion[];
+}
+
+export interface CycleWeek {
+  week_start: string;
+  phase: string;
+  km: number | null;
+  long_run: string;
+  focus: string;
+  key_sessions: string;
 }
 
 export interface Suggestion {
@@ -62,8 +77,8 @@ export async function coachMethod(supabase: ServerSupabase, coachId: string): Pr
 /** Plain-text summary of everything relevant about the athlete, without e-mail or surname. */
 export async function buildContext(supabase: ServerSupabase, athleteId: string, firstName: string, today: string): Promise<string> {
   const from = addDaysISO(today, -42);
-  const [long, year, profile, goals, records, notes, readiness, plans] = await Promise.all([
-    listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -140), to: addDaysISO(today, 14) }),
+  const [long, year, profile, goals, records, notes, readiness, plans, injuries, pain, comments, previous] = await Promise.all([
+    listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -140), to: addDaysISO(today, 120) }),
     listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
     getAthleteProfile(supabase, athleteId),
     listGoals(supabase, athleteId).catch(() => []),
@@ -73,56 +88,115 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
       .from("readiness")
       .select("day, sleep, energy, soreness, pain, pain_area, note")
       .eq("athlete_id", athleteId)
-      .gte("day", addDaysISO(today, -14))
+      .gte("day", addDaysISO(today, -21))
       .order("day")
       .then((r) => (r.data ?? []) as { day: string; sleep: number; energy: number; soreness: number; pain: boolean; pain_area: string | null; note: string | null }[]),
     listPlans(supabase, athleteId).catch(() => []),
+    listInjuries(supabase, athleteId),
+    painHistory(supabase, athleteId, addDaysISO(today, -182)),
+    listRecentComments(supabase, { athleteId, limit: 40 }).catch(() => []),
+    supabase
+      .from("coach_insights")
+      .select("created_at, content")
+      .eq("athlete_id", athleteId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then((r) => (r.data as { created_at: string; content: Insight } | null) ?? null),
   ]);
-  const sessions = long.filter((x) => x.scheduled_date >= from);
+  const past = long.filter((x) => x.scheduled_date <= today);
+  const recent = past.filter((x) => x.scheduled_date >= from);
+  const future = long.filter((x) => x.scheduled_date > today);
+
+  // Planned targets and per-rep results of the last six weeks: was the work done at the intended paces?
+  const recentIds = recent.map((x) => x.id);
+  const execIds = recent.filter((x) => x.execution && QUALITY.has(x.category)).map((x) => x.execution!.id);
+  const [targets, segments, laps] = await Promise.all([
+    recentIds.length
+      ? supabase.from("running_workouts").select("session_id, target_pace_min_s, target_pace_max_s, intensity_zone").in("session_id", recentIds).then((r) => (r.data ?? []) as { session_id: string; target_pace_min_s: number | null; target_pace_max_s: number | null; intensity_zone: string | null }[])
+      : Promise.resolve([]),
+    recentIds.length
+      ? supabase.from("running_segments").select("session_id, position, segment_type, repeats, distance_m, duration_s, target_pace_min_s, target_pace_max_s, recovery_duration_s").in("session_id", recentIds).eq("segment_type", "work").order("position").then((r) => (r.data ?? []) as { session_id: string; repeats: number; distance_m: number | null; duration_s: number | null; target_pace_min_s: number | null; target_pace_max_s: number | null; recovery_duration_s: number | null }[])
+      : Promise.resolve([]),
+    execIds.length
+      ? supabase.from("running_lap_results").select("execution_id, position, rep_index, distance_m, duration_s, avg_hr").in("execution_id", execIds).order("position").order("rep_index").then((r) => (r.data ?? []) as { execution_id: string; distance_m: number | null; duration_s: number | null; avg_hr: number | null }[])
+      : Promise.resolve([]),
+  ]);
+  type Target = { session_id: string; target_pace_min_s: number | null; target_pace_max_s: number | null; intensity_zone: string | null };
+  const targetBy = new Map<string, Target>((targets as Target[]).map((t) => [t.session_id, t]));
+  const paceRange = (a: number | null, b: number | null) => (a || b ? `${formatPace(a)}–${formatPace(b)}` : "");
 
   const lines: string[] = [];
-  lines.push(`Dzisiaj: ${today}. Zawodnik: ${firstName}.`);
+  const section = (title: string) => lines.push("", `## ${title}`);
+  lines.push(`Dzisiaj: ${today} (${["nd", "pon", "wt", "śr", "czw", "pt", "sob"][new Date(`${today}T12:00:00Z`).getUTCDay()]}). Zawodnik: ${firstName}.`);
+
+  section("PROFIL");
   if (profile) {
     const age = profile.birth_year ? new Date().getFullYear() - profile.birth_year : null;
     lines.push(
-      `Profil: ${[age ? `wiek ok. ${age}` : null, profile.weight_kg ? `${profile.weight_kg} kg` : null, profile.resting_hr ? `HR spocz. ${profile.resting_hr}` : null, profile.max_hr ? `HR max ${profile.max_hr}` : null, profile.lthr ? `LTHR ${profile.lthr}` : null, profile.easy_hr_max ? `easy do ${profile.easy_hr_max}` : null].filter(Boolean).join(", ") || "brak danych"}.`,
+      [age ? `wiek ok. ${age}` : null, profile.height_cm ? `${profile.height_cm} cm` : null, profile.weight_kg ? `${profile.weight_kg} kg` : null, profile.resting_hr ? `HR spocz. ${profile.resting_hr}` : null, profile.max_hr ? `HR max ${profile.max_hr}` : null, profile.lthr ? `LTHR ${profile.lthr}` : null, profile.easy_hr_max ? `easy do HR ${profile.easy_hr_max}` : null]
+        .filter(Boolean)
+        .join(", ") || "brak danych fizjologicznych",
     );
     if (profile.sport_goal) lines.push(`Cel sportowy: ${clip(profile.sport_goal, 300)}`);
-    if (profile.athlete_notes) lines.push(`Uwagi zawodnika: ${clip(profile.athlete_notes, 600)}`);
-    if (profile.intake && typeof profile.intake === "object") {
-      const answers = Object.entries(profile.intake)
-        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-        .join("; ");
-      if (answers) lines.push(`Ankieta startowa: ${clip(answers, 1500)}`);
+    if (profile.athlete_notes) lines.push(`Uwagi zawodnika: ${clip(profile.athlete_notes, 800)}`);
+    const intake = profile.intake && typeof profile.intake === "object" ? (profile.intake as Record<string, string | string[]>) : null;
+    if (intake) {
+      section("ANKIETA STARTOWA (cel, doświadczenie, dostępność, zdrowie)");
+      for (const sec of INTAKE_SECTIONS) {
+        for (const field of sec.fields) {
+          const v = intakeValue(field, intake[field.key]);
+          if (v) lines.push(`- ${field.label()}: ${clip(v, 600)}`);
+        }
+      }
     }
-  }
+  } else lines.push("Brak profilu.");
 
+  section("KONTUZJE (historia; ograniczenia są wiążące dla planu)");
+  if (injuries.length) {
+    for (const i of injuries) {
+      lines.push(
+        `- [${i.status.toUpperCase()}] ${i.name} (${i.area}${i.side ? `, ${i.side}` : ""}, waga ${i.severity}/3${i.started_on ? `, od ${i.started_on}` : ""}${i.ended_on ? ` do ${i.ended_on}` : ""})` +
+          `${i.restrictions ? `. OGRANICZENIA: ${clip(i.restrictions, 400)}` : ""}${i.triggers ? `. Wywołuje: ${clip(i.triggers, 300)}` : ""}${i.helps ? `. Pomaga: ${clip(i.helps, 300)}` : ""}${i.notes ? `. Notatki: ${clip(i.notes, 300)}` : ""}`,
+      );
+    }
+  } else lines.push("Brak wpisów w historii kontuzji (sprawdź też ankietę startową).");
+  if (pain.length) lines.push(`Ból z porannej oceny, ostatnie 6 mies.: ${pain.map((p) => `${p.area} ${p.days} dni (ostatnio ${p.last})`).join("; ")}`);
+
+  section("START DOCELOWY, FAZA, CELE, PLAN");
   const goalText = (g: (typeof goals)[number]) =>
-    `${g.name}${g.deadline ? ` (${g.deadline})` : ""}${g.target_value != null ? `, cel ${g.unit === "s" ? formatDuration(g.target_value) : `${g.target_value}${g.unit ?? ""}`}` : ""}${g.description ? `, ${clip(g.description, 200)}` : ""}`;
+    `${g.name}${g.deadline ? ` (${g.deadline})` : ""}${g.target_value != null ? `, cel ${g.unit === "s" ? formatDuration(g.target_value) : `${g.target_value}${g.unit ?? ""}`}` : ""}${g.current_value != null ? `, teraz ${g.unit === "s" ? formatDuration(g.current_value) : `${g.current_value}${g.unit ?? ""}`}` : ""}${g.description ? `, ${clip(g.description, 200)}` : ""}`;
   const race = raceCountdown(goals, today);
   if (race) {
     lines.push(
-      `START DOCELOWY${race.goal.is_main ? " (A)" : " (najbliższy cel z datą, nieoznaczony jako A)"}: ${goalText(race.goal)}. Za ${race.daysLeft} dni, tydzień ${race.week} z ${race.totalWeeks} przygotowań. Faza: ${PHASE_TEXT[race.phase]}.`,
+      `START DOCELOWY${race.goal.is_main ? " (A)" : " (najbliższy cel z datą, nieoznaczony jako A)"}: ${goalText(race.goal)}. Za ${race.daysLeft} dni (${Math.ceil(race.daysLeft / 7)} tyg.), tydzień ${race.week} z ${race.totalWeeks} przygotowań.`,
+      `Faza teraz: ${PHASE_TEXT[race.phase]}.`,
+      `Granice faz: tapering od ${addDaysISO(race.goal.deadline!, -14)}, szczyt od ${addDaysISO(race.goal.deadline!, -42)}, budowanie od ${addDaysISO(race.goal.deadline!, -98)}.`,
     );
   } else {
     lines.push("Brak startu docelowego z datą: planuj rozwój ogólny (faza bazy), bez szczytowania formy.");
   }
   const others = goals.filter((g) => g.status === "active" && g.id !== race?.goal.id);
-  if (others.length) lines.push(`Inne aktywne cele (pośrednie, starty B/C): ${others.map(goalText).join("; ")}`);
-  const currentPlans = plans.filter((p) => !p.end_date || p.end_date >= addDaysISO(today, -14)).slice(0, 2);
-  for (const p of currentPlans) {
-    lines.push(`Plan treningowy: „${clip(p.name, 120)}” ${p.start_date}–${p.end_date ?? "bez końca"}${p.goal ? `, cel planu: ${clip(p.goal, 200)}` : ""}${p.description ? `, opis: ${clip(p.description, 600)}` : ""}`);
+  if (others.length) lines.push(`Inne aktywne cele (starty pośrednie B/C): ${others.map(goalText).join("; ")}`);
+  const done = goals.filter((g) => g.status === "achieved").slice(0, 3);
+  if (done.length) lines.push(`Osiągnięte cele: ${done.map((g) => g.name).join("; ")}`);
+  for (const p of plans.filter((p) => !p.end_date || p.end_date >= addDaysISO(today, -14)).slice(0, 2)) {
+    lines.push(`Plan treningowy: „${clip(p.name, 120)}” ${p.start_date}–${p.end_date ?? "bez końca"}${p.goal ? `, cel planu: ${clip(p.goal, 200)}` : ""}${p.description ? `, opis: ${clip(p.description, 800)}` : ""}`);
   }
-  const runRecords = records.filter((r) => r.kind === "running" && r.unit === "s").slice(0, 8);
-  if (runRecords.length) lines.push(`Rekordy: ${runRecords.map((r) => `${r.label} ${formatDuration(Number(r.value))} (${r.achieved_on})`).join("; ")}`);
 
+  section("POZIOM");
+  const runRecords = records.filter((r) => r.kind === "running" && r.unit === "s").slice(0, 10);
+  lines.push(runRecords.length ? `Rekordy: ${runRecords.map((r) => `${r.label} ${formatDuration(Number(r.value))} (${r.achieved_on}${r.source !== "manual" ? `, ${r.source}` : ""})`).join("; ")}` : "Brak rekordów w systemie.");
   const p = predictRaces(year, records, today);
-  if (p) lines.push(`Prognoza wyników (VDOT ${p.vdot}): ${p.times.map((t) => `${t.label} ${formatDuration(t.seconds)}`).join(", ")}. Średnio ${p.weeklyKm} km/tydz. w ostatnich 6 tyg.`);
+  if (p) {
+    lines.push(`Prognoza (VDOT ${p.vdot}, z: ${p.basis.title} ${p.basis.date}): ${p.times.map((t) => `${t.label} ${formatDuration(t.seconds)} (${formatPace(t.pace)}/km)`).join(", ")}. Średnio ${p.weeklyKm} km/tydz. w ostatnich 6 tyg.`);
+    const thr = timeFor(p.vdot, 15000) / 15; // roughly the pace held for about an hour
+    lines.push(`Orientacyjne tempa z VDOT: próg ok. ${formatPace(thr)}/km, maraton ${formatPace(p.times[3].pace)}/km, półmaraton ${formatPace(p.times[2].pace)}/km, 10 km ${formatPace(p.times[1].pace)}/km, 5 km ${formatPace(p.times[0].pace)}/km, easy ok. ${formatPace(thr * 1.22)}–${formatPace(thr * 1.35)}/km.`);
+  } else lines.push("Brak prognozy: nie ma jeszcze mocnego biegu ani rekordu.");
 
-  // 20 weeks in short: how the cycle has been built so far.
-  lines.push("Ostatnie 20 tygodni w skrócie (start tygodnia: km wykonane, biegi, najdłuższy bieg, akcenty, siła, śr. RPE):");
+  section("CYKL: 20 TYGODNI W SKRÓCIE (start tygodnia: km, biegi, najdłuższy, akcenty, siła, śr. RPE)");
   const weeks = new Map<string, { km: number; runs: number; longest: number; quality: number; strength: number; rpe: number[] }>();
-  for (const s of long) {
+  for (const s of past) {
     const e = s.execution;
     if (!e || !isDone(e.status) || e.performed_on > today) continue;
     const w = weekStartISO(e.performed_on);
@@ -146,55 +220,102 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
         : `${w}: brak wykonanych treningów`,
     );
   }
+  const buckets = weeklyBuckets(long.filter((x) => x.scheduled_date >= from && x.scheduled_date <= addDaysISO(today, 7)), today, 6);
+  lines.push("Realizacja planu (tydzień: km plan/wykonane, % treningów): " + buckets.map((b) => `${b.weekStart}: ${b.plannedKm}/${b.actualKm}, ${b.completion == null ? "-" : `${b.completion}%`}`).join("; "));
 
-  const buckets = weeklyBuckets(sessions, today, 6);
-  lines.push(
-    "Tygodnie (start tygodnia: km plan/wykonane, realizacja): " +
-      buckets.map((b) => `${b.weekStart}: ${b.plannedKm}/${b.actualKm} km, ${b.completion == null ? "-" : `${b.completion}%`}`).join("; "),
-  );
-
-  lines.push("Treningi z ostatnich 6 tygodni (data | rodzaj | nazwa | plan | status | wykonanie | RPE | komentarz):");
-  for (const s of sessions.filter((x) => x.scheduled_date <= today)) {
+  section("OSTATNIE 6 TYGODNI, TRENING PO TRENINGU");
+  lines.push("data | rodzaj | nazwa | plan (dystans, czas, tempo docelowe, strefa) | status | wykonanie | RPE | komentarz zawodnika");
+  for (const s of recent) {
     const e = s.execution;
-    const plan = [s.planned_distance_m ? `${km(s.planned_distance_m)} km` : null, s.planned_duration_s ? formatDuration(s.planned_duration_s) : null].filter(Boolean).join(", ") || "-";
-    const done = e && isDone(e.status)
-      ? [e.distance_m ? `${km(e.distance_m)} km` : null, e.duration_s ? formatDuration(e.duration_s) : null, e.avg_pace_s ? `${formatPace(e.avg_pace_s)}/km` : null, e.avg_hr ? `HR ${e.avg_hr}` : null].filter(Boolean).join(", ")
-      : "-";
-    lines.push(`${s.scheduled_date} | ${s.category} | ${clip(s.title, 60)} | ${plan} | ${s.status} | ${done} | ${e?.rpe ?? "-"} | ${clip(e?.comment, 160) || "-"}`);
+    const t = targetBy.get(s.id);
+    const work = segments.filter((g) => g.session_id === s.id);
+    const plan =
+      [
+        s.planned_distance_m ? `${km(s.planned_distance_m)} km` : null,
+        s.planned_duration_s ? formatDuration(s.planned_duration_s) : null,
+        t ? paceRange(t.target_pace_min_s, t.target_pace_max_s) : null,
+        t?.intensity_zone ?? null,
+        work.length
+          ? `odcinki: ${work.map((g) => `${g.repeats}×${g.distance_m ? `${g.distance_m} m` : formatDuration(g.duration_s)}${g.target_pace_min_s || g.target_pace_max_s ? ` @${paceRange(g.target_pace_min_s, g.target_pace_max_s)}` : ""}${g.recovery_duration_s ? ` p.${formatDuration(g.recovery_duration_s)}` : ""}`).join(" + ")}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(", ") || "-";
+    const result =
+      e && isDone(e.status)
+        ? [e.distance_m ? `${km(e.distance_m)} km` : null, e.duration_s ? formatDuration(e.duration_s) : null, e.avg_pace_s ? `${formatPace(e.avg_pace_s)}/km` : null, e.avg_hr ? `HR ${e.avg_hr}` : null].filter(Boolean).join(", ")
+        : "-";
+    lines.push(`${s.scheduled_date} | ${s.category} | ${clip(s.title, 60)} | ${plan} | ${s.status} | ${result} | ${e?.rpe ?? "-"} | ${clip(e?.comment, 200) || "-"}`);
+    const reps = e ? laps.filter((l) => l.execution_id === e.id && l.duration_s && l.distance_m) : [];
+    if (reps.length) lines.push(`   odcinki wykonane: ${reps.slice(0, 20).map((l) => `${formatPace(l.duration_s! / (l.distance_m! / 1000))}${l.avg_hr ? `/HR${l.avg_hr}` : ""}`).join(", ")}`);
   }
 
-  const upcoming = sessions.filter((x) => x.scheduled_date > today);
-  lines.push(upcoming.length ? "Już zaplanowane na najbliższe 14 dni:" : "Na najbliższe 14 dni nic nie jest zaplanowane.");
-  for (const s of upcoming) lines.push(`${s.scheduled_date} | ${s.category} | ${clip(s.title, 60)} | ${s.planned_distance_m ? `${km(s.planned_distance_m)} km` : "-"}`);
+  const talk = comments.filter((c) => c.session_date >= from).slice(0, 25);
+  if (talk.length) {
+    section("ROZMOWY POD TRENINGAMI (najnowsze)");
+    for (const c of talk) lines.push(`${c.session_date} ${c.author_role === "coach" ? "trener" : "zawodnik"} (${clip(c.session_title, 40)}): ${clip(c.body, 240)}`);
+  }
 
+  section("SAMOPOCZUCIE, OSTATNIE 21 DNI (sen/energia/zakwasy 1–5, ból)");
   if (readiness.length) {
-    lines.push("Samopoczucie (sen/energia/zakwasy 1–5, ból):");
-    for (const r of readiness) lines.push(`${r.day}: ${r.sleep}/${r.energy}/${r.soreness}${r.pain ? `, BÓL${r.pain_area ? ` (${clip(r.pain_area, 60)})` : ""}` : ""}${r.note ? `, ${clip(r.note, 120)}` : ""}`);
+    for (const r of readiness) lines.push(`${r.day}: ${r.sleep}/${r.energy}/${r.soreness}${r.pain ? `, BÓL${r.pain_area ? ` (${clip(r.pain_area, 60)})` : ""}` : ""}${r.note ? `, ${clip(r.note, 140)}` : ""}`);
+  } else lines.push("Brak wpisów.");
+
+  if (notes.length) {
+    section("NOTATKI ZESPOŁU (trener, trener siłowy, fizjoterapeuta)");
+    for (const n of notes.slice(0, 10)) lines.push(`${n.created_at.slice(0, 10)} ${n.author_role ?? "trener"}: ${clip(n.body, 400)}`);
   }
-  if (notes.length) lines.push(`Notatki trenerów (najnowsze): ${notes.slice(0, 4).map((n) => clip(n.body, 300)).join(" / ")}`);
+
+  section("JUŻ ZAPLANOWANE (nie dubluj tych dni)");
+  const next14 = future.filter((x) => x.scheduled_date <= addDaysISO(today, 14));
+  if (next14.length) for (const s of next14) lines.push(`${s.scheduled_date} | ${s.category} | ${clip(s.title, 60)} | ${s.planned_distance_m ? `${km(s.planned_distance_m)} km` : "-"}`);
+  else lines.push("Na najbliższe 14 dni nic nie jest zaplanowane.");
+  const later = future.filter((x) => x.scheduled_date > addDaysISO(today, 14));
+  if (later.length) {
+    const byWeek = new Map<string, { n: number; km: number; key: string[] }>();
+    for (const s of later) {
+      const w = weekStartISO(s.scheduled_date);
+      const b = byWeek.get(w) ?? { n: 0, km: 0, key: [] };
+      b.n += 1;
+      b.km += (s.planned_distance_m ?? 0) / 1000;
+      if (QUALITY.has(s.category) || s.category === "long") b.key.push(clip(s.title, 40));
+      byWeek.set(w, b);
+    }
+    lines.push("Dalej w planie (tydzień: treningi, km, kluczowe): " + [...byWeek.entries()].map(([w, b]) => `${w}: ${b.n}, ${b.km.toFixed(0)} km, ${b.key.join("/") || "-"}`).join("; "));
+  }
+
+  if (previous) {
+    section("POPRZEDNIA ANALIZA (zachowaj ciągłość albo wyjaśnij zmianę)");
+    lines.push(`${previous.created_at.slice(0, 10)}. Priorytet: ${clip(previous.content.focus, 300) || "-"}.`);
+    const plannedDates = new Set(long.map((x) => x.scheduled_date));
+    const sug = previous.content.suggestions ?? [];
+    if (sug.length) lines.push(`Proponowane wtedy: ${sug.map((x) => `${x.date} ${clip(x.title, 40)}${plannedDates.has(x.date) ? "" : " (nie dodane)"}`).join("; ")}`);
+  }
   return lines.join("\n");
 }
 
-const SYSTEM = `Jesteś asystentem trenera biegania w VYRA. Trener prowadzi amatorów. Na podstawie danych zawodnika przygotuj krótką, konkretną analizę i propozycje treningów na najbliższe 14 dni, które trener sprawdzi i ewentualnie doda do planu.
+const SYSTEM = `Jesteś asystentem trenera biegania w VYRA. Trener prowadzi amatorów. Dostajesz pełny obraz zawodnika: profil, ankietę, historię kontuzji, start docelowy z fazą, 20 tygodni cyklu, ostatnie 6 tygodni trening po treningu (plan kontra wykonanie, odcinki, RPE, komentarze), samopoczucie, notatki zespołu i to, co już zaplanowane. Przygotuj analizę, zarys cyklu do startu i konkretne treningi na 14 dni. Trener to sprawdzi i zdecyduje.
 
-Jak myśleć:
-- Zacznij od startu docelowego, liczby dni do niego i fazy przygotowań. Każda propozycja ma pasować do tej fazy.
-- Oceń cykl na podstawie 20 tygodni: czy objętość rosła stopniowo, czy były tygodnie lżejsze, jak często były akcenty i długie wybiegania.
-- Ostatnie 6 tygodni czytaj trening po treningu: realizacja, tempa względem planu, RPE, komentarze, samopoczucie.
-- Jeśli trener podał swoją metodę, stosuj ją w pierwszej kolejności przy doborze akcentów, temp i struktury tygodnia. Zasady poniżej (zwłaszcza bezpieczeństwo) mają zawsze pierwszeństwo.
+Jak myśleć, po kolei:
+1. Gdzie jesteśmy w cyklu: start docelowy, dni do niego, faza. Bez startu: faza bazy.
+2. Kontuzje: aktywne i nawracające ograniczenia są wiążące. Unikaj tego, co je wywołuje (np. podbiegi, kolce, nagły wzrost km). Wyleczone urazy w danym miejscu i ból z porannej oceny traktuj jako sygnał ostrożności w tym obszarze. Uwzględnij to, co pomaga (np. ćwiczenia, które można dopisać do instrukcji).
+3. Jak budowany był cykl przez 20 tygodni: progresja km, tygodnie lżejsze, regularność akcentów, długość długich wybiegań. Z tego wynika bezpieczny kilometraż na kolejne tygodnie.
+4. Ostatnie 6 tygodni: czy akcenty wychodzą w zaplanowanych tempach (odcinki wykonane vs docelowe), RPE względem planu, pominięte treningi i ich powody, komentarze, samopoczucie.
+5. Profil i dostępność z ankiety: dni treningowe, dzień długiego wybiegania, czas na trening, dostęp do siłowni. Propozycje mają się w tym mieścić.
+6. Zarys cyklu tydzień po tygodniu do startu (najwyżej 12 tygodni): faza, docelowy kilometraż, długie wybieganie, cel tygodnia, akcenty. Treningi na 14 dni mają być pierwszymi krokami tego zarysu.
+7. Jeśli trener podał swoją metodę, stosuj ją w pierwszej kolejności przy doborze akcentów, temp i struktury tygodnia. Bezpieczeństwo i ograniczenia kontuzji mają zawsze pierwszeństwo.
 
 Zasady:
-- Pisz po polsku, rzeczowo, jak doświadczony trener do trenera. Bez lania wody.
-- Opieraj się tylko na danych. Gdy danych jest mało, powiedz to wprost.
-- Bezpieczeństwo: tygodniowy kilometraż rośnie najwyżej o ok. 10%. Co najmniej 80% objętości spokojnie. Maks. 2 akcenty (trening jakościowy) w tygodniu. Po akcencie dzień spokojny lub wolny.
-- Co 3–4 tygodnie tydzień lżejszy, jeśli w danych go nie było, zaproponuj go.
-- Jeśli zawodnik zgłasza ból lub bardzo słabe samopoczucie, zaproponuj odciążenie i konsultację z fizjoterapeutą. Nie stawiaj diagnoz.
-- Tempa dobieraj do prognozy wyników i ostatnich treningów. Easy i long run w tempie konwersacyjnym.
-- Propozycje tylko na dni, na które nic nie jest jeszcze zaplanowane, w przedziale od jutra do 14 dni. 3–6 propozycji.
-- Kategorie treningu (pole category) wybieraj wyłącznie z listy: ${RUN_CATEGORIES.join(", ")}.
+- Pisz po polsku, rzeczowo, jak doświadczony trener do trenera. Bez lania wody, bez ogólników, odwołuj się do konkretnych danych (daty, tempa, km).
+- Opieraj się tylko na danych. Gdy czegoś brakuje (np. tętna, rekordów, ankiety), napisz to wprost w ryzykach.
+- Tygodniowy kilometraż rośnie najwyżej o ok. 10%. Co najmniej 80% objętości spokojnie. Maks. 2 akcenty w tygodniu (przy aktywnej kontuzji zwykle 1 lub 0). Po akcencie dzień spokojny lub wolny. Co 3–4 tydzień tydzień lżejszy.
+- Przy aktywnym bólu lub urazie: odciążenie, zamiana na trening bez obciążenia bolącego miejsca, konsultacja z fizjoterapeutą. Nie stawiaj diagnoz.
+- Tempa wylicz z prognozy (VDOT) i ostatnich wykonanych odcinków, nie zgaduj. Easy i long run w tempie konwersacyjnym.
+- Propozycje tylko na dni, na które nic nie jest zaplanowane, od jutra do 14 dni, w dni dostępne dla zawodnika. 3–7 propozycji. Strukturę treningu (rozgrzewka, odcinki, przerwy, schłodzenie) opisz w description.
+- Kategorie treningu (pole category) wyłącznie z listy: ${RUN_CATEGORIES.join(", ")}.
 
-Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy) w tym kształcie:
-{"summary":"2–4 zdania: gdzie jesteśmy w cyklu (faza, dni do startu), forma i realizacja planu","positives":["do 3 punktów"],"risks":[{"level":"low|medium|high","text":"..."}],"focus":"1–2 zdania: priorytet na najbliższe 2 tygodnie","suggestions":[{"date":"YYYY-MM-DD","category":"easy","title":"krótka nazwa","distance_km":8,"duration_min":null,"pace_from":"5:30","pace_to":"5:50","zone":"Z2","description":"instrukcja dla zawodnika, z rozgrzewką i strukturą","why":"dlaczego ten trening, dla trenera"}]}
+Odpowiedz wyłącznie poprawnym JSON (bez markdown, bez komentarzy):
+{"summary":"3–5 zdań: gdzie jesteśmy w cyklu, forma, realizacja, najważniejszy wniosek","positives":["do 3"],"risks":[{"level":"low|medium|high","text":"..."}],"injury_guard":"jak plan chroni przed kontuzjami tego zawodnika, konkretnie (albo null)","focus":"1–2 zdania: priorytet na 2 tygodnie","cycle":[{"week_start":"YYYY-MM-DD (poniedziałek)","phase":"baza|budowanie|szczyt|tapering|start|regeneracja","km":40,"long_run":"np. 16 km spokojnie, ostatnie 3 km w tempie M","focus":"cel tygodnia","key_sessions":"akcenty tygodnia w skrócie"}],"suggestions":[{"date":"YYYY-MM-DD","category":"easy","title":"krótka nazwa","distance_km":8,"duration_min":null,"pace_from":"5:30","pace_to":"5:50","zone":"Z2","description":"instrukcja dla zawodnika ze strukturą","why":"dlaczego, w odniesieniu do cyklu i danych"}]}
 Pola, których nie ustalasz, ustaw na null. pace_from to szybsza granica.`;
 
 /** Asks the model. Returns null when the assistant is not configured or the answer could not be used. */
@@ -207,7 +328,7 @@ export async function runAssistant(context: string, today: string, method = ""):
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
         model: assistantModel(),
-        max_tokens: 3000,
+        max_tokens: 6000,
         system: method ? `${SYSTEM}\n\nMETODA TRENERA (stosuj ją przy planowaniu):\n${method.slice(0, 6000)}` : SYSTEM,
         messages: [{ role: "user", content: context }],
       }),
@@ -284,6 +405,17 @@ export function cleanInsight(raw: unknown, today: string): Insight | null {
       .filter((r) => r.text)
       .slice(0, 5),
     focus: str(o.focus, 500),
+    injury_guard: str(o.injury_guard, 800) || null,
+    cycle: (Array.isArray(o.cycle) ? o.cycle : [])
+      .map((x): CycleWeek | null => {
+        if (!x || typeof x !== "object") return null;
+        const w = x as Record<string, unknown>;
+        const week = str(w.week_start, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(week)) return null;
+        return { week_start: week, phase: str(w.phase, 30), km: num(w.km, 0, 250), long_run: str(w.long_run, 200), focus: str(w.focus, 300), key_sessions: str(w.key_sessions, 400) };
+      })
+      .filter((w): w is CycleWeek => w !== null)
+      .slice(0, 12),
     suggestions,
   };
 }

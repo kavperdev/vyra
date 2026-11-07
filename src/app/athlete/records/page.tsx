@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
+import { InjuriesSection } from "@/components/athlete/injuries";
+import { listInjuries } from "@/lib/data/injuries";
 import { requireRole } from "@/lib/auth";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { listGoals, listRecords } from "@/lib/data/people";
@@ -20,10 +22,11 @@ export default async function AthleteRecordsPage() {
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
-  const [records, goals, sessions] = await Promise.all([
+  const [records, goals, sessions, injuries] = await Promise.all([
     listRecords(supabase, user.id),
     listGoals(supabase, user.id),
     listSessions(supabase, { athleteIds: [user.id], kinds: ["running"], from: addDaysISO(today, -365), to: today }),
+    listInjuries(supabase, user.id),
   ]);
   const suggestions = suggestRunningRecords(
     sessions
@@ -36,6 +39,11 @@ export default async function AthleteRecordsPage() {
       <PageHeader eyebrow={tl("Postęp", "Progress")} title={tl("Rekordy i cele", "Records & goals")} />
       <RecordsSection athleteId={user.id} records={records} suggestions={suggestions} today={today} />
       <GoalsSection athleteId={user.id} goals={goals} />
+      <InjuriesSection
+        athleteId={user.id}
+        injuries={injuries}
+        intro={tl("Urazy, także dawne. Trener układa plan tak, żeby ich nie odnowić. Widzi to tylko Twój trener i fizjoterapeuta.", "Injuries, old ones too. Your coach plans so they don’t come back. Only your coach and physio see this.")}
+      />
     </div>
   );
 }

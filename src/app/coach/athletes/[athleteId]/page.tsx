@@ -18,6 +18,8 @@ import { RacePredictionCard } from "@/components/athlete/race-prediction";
 import { AnalyzeButton, InsightView } from "@/components/coach/assistant-panel";
 import { assistantConfigured, type Insight } from "@/lib/coach-assistant";
 import { predictRaces } from "@/lib/training/prediction";
+import { InjuriesSection } from "@/components/athlete/injuries";
+import { listInjuries, painHistory } from "@/lib/data/injuries";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
 import { IntakeView } from "@/components/coach/intake-view";
 import { SessionList } from "@/components/training/session-bits";
@@ -36,8 +38,8 @@ import { canPlan, type SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
 import { tl } from "@/lib/i18n/runtime";
 
-// The assistant tab calls the model, which can take up to a minute.
-export const maxDuration = 60;
+// The assistant reads the whole athlete history and writes a cycle outline: this can take 1–2 minutes.
+export const maxDuration = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -53,6 +55,7 @@ const tabs = () => [
   ["strength", tl("Siła", "Strength")],
   ["analytics", tl("Analityka", "Analytics")],
   ["records", tl("Rekordy i cele", "Records & goals")],
+  ["health", tl("Zdrowie", "Health")],
   ["history", tl("Historia", "History")],
   ["notes", tl("Notatki", "Notes")],
   ["settings", tl("Ustawienia", "Settings")],
@@ -229,7 +232,7 @@ async function TabContent({
               <CardTitle>{tl("Asystent trenera", "Coach assistant")}</CardTitle>
               <p className="max-w-2xl text-sm text-muted">
                 {tl(
-                  "Bierze pod uwagę start docelowy (A), dni do startu i fazę przygotowań, plan treningowy, 20 tygodni w skrócie, ostatnie 6 tygodni trening po treningu (plan, wykonanie, RPE, komentarze), samopoczucie, cele, rekordy i prognozę. Planuje według Twojej metody. Widzą to tylko trenerzy, zawodnik nie.",
+                  "Bierze pod uwagę profil i ankietę (dostępność, czas, siłownia), historię kontuzji z ograniczeniami, start docelowy (A) z fazą, plan, 20 tygodni cyklu, ostatnie 6 tygodni trening po treningu (tempa docelowe i wykonane odcinki, RPE, komentarze, rozmowy), samopoczucie, notatki zespołu, rekordy i prognozę. Zwraca analizę, zarys cyklu do startu i treningi na 14 dni według Twojej metody. Widzą to tylko trenerzy.",
                   "Considers the main race (A), days to go and training phase, the plan, 20 weeks in short, the last 6 weeks session by session (plan, execution, RPE, comments), readiness, goals, records and prediction. Plans by your method. Only coaches see it, not the athlete.",
                 )}{" "}
                 <Link href="/coach/settings" className="text-foreground underline-offset-2 hover:underline">
@@ -248,6 +251,25 @@ async function TabContent({
           ) : null}
         </Card>
         {latest ? <InsightView insight={latest.content} insightId={latest.id} createdAt={latest.created_at} athleteId={athleteId} planner={planner && athlete.link_status === "active"} /> : null}
+      </div>
+    );
+  }
+
+  if (tab === "health") {
+    const [injuries, pain] = await Promise.all([listInjuries(supabase, athleteId), painHistory(supabase, athleteId, addDaysISO(today, -182))]);
+    const p = athlete.profile;
+    return (
+      <div className="grid gap-6">
+        <InjuriesSection
+          athleteId={athleteId}
+          injuries={injuries}
+          pain={pain}
+          intro={tl(
+            "Wpisz wszystkie urazy, także wyleczone, z tym co je wywołuje i jakie ograniczenia ma respektować plan. Asystent trenera planuje z uwzględnieniem tej historii. Zawodnik i fizjoterapeuta też mogą tu dopisywać.",
+            "Record every injury, healed ones too, with triggers and the limits the plan must respect. The coach assistant plans around this history. The athlete and physio can add to it too.",
+          )}
+        />
+        <IntakeView intake={p ? p.intake : undefined} doneAt={p?.intake_done_at} />
       </div>
     );
   }

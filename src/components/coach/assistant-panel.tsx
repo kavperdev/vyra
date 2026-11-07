@@ -32,7 +32,7 @@ export function AnalyzeButton({ athleteId, hasInsight }: { athleteId: string; ha
       }
     >
       {hasInsight ? <RefreshCw className={pending ? "size-4 animate-spin" : "size-4"} /> : <Sparkles className="size-4" />}
-      {pending ? tl("Analizuję… (do minuty)", "Analysing… (up to a minute)") : hasInsight ? tl("Przeanalizuj ponownie", "Analyse again") : tl("Przeanalizuj zawodnika", "Analyse athlete")}
+      {pending ? tl("Analizuję… (1–2 min)", "Analysing… (1–2 min)") : hasInsight ? tl("Przeanalizuj ponownie", "Analyse again") : tl("Przeanalizuj zawodnika", "Analyse athlete")}
     </Button>
   );
 }
@@ -67,6 +67,12 @@ export function InsightView({
         </CardHeader>
         <CardContent className="grid gap-5">
           <p className="text-[14.5px] leading-relaxed">{insight.summary}</p>
+          {insight.injury_guard ? (
+            <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+              <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.15em] text-warning">{tl("Ochrona przed kontuzjami", "Injury protection")}</p>
+              <p className="text-[14px] leading-relaxed">{insight.injury_guard}</p>
+            </div>
+          ) : null}
           {insight.focus ? (
             <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
               <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.15em] text-accent">{tl("Priorytet na 2 tygodnie", "Focus for 2 weeks")}</p>
@@ -105,6 +111,43 @@ export function InsightView({
           </div>
         </CardContent>
       </Card>
+
+      {insight.cycle?.length ? (
+        <Card>
+          <CardHeader>
+            <div className="grid gap-1">
+              <CardTitle>{tl("Zarys cyklu", "Cycle outline")}</CardTitle>
+              <CardDescription>{tl("Tydzień po tygodniu do startu. Podpowiedzi poniżej to pierwsze kroki tego zarysu.", "Week by week to the race. The suggestions below are its first steps.")}</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-[13px]">
+              <thead className="text-[11.5px] uppercase tracking-wide text-muted">
+                <tr className="border-b border-border">
+                  <th className="py-2 pr-3 font-medium">{tl("Tydzień", "Week")}</th>
+                  <th className="py-2 pr-3 font-medium">{tl("Faza", "Phase")}</th>
+                  <th className="py-2 pr-3 text-right font-medium">km</th>
+                  <th className="py-2 pr-3 font-medium">{tl("Długie wybieganie", "Long run")}</th>
+                  <th className="py-2 pr-3 font-medium">{tl("Akcenty", "Key sessions")}</th>
+                  <th className="py-2 font-medium">{tl("Cel tygodnia", "Week focus")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {insight.cycle.map((w) => (
+                  <tr key={w.week_start} className="border-b border-border/60 align-top last:border-0">
+                    <td className="whitespace-nowrap py-2 pr-3 font-mono">{formatDate(w.week_start, "d MMM")}</td>
+                    <td className="py-2 pr-3">{w.phase}</td>
+                    <td className="py-2 pr-3 text-right font-mono tabular-nums">{w.km ?? "–"}</td>
+                    <td className="py-2 pr-3 text-muted">{w.long_run || "–"}</td>
+                    <td className="py-2 pr-3 text-muted">{w.key_sessions || "–"}</td>
+                    <td className="py-2 text-muted">{w.focus || "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid gap-3">
         <div className="grid gap-1">

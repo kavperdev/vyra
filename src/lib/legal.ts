@@ -122,8 +122,8 @@ Administratorem danych osobowych przekazanych przez tę stronę jest {{sprzedawc
 - Program poleceń: kod polecającego i informacja o zakupie z jego linku, aby przyznać rabat i nagrodę.
 - Konto w platformie VYRA (dla zawodników): dane potrzebne do prowadzenia treningu, w tym plan i wyniki treningów.
 - Opinia o współpracy: ocena i opinia, którą sam wpiszesz w aplikacji. Publikujemy ją na stronie i w mediach społecznościowych VYRA tylko za Twoją zgodą, z podpisem, który wybierzesz.
-- Ankieta startowa i poranna ocena gotowości: informacje o zdrowiu, kontuzjach i samopoczuciu, które sam podasz, aby trener mógł bezpiecznie ułożyć plan. Widzi je tylko Twój trener.
-- Analiza treningu dla trenera: trener może przygotować automatyczne podsumowanie Twoich ostatnich treningów i propozycje kolejnych. Dane treningowe (bez nazwiska i adresu e-mail) przetwarza wtedy zewnętrzny dostawca usług technicznych, tylko w tym celu. Wynik widzi tylko Twój trener, a o planie zawsze decyduje trener.
+- Ankieta startowa, historia kontuzji i poranna ocena gotowości: informacje o zdrowiu, kontuzjach i samopoczuciu, które podasz Ty, Twój trener lub fizjoterapeuta, aby bezpiecznie ułożyć plan. Widzi je tylko Twój trener i zespół, który Cię prowadzi.
+- Analiza treningu dla trenera: trener może przygotować automatyczne podsumowanie Twoich ostatnich treningów i propozycje kolejnych. Dane treningowe, w tym informacje o zdrowiu i kontuzjach (bez nazwiska i adresu e-mail), przetwarza wtedy zewnętrzny dostawca usług technicznych, tylko w tym celu. Wynik widzi tylko Twój trener, a o planie zawsze decyduje trener.
 
 ## Podstawa przetwarzania
 
@@ -171,8 +171,8 @@ The controller of personal data submitted through this website is {{sprzedawca}}
 - Referral programme: the referrer’s code and the fact of a purchase through their link, to apply the discount and the reward.
 - A VYRA platform account (for athletes): the data needed for coaching, including your plan and training results.
 - Feedback: the rating and opinion you enter in the app. We publish it on the website and VYRA social media only with your consent, under the name you choose.
-- The starting questionnaire and morning readiness check: information about your health, injuries and wellbeing that you choose to give, so your coach can plan safely. Only your coach sees it.
-- Training analysis for your coach: your coach can prepare an automatic summary of your recent training and ideas for next sessions. Your training data (without surname or e-mail) is then processed by an external technical service provider for this purpose only. Only your coach sees the result, and your coach always decides on the plan.
+- The starting questionnaire, injury history and morning readiness check: information about your health, injuries and wellbeing given by you, your coach or physio, so the plan is safe. Only your coach and the team looking after you see it.
+- Training analysis for your coach: your coach can prepare an automatic summary of your recent training and ideas for next sessions. Your training data, including health and injury information (without surname or e-mail), is then processed by an external technical service provider for this purpose only. Only your coach sees the result, and your coach always decides on the plan.
 
 ## Legal basis
 

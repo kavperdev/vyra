@@ -1018,3 +1018,22 @@ do $$ begin
   raise exception 'FAIL: two main races';
 exception when unique_violation then raise notice 'ok  only one main race per athlete';
 end $$;
+
+-- ---------------------------------------------------------------- injury history
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
+insert into public.athlete_injuries (athlete_id, area, name, status, restrictions)
+  values ('00000000-0000-0000-0000-0000000000a1', 'pieta_achilles', 'Tendinopatia Achillesa', 'recurring', 'bez podbiegów');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.check((select count(*) from public.athlete_injuries) = 1, 'athlete sees own injury history');
+insert into public.athlete_injuries (athlete_id, area, name) values ('00000000-0000-0000-0000-0000000000a1', 'kolano', 'Ból kolana');
+select pg_temp.check((select count(*) from public.athlete_injuries) = 2, 'athlete adds an injury');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.check((select count(*) from public.athlete_injuries) = 0, 'another athlete does not see the injuries');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.check((select count(*) from public.athlete_injuries) = 0, 'foreign coach does not see the injuries');
+do $$ begin
+  insert into public.athlete_injuries (athlete_id, area, name) values ('00000000-0000-0000-0000-0000000000a1', 'kolano', 'x');
+  raise exception 'FAIL: foreign coach added an injury';
+exception when insufficient_privilege then raise notice 'ok  foreign coach cannot add an injury';
+end $$;
+select pg_temp.as_admin();
