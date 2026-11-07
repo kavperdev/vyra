@@ -9,6 +9,7 @@ import { listSessions } from "@/lib/data/sessions";
 import { listRecords, strengthHistory } from "@/lib/data/people";
 import { RacePredictionCard } from "@/components/athlete/race-prediction";
 import { predictRaces } from "@/lib/training/prediction";
+import { loadThresholdReps } from "@/lib/training/form";
 import { periodStart } from "@/lib/training/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -47,11 +48,11 @@ export default async function AthleteProgressPage({ searchParams }: { searchPara
   const prediction =
     view === "strength"
       ? null
-      : predictRaces(
-          await listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
-          await listRecords(supabase, user.id).catch(() => []),
-          today,
-        );
+      : await (async () => {
+          const year = await listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(today, -365), to: today, kinds: ["running"] });
+          const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
+          return predictRaces(year, await listRecords(supabase, user.id).catch(() => []), today, reps);
+        })();
 
   return (
     <div className="grid gap-6">

@@ -20,6 +20,7 @@ import { assistantConfigured, type Insight } from "@/lib/coach-assistant";
 import { predictRaces, weeklyKmBefore } from "@/lib/training/prediction";
 import { MethodCard } from "@/components/coach/method-card";
 import { methodSnapshot } from "@/lib/training/method";
+import { loadThresholdReps } from "@/lib/training/form";
 import { InjuriesSection } from "@/components/athlete/injuries";
 import { listInjuries, painHistory } from "@/lib/data/injuries";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
@@ -231,7 +232,8 @@ async function TabContent({
     ]);
     const configured = assistantConfigured();
     const race = raceCountdown(goals, today);
-    const prediction = predictRaces(year, records, today);
+    const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
+    const prediction = predictRaces(year, records, today, reps);
     const ratings: Record<string, "good" | "bad"> = {};
     if (latest) {
       const { data: fb } = await supabase.from("assistant_feedback").select("suggestion, verdict").eq("insight_id", latest.id);
@@ -239,12 +241,14 @@ async function TabContent({
     }
     const method = methodSnapshot({
       past: year,
+      records,
+      reps,
       goals,
       today,
       prediction,
       weeklyKm: prediction?.weeklyKm ?? weeklyKmBefore(year, today),
       birthYear: athlete.profile?.birth_year ?? null,
-      maxHr: athlete.profile?.max_hr ?? null,
+      profile: athlete.profile ? { lthr: athlete.profile.lthr, max_hr: athlete.profile.max_hr, resting_hr: athlete.profile.resting_hr } : null,
       intake: athlete.profile?.intake,
       injuries,
       readiness,

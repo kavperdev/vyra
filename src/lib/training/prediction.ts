@@ -24,16 +24,27 @@ export interface Effort {
   date: string;
   distanceM: number;
   seconds: number;
-  /** "race" | "test" | "record" | "tempo" | "hard" */
-  source: "race" | "test" | "record" | "tempo" | "hard";
+  source: "race" | "test" | "record" | "tempo" | "hard" | "reps";
   title: string;
   sessionId: string | null;
   vdot: number;
+  avgHr?: number | null;
+}
+
+export interface Source extends Effort {
+  /** Share of this effort in the 10 km estimate, 0–100. */
+  share: number;
 }
 
 export interface Prediction {
+  /** Overall fitness (VDOT at 10 km), blended from all recent efforts. */
   vdot: number;
+  /** The effort with the largest share, kept for short labels. */
   basis: Effort;
+  /** Every effort that fed the estimate, with its share. */
+  sources: Source[];
+  /** Speed vs endurance: how long-distance results compare with short ones. */
+  profile: { kind: "speed" | "endurance" | "balanced" | "unknown"; short: number | null; long: number | null };
   confidence: "high" | "medium" | "low";
   weeklyKm: number;
   times: { key: DistanceKey; label: string; m: number; seconds: number; pace: number; adjusted: boolean }[];
@@ -73,9 +84,21 @@ export function timeFor(vdot: number, distanceM: number): number {
 const TEMPO_FRACTION = 0.88;
 const TEMPO_CATEGORIES = new Set(["tempo", "threshold", "race_pace", "progression"]);
 
-/** Hard efforts from logged sessions and running records. */
-export function collectEfforts(sessions: SessionSummary[], records: PersonalRecord[]): Effort[] {
+/** Work reps of a threshold session (from lap results): total distance, time and HR of the reps only. */
+export interface ThresholdReps {
+  sessionId: string;
+  date: string;
+  title: string;
+  distanceM: number;
+  seconds: number;
+  avgHr: number | null;
+  rpe: number | null;
+}
+
+/** Hard efforts from logged sessions, records and threshold reps. */
+export function collectEfforts(sessions: SessionSummary[], records: PersonalRecord[], reps: ThresholdReps[] = []): Effort[] {
   const out: Effort[] = [];
+  const withReps = new Set(reps.map((r) => r.sessionId));
   for (const s of sessions) {
     const e = s.execution;
     if (s.kind !== "running" || !e || !isDone(e.status)) continue;
@@ -86,33 +109,79 @@ export function collectEfforts(sessions: SessionSummary[], records: PersonalReco
     if (pace < 150 || pace > 900) continue; // faster than 2:30 or slower than 15:00 per km: a typo
     if (s.category === "race" || s.category === "test" || (e.rpe ?? 0) >= 9) {
       const source = s.category === "race" ? "race" : s.category === "test" ? "test" : "hard";
-      out.push({ date: e.performed_on, distanceM: d, seconds: sec, source, title: s.title, sessionId: s.id, vdot: vdotOf(d, sec) });
-    } else if (TEMPO_CATEGORIES.has(s.category) && sec >= 900 && d >= 3000) {
-      const v = d / (sec / 60);
-      out.push({ date: e.performed_on, distanceM: d, seconds: sec, source: "tempo", title: s.title, sessionId: s.id, vdot: vo2At(v) / TEMPO_FRACTION });
+      out.push({ date: e.performed_on, distanceM: d, seconds: sec, source, title: s.title, sessionId: s.id, vdot: vdotOf(d, sec), avgHr: e.avg_hr });
+    } else if (TEMPO_CATEGORIES.has(s.category) && !withReps.has(s.id) && sec >= 900 && d >= 3000) {
+      // Whole session including warm-up: a cautious, low-weight signal.
+      out.push({ date: e.performed_on, distanceM: d, seconds: sec, source: "tempo", title: s.title, sessionId: s.id, vdot: vo2At(d / (sec / 60)) / TEMPO_FRACTION, avgHr: e.avg_hr });
     }
   }
-  for (const r of records) {
-    if (r.kind !== "running" || r.unit !== "s" || !r.distance_m || r.distance_m < 1500 || r.value < 240) continue;
-    out.push({ date: r.achieved_on, distanceM: r.distance_m, seconds: Number(r.value), source: "record", title: r.label, sessionId: r.session_id, vdot: vdotOf(r.distance_m, Number(r.value)) });
+  for (const r of reps) {
+    if (r.distanceM < 2000 || r.seconds < 480) continue;
+    // Controlled sub-threshold reps (the method's 10–15% slower than 5 km pace) sit at about 84% of VO2max;
+    // reps run harder (RPE 8+) are closer to 10 km–half effort.
+    const fraction = (r.rpe ?? 7) >= 8 ? 0.9 : 0.84;
+    out.push({ date: r.date, distanceM: r.distanceM, seconds: r.seconds, source: "reps", title: `${r.title} (odcinki)`, sessionId: r.sessionId, vdot: vo2At(r.distanceM / (r.seconds / 60)) / fraction, avgHr: r.avgHr });
+  }
+  for (const rec of records) {
+    if (rec.kind !== "running" || rec.unit !== "s" || !rec.distance_m || rec.distance_m < 1500 || rec.value < 240) continue;
+    out.push({ date: rec.achieved_on, distanceM: rec.distance_m, seconds: Number(rec.value), source: "record", title: rec.label, sessionId: rec.session_id, vdot: vdotOf(rec.distance_m, Number(rec.value)) });
   }
   return out;
 }
 
-/** Score of an effort as of a day: recent efforts count fully, older ones a little less (about 1.5% per month). */
-function scoreAt(e: Effort, asOf: string): number | null {
+/** How much each kind of effort is trusted. */
+const RELIABILITY: Record<Effort["source"], number> = { race: 1, test: 0.9, record: 0.75, reps: 0.7, hard: 0.55, tempo: 0.4 };
+
+/** Fitness as of a day: slight discount for older efforts (about 0.75% per month after 8 weeks). */
+function adjusted(e: Effort, asOf: string): number | null {
   const age = days(e.date, asOf);
   if (age < 0 || age > MAX_AGE_DAYS) return null;
-  return e.vdot * (age <= RECENT_DAYS ? 1 : 1 - 0.0005 * (age - RECENT_DAYS));
+  const v = e.vdot * (age <= RECENT_DAYS ? 1 : 1 - 0.00025 * (age - RECENT_DAYS));
+  return v >= 25 && v <= 90 ? v : null;
 }
 
-function bestAt(efforts: Effort[], asOf: string): { effort: Effort; vdot: number } | null {
-  let best: { effort: Effort; vdot: number } | null = null;
-  for (const e of efforts) {
-    const v = scoreAt(e, asOf);
-    if (v != null && v >= 25 && v <= 90 && (!best || v > best.vdot)) best = { effort: e, vdot: v };
-  }
-  return best;
+/** Recency weight: full for 6 weeks, then fading with a half-life of about 3 months. */
+const recency = (age: number) => (age <= 42 ? 1 : Math.exp(-(age - 42) / 120));
+/** Distance similarity: a half marathon says more about a marathon than a 5 km does. */
+const similarity = (a: number, b: number) => Math.exp(-Math.abs(Math.log(a / b)) * 1.3);
+
+interface Weighted {
+  effort: Effort;
+  v: number;
+  w: number;
+}
+
+/**
+ * Fitness for one distance: weighted mean of all efforts of the last year, weighted by reliability,
+ * recency and distance similarity. Clearly sub-maximal efforts (below 92% of the best) are left out.
+ */
+function fitnessFor(efforts: Effort[], asOf: string, distanceM: number): { v: number; parts: Weighted[] } | null {
+  const scored = efforts
+    .map((e) => ({ effort: e, v: adjusted(e, asOf) }))
+    .filter((x): x is { effort: Effort; v: number } => x.v != null);
+  if (!scored.length) return null;
+  const best = Math.max(...scored.map((x) => x.v));
+  const parts = scored
+    .filter((x) => x.v >= best * 0.92)
+    .map((x) => ({ ...x, w: RELIABILITY[x.effort.source] * recency(days(x.effort.date, asOf)) * similarity(x.effort.distanceM, distanceM) }))
+    .filter((x) => x.w > 0.02);
+  const total = parts.reduce((a, x) => a + x.w, 0);
+  if (!total) return null;
+  return { v: parts.reduce((a, x) => a + x.v * x.w, 0) / total, parts };
+}
+
+/** Best race-type effort (race, test, record) up to 6 km and from 15 km, for the speed/endurance profile. */
+function profileOf(efforts: Effort[], asOf: string): Prediction["profile"] {
+  const real = efforts.filter((e) => e.source === "race" || e.source === "test" || e.source === "record");
+  const best = (pred: (e: Effort) => boolean) => {
+    const vs = real.filter(pred).map((e) => adjusted(e, asOf)).filter((v): v is number => v != null);
+    return vs.length ? Math.max(...vs) : null;
+  };
+  const short = best((e) => e.distanceM <= 6000);
+  const long = best((e) => e.distanceM >= 15000);
+  if (short == null || long == null) return { kind: "unknown", short, long };
+  const diff = (long - short) / short;
+  return { kind: diff < -0.03 ? "speed" : diff > 0.02 ? "endurance" : "balanced", short, long };
 }
 
 /** Average running km per week over the six weeks before `asOf`. */
@@ -133,30 +202,35 @@ function volumeFactor(key: DistanceKey, weeklyKm: number): number {
   return 1;
 }
 
-function timesFor(vdot: number, weeklyKm: number) {
+function timesAt(efforts: Effort[], asOf: string, weeklyKm: number) {
   return PREDICTION_DISTANCES.map((d) => {
+    const fit = fitnessFor(efforts, asOf, d.m);
+    if (!fit) return null;
     const f = volumeFactor(d.key, weeklyKm);
-    const seconds = timeFor(vdot, d.m) * f;
+    const seconds = timeFor(fit.v, d.m) * f;
     return { key: d.key, label: d.label, m: d.m, seconds, pace: seconds / (d.m / 1000), adjusted: f > 1.005 };
   });
 }
 
-/** Prediction for today, with the change against four weeks earlier. Null when there is no hard effort to go on. */
-export function predictRaces(sessions: SessionSummary[], records: PersonalRecord[], today: string): Prediction | null {
-  const efforts = collectEfforts(sessions, records).filter((e) => e.date <= today);
-  const now = bestAt(efforts, today);
-  if (!now) return null;
+/**
+ * Prediction for today from everything the athlete ran: races and tests at every distance, records,
+ * threshold reps and hard sessions, each weighted by how much it can be trusted, how recent it is and how
+ * close its distance is to the predicted one. Null when there is no hard effort to go on.
+ */
+export function predictRaces(sessions: SessionSummary[], records: PersonalRecord[], today: string, reps: ThresholdReps[] = []): Prediction | null {
+  const efforts = collectEfforts(sessions, records, reps).filter((e) => e.date <= today);
+  const ten = fitnessFor(efforts, today, 10000);
+  if (!ten) return null;
   const weeklyKm = weeklyKmBefore(sessions, today);
-  const times = timesFor(now.vdot, weeklyKm);
+  const times = timesAt(efforts, today, weeklyKm).filter((t): t is NonNullable<typeof t> => t != null);
   const before = addDaysISO(today, -28);
-  const then = bestAt(efforts, before);
-  let change: Prediction["change"] = null;
-  if (then) {
-    const old = timesFor(then.vdot, weeklyKmBefore(sessions, before));
-    change = Object.fromEntries(times.map((t, i) => [t.key, Math.round(t.seconds - old[i].seconds)]));
-  }
-  const age = days(now.effort.date, today);
-  const direct = now.effort.source !== "tempo";
-  const confidence = direct && age <= RECENT_DAYS ? "high" : age <= RECENT_DAYS ? "medium" : "low";
-  return { vdot: Math.round(now.vdot * 10) / 10, basis: now.effort, confidence, weeklyKm, times, change };
+  const old = timesAt(efforts, before, weeklyKmBefore(sessions, before));
+  const change = old.every((t) => t != null) ? Object.fromEntries(times.map((t, i) => [t.key, Math.round(t.seconds - old[i]!.seconds)])) : null;
+  const total = ten.parts.reduce((a, x) => a + x.w, 0);
+  const sources = ten.parts
+    .map((x) => ({ ...x.effort, share: Math.round((x.w / total) * 100) }))
+    .sort((a, b) => b.share - a.share);
+  const recent = efforts.filter((e) => days(e.date, today) <= RECENT_DAYS);
+  const confidence = recent.some((e) => e.source === "race" || e.source === "test") && sources.length >= 2 ? "high" : recent.length ? "medium" : "low";
+  return { vdot: Math.round(ten.v * 10) / 10, basis: sources[0], sources, profile: profileOf(efforts, today), confidence, weeklyKm, times, change };
 }

@@ -13,6 +13,7 @@ export function MethodCard({ m, today }: { m: MethodSnapshot; today: string }) {
   if (s.fatigue) alerts.push({ tone: "warning", text: tl("Zmęczenie 2+ dni: najbliższy akcent zamień na spokojny bieg.", "Fatigue 2+ days: swap the next key session for an easy run.") });
   if (s.returning) alerts.push({ tone: "warning", text: tl("Powrót po przerwie: 50–70% objętości, 1–2 tyg. bez progów.", "Returning after a break: 50–70% volume, 1–2 weeks without threshold.") });
   if (s.buildWeeks >= 3) alerts.push({ tone: "planned", text: tl(`${s.buildWeeks} tyg. budowania z rzędu: następny tydzień lżejszy (−20–30%).`, `${s.buildWeeks} build weeks in a row: next week lighter (−20–30%).`) });
+  if (m.efficiency.tooHard) alerts.push({ tone: "warning", text: tl(`${m.efficiency.tooHard} z ${m.efficiency.easyRuns} spokojnych biegów za mocno (tętno powyżej strefy spokojnej).`, `${m.efficiency.tooHard} of ${m.efficiency.easyRuns} easy runs too hard (HR above the easy zone).`) });
   if (!s.lastTest || s.lastTest < addDaysISO(today, -42)) alerts.push({ tone: "planned", text: tl("Brak testu lub startu od 6 tygodni: czas zaktualizować tempa.", "No test or race for 6 weeks: time to update paces.") });
 
   return (
@@ -50,32 +51,44 @@ export function MethodCard({ m, today }: { m: MethodSnapshot; today: string }) {
           </div>
         </div>
 
-        {m.zones && m.fiveK ? (
+        {m.zones && m.form ? (
           <div className="grid gap-2">
             <p className="text-[13.5px] font-semibold">
-              {tl("Strefy od aktualnej formy na 5 km", "Zones from current 5K form")}: {formatDuration(m.fiveK.seconds)}{" "}
-              <span className="font-normal text-muted">({m.fiveK.source})</span>
+              {tl("Aktualna forma z całości danych", "Current form from all data")}: VDOT {m.form.vdot.toLocaleString("pl-PL")}{" "}
+              <span className="font-normal text-muted">
+                · {tl("ekwiwalent 5 km", "5K equivalent")} {formatDuration(m.form.seconds5k)}
+                {m.form.profile.kind === "speed" ? tl(" · szybkościowiec", " · speed type") : m.form.profile.kind === "endurance" ? tl(" · wytrzymałościowiec", " · endurance type") : m.form.profile.kind === "balanced" ? tl(" · zrównoważony", " · balanced") : ""}
+              </span>
+            </p>
+            <p className="text-[12.5px] leading-relaxed text-muted">
+              {tl("Źródła", "Sources")}: {m.form.sources.map((x) => `${x.title} ${formatDate(x.date, "d MMM")} (${x.share}%)`).join(" · ")}
             </p>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-[13px]">
+              <table className="w-full min-w-[560px] text-left text-[13px]">
                 <tbody>
                   {m.zones.map((z) => (
-                    <tr key={z.name} className="border-b border-border/60 last:border-0">
+                    <tr key={z.name} className="border-b border-border/60 align-top last:border-0">
                       <td className="py-1.5 pr-3 font-medium">{z.name}</td>
                       <td className="py-1.5 pr-3 font-mono tabular-nums">
                         {formatPace(z.from)}–{formatPace(z.to)} /km
+                        {z.note ? <span className="block font-sans text-[11.5px] text-muted">{z.note}</span> : null}
                       </td>
-                      <td className="py-1.5 pr-3 text-muted">{z.hr}</td>
+                      <td className="py-1.5 pr-3 font-mono tabular-nums text-muted">{z.hr}</td>
                       <td className="py-1.5 text-muted">{z.feel}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <p className="text-[12.5px] leading-relaxed text-muted">
+              {tl("Tętno", "Heart rate")}: {m.hrBasis ?? tl("brak danych. Wpisz w profilu tętno progowe (LTHR) albo maksymalne, albo zrób test 30 min.", "no data. Add threshold (LTHR) or max HR in the profile, or run a 30-min test.")}
+              {m.observed ? tl(` · Próg na treningach: ${formatPace(m.observed.pace)}/km${m.observed.avgHr ? ` przy HR ${m.observed.avgHr}` : ""} (${m.observed.sessions} sesji)`, ` · Threshold in training: ${formatPace(m.observed.pace)}/km${m.observed.avgHr ? ` at HR ${m.observed.avgHr}` : ""}`) : ""}
+              {m.efficiency.changePct != null ? tl(` · Ekonomia na spokojnych: ${m.efficiency.changePct > 0 ? "+" : ""}${m.efficiency.changePct}% vs poprzednie 6 tyg.`, ` · Easy-run economy: ${m.efficiency.changePct > 0 ? "+" : ""}${m.efficiency.changePct}% vs previous 6 weeks`) : ""}
+            </p>
           </div>
         ) : (
           <p className="rounded-lg bg-surface-2 p-3 text-[13px] text-muted">
-            {tl("Brak aktualnej formy na 5 km. Zrób test (5 km, 3 km albo 30 min) albo wpisz rekord, wtedy pojawią się strefy.", "No current 5K form. Run a test (5K, 3K or 30 min) or add a record to get zones.")}
+            {tl("Brak danych o aktualnej formie. Zrób test (5 km, 3 km albo 30 min z tętnem) albo wpisz rekordy, wtedy pojawią się strefy.", "No data on current form. Run a test (5K, 3K or 30 min with HR) or add records to get zones.")}
           </p>
         )}
 

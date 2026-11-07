@@ -12,6 +12,7 @@ const sourceLabel = (s: Prediction["basis"]["source"]) =>
     record: tl("rekord", "record"),
     tempo: tl("bieg tempowy", "tempo run"),
     hard: tl("mocny bieg", "hard run"),
+    reps: tl("odcinki progowe", "threshold reps"),
   })[s];
 
 const distanceLabel = (key: string, fallback: string) => (key === "half" ? tl("Półmaraton", "Half marathon") : key === "marathon" ? tl("Maraton", "Marathon") : fallback);
@@ -46,8 +47,9 @@ export function RacePredictionCard({ prediction, sessionHref }: { prediction: Pr
       </Card>
     );
   }
-  const b = prediction.basis;
-  const basis = `${sourceLabel(b.source)}: ${b.title}, ${(b.distanceM / 1000).toLocaleString("pl-PL", { maximumFractionDigits: 2 })} km w ${formatDuration(b.seconds)} (${formatDate(b.date, "d MMM")})`;
+  const label = (b: Prediction["sources"][number]) =>
+    `${b.title}, ${(b.distanceM / 1000).toLocaleString("pl-PL", { maximumFractionDigits: 2 })} km w ${formatDuration(b.seconds)} (${formatDate(b.date, "d MMM")})`;
+  const profile = prediction.profile.kind === "speed" ? tl("Profil: szybkościowiec (długie dystanse względnie słabsze).", "Profile: speed type (long distances relatively weaker).") : prediction.profile.kind === "endurance" ? tl("Profil: wytrzymałościowiec (krótkie dystanse względnie słabsze).", "Profile: endurance type (short distances relatively weaker).") : prediction.profile.kind === "balanced" ? tl("Profil: zrównoważony.", "Profile: balanced.") : null;
   const confidence = {
     high: tl("dokładna", "accurate"),
     medium: tl("szacunkowa", "estimated"),
@@ -60,13 +62,9 @@ export function RacePredictionCard({ prediction, sessionHref }: { prediction: Pr
         <div className="grid gap-1">
           <CardTitle>{tl("Prognoza wyniku na dziś", "Race prediction today")}</CardTitle>
           <CardDescription>
-            {tl("Na podstawie", "Based on")}{" "}
-            {b.sessionId && sessionHref ? (
-              <Link href={sessionHref(b.sessionId)} className="underline-offset-2 hover:underline">
-                {basis}
-              </Link>
-            ) : (
-              basis
+            {tl(
+              `Z całości danych: ${prediction.sources.length} ${prediction.sources.length === 1 ? "bieg" : "biegów"} z ostatniego roku. Każdy dystans liczony głównie z wyników na podobnych dystansach.`,
+              `From all your data: ${prediction.sources.length} efforts from the last year. Each distance mostly from results at similar distances.`,
             )}
           </CardDescription>
         </div>
@@ -87,7 +85,28 @@ export function RacePredictionCard({ prediction, sessionHref }: { prediction: Pr
             </div>
           ))}
         </div>
+        <details className="text-[12.5px] text-muted">
+          <summary className="cursor-pointer select-none">{tl("Z czego to wynika", "What it is based on")}</summary>
+          <ul className="mt-2 grid gap-1">
+            {prediction.sources.map((s, i) => (
+              <li key={i} className="flex flex-wrap justify-between gap-2">
+                <span>
+                  {sourceLabel(s.source)}:{" "}
+                  {s.sessionId && sessionHref ? (
+                    <Link href={sessionHref(s.sessionId)} className="underline-offset-2 hover:underline">
+                      {label(s)}
+                    </Link>
+                  ) : (
+                    label(s)
+                  )}
+                </span>
+                <span className="font-mono">{s.share}%</span>
+              </li>
+            ))}
+          </ul>
+        </details>
         <p className="text-[12.5px] leading-relaxed text-muted">
+          {profile ? `${profile} ` : null}
           {tl("Prognoza", "Prediction")} {confidence}.{" "}
           {prediction.change ? tl("Zmiana obok czasu: w porównaniu z prognozą sprzed 4 tygodni.", "Change next to each time: against the prediction four weeks ago.") : null}{" "}
           {prediction.times.some((t) => t.adjusted)

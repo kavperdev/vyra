@@ -10,6 +10,7 @@ import { weeklyBuckets } from "@/lib/training/analytics";
 import { CATEGORIES } from "@/lib/training/categories";
 import { predictRaces, weeklyKmBefore } from "@/lib/training/prediction";
 import { LEVEL_LABEL, LEVEL_WEEK, methodSnapshot, PERIOD_LABEL, PERIOD_RULES } from "@/lib/training/method";
+import { loadThresholdReps } from "@/lib/training/form";
 import { raceCountdown, type RacePhase } from "@/lib/training/race";
 import { isDone } from "@/lib/training/status";
 import { VYRA_METHOD } from "@/lib/training/vyra-method-text";
@@ -115,6 +116,7 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
       .then((r) => (r.error ? [] : ((r.data ?? []) as unknown as Feedback[]))),
   ]);
   const past = long.filter((x) => x.scheduled_date <= today);
+  const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
   const recent = past.filter((x) => x.scheduled_date >= from);
   const future = long.filter((x) => x.scheduled_date > today);
 
@@ -197,20 +199,22 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
   section("POZIOM");
   const runRecords = records.filter((r) => r.kind === "running" && r.unit === "s").slice(0, 10);
   lines.push(runRecords.length ? `Rekordy: ${runRecords.map((r) => `${r.label} ${formatDuration(Number(r.value))} (${r.achieved_on}${r.source !== "manual" ? `, ${r.source}` : ""})`).join("; ")}` : "Brak rekordów w systemie.");
-  const p = predictRaces(year, records, today);
+  const p = predictRaces(year, records, today, reps);
   if (p) {
-    lines.push(`Prognoza (VDOT ${p.vdot}, z: ${p.basis.title} ${p.basis.date}): ${p.times.map((t) => `${t.label} ${formatDuration(t.seconds)} (${formatPace(t.pace)}/km)`).join(", ")}. Średnio ${p.weeklyKm} km/tydz. w ostatnich 6 tyg.`);
+    lines.push(`Prognoza z ${p.sources.length} ${p.sources.length === 1 ? "źródła" : "źródeł"} (VDOT ${p.vdot}; każdy dystans liczony głównie z wyników na podobnych dystansach): ${p.times.map((t) => `${t.label} ${formatDuration(t.seconds)} (${formatPace(t.pace)}/km)`).join(", ")}. Średnio ${p.weeklyKm} km/tydz. w ostatnich 6 tyg.`);
   } else lines.push("Brak prognozy: nie ma jeszcze mocnego biegu ani rekordu.");
 
   section("METODA W LICZBACH (wyliczone z danych według metody; trzymaj się tego)");
   const m = methodSnapshot({
-    past,
+    past: year,
+    records,
+    reps,
     goals,
     today,
     prediction: p,
     weeklyKm: p?.weeklyKm ?? weeklyKmBefore(year, today),
     birthYear: profile?.birth_year ?? null,
-    maxHr: profile?.max_hr ?? null,
+    profile: profile ? { lthr: profile.lthr, max_hr: profile.max_hr, resting_hr: profile.resting_hr } : null,
     intake: profile?.intake as Record<string, string | string[]> | null | undefined,
     injuries,
     readiness,
@@ -218,11 +222,20 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
   });
   lines.push(`Poziom: ${LEVEL_LABEL[m.level.level]} (${m.level.reasons.join("; ")})${m.level.minor ? ". NIEPEŁNOLETNI: bez podwójnego progu i bloków maratońskich, nacisk na różnorodność, technikę i siłę" : ""}.`);
   lines.push(`Tydzień dla poziomu: ${LEVEL_WEEK[m.level.level]}`);
+  if (m.form) {
+    lines.push(
+      `Aktualna forma z całości danych: VDOT ${m.form.vdot}, ekwiwalent 5 km ${formatDuration(m.form.seconds5k)} (pewność: ${m.form.confidence}). Źródła i ich udział: ${m.form.sources.map((x) => `${x.title} ${x.date} ${(x.distanceM / 1000).toFixed(1)} km w ${formatDuration(x.seconds)}${x.avgHr ? ` HR ${x.avgHr}` : ""} [${x.source}, ${x.share}%]`).join("; ")}.`,
+    );
+    const pr = m.form.profile;
+    if (pr.kind !== "unknown") lines.push(`Profil: ${pr.kind === "speed" ? "SZYBKOŚCIOWIEC (długie dystanse słabsze niż krótkie: więcej pracy wytrzymałościowej i progu na długich odcinkach)" : pr.kind === "endurance" ? "WYTRZYMAŁOŚCIOWIEC (krótkie dystanse słabsze: więcej szybkości, podbiegów, krótkich odcinków)" : "zrównoważony"}.`);
+    lines.push(`Strefy (tempo z formy, tętno ${m.hrBasis ?? "brak danych o tętnie: wpisz LTHR lub HRmax albo zrób test 30 min"}): ${m.zones!.map((z) => `${z.name} ${formatPace(z.from)}–${formatPace(z.to)}/km, ${z.hr}, ${z.feel}${z.note ? ` (${z.note})` : ""}`).join("; ")}.`);
+  } else lines.push("Brak danych o aktualnej formie: pierwszy akcent to test (5 km, 3 km albo 30 min z tętnem).");
+  if (m.observed) lines.push(`Próg obserwowany na treningach (kontrolowane odcinki, 6 tyg.): ${formatPace(m.observed.pace)}/km${m.observed.avgHr ? ` przy HR ${m.observed.avgHr}` : ""} z ${m.observed.sessions} sesji.`);
   lines.push(
-    m.fiveK
-      ? `Aktualna forma na 5 km: ${formatDuration(m.fiveK.seconds)} (${formatPace(m.fiveK.pace)}/km), z: ${m.fiveK.source}. Strefy (od aktualnej formy, nie od celu): ${m.zones!.map((z) => `${z.name} ${formatPace(z.from)}–${formatPace(z.to)}/km, ${z.hr}, ${z.feel}`).join("; ")}.`
-      : "Brak aktualnej formy na 5 km: zaproponuj test (5 km, 3 km albo 30 min) zanim ustalisz tempa progu.",
+    `Tętno: progowe ${m.hr.lthr ? `${m.hr.lthr.bpm} (${m.hr.lthr.source})` : "nieznane"}, maks. ${m.hr.max ? `${m.hr.max.bpm} (${m.hr.max.source})` : "nieznane"}, spoczynkowe ${m.hr.resting ?? "nieznane"}.`,
   );
+  const ef = m.efficiency;
+  if (ef.easyRuns) lines.push(`Biegi spokojne z tętnem (6 tyg.): ${ef.easyRuns}, ${ef.recentPaceAt ?? ""}${ef.changePct != null ? `; ekonomia tlenowa ${ef.changePct > 0 ? "+" : ""}${ef.changePct}% m/uderzenie wobec wcześniejszych 6 tyg.` : ""}${ef.tooHard ? `; ${ef.tooHard} spokojnych biegów ZA MOCNO (tętno powyżej strefy spokojnej)` : ""}.`);
   lines.push(`Okres według metody: ${PERIOD_LABEL[m.plan.period]}${m.plan.daysLeft != null ? ` (${m.plan.daysLeft} dni do startu${m.plan.distanceM ? `, dystans ${(m.plan.distanceM / 1000).toLocaleString("pl-PL")} km` : ", dystans nieznany z nazwy celu"})` : ""}. Obowiązuje: ${PERIOD_RULES[m.plan.period]}.`);
   if (m.plan.starts.length) lines.push(`Kalendarz okresów: ${m.plan.starts.map((x) => `${PERIOD_LABEL[x.period]} od ${x.from}`).join(", ")}. Taper dla tego dystansu: ${m.taper.from}–${m.taper.to} dni.`);
   const sg = m.signals;
@@ -394,7 +407,7 @@ Jak rozumujesz (zrób to w myślach, w odpowiedzi podaj tylko wnioski):
 Zasady pisania:
 - Po polsku, rzeczowo, jak doświadczony trener do trenera. Konkretnie: daty, tempa, km, tętno. Bez ogólników.
 - Tylko na podstawie danych. Braki (tętno, test, ankieta, kontuzje) wpisz w ryzyka.
-- Tempa wyłącznie ze stref „METODY W LICZBACH”. Gdy nie ma aktualnej formy na 5 km, pierwszym akcentem jest test.
+- Tempa i tętno wyłącznie ze stref „METODY W LICZBACH”. Forma jest tam policzona z całości danych (starty na różnych dystansach, testy, rekordy, odcinki progowe, tętno), a nie z jednego biegu. Próg to stan, nie sztywne tempo: w opisie akcentu podaj tempo, tętno i odczucie, z zastrzeżeniem, że tętno i odczucie mają pierwszeństwo (upał, wiatr, teren, słaba noc). Uwzględnij profil szybkościowiec/wytrzymałościowiec, obserwowany próg, ekonomię tlenową i spokojne biegi biegane za mocno. Gdy brakuje danych o formie albo tętnie, zaproponuj test.
 - Akcenty z repertuaru metody (formaty progu, podbiegi, fartleki, tempo startowe pod dystans). Każdy z rozgrzewką 15–20 min, ćwiczeniami i przebieżkami oraz schłodzeniem 10–15 min. W description podaj strukturę, tempo, tętno i odczucie (np. „6–7/10, zostaw jeden odcinek w zapasie”).
 - Propozycje tylko na dni wolne od zaplanowanych treningów, od jutra do 14 dni, w dni dostępne dla zawodnika. 3–7 propozycji.
 - Kategoria (pole category) wyłącznie z listy: ${RUN_CATEGORIES.join(", ")}. Próg podprogowy to "threshold", tempo startowe "race_pace", test "test".

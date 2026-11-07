@@ -1,6 +1,10 @@
 import { addDaysISO, weekStartISO } from "@/lib/dates";
+import { formatPace } from "@/lib/format";
 import type { AthleteGoal, SessionSummary } from "@/lib/types";
 import { isDone } from "@/lib/training/status";
+import { aerobicEfficiency, hrProfile, hrRanges, observedThreshold, type Efficiency, type HrProfile, type ObservedThreshold } from "@/lib/training/form";
+import { collectEfforts, type Prediction, type ThresholdReps } from "@/lib/training/prediction";
+import type { PersonalRecord } from "@/lib/types";
 
 /**
  * The VYRA method in numbers: level, zones from current 5 km form, the period of the cycle,
@@ -42,10 +46,10 @@ export function levelFor(input: { fiveKSeconds: number | null; weeklyKm: number;
   let level: Level = "elite";
   if (input.fiveKSeconds) {
     level = lower(level, byTime(input.fiveKSeconds));
-    reasons.push(`forma na 5 km → ${LEVEL_LABEL[byTime(input.fiveKSeconds)]}`);
+    reasons.push(`aktualna forma (ekwiwalent 5 km ${Math.floor(input.fiveKSeconds / 60)}:${String(Math.round(input.fiveKSeconds % 60)).padStart(2, "0")}) → ${LEVEL_LABEL[byTime(input.fiveKSeconds)]}`);
   } else {
     level = lower(level, "intermediate");
-    reasons.push("brak aktualnej formy na 5 km → ostrożnie");
+    reasons.push("brak danych o aktualnej formie → ostrożnie");
   }
   level = lower(level, byKm(input.weeklyKm));
   reasons.push(`${input.weeklyKm} km/tydz. → ${LEVEL_LABEL[byKm(input.weeklyKm)]}`);
@@ -76,18 +80,34 @@ export interface Zone {
   to: number; // s/km, slower bound
   hr: string;
   feel: string;
+  note?: string;
 }
 
-/** Zones from the CURRENT 5 km pace (s/km), as in the method's table. */
-export function zonesFrom5k(p5k: number, maxHr: number | null): Zone[] {
-  const hr = (a: number, b: number | null) => (maxHr ? `${Math.round(maxHr * a)}${b ? `–${Math.round(maxHr * b)}` : "+"} bpm` : `${Math.round(a * 100)}${b ? `–${Math.round(b * 100)}` : "+"}% HRmax`);
+/**
+ * Zones of the method. Paces from the current form (the 5 km equivalent of everything the athlete ran),
+ * the threshold zone moved halfway towards the pace actually held on controlled threshold reps,
+ * heart rate from threshold HR when known, otherwise from max HR.
+ */
+export function methodZones(p5k: number, hr: ReturnType<typeof hrRanges>, observed: ObservedThreshold | null): Zone[] {
+  const h = (k: keyof NonNullable<typeof hr>) => (hr ? hr[k] : "–");
+  let thrFrom = p5k * 1.1;
+  let thrTo = p5k * 1.15;
+  let note: string | undefined;
+  if (observed) {
+    const shift = (observed.pace - (thrFrom + thrTo) / 2) / 2;
+    if (Math.abs(shift) > 1) {
+      thrFrom += shift;
+      thrTo += shift;
+      note = `skorygowane o tempo z ${observed.sessions} sesji progowych (${formatPace(observed.pace)}/km${observed.avgHr ? `, HR ${observed.avgHr}` : ""})`;
+    }
+  }
   return [
-    { name: "Regeneracja", from: p5k * 1.35, to: p5k * 1.5, hr: maxHr ? `< ${Math.round(maxHr * 0.7)} bpm` : "< 70% HRmax", feel: "bardzo lekko" },
-    { name: "Spokojnie", from: p5k * 1.25, to: p5k * 1.35, hr: hr(0.7, 0.78), feel: "swobodna rozmowa" },
-    { name: "Tempo maratońskie", from: p5k * 1.12, to: p5k * 1.18, hr: hr(0.78, 0.84), feel: "spokojnie, ale z wysiłkiem" },
-    { name: "Próg podprogowy", from: p5k * 1.1, to: p5k * 1.15, hr: hr(0.82, 0.88), feel: "6–7/10, pełna kontrola" },
-    { name: "Tempo 10 km–półmaraton", from: p5k * 1.02, to: p5k * 1.08, hr: hr(0.88, 0.92), feel: "8/10" },
-    { name: "VO2max (3–5 km)", from: p5k * 0.98, to: p5k, hr: hr(0.92, null), feel: "9/10" },
+    { name: "Regeneracja", from: p5k * 1.35, to: p5k * 1.5, hr: h("regeneracja"), feel: "bardzo lekko" },
+    { name: "Spokojnie", from: p5k * 1.25, to: p5k * 1.35, hr: h("spokojnie"), feel: "swobodna rozmowa" },
+    { name: "Tempo maratońskie", from: p5k * 1.12, to: p5k * 1.18, hr: h("maraton"), feel: "spokojnie, ale z wysiłkiem" },
+    { name: "Próg podprogowy", from: thrFrom, to: thrTo, hr: h("prog"), feel: "6–7/10, pełna kontrola", note },
+    { name: "Tempo 10 km–półmaraton", from: p5k * 1.02, to: p5k * 1.08, hr: h("dycha"), feel: "8/10" },
+    { name: "VO2max (3–5 km)", from: p5k * 0.98, to: p5k, hr: h("vo2"), feel: "9/10" },
   ];
 }
 
@@ -222,39 +242,44 @@ export function cycleSignals(
 const EXPERIENCE_YEARS: Record<string, number> = { "0": 0, "1": 0.5, "3": 2, "5": 4, "6": 6 };
 
 export interface MethodSnapshot {
-  fiveK: { seconds: number; pace: number; source: string } | null;
+  /** Current form from all data: its 5 km equivalent, the sources and their shares. */
+  form: { seconds5k: number; pace5k: number; vdot: number; confidence: Prediction["confidence"]; sources: Prediction["sources"]; profile: Prediction["profile"] } | null;
   weeklyKm: number;
   level: LevelResult;
   zones: Zone[] | null;
+  hr: HrProfile;
+  hrBasis: string | null;
+  observed: ObservedThreshold | null;
+  efficiency: Efficiency;
   plan: PeriodPlan;
   taper: { from: number; to: number };
   signals: CycleSignals;
   mainGoal: AthleteGoal | null;
 }
 
-/**
- * Everything the method needs, computed from data already loaded.
- * `fiveK` comes from the race prediction (current form), never from the goal.
- */
+/** Everything the method needs, computed from all of the athlete's data (never from the goal). */
 export function methodSnapshot(input: {
   past: SessionSummary[];
+  records: PersonalRecord[];
+  reps: ThresholdReps[];
   goals: AthleteGoal[];
   today: string;
-  prediction: { times: { key: string; seconds: number; pace: number }[]; basis: { title: string; date: string }; weeklyKm: number } | null;
+  prediction: Prediction | null;
   weeklyKm: number;
   birthYear: number | null;
-  maxHr: number | null;
+  profile: { lthr: number | null; max_hr: number | null; resting_hr: number | null } | null;
   intake: Record<string, string | string[]> | null | undefined;
   injuries: { status: string }[];
   readiness: { day: string; sleep: number; energy: number; pain: boolean; pain_area: string | null }[];
   mainGoal: AthleteGoal | null;
 }): MethodSnapshot {
-  const t5 = input.prediction?.times.find((t) => t.key === "5k") ?? null;
-  const fiveK = t5 ? { seconds: t5.seconds, pace: t5.pace, source: `${input.prediction!.basis.title}, ${input.prediction!.basis.date}` } : null;
+  const p = input.prediction;
+  const t5 = p?.times.find((t) => t.key === "5k") ?? null;
+  const form = p && t5 ? { seconds5k: t5.seconds, pace5k: t5.pace, vdot: p.vdot, confidence: p.confidence, sources: p.sources.slice(0, 6), profile: p.profile } : null;
   const exp = input.intake && typeof input.intake.experience === "string" ? (EXPERIENCE_YEARS[input.intake.experience] ?? null) : null;
   const age = input.birthYear ? new Date(`${input.today}T12:00:00Z`).getUTCFullYear() - input.birthYear : null;
   const level = levelFor({
-    fiveKSeconds: fiveK?.seconds ?? null,
+    fiveKSeconds: form?.seconds5k ?? null,
     weeklyKm: input.weeklyKm,
     experienceYears: exp,
     activeInjury: input.injuries.some((i) => i.status === "active" || i.status === "recurring"),
@@ -266,11 +291,20 @@ export function methodSnapshot(input: {
     .sort()
     .pop() ?? null;
   const plan = methodPeriod(input.mainGoal, input.today, lastRace);
+  const efforts = collectEfforts(input.past, input.records, input.reps);
+  const hr = hrProfile(input.profile, efforts, input.reps, input.today);
+  const ranges = hrRanges(hr);
+  const observed = observedThreshold(input.reps, input.today);
+  const easyCeiling = hr.lthr ? Math.round(hr.lthr.bpm * 0.87) : hr.max ? Math.round(hr.max.bpm * 0.78) : null;
   return {
-    fiveK,
+    form,
     weeklyKm: input.weeklyKm,
     level,
-    zones: fiveK ? zonesFrom5k(fiveK.pace, input.maxHr) : null,
+    zones: form ? methodZones(form.pace5k, ranges, observed) : null,
+    hr,
+    hrBasis: ranges?.basis ?? null,
+    observed,
+    efficiency: aerobicEfficiency(input.past, input.today, easyCeiling),
     plan,
     taper: taperDays(plan.distanceM),
     signals: cycleSignals(input.past, input.today, input.readiness),
