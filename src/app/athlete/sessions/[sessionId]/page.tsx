@@ -46,7 +46,7 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
         description={<StatusBadge status={session.status} date={session.scheduled_date} today={today} />}
       />
       {!done && (session.segments.length || session.exercises.length) ? (
-        <WorkoutPlayer title={session.title} segments={session.segments} exercises={session.exercises} autoStart={start === "1"} />
+        <WorkoutPlayer sessionId={session.id} title={session.title} segments={session.segments} exercises={session.exercises} autoStart={start === "1"} />
       ) : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="grid content-start gap-6">

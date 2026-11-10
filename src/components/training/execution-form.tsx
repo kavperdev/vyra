@@ -13,6 +13,7 @@ import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-c
 import { deleteExecution, saveExecution } from "@/lib/actions/executions";
 import { AchievementsDialog } from "@/components/training/achievements-dialog";
 import type { Achievement } from "@/lib/training/achievements";
+import type { WorkoutResult } from "@/components/training/workout-player";
 import { formatDuration, formatKg, formatPace, paceFrom, parseDuration, parseKmToMeters } from "@/lib/format";
 import type { ExecutionStatus, SessionKind, StrengthExercise } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -88,13 +89,54 @@ export function ExecutionForm({
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
 
-  // Total time from the "Start workout" player fills an empty duration field.
+  // Results from the "Start workout" player fill the fields the athlete has not typed yet.
   useEffect(() => {
     const onDone = (e: Event) => {
-      const secs = (e as CustomEvent<{ seconds: number }>).detail?.seconds;
-      if (kind !== "running" || !secs || form.getValues("running.duration")) return;
-      form.setValue("running.duration", formatDuration(secs), { shouldDirty: true });
-      toast.success(tl("Wpisaliśmy czas z treningu. Uzupełnij dystans.", "We filled in your workout time. Add the distance."));
+      const r = (e as CustomEvent<WorkoutResult>).detail;
+      if (!r) return;
+      const opts = { shouldDirty: true } as const;
+      const filled: string[] = [];
+      if (kind === "running") {
+        if (r.seconds && !form.getValues("running.duration")) {
+          form.setValue("running.duration", formatDuration(r.seconds), opts);
+          filled.push(tl("czas", "time"));
+        }
+        if (r.distanceM && !form.getValues("running.distance_km")) {
+          form.setValue("running.distance_km", String(Math.round(r.distanceM / 10) / 100).replace(".", ","), opts);
+          filled.push(tl("dystans (z planu)", "distance (from the plan)"));
+        }
+        const laps = form.getValues("laps");
+        let lapCount = 0;
+        r.laps.forEach((l) => {
+          const i = laps.findIndex((x) => x.segment_id === l.segment_id && x.rep_index === l.rep_index);
+          if (i >= 0 && !laps[i].duration) {
+            form.setValue(`laps.${i}.duration`, formatDuration(l.seconds), opts);
+            lapCount++;
+          }
+        });
+        if (lapCount) filled.push(tl(`${lapCount} okrążeń`, `${lapCount} laps`));
+      } else {
+        const exs = form.getValues("exercises");
+        let setCount = 0;
+        exs.forEach((ex, i) => {
+          ex.sets.forEach((st, j) => {
+            const got = r.sets.find((x) => x.set_id === st.set_id);
+            if (!got) return;
+            if (got.reps != null) form.setValue(`exercises.${i}.sets.${j}.reps`, String(got.reps), opts);
+            if (got.load_kg != null) form.setValue(`exercises.${i}.sets.${j}.load_kg`, String(got.load_kg).replace(".", ","), opts);
+            form.setValue(`exercises.${i}.sets.${j}.completed`, true, opts);
+            setCount++;
+          });
+          const done = ex.sets.filter((st) => r.sets.some((x) => x.set_id === st.set_id)).length;
+          if (done) form.setValue(`exercises.${i}.status`, done === ex.sets.length ? "done" : "partial", opts);
+        });
+        if (setCount) filled.push(tl(`${setCount} serii`, `${setCount} sets`));
+      }
+      toast.success(
+        filled.length
+          ? tl(`Wpisaliśmy: ${filled.join(", ")}. Sprawdź, dodaj samopoczucie i zapisz.`, `Filled in: ${filled.join(", ")}. Check it, add how it felt and save.`)
+          : tl("Dodaj samopoczucie i zapisz trening.", "Add how it felt and save the workout."),
+      );
     };
     window.addEventListener("vyra:workout-finished", onDone);
     return () => window.removeEventListener("vyra:workout-finished", onDone);
