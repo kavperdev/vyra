@@ -1055,3 +1055,26 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  no lessons about foreign athletes';
 end $$;
 select pg_temp.as_admin();
+
+-- ---------------------------------------------------------------- free plan progress survives the browser
+select set_config('vyra.fp', (select token::text from public.free_plan_start(current_setting('vyra.test_secret'), ' Ola@Example.com ', 'Ola') where is_new), false);
+select pg_temp.check(current_setting('vyra.fp') <> '', 'new e-mail gets a plan token');
+select pg_temp.check((select not is_new from public.free_plan_start(current_setting('vyra.test_secret'), 'ola@example.com', 'Ola')), 'same e-mail is recognised, not duplicated');
+select pg_temp.as_user('00000000-0000-0000-0000-0000000000a2');
+set local role anon;
+select pg_temp.check(public.free_plan_save(current_setting('vyra.fp')::uuid, '{"1-0": true, "1-1": false, "evil": true}'::jsonb), 'token holder saves progress');
+select pg_temp.check((select done from public.free_plan_get(current_setting('vyra.fp')::uuid)) = '{"1-0": true}'::jsonb, 'only valid finished sessions are kept');
+select pg_temp.check(not public.free_plan_save(gen_random_uuid(), '{"1-0": true}'::jsonb), 'unknown token saves nothing');
+select pg_temp.check((select count(*) from public.free_plan_get(gen_random_uuid())) = 0, 'unknown token reads nothing');
+do $$ begin
+  perform 1 from public.free_plan_progress;
+  raise exception 'FAIL: anon reads the free plan table';
+exception when insufficient_privilege then raise notice 'ok  free plan table is closed to direct reads';
+end $$;
+do $$ begin
+  perform public.free_plan_start('wrong', 'x@example.com', 'X');
+  raise exception 'FAIL: free_plan_start accepts a wrong secret';
+exception when insufficient_privilege then raise notice 'ok  free_plan_start rejects a wrong secret';
+end $$;
+reset role;
+select pg_temp.as_admin();

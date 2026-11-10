@@ -11,7 +11,7 @@ const HIDDEN_ON = ["/zacznij-biegac", "/prowadzenie", "/kontakt", "/polityka-pry
 
 function snoozed() {
   try {
-    if (localStorage.getItem("vyra-free-plan") === "1") return true;
+    if (localStorage.getItem("vyra-free-plan") === "1" || localStorage.getItem("vyra-free-plan-token")) return true;
     const until = Number(localStorage.getItem(SNOOZE) ?? 0);
     return until > Date.now();
   } catch {

@@ -248,6 +248,47 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* 3b. FREE PLAN: the first step for people who don't run yet. */}
+      <section aria-label={t("Darmowy plan", "Free plan")} className="relative isolate overflow-hidden border-y border-white/10">
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[url('/site/night-city.jpg')] bg-cover bg-center opacity-35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/50" />
+        </div>
+        <div className={`${wrap} grid gap-10 py-20 sm:py-28 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-center`}>
+          <div className="grid gap-5">
+            <Reveal>
+              <Eyebrow accent>{t("Nie biegasz jeszcze? · za darmo", "Not running yet? · free")}</Eyebrow>
+            </Reveal>
+            <Reveal delay={80} as="h2" className="display text-[clamp(2rem,5vw,3.75rem)] leading-[1.02] text-white">
+              {t("Od zera do 25 minut biegu w 6 tygodni", "From zero to 25 minutes of running in 6 weeks")}
+            </Reveal>
+            <Reveal delay={160} as="p" className="max-w-xl text-lg leading-relaxed text-white/65">
+              {t(
+                "Darmowy plan od trenerów VYRA: 3 treningi w tygodniu, odhaczanie postępu, przypomnienia w kalendarzu. Postęp zapisuje się na stałe, na każdym urządzeniu.",
+                "A free plan from the VYRA coaches: 3 sessions a week, progress tracking, calendar reminders. Your progress is saved for good, on every device.",
+              )}
+            </Reveal>
+            <Reveal delay={240} className="flex flex-wrap gap-3">
+              <PrimaryLink href="/zacznij-biegac#plan">{t("Odbierz darmowy plan", "Get the free plan")}</PrimaryLink>
+            </Reveal>
+          </div>
+          <Reveal delay={150}>
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10">
+              {[
+                ["6", t("tygodni", "weeks")],
+                ["18", t("treningów", "sessions")],
+                ["~35", t("min na trening", "min a session")],
+              ].map(([v, k]) => (
+                <div key={k} className="grid gap-1 bg-black/80 p-5 sm:p-7">
+                  <span className="display num text-3xl text-white sm:text-4xl">{v}</span>
+                  <span className="text-[13px] text-white/50">{k}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* 4. IDENTITY: the manifest. */}
       <Manifest t={t} />
 

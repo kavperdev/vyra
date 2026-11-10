@@ -179,21 +179,33 @@ export const MAILS = {
     };
   },
 
-  freePlan(o: { name: string }): MailContent {
+  freePlan(o: { name: string; token?: string | null }): MailContent {
     const origin = publicOrigin();
     return {
       subject: "Twój darmowy plan: Zacznij biegać (6 tygodni)",
-      preview: "18 treningów, 3 razy w tygodniu po około 35 minut.",
+      preview: "18 treningów, 3 razy w tygodniu po około 35 minut. Postęp zapisuje się sam.",
       title: hi(o.name),
       paragraphs: [
         "Oto Twój plan na 6 tygodni: 18 treningów, 3 razy w tygodniu po około 35 minut. Zaczynasz od minuty truchtu przeplatanej marszem.",
-        "Zapisz ten mail. Link otwiera plan na każdym urządzeniu, a w planie możesz odhaczać treningi i dodać je do kalendarza w telefonie.",
+        "Zapisz ten mail. To Twój osobisty link: otwiera plan z Twoim postępem na każdym urządzeniu, nawet po zamknięciu przeglądarki albo na nowym telefonie.",
       ],
-      cta: { label: "Otwórz plan", url: `${origin}/zacznij-biegac?plan=1` },
+      cta: { label: "Otwórz mój plan", url: o.token ? `${origin}/zacznij-biegac?t=${o.token}#plan` : `${origin}/zacznij-biegac?plan=1#plan` },
       after: [
         "Jedna rada na start: biegaj wolniej, niż Ci się wydaje. Masz móc mówić pełnymi zdaniami.",
         "Jeśli po drodze pojawi się pytanie, odpowiedz na tego maila. Czytam każdą wiadomość.",
       ],
+    };
+  },
+
+  freePlanLink(o: { name: string; token: string }): MailContent {
+    const origin = publicOrigin();
+    return {
+      subject: "Link do Twojego planu „Zacznij biegać”",
+      preview: "Otwórz plan z zapisanym postępem.",
+      title: hi(o.name),
+      paragraphs: ["Ktoś (pewnie Ty) poprosił o dostęp do Twojego darmowego planu. Ten link otwiera go z całym zapisanym postępem, na dowolnym urządzeniu."],
+      cta: { label: "Otwórz mój plan", url: `${origin}/zacznij-biegac?t=${o.token}#plan` },
+      after: ["Jeśli to nie Ty, zignoruj tę wiadomość. Bez linku nikt nie zobaczy Twojego planu."],
     };
   },
 

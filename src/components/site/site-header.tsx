@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { LangSwitch } from "@/components/shared/lang-switch";
 import { useLang } from "@/lib/i18n/client";
@@ -64,6 +64,13 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
         <div className="relative z-10 flex items-center gap-2">
           <LangSwitch className="hidden sm:inline-flex" />
           <Link
+            href="/zacznij-biegac"
+            className="hidden h-10 items-center gap-2 rounded-full border border-white/20 px-4 text-[13px] font-semibold text-white transition-colors hover:border-[var(--accent)] xl:inline-flex"
+          >
+            <span aria-hidden className="size-1.5 rounded-full bg-[var(--accent)]" />
+            {en ? "Free plan" : "Darmowy plan"}
+          </Link>
+          <Link
             href={panel.href}
             className="hidden h-10 items-center px-3 text-[13px] font-semibold text-white/70 transition-colors hover:text-white sm:inline-flex"
           >
@@ -91,6 +98,16 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
       {open ? (
         <div id="site-menu" className="site-fade h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/10 bg-black lg:hidden">
           <nav aria-label="Menu" className="mx-auto grid max-w-6xl gap-1 px-[max(1.25rem,env(safe-area-inset-left))] py-8">
+            <Link
+              href="/zacznij-biegac"
+              className="site-rise mb-3 flex items-center justify-between gap-4 rounded-2xl border border-[var(--accent)]/50 bg-[var(--accent)]/10 px-5 py-4"
+            >
+              <span className="grid gap-0.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--accent)]">{en ? "Free" : "Za darmo"}</span>
+                <span className="text-[15px] font-semibold text-white">{en ? "Start running: 6-week plan" : "Zacznij biegać: plan na 6 tygodni"}</span>
+              </span>
+              <ArrowRight className="size-5 shrink-0 text-white" />
+            </Link>
             {SITE_NAV.map((item, i) => (
               <Link
                 key={item.href}
@@ -102,7 +119,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
               </Link>
             ))}
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-              {SITE_NAV_MORE.map((item) => (
+              {SITE_NAV_MORE.filter((item) => item.href !== "/zacznij-biegac").map((item) => (
                 <Link key={item.href} href={item.href} className="py-2 text-lg text-white/65 hover:text-white">
                   {en ? item.en : item.label}
                 </Link>

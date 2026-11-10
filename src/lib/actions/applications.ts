@@ -10,6 +10,7 @@ import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
 import { FREE_PLAN_NAME } from "@/lib/free-plan";
 import { insertApplication } from "@/lib/source";
+import { rememberPlan, startPlan } from "@/lib/free-plan-store";
 import { dbError, validationError, withUser } from "./helpers";
 
 function schemas(t: T) {
@@ -77,9 +78,18 @@ export async function submitApplication(input: ApplicationInput): Promise<Action
   return { ok: true };
 }
 
-/** E-mail for the free "Zacznij biegać" plan. Saved as a coaching lead so it appears in Zgłoszenia. */
-export async function requestFreePlan(input: { full_name: string; email: string; consent: boolean; website?: string }): Promise<ActionResult> {
-  if (input.website) return { ok: true };
+/**
+ * E-mail for the free "Zacznij biegać" plan. Saved as a coaching lead so it appears in Zgłoszenia,
+ * and as a saved plan, so access and progress survive a closed browser and work on every device.
+ * A known e-mail gets its personal link by e-mail (never in the response: an e-mail alone opens nothing).
+ */
+export async function requestFreePlan(input: {
+  full_name: string;
+  email: string;
+  consent: boolean;
+  website?: string;
+}): Promise<ActionResult<{ token: string | null; existing: boolean }>> {
+  if (input.website) return { ok: true, data: { token: null, existing: false } };
   const { t } = await getT();
   const schema = z.object({
     full_name: z.string().trim().min(2, t("Podaj imię", "Enter your name")).max(120),
@@ -88,19 +98,30 @@ export async function requestFreePlan(input: { full_name: string; email: string;
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
+  const { full_name, email } = parsed.data;
+
+  const saved = await startPlan(email, full_name);
+  if (saved && !saved.isNew) {
+    // Once an hour at most, so the form cannot be used to flood someone's inbox.
+    const hour = new Date().toISOString().slice(0, 13);
+    await sendMailOnce(`free-link:${email}:${hour}`, email, MAILS.freePlanLink({ name: full_name, token: saved.token }));
+    return { ok: true, data: { token: null, existing: true } };
+  }
+
   const supabase = await createClient();
   const { error } = await insertApplication(supabase, {
     kind: "coaching",
-    full_name: parsed.data.full_name,
-    email: parsed.data.email,
+    full_name,
+    email,
     consent: true,
     package: FREE_PLAN_NAME,
     goal: "Odebrał(a) darmowy plan „Zacznij biegać” (6 tygodni). Dobry kandydat na pakiet Start.",
     status: "new",
   });
-  if (error) return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie za chwilę.", "We couldn’t save that. Please try again in a moment.") };
-  await sendMailOnce(`free:${parsed.data.email}`, parsed.data.email, MAILS.freePlan({ name: parsed.data.full_name }));
-  return { ok: true };
+  if (error && !saved) return { ok: false, error: t("Nie udało się zapisać. Spróbuj ponownie za chwilę.", "We couldn’t save that. Please try again in a moment.") };
+  if (saved) await rememberPlan(saved.token);
+  await sendMailOnce(`free:${email}`, email, MAILS.freePlan({ name: full_name, token: saved?.token ?? null }));
+  return { ok: true, data: { token: saved?.token ?? null, existing: false } };
 }
 
 const STATUSES =["new", "contacted", "invited", "rejected"] as const;

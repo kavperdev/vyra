@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, CalendarPlus, Check, Link2, Lock, Printer, Trophy } from "lucide-react";
+import { ArrowRight, CalendarPlus, Check, CloudOff, Link2, Lock, Mail, Printer, ShieldCheck, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form-controls";
 import { requestFreePlan } from "@/lib/actions/applications";
+import { loadFreePlan, saveFreePlan } from "@/lib/actions/free-plan";
 import { FREE_PLAN, FREE_PLAN_RULES, type FreeWeek } from "@/lib/free-plan";
 import { useLang } from "@/lib/i18n/client";
 import { tl } from "@/lib/i18n/runtime";
 import { cn } from "@/lib/utils";
 
 const KEY = "vyra-free-plan";
+const TOKEN_KEY = "vyra-free-plan-token";
 const TOTAL = FREE_PLAN.length * 3;
 const ids = FREE_PLAN.flatMap((w) => [0, 1, 2].map((i) => `${w.week}-${i}`));
 
@@ -204,41 +206,164 @@ function WeekCard({ w, done, onToggle, locked, className }: { w: FreeWeek; done:
   );
 }
 
-function Plan() {
-  const lang = useLang();
-  const [done, setDone] = useState<Done>({});
-  const [copied, setCopied] = useState(false);
+type SaveState = "idle" | "saving" | "saved" | "offline";
 
+function readLocalDone(): Done {
+  try {
+    return JSON.parse(read(`${KEY}-done`) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function union(...all: Done[]): Done {
+  const out: Done = {};
+  for (const d of all) for (const [k, v] of Object.entries(d)) if (v) out[k] = true;
+  return out;
+}
+
+/** Name, e-mail and consent: shared by the gate and by "save your progress for good". */
+function ContactFields({
+  v,
+  setV,
+  errors,
+  idPrefix,
+}: {
+  v: { full_name: string; email: string; consent: boolean; website: string };
+  setV: (v: { full_name: string; email: string; consent: boolean; website: string }) => void;
+  errors: Errors;
+  idPrefix: string;
+}) {
+  return (
+    <>
+      <Field label={tl("Imię", "First name")} htmlFor={`${idPrefix}-name`} error={errors.full_name?.[0]}>
+        <Input id={`${idPrefix}-name`} autoComplete="given-name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
+      </Field>
+      <Field label="E-mail" htmlFor={`${idPrefix}-email`} error={errors.email?.[0]}>
+        <Input id={`${idPrefix}-email`} type="email" inputMode="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
+      </Field>
+      <input tabIndex={-1} aria-hidden autoComplete="off" className="absolute left-[-9999px] h-0 w-0" value={v.website} onChange={(e) => setV({ ...v, website: e.target.value })} />
+      <label className="flex items-start gap-3 text-[13px] text-white/55">
+        <Checkbox checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} aria-invalid={!!errors.consent} className="mt-0.5" />
+        <span>
+          {tl(
+            "Zgadzam się na przetwarzanie moich danych przez VYRA i kontakt w sprawie treningów. Mogę zrezygnować w każdej chwili.",
+            "I agree to VYRA processing my data and contacting me about training. I can opt out at any time.",
+          )}
+          {errors.consent?.[0] ? <span role="alert" className="mt-1 block text-[13px] text-problem">{errors.consent[0]}</span> : null}
+        </span>
+      </label>
+    </>
+  );
+}
+
+const EMPTY = { full_name: "", email: "", consent: false, website: "" };
+
+/** For a plan opened without a saved copy (old link, or before the e-mail was given): one form saves it for good. */
+function SaveForGood({ onSaved }: { onSaved: (token: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState(EMPTY);
+  const [errors, setErrors] = useState<Errors>({});
+  const [sent, setSent] = useState(false);
+  const [pending, start] = useTransition();
+  if (sent) {
+    return (
+      <p role="status" className="flex items-start gap-2 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/75">
+        <Mail className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
+        {tl(
+          "Ten e-mail ma już zapisany plan. Wysłaliśmy na niego link: otwórz go, a plan wróci z całym postępem.",
+          "This e-mail already has a saved plan. We sent you a link: open it and the plan comes back with all your progress.",
+        )}
+      </p>
+    );
+  }
+  return (
+    <div className="grid gap-3 rounded-xl border border-[var(--accent)]/50 bg-[var(--accent)]/10 p-4">
+      <p className="flex items-start gap-2 text-sm text-white">
+        <CloudOff className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
+        {tl(
+          "Ten plan jest zapisany tylko w tej przeglądarce i może zniknąć. Podaj e-mail, a zapiszemy go na stałe.",
+          "This plan lives only in this browser and may disappear. Enter your e-mail and we will save it for good.",
+        )}
+      </p>
+      {open ? (
+        <form
+          noValidate
+          className="relative grid gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            start(async () => {
+              const res = await requestFreePlan(v);
+              if (!res.ok) return setErrors(res.fieldErrors ?? { form: [res.error] });
+              if (res.data?.token) onSaved(res.data.token);
+              else if (res.data?.existing) setSent(true);
+              else setErrors({ form: [tl("Zapis chwilowo nie działa. Spróbuj później.", "Saving is unavailable right now. Try again later.")] });
+            });
+          }}
+        >
+          <ContactFields v={v} setV={setV} errors={errors} idPrefix="fp-save" />
+          {errors.form ? <p role="alert" className="text-sm text-problem">{errors.form[0]}</p> : null}
+          <Button type="submit" variant="accent" disabled={pending} className="w-full sm:w-fit">
+            {pending ? tl("Chwila…", "One moment…") : tl("Zapisz mój plan", "Save my plan")}
+          </Button>
+        </form>
+      ) : (
+        <Button type="button" variant="accent" size="sm" onClick={() => setOpen(true)} className="w-fit">
+          {tl("Zapisz na stałe", "Save for good")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function Plan({ token: initialToken, initialDone, name }: { token: string | null; initialDone: Done; name: string }) {
+  const lang = useLang();
+  const [token, setToken] = useState(initialToken);
+  const [done, setDone] = useState<Done>(initialDone);
+  const [copied, setCopied] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const timer = useRef<number | undefined>(undefined);
+
+  const persist = (next: Done, t: string | null, delay = 600) => {
+    store(`${KEY}-done`, JSON.stringify(next));
+    if (!t) return;
+    window.clearTimeout(timer.current);
+    setSaveState("saving");
+    timer.current = window.setTimeout(async () => {
+      const ok = await saveFreePlan(t, next).catch(() => false);
+      setSaveState(ok ? "saved" : "offline");
+    }, delay);
+  };
+
+  // Progress from this browser that the server does not have yet (ticked offline or before saving).
   useEffect(() => {
-    let local: Done = {};
-    try {
-      local = JSON.parse(read(`${KEY}-done`) ?? "{}");
-    } catch {
-      local = {};
-    }
-    // Progress from a personal link opened on another device.
-    const m = window.location.hash.match(/p=([0-9a-z]+)/);
-    const fromLink = m ? decode(m[1]) : {};
-    const merged = { ...local };
-    for (const [k, v] of Object.entries(fromLink)) if (v) merged[k] = true;
-    setDone(merged);
-    store(`${KEY}-done`, JSON.stringify(merged));
+    if (token && Object.keys(initialDone).length && Object.keys(initialDone).some((k) => initialDone[k])) persist(initialDone, token, 0);
+    return () => window.clearTimeout(timer.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = (id: string) => {
     const next = { ...done, [id]: !done[id] };
     setDone(next);
-    store(`${KEY}-done`, JSON.stringify(next));
+    persist(next, token);
     if (next[id] && navigator.vibrate) navigator.vibrate(12);
   };
+  const saved = (t: string) => {
+    setToken(t);
+    store(TOKEN_KEY, t);
+    persist(done, t, 0);
+  };
+
   const count = Object.values(done).filter(Boolean).length;
   const nextId = ids.find((id) => !done[id]);
-  const nextWeek = nextId ? Number(nextId.split("-")[0]) : null;
+  const nextWeek = nextId ? FREE_PLAN.find((w) => w.week === Number(nextId.split("-")[0])) : undefined;
+  const nextIdx = nextId ? Number(nextId.split("-")[1]) : 0;
 
   const link = useMemo(() => {
     if (typeof window === "undefined") return "";
+    if (token) return `${window.location.origin}/zacznij-biegac?t=${token}#plan`;
     return `${window.location.origin}/zacznij-biegac?plan=1${count ? `#p=${encode(done)}` : ""}`;
-  }, [done, count]);
+  }, [done, count, token]);
 
   const share = async () => {
     try {
@@ -254,9 +379,11 @@ function Plan() {
     }
   };
 
+  const first = name.trim().split(/\s+/)[0];
+
   return (
     <div className="print-plan grid gap-10">
-      <div className="grid gap-4 rounded-2xl border border-white/15 bg-black p-6 sm:p-8 print:hidden">
+      <div className="grid gap-5 rounded-2xl border border-white/15 bg-black p-6 sm:p-8 print:hidden">
         {count === TOTAL ? (
           <div className="grid gap-2">
             <p className="flex items-center gap-2 text-xl font-semibold text-white">
@@ -269,22 +396,38 @@ function Plan() {
         ) : (
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/45">{tl("Twój postęp", "Your progress")}</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/45">
+                {first ? tl(`${first}, Twój postęp`, `${first}, your progress`) : tl("Twój postęp", "Your progress")}
+              </p>
               <p className="display mt-1 text-4xl text-white">
                 <span className="num">{count}</span>
                 <span className="text-white/35">/{TOTAL}</span>
               </p>
             </div>
-            {nextWeek ? (
-              <p className="text-sm text-white/60">
-                {tl("Następny", "Next")}: <span className="text-white">{tl("Tydzień", "Week")} {nextWeek}, {tl("trening", "session")} {Number(nextId!.split("-")[1]) + 1}</span>
-              </p>
-            ) : null}
+            <SaveBadge state={token ? saveState : null} />
           </div>
         )}
         <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
           <div className="h-full bg-[var(--accent)] transition-all duration-500" style={{ width: `${(count / TOTAL) * 100}%` }} />
         </div>
+
+        {nextWeek && nextId ? (
+          <div className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 sm:flex sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[var(--accent)]">
+                {tl("Następny trening", "Next session")} · {tl("Tydzień", "Week")} {nextWeek.week}, {tl("trening", "session")} {nextIdx + 1}
+              </p>
+              <p className="mt-1 text-[15px] text-white">{lang === "en" ? nextWeek.sessions[nextIdx].en : nextWeek.sessions[nextIdx].pl}</p>
+              <p className="text-[12.5px] text-white/45">{tl("Do tego 5 min marszu na start i 5 min na koniec.", "Plus a 5-min walk before and after.")}</p>
+            </div>
+            <Button type="button" variant="accent" onClick={() => toggle(nextId)} className="w-full shrink-0 sm:w-auto">
+              <Check className="size-4" /> {tl("Zrobione", "Done")}
+            </Button>
+          </div>
+        ) : null}
+
+        {token ? null : <SaveForGood onSaved={saved} />}
+
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={share} className="border-white/25 text-white hover:bg-white/10">
             <Link2 className="size-4" /> {copied ? tl("Skopiowano link", "Link copied") : tl("Mój link do planu", "My plan link")}
@@ -293,11 +436,16 @@ function Plan() {
             <Printer className="size-4" /> {tl("Drukuj / PDF", "Print / PDF")}
           </Button>
         </div>
-        <p className="text-[12px] text-white/40">
-          {tl(
-            "Postęp zapisuje się na tym urządzeniu. Link otwiera plan z postępem na innym telefonie lub komputerze.",
-            "Progress is saved on this device. The link opens the plan with your progress on another phone or computer.",
-          )}
+        <p className="text-[12px] leading-relaxed text-white/45">
+          {token
+            ? tl(
+                "Postęp zapisuje się sam, na serwerze. Możesz zamknąć przeglądarkę: plan zostanie otwarty na tym urządzeniu, a link z maila otworzy go z postępem na każdym innym. Wskazówka: dodaj tę stronę do ekranu głównego (Udostępnij → Do ekranu początkowego), będzie jak aplikacja.",
+                "Progress saves itself on our server. Close the browser any time: the plan stays open on this device, and the link from the e-mail opens it with your progress anywhere else. Tip: add this page to your home screen to use it like an app.",
+              )
+            : tl(
+                "Postęp zapisuje się na razie tylko w tej przeglądarce.",
+                "For now progress is saved only in this browser.",
+              )}
         </p>
       </div>
 
@@ -342,24 +490,95 @@ function Plan() {
   );
 }
 
-/** E-mail gate for the free plan. Week 1 is visible up front; the rest opens after the form. */
+/** Saved progress indicator next to the counter. */
+function SaveBadge({ state }: { state: SaveState | null }) {
+  if (!state) return null;
+  if (state === "offline") {
+    return (
+      <span className="flex items-center gap-1.5 text-[12px] text-white/55">
+        <CloudOff className="size-3.5" /> {tl("Bez internetu: zapiszę przy następnym kliknięciu", "Offline: will save on the next tick")}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1.5 text-[12px] text-white/55">
+      <ShieldCheck className="size-3.5 text-[var(--accent)]" />
+      {state === "saving" ? tl("Zapisuję…", "Saving…") : tl("Zapisany na stałe", "Saved for good")}
+    </span>
+  );
+}
+
+type Opened = { token: string | null; done: Done; name: string };
+
+/**
+ * E-mail gate for the free plan. Week 1 is visible up front; the rest opens after the form.
+ * Once given, access and progress live on the server (cookie + personal link), not only in the browser.
+ */
 export function FreePlan() {
-  const [unlocked, setUnlocked] = useState(false);
-  const [v, setV] = useState({ full_name: "", email: "", consent: false, website: "" });
+  const [opened, setOpened] = useState<Opened | null>(null);
+  const [notice, setNotice] = useState(false);
+  const [v, setV] = useState(EMPTY);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, start] = useTransition();
 
   useEffect(() => {
-    const fromLink = new URLSearchParams(window.location.search).has("plan");
-    if (fromLink) store(KEY, "1");
-    if (fromLink || read(KEY) === "1") setUnlocked(true);
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("t");
+    const localToken = read(TOKEN_KEY);
+    const legacy = params.has("plan") || read(KEY) === "1";
+    const m = window.location.hash.match(/p=([0-9a-z]+)/);
+    const local = union(readLocalDone(), m ? decode(m[1]) : {});
+    // Show the plan at once when this browser knows it; the server copy fills in a moment later.
+    if (legacy || localToken || urlToken) setOpened({ token: null, done: local, name: "" });
+    let alive = true;
+    loadFreePlan(urlToken ?? localToken)
+      .then((saved) => {
+        if (!alive) return;
+        if (saved) {
+          store(TOKEN_KEY, saved.token);
+          store(KEY, "1");
+          // Keep the personal link in the address bar, so a bookmark or the home screen opens this plan.
+          if (urlToken !== saved.token) window.history.replaceState(null, "", `/zacznij-biegac?t=${saved.token}#plan`);
+          setOpened({ token: saved.token, done: union(saved.done, local), name: saved.name });
+        } else if (legacy) {
+          store(KEY, "1");
+          setOpened({ token: null, done: local, name: "" });
+        } else {
+          setOpened(null);
+        }
+      })
+      .catch(() => {
+        if (alive && legacy) setOpened({ token: null, done: local, name: "" });
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  if (unlocked) return <Plan />;
+  if (opened) {
+    return (
+      <div className="grid gap-6">
+        {notice ? (
+          <p role="status" className="flex items-start gap-2 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/75">
+            <Mail className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
+            {tl(
+              "Ten e-mail ma już zapisany plan. Wysłaliśmy na niego link: otwórz go, a wróci cały Twój postęp.",
+              "This e-mail already has a saved plan. We sent you a link: open it and all your progress comes back.",
+            )}
+          </p>
+        ) : null}
+        <Plan key={opened.token ?? "local"} token={opened.token} initialDone={opened.done} name={opened.name} />
+      </div>
+    );
+  }
 
-  const open = () => {
+  const open = (token: string | null, name: string) => {
     store(KEY, "1");
-    setUnlocked(true);
+    if (token) {
+      store(TOKEN_KEY, token);
+      window.history.replaceState(null, "", `/zacznij-biegac?t=${token}#plan`);
+    }
+    setOpened({ token, done: readLocalDone(), name });
     document.getElementById("plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -386,8 +605,9 @@ export function FreePlan() {
           e.preventDefault();
           start(async () => {
             const res = await requestFreePlan(v);
-            if (res.ok) open();
-            else setErrors(res.fieldErrors ?? { form: [res.error] });
+            if (!res.ok) return setErrors(res.fieldErrors ?? { form: [res.error] });
+            if (res.data?.existing) setNotice(true);
+            open(res.data?.token ?? null, v.full_name);
           });
         }}
       >
@@ -395,36 +615,22 @@ export function FreePlan() {
         <ul className="grid gap-2 text-sm text-white/70">
           {[
             tl("18 treningów krok po kroku", "18 step-by-step sessions"),
+            tl("Postęp zapisany na stałe, na każdym urządzeniu", "Progress saved for good, on every device"),
             tl("Wpisanie do kalendarza z przypomnieniami", "Add to your calendar with reminders"),
-            tl("Odhaczanie postępu i link do planu", "Progress tracking and a link to your plan"),
           ].map((x) => (
             <li key={x} className="flex gap-2.5">
               <Check className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" /> {x}
             </li>
           ))}
         </ul>
-        <Field label={tl("Imię", "First name")} htmlFor="fp-name" error={errors.full_name?.[0]}>
-          <Input id="fp-name" autoComplete="given-name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
-        </Field>
-        <Field label="E-mail" htmlFor="fp-email" error={errors.email?.[0]}>
-          <Input id="fp-email" type="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
-        </Field>
-        <input tabIndex={-1} aria-hidden autoComplete="off" className="absolute left-[-9999px] h-0 w-0" value={v.website} onChange={(e) => setV({ ...v, website: e.target.value })} />
-        <label className="flex items-start gap-3 text-[13px] text-white/55">
-          <Checkbox checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} aria-invalid={!!errors.consent} className="mt-0.5" />
-          <span>
-            {tl(
-              "Zgadzam się na przetwarzanie moich danych przez VYRA i kontakt w sprawie treningów. Mogę zrezygnować w każdej chwili.",
-              "I agree to VYRA processing my data and contacting me about training. I can opt out at any time.",
-            )}
-            {errors.consent?.[0] ? <span role="alert" className="mt-1 block text-[13px] text-problem">{errors.consent[0]}</span> : null}
-          </span>
-        </label>
+        <ContactFields v={v} setV={setV} errors={errors} idPrefix="fp" />
         {errors.form ? <p role="alert" className="text-sm text-problem">{errors.form[0]}</p> : null}
         <Button type="submit" variant="accent" size="lg" disabled={pending} className="w-full">
           {pending ? tl("Chwila…", "One moment…") : tl("Otwórz mój plan", "Open my plan")} <ArrowRight className="size-4" />
         </Button>
-        <p className="text-center text-[12px] text-white/40">{tl("Za darmo. Bez spamu. Plan otworzy się od razu.", "Free. No spam. The plan opens instantly.")}</p>
+        <p className="text-center text-[12px] text-white/40">
+          {tl("Za darmo. Bez spamu. Plan otworzy się od razu. Masz już plan? Wpisz ten sam e-mail.", "Free. No spam. The plan opens instantly. Already have one? Use the same e-mail.")}
+        </p>
       </form>
     </div>
   );
