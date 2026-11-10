@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult, ExecutionStatus } from "@/lib/types";
 import { executionFormSchema, executionToPayload, type ExecutionFormValues } from "@/lib/validation/execution";
+import { detectAchievements, type Achievement, type LiftRow, type RunRow } from "@/lib/training/achievements";
+import type { ServerSupabase } from "@/lib/supabase/server";
 import { dbError, validationError, withUser } from "./helpers";
 
 const STATUSES: ExecutionStatus[] = ["in_progress", "completed", "partial", "skipped"];
 
-export async function saveExecution(values: ExecutionFormValues, status: ExecutionStatus): Promise<ActionResult> {
+export async function saveExecution(values: ExecutionFormValues, status: ExecutionStatus): Promise<ActionResult<{ achievements: Achievement[] }>> {
   return withUser("athlete", async ({ supabase, user }) => {
     if (!STATUSES.includes(status)) return { ok: false, error: "Nieznany status." };
     const parsed = executionFormSchema.safeParse(values);
@@ -34,8 +36,49 @@ export async function saveExecution(values: ExecutionFormValues, status: Executi
       partial: "Zapisano trening jako wykonany częściowo.",
       skipped: "Oznaczono trening jako pominięty.",
     };
-    return { ok: true, message: messages[status] };
+    const achievements = status === "completed" || status === "partial" ? await findAchievements(supabase, user.id, s.id).catch(() => []) : [];
+    return { ok: true, message: messages[status], data: { achievements } };
   });
+}
+
+function one<T>(x: T | T[] | null | undefined): T | null {
+  return Array.isArray(x) ? (x[0] ?? null) : (x ?? null);
+}
+
+/** Compares the saved session with the athlete's own earlier results (never blocks the save). */
+async function findAchievements(supabase: ServerSupabase, athleteId: string, sessionId: string): Promise<Achievement[]> {
+  const { data: exec } = await supabase.from("workout_executions").select("id").eq("session_id", sessionId).maybeSingle();
+  const current = (exec as { id: string } | null)?.id;
+  if (!current) return [];
+  const [runs, lifts, recs] = await Promise.all([
+    supabase
+      .from("workout_executions")
+      .select("id, running_execution_results(distance_m, duration_s)")
+      .eq("athlete_id", athleteId)
+      .in("status", ["completed", "partial"])
+      .limit(2000),
+    supabase
+      .from("exercise_execution_results")
+      .select("execution_id, exercise_name, workout_executions!inner(athlete_id, status), set_execution_results(load_kg, completed)")
+      .eq("workout_executions.athlete_id", athleteId)
+      .in("workout_executions.status", ["completed", "partial"])
+      .limit(3000),
+    supabase.from("personal_records").select("label, value, unit, kind, confirmed").eq("athlete_id", athleteId),
+  ]);
+  const runRows: RunRow[] = ((runs.data ?? []) as { id: string; running_execution_results: unknown }[]).flatMap((r) => {
+    const res = one(r.running_execution_results as { distance_m: number | null; duration_s: number | null } | null);
+    return res ? [{ execution_id: r.id, distance_m: res.distance_m, duration_s: res.duration_s }] : [];
+  });
+  const liftRows: LiftRow[] = ((lifts.data ?? []) as { execution_id: string; exercise_name: string; set_execution_results: { load_kg: number | string | null; completed: boolean }[] | null }[]).flatMap((e) =>
+    (e.set_execution_results ?? []).filter((x) => x.completed && x.load_kg != null).map((x) => ({ execution_id: e.execution_id, exercise_name: e.exercise_name, load_kg: Number(x.load_kg) })),
+  );
+  const best = new Map<string, number>();
+  for (const r of (recs.data ?? []) as { label: string; value: number | string; unit: string; kind: string; confirmed: boolean }[]) {
+    if (r.kind !== "running" || r.unit !== "s" || !r.confirmed) continue;
+    const v = Number(r.value);
+    if (!best.has(r.label) || v < best.get(r.label)!) best.set(r.label, v);
+  }
+  return detectAchievements(current, runRows, liftRows, best);
 }
 
 /** Removes the athlete's own record of a session (the plan stays). */

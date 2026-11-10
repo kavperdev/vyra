@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { deleteExecution, saveExecution } from "@/lib/actions/executions";
+import { AchievementsDialog } from "@/components/training/achievements-dialog";
+import type { Achievement } from "@/lib/training/achievements";
 import { formatDuration, formatKg, formatPace, paceFrom, parseDuration, parseKmToMeters } from "@/lib/format";
 import type { ExecutionStatus, SessionKind, StrengthExercise } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -84,6 +86,20 @@ export function ExecutionForm({
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+
+  // Total time from the "Start workout" player fills an empty duration field.
+  useEffect(() => {
+    const onDone = (e: Event) => {
+      const secs = (e as CustomEvent<{ seconds: number }>).detail?.seconds;
+      if (kind !== "running" || !secs || form.getValues("running.duration")) return;
+      form.setValue("running.duration", formatDuration(secs), { shouldDirty: true });
+      toast.success(tl("Wpisaliśmy czas z treningu. Uzupełnij dystans.", "We filled in your workout time. Add the distance."));
+    };
+    window.addEventListener("vyra:workout-finished", onDone);
+    return () => window.removeEventListener("vyra:workout-finished", onDone);
+  }, [kind, form]);
+
   const submit = (status: ExecutionStatus) =>
     handleSubmit(
       (v) =>
@@ -97,6 +113,7 @@ export function ExecutionForm({
             /* ignore */
           }
           toast.success(res.message);
+          if (res.data?.achievements?.length) setAchievements(res.data.achievements);
           reset(v);
           saved.current = false;
           setConfirmSkip(false);
@@ -281,6 +298,8 @@ export function ExecutionForm({
           </button>
         ) : null}
       </div>
+
+      <AchievementsDialog items={achievements} onClose={() => setAchievements([])} />
 
       <Dialog open={confirmSkip} onOpenChange={setConfirmSkip}>
         <DialogContent title={tl("Oznaczyć jako pominięty?", "Mark as skipped?")} description={tl("Trener zobaczy, że trening nie został wykonany. Dopisz w komentarzu powód, to pomoże dopasować plan.", "Your coach will see the session wasn’t done. Add the reason in a comment, it helps adjust the plan.")}>

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, MessageSquare, Trophy } from "lucide-react";
+import { ArrowRight, MessageSquare, Play, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, HelloCard, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
 import { describeSegment, KindIcon, plannedVolume, SessionList, StatusBadge } from "@/components/training/session-bits";
 import { ReadinessCard } from "@/components/athlete/readiness-card";
 import { RaceCountdownCard } from "@/components/athlete/race-countdown";
+import { FormWeekCard } from "@/components/athlete/form-week-card";
+import { formIndex, intensitySplit } from "@/lib/training/form-index";
 import { WorkoutChart } from "@/components/training/workout-chart";
 import { raceCountdown } from "@/lib/training/race";
 import { requireRole } from "@/lib/auth";
@@ -36,7 +38,7 @@ export default async function AthleteDashboard() {
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
   const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals, feedbackDue] = await Promise.all([
-    listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -56), to: addDaysISO(today, 14) }),
+    listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -70), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
     listRecentComments(supabase, { onlyRole: "coach", limit: 3 }),
     // Missing table (migration not run yet) simply hides the check-in.
@@ -108,6 +110,8 @@ export default async function AthleteDashboard() {
   const weekSessions = sessions.filter((s) => s.scheduled_date >= weekStart && s.scheduled_date <= weekEndISO(today));
   const weekDone = weekSessions.filter((s) => isDone(s.status)).length;
   const prs = bestRecords(records).slice(0, 3);
+  const form = formIndex(sessions, today);
+  const split = intensitySplit(sessions, weekStart, today);
   const firstName = user.profile.full_name.split(" ")[0];
 
   return (
@@ -213,12 +217,21 @@ export default async function AthleteDashboard() {
               ) : plannedVolume(featured) ? (
                 <p className="num text-sm text-muted">{plannedVolume(featured)}</p>
               ) : null}
-              <Button asChild size="lg" variant={featured.status === "planned" || featured.status === "in_progress" ? "accent" : "outline"} className="w-full sm:w-fit">
+              <div className="flex flex-wrap gap-2">
+              {featured.status === "planned" && (featuredDetail.segments.length || featuredDetail.exercises.length) ? (
+                <Button asChild size="lg" variant="accent" className="w-full sm:w-fit">
+                  <Link href={`/athlete/sessions/${featured.id}?start=1`}>
+                    <Play className="size-4" /> {tl("Zacznij trening", "Start workout")}
+                  </Link>
+                </Button>
+              ) : null}
+              <Button asChild size="lg" variant={(featured.status === "planned" && !(featuredDetail.segments.length || featuredDetail.exercises.length)) || featured.status === "in_progress" ? "accent" : "outline"} className="w-full sm:w-fit">
                 <Link href={`/athlete/sessions/${featured.id}`}>
                   {featured.status === "planned" ? tl("Otwórz i zapisz wykonanie", "Open and log result") : featured.status === "in_progress" ? tl("Dokończ zapis", "Finish logging") : tl("Zobacz podsumowanie", "View summary")}
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
+              </div>
               {todays.length > 1 ? <p className="text-[12px] text-muted">{tl(`Dziś masz ${todays.length} treningi. Pozostałe są w planie tygodnia poniżej.`, `You have ${todays.length} sessions today. The others are in the weekly plan below.`)}</p> : null}
             </CardContent>
           </Card>
@@ -226,6 +239,8 @@ export default async function AthleteDashboard() {
           <EmptyState title={tl("Dziś wolne", "Rest day")} description={upcoming[0] ? tl(`Następny trening: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} — ${upcoming[0].title}.`, `Next session: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} — ${upcoming[0].title}.`) : tl("Trener nie zaplanował jeszcze kolejnych treningów.", "Your coach hasn’t planned the next sessions yet.")} />
         )}
       </section>
+
+      <FormWeekCard form={form} split={split} week={week} buckets={buckets} />
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label={tl("Statystyki", "Statistics")}>
         <Stat label={tl("Ten tydzień", "This week")} value={`${weekDone}/${weekSessions.length}`} hint={tl("treningi wykonane / zaplanowane", "sessions done / planned")} />

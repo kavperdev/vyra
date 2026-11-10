@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
 import { Comments } from "@/components/training/comments";
 import { ExecutionForm } from "@/components/training/execution-form";
+import { WorkoutPlayer } from "@/components/training/workout-player";
 import { StatusBadge } from "@/components/training/session-bits";
 import { PlanDetails, PlanVsActual } from "@/components/training/session-views";
 import { requireRole } from "@/lib/auth";
@@ -22,9 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("Trening", "Session") };
 }
 
-export default async function AthleteSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default async function AthleteSessionPage({ params, searchParams }: { params: Promise<{ sessionId: string }>; searchParams: Promise<{ start?: string }> }) {
   await getLang();
   const { sessionId } = await params;
+  const { start } = await searchParams;
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const session = await getSessionDetail(supabase, sessionId);
@@ -43,6 +45,9 @@ export default async function AthleteSessionPage({ params }: { params: Promise<{
         title={session.title}
         description={<StatusBadge status={session.status} date={session.scheduled_date} today={today} />}
       />
+      {!done && (session.segments.length || session.exercises.length) ? (
+        <WorkoutPlayer title={session.title} segments={session.segments} exercises={session.exercises} autoStart={start === "1"} />
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="grid content-start gap-6">
           <PlanDetails session={session} />
