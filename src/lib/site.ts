@@ -41,6 +41,7 @@ export const SITE_NAV_MORE = [
   { href: "/tapety", label: "Tapety", en: "Wallpapers" },
   { href: "/voucher", label: "Voucher na prezent", en: "Gift voucher" },
   { href: "/zespol", label: "Zespół", en: "Team" },
+  { href: "/kluby", label: "Dla klubów", en: "For clubs" },
   { href: "/dla-firm", label: "Dla firm", en: "For companies" },
   { href: "/prasa", label: "Dla mediów", en: "Press" },
   { href: "/kontakt", label: "Kontakt", en: "Contact" },

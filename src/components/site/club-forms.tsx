@@ -275,3 +275,108 @@ export function BusinessForm() {
     </form>
   );
 }
+
+const CLUB_SIZES = ["do 25", "26–80", "81–200", "ponad 200"];
+const CLUB_PACKAGES = ["Sekcja", "Klub", "Klub+", "Nie wiem jeszcze"];
+
+/** "Chcę pokaz": a club asks for a demo of the club platform. */
+export function ClubDemoForm({ defaultPackage = "" }: { defaultPackage?: string }) {
+  const [v, setV] = useState({ full_name: "", email: "", phone: "", goal: "", city: "", athletes: "", package: defaultPackage, message: "", consent: false, website: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [pending, start] = useTransition();
+  const err = (k: string) => errors[k]?.[0];
+  useEffect(() => {
+    const pick = (e: Event) => setV((cur) => ({ ...cur, package: (e as CustomEvent<string>).detail }));
+    window.addEventListener("vyra:club-package", pick);
+    return () => window.removeEventListener("vyra:club-package", pick);
+  }, []);
+  if (done)
+    return (
+      <Done
+        title={tl("Dziękujemy", "Thank you")}
+        body={tl("Odezwiemy się w ciągu jednego dnia roboczego, żeby umówić pokaz. Trwa ok. 30 minut, online.", "We’ll get back to you within one working day to book a demo. It takes about 30 minutes, online.")}
+      />
+    );
+  const chip = (on: boolean) =>
+    `rounded-full border px-3.5 py-2 text-[13px] transition ${on ? "border-[var(--accent)] bg-[var(--accent)]/15 text-white" : "border-white/15 text-white/70 hover:border-white/40"}`;
+  return (
+    <form
+      noValidate
+      className="relative grid gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setFormError(null);
+        start(async () => {
+          const res = await submitApplication({ kind: "club", ...v, consent: v.consent as true });
+          if (res.ok) setDone(true);
+          else {
+            setErrors(res.fieldErrors ?? {});
+            setFormError(res.fieldErrors ? null : res.error);
+          }
+        });
+      }}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={tl("Nazwa klubu lub sekcji", "Club or section name")} htmlFor="k-club" error={err("goal")}>
+          <Input id="k-club" autoComplete="organization" value={v.goal} onChange={(e) => setV({ ...v, goal: e.target.value })} />
+        </Field>
+        <Field label={tl("Miejscowość", "Town")} htmlFor="k-city" hint={tl("Opcjonalnie", "Optional")} error={err("city")}>
+          <Input id="k-city" autoComplete="address-level2" value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} />
+        </Field>
+        <Field label={tl("Imię i nazwisko", "Full name")} htmlFor="k-name" error={err("full_name")}>
+          <Input id="k-name" autoComplete="name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />
+        </Field>
+        <Field label="E-mail" htmlFor="k-email" error={err("email")}>
+          <Input id="k-email" type="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} />
+        </Field>
+        <Field label={tl("Telefon", "Phone")} htmlFor="k-phone" hint={tl("Opcjonalnie", "Optional")} error={err("phone")}>
+          <Input id="k-phone" type="tel" autoComplete="tel" value={v.phone} onChange={(e) => setV({ ...v, phone: e.target.value })} />
+        </Field>
+      </div>
+      <fieldset className="grid gap-2">
+        <legend className="mb-2 text-sm font-medium text-white">{tl("Ilu macie zawodników?", "How many athletes?")}</legend>
+        <div className="flex flex-wrap gap-2">
+          {CLUB_SIZES.map((s) => (
+            <button key={s} type="button" aria-pressed={v.athletes === s} className={chip(v.athletes === s)} onClick={() => setV({ ...v, athletes: s })}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="grid gap-2">
+        <legend className="mb-2 text-sm font-medium text-white">{tl("Który pakiet Was interesuje?", "Which package?")}</legend>
+        <div className="flex flex-wrap gap-2">
+          {CLUB_PACKAGES.map((s) => (
+            <button key={s} type="button" aria-pressed={v.package === s} className={chip(v.package === s)} onClick={() => setV({ ...v, package: s })}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <Field label={tl("Coś jeszcze?", "Anything else?")} htmlFor="k-msg" hint={tl("Opcjonalnie. Np. ile macie grup, czy zbieracie składki, czego teraz używacie.", "Optional. E.g. how many groups, whether you collect fees, what you use now.")} error={err("message")}>
+        <Textarea id="k-msg" rows={3} value={v.message} onChange={(e) => setV({ ...v, message: e.target.value })} />
+      </Field>
+      <input tabIndex={-1} aria-hidden autoComplete="off" className="absolute left-[-9999px] h-0 w-0" value={v.website} onChange={(e) => setV({ ...v, website: e.target.value })} />
+      <Consent checked={v.consent} onChange={(consent) => setV({ ...v, consent })} error={err("consent")} />
+      {formError ? <p role="alert" className="text-sm text-problem">{formError}</p> : null}
+      <Button type="submit" variant="accent" size="lg" disabled={pending} className="w-full sm:w-fit">
+        {pending ? tl("Wysyłanie…", "Sending…") : tl("Umów pokaz", "Book a demo")} <ArrowRight className="size-4" />
+      </Button>
+    </form>
+  );
+}
+
+/** Pricing-card button: scrolls to the form and preselects the package there. */
+export function PickClubPackage({ name, children, className }: { name: string; children: React.ReactNode; className?: string }) {
+  return (
+    <a
+      href="#pokaz"
+      className={className}
+      onClick={() => window.dispatchEvent(new CustomEvent("vyra:club-package", { detail: name }))}
+    >
+      {children}
+    </a>
+  );
+}

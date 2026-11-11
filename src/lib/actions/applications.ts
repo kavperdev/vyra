@@ -58,7 +58,22 @@ function schemas(t: T) {
     website: z.string().max(0).optional(),
   });
 
-  return z.discriminatedUnion("kind", [campSchema, coachingSchema, businessSchema]);
+  // Clubs asking for a demo. Saved as a "business" lead, with the package and club size in `package`.
+  const clubSchema = z.object({
+    kind: z.literal("club"),
+    full_name: z.string().trim().min(2, t("Podaj imię i nazwisko", "Enter your full name")).max(120),
+    email,
+    phone: optional(40).optional(),
+    goal: z.string().trim().min(2, t("Podaj nazwę klubu", "Enter your club name")).max(200),
+    city: optional(80),
+    athletes: z.string().trim().max(20),
+    package: z.string().trim().max(40),
+    message: optional(2000),
+    consent,
+    website: z.string().max(0).optional(),
+  });
+
+  return z.discriminatedUnion("kind", [campSchema, coachingSchema, businessSchema, clubSchema]);
 }
 
 export type ApplicationInput = z.input<ReturnType<typeof schemas>>;
@@ -69,8 +84,19 @@ export async function submitApplication(input: ApplicationInput): Promise<Action
   const { t } = await getT();
   const parsed = schemas(t).safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
-  const { website, ...row } = parsed.data;
+  const { website, ...data } = parsed.data;
   if (website) return { ok: true };
+  let row: Record<string, unknown> = data;
+  if (data.kind === "club") {
+    const { athletes, city, package: pkg, goal, message, ...rest } = data;
+    row = {
+      ...rest,
+      kind: "business",
+      package: `VYRA dla klubów${pkg ? `: ${pkg}` : ""}`.slice(0, 80),
+      goal: `Klub: ${goal}${city ? `, ${city}` : ""}`,
+      message: [`Zawodników: ${athletes || "?"}`, message].filter(Boolean).join("\n"),
+    };
+  }
   const supabase = await createClient();
   // No .select() after insert: visitors may write an application but never read one back.
   const { error } = await insertApplication(supabase, { ...row, status: "new" });

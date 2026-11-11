@@ -7,7 +7,7 @@ import { ArrowRight, X } from "lucide-react";
 import { tl } from "@/lib/i18n/runtime";
 
 const SNOOZE = "vyra-nudge-snooze";
-const HIDDEN_ON = ["/zacznij-biegac", "/prowadzenie", "/kontakt", "/polityka-prywatnosci", "/dla-firm"];
+const HIDDEN_ON = ["/zacznij-biegac", "/prowadzenie", "/kontakt", "/polityka-prywatnosci", "/dla-firm", "/kluby"];
 
 function snoozed() {
   try {

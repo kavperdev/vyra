@@ -618,6 +618,9 @@ export default async function Home() {
             <Link href="/run-club" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
               VYRA Run Club <ArrowUpRight className="size-4" />
             </Link>
+            <Link href="/kluby" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
+              {t("Dla klubów", "For clubs")} <ArrowUpRight className="size-4" />
+            </Link>
             <Link href="/dla-firm" className="site-link inline-flex items-center gap-2 pb-0.5 text-sm font-semibold text-white">
               {t("Dla firm", "For companies")} <ArrowUpRight className="size-4" />
             </Link>
