@@ -15,7 +15,7 @@ import { AchievementsDialog } from "@/components/training/achievements-dialog";
 import type { Achievement } from "@/lib/training/achievements";
 import type { WorkoutResult } from "@/components/training/workout-player";
 import { formatDuration, formatKg, formatPace, paceFrom, parseDuration, parseKmToMeters } from "@/lib/format";
-import type { ExecutionStatus, SessionKind, StrengthExercise } from "@/lib/types";
+import type { ExecutionStatus, RunningSegment, SessionKind, StrengthExercise } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { executionFormSchema, type ExecutionFormValues } from "@/lib/validation/execution";
 import { tl } from "@/lib/i18n/runtime";
@@ -32,12 +32,14 @@ export function ExecutionForm({
   kind,
   initial,
   exercises,
+  segments = [],
   hasExecution,
   lastSavedAt,
 }: {
   kind: SessionKind;
   initial: ExecutionFormValues;
   exercises: StrengthExercise[];
+  segments?: RunningSegment[];
   hasExecution: boolean;
   lastSavedAt: string | null;
 }) {
@@ -204,10 +206,12 @@ export function ExecutionForm({
         </div>
       ) : null}
 
+      {kind === "running" && initial.laps.length ? <LapsEditor control={control} register={register} setValue={setValue} segments={segments} /> : null}
+
       {kind === "running" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="eyebrow text-[11px]">{tl("Twój bieg", "Your run")}</CardTitle>
+            <CardTitle className="eyebrow text-[11px]">{initial.laps.length ? tl("Cały trening", "Whole session") : tl("Twój bieg", "Your run")}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -256,7 +260,6 @@ export function ExecutionForm({
             <Field label={tl("Warunki", "Conditions")} htmlFor="r-cond" hint={tl("opcjonalnie: pogoda, nawierzchnia, wiatr", "optional: weather, surface, wind")}>
               <Input id="r-cond" {...register("running.conditions")} />
             </Field>
-            {initial.laps.length ? <LapsEditor control={control} register={register} /> : null}
           </CardContent>
         </Card>
       ) : (
@@ -384,51 +387,102 @@ export function ExecutionForm({
   );
 }
 
-function LapsEditor({ control, register }: { control: Control<ExecutionFormValues>; register: UseFormRegister<ExecutionFormValues> }) {
+/** Rep-by-rep results of an interval or fartlek session: time or pace per rep, compared with the target. */
+function LapsEditor({
+  control,
+  register,
+  setValue,
+  segments,
+}: {
+  control: Control<ExecutionFormValues>;
+  register: UseFormRegister<ExecutionFormValues>;
+  setValue: UseFormSetValue<ExecutionFormValues>;
+  segments: RunningSegment[];
+}) {
   const { fields } = useFieldArray({ control, name: "laps" });
   const laps = useWatch({ control, name: "laps" });
+  const [paceDraft, setPaceDraft] = useState<Record<number, string>>({});
+  const bySeg = new Map(segments.map((g) => [g.id, g]));
+
+  type Row = { f: { id: string; label: string; segment_id: string }; i: number; d: number | null; t: number | null; pace: number | null; target: string | null; verdict: "fast" | "slow" | "ok" | null };
+  const rows: Row[] = fields.map((f: { id: string; label: string; segment_id: string }, i: number) => {
+    const l = laps?.[i];
+    const g = bySeg.get(f.segment_id);
+    const d = Number(l?.distance_m) || null;
+    const t = parseDuration(l?.duration ?? "");
+    const pace = d && t && Number.isFinite(t) ? paceFrom(d, t) : null;
+    const lo = g?.target_pace_min_s ?? null;
+    const hi = g?.target_pace_max_s ?? null;
+    const target = lo || hi ? `${formatPace(lo ?? hi)}${hi && lo && hi !== lo ? `–${formatPace(hi)}` : ""} /km` : g?.target_hr_min || g?.target_hr_max ? `${g?.target_hr_min ?? ""}–${g?.target_hr_max ?? ""} bpm` : null;
+    const verdict = pace && (lo || hi) ? (pace < (lo ?? hi!) - 2 ? "fast" : pace > (hi ?? lo!) + 2 ? "slow" : "ok") : null;
+    return { f, i, d, t, pace, target, verdict: verdict as Row["verdict"] };
+  });
+  const done = rows.filter((r) => r.pace);
+  const avg = done.length ? done.reduce((n, r) => n + r.pace!, 0) / done.length : null;
+  const spread = done.length > 1 ? Math.max(...done.map((r) => r.pace!)) - Math.min(...done.map((r) => r.pace!)) : null;
+
+  const onPace = (i: number, v: string, d: number | null) => {
+    setPaceDraft((p) => ({ ...p, [i]: v }));
+    const secPerKm = parseDuration(v);
+    if (d && secPerKm && Number.isFinite(secPerKm) && secPerKm >= 120 && secPerKm <= 900) {
+      setValue(`laps.${i}.duration`, formatDuration(Math.round((secPerKm * d) / 1000)), { shouldDirty: true });
+    }
+  };
+
   return (
-    <details className="group rounded-md border border-border">
-      <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium">
-        {tl("Wyniki odcinków", "Rep results")} <span className="text-muted">(opcjonalnie, {fields.length})</span>
-      </summary>
-      <div className="overflow-x-auto border-t border-border p-3">
-        <table className="w-full min-w-[420px] text-sm">
-          <thead>
-            <tr className="text-left text-[12px] text-muted">
-              <th className="pb-1.5 font-medium">{tl("Odcinek", "Rep")}</th>
-              <th className="pb-1.5 font-medium">{tl("Dystans (m)", "Distance (m)")}</th>
-              <th className="pb-1.5 font-medium">{tl("Czas", "Time")}</th>
-              <th className="pb-1.5 font-medium">{tl("Tempo", "Pace")}</th>
-              <th className="pb-1.5 font-medium">{tl("Tętno", "HR")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fields.map((f, i) => {
-              const l = laps?.[i];
-              const d = Number(l?.distance_m) || null;
-              const t = parseDuration(l?.duration ?? "");
-              const pace = d && t && Number.isFinite(t) ? paceFrom(d, t) : null;
-              return (
-                <tr key={f.id}>
-                  <td className="py-1 pr-2 text-[13px] text-muted">{f.label}</td>
-                  <td className="py-1 pr-1.5">
-                    <Input aria-label={`${f.label}: dystans`} inputMode="numeric" className="h-10" {...register(`laps.${i}.distance_m`)} />
-                  </td>
-                  <td className="py-1 pr-1.5">
-                    <Input aria-label={`${f.label}: czas`} inputMode="decimal" placeholder="2:42" className="h-10" {...register(`laps.${i}.duration`)} />
-                  </td>
-                  <td className="num py-1 pr-1.5 text-[13px]">{pace ? formatPace(pace) : "–"}</td>
-                  <td className="py-1">
-                    <Input aria-label={`${f.label}: ${tl("tętno", "heart rate")}`} inputMode="numeric" className="h-10" {...register(`laps.${i}.avg_hr`)} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </details>
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-baseline justify-between gap-2">
+        <CardTitle className="eyebrow text-[11px]">{tl(`Odcinki (${fields.length})`, `Reps (${fields.length})`)}</CardTitle>
+        {done.length ? (
+          <span className="num text-[12px] text-muted">
+            {tl("śr.", "avg")} {formatPace(avg)} /km{spread != null ? ` · ${tl("rozrzut", "spread")} ${Math.round(spread)} s` : ""} · {done.length}/{fields.length}
+          </span>
+        ) : (
+          <span className="text-[12px] text-muted">{tl("Wpisz czas albo tempo każdego odcinka", "Enter the time or pace of each rep")}</span>
+        )}
+      </CardHeader>
+      <CardContent className="grid gap-2">
+        {rows.map(({ f, i, d, pace, target, verdict }) => (
+          <div key={f.id} className={cn("grid gap-2 rounded-md border px-3 py-2.5", verdict === "ok" ? "border-done/40" : verdict === "slow" ? "border-warning/50" : verdict === "fast" ? "border-accent/50" : "border-border")}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <span className="text-sm font-medium">{f.label}</span>
+              {target ? (
+                <span className="num text-[12px] text-muted">
+                  {tl("cel", "target")} {target}
+                </span>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <label className="grid gap-1">
+                <span className="text-[11px] text-muted">{tl("Czas", "Time")}</span>
+                <Input aria-label={`${f.label}: ${tl("czas", "time")}`} inputMode="decimal" placeholder="2:42" className="num h-11" {...register(`laps.${i}.duration`, { onChange: () => setPaceDraft((p) => ({ ...p, [i]: "" })) })} />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[11px] text-muted">{tl("Tempo /km", "Pace /km")}</span>
+                <Input
+                  aria-label={`${f.label}: ${tl("tempo", "pace")}`}
+                  inputMode="decimal"
+                  placeholder={d ? "3:20" : tl("podaj dystans", "add distance")}
+                  disabled={!d}
+                  className={cn("num h-11", verdict === "ok" && "text-done", verdict === "slow" && "text-warning", verdict === "fast" && "text-accent")}
+                  value={paceDraft[i] || (pace ? formatPace(pace) : "")}
+                  onChange={(e) => onPace(i, e.target.value, d)}
+                />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[11px] text-muted">{tl("Dystans m", "Distance m")}</span>
+                <Input aria-label={`${f.label}: ${tl("dystans", "distance")}`} inputMode="numeric" className="num h-11" {...register(`laps.${i}.distance_m`)} />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[11px] text-muted">{tl("Tętno", "HR")}</span>
+                <Input aria-label={`${f.label}: ${tl("tętno", "heart rate")}`} inputMode="numeric" className="num h-11" {...register(`laps.${i}.avg_hr`)} />
+              </label>
+            </div>
+          </div>
+        ))}
+        <p className="text-[12px] text-muted">{tl("Tempo przelicza się z czasu i dystansu. Możesz też wpisać samo tempo z zegarka, a czas uzupełni się sam.", "Pace is worked out from time and distance. You can also type the pace from your watch and the time fills in.")}</p>
+      </CardContent>
+    </Card>
   );
 }
 

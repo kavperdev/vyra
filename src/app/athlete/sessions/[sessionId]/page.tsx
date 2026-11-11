@@ -70,6 +70,7 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
               kind={session.kind}
               initial={executionDefaults(session, today)}
               exercises={session.exercises}
+              segments={session.segments}
               hasExecution={!!session.execution}
               lastSavedAt={session.execution?.updated_at ?? null}
             />

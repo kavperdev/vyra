@@ -82,7 +82,7 @@ export function executionDefaults(s: SessionDetail, today: string): ExecutionFor
       const saved = e?.laps.find((l) => l.segment_id === g.id && l.rep_index === i);
       laps.push({
         segment_id: g.id,
-        label: `${g.label || (g.distance_m ? `${g.distance_m} m` : g.duration_s ? formatDuration(g.duration_s) : "Odcinek")} · ${i}/${g.repeats}`,
+        label: `${g.label || "Odcinek"}${g.distance_m ? ` ${g.distance_m} m` : g.duration_s ? ` ${formatDuration(g.duration_s)}` : ""}${g.repeats > 1 ? ` · ${i}/${g.repeats}` : ""}`,
         rep_index: i,
         distance_m: saved ? str(saved.distance_m) : g.distance_m ? String(g.distance_m) : "",
         duration: saved ? dur(saved.duration_s) : "",
