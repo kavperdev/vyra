@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  Activity, Award, BarChart3, Bell, Gift, CalendarDays, ClipboardList, Globe, History, Home, Inbox, LayoutDashboard, MoreHorizontal, Settings, ShieldCheck, Tent, Trophy, Users,
+  Activity, Award, BarChart3, Bell, Gift, CalendarDays, ClipboardList, Flag, Globe, History, Home, Inbox, LayoutDashboard, MoreHorizontal, Settings, ShieldCheck, Tent, Trophy, Users,
 } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ const ICONS = {
   team: ShieldCheck,
   camps: Tent,
   site: Globe,
+  club: Flag,
   settings: Settings,
 } as const;
 

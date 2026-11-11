@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
-import { deleteExecution, saveExecution } from "@/lib/actions/executions";
+import { deleteExecution, saveExecution, saveExecutionFor } from "@/lib/actions/executions";
 import { AchievementsDialog } from "@/components/training/achievements-dialog";
 import type { Achievement } from "@/lib/training/achievements";
 import type { WorkoutResult } from "@/components/training/workout-player";
@@ -35,6 +35,7 @@ export function ExecutionForm({
   segments = [],
   hasExecution,
   lastSavedAt,
+  forAthleteId,
 }: {
   kind: SessionKind;
   initial: ExecutionFormValues;
@@ -42,6 +43,8 @@ export function ExecutionForm({
   segments?: RunningSegment[];
   hasExecution: boolean;
   lastSavedAt: string | null;
+  /** Coach logging for an athlete without an account. */
+  forAthleteId?: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -148,7 +151,7 @@ export function ExecutionForm({
     handleSubmit(
       (v) =>
         start(async () => {
-          const res = await saveExecution(v, status);
+          const res = forAthleteId ? await saveExecutionFor(forAthleteId, v, status) : await saveExecution(v, status);
           if (!res.ok) return void toast.error(res.error);
           saved.current = true;
           try {
@@ -337,7 +340,7 @@ export function ExecutionForm({
         <button type="button" className="text-muted underline-offset-4 hover:text-foreground hover:underline" onClick={() => setConfirmSkip(true)}>
           {tl("Nie zrobiłem(-am) tego treningu", "I didn’t do this session")}
         </button>
-        {hasExecution ? (
+        {hasExecution && !forAthleteId ? (
           <button type="button" className="text-muted underline-offset-4 hover:text-problem hover:underline" onClick={() => setConfirmDelete(true)}>
             {tl("Usuń mój zapis", "Delete my result")}
           </button>

@@ -82,6 +82,31 @@ async function findAchievements(supabase: ServerSupabase, athleteId: string, ses
 }
 
 /** Removes the athlete's own record of a session (the plan stays). */
+/** A coach logs the result for an athlete without an account (managed athlete). */
+export async function saveExecutionFor(athleteId: string, values: ExecutionFormValues, status: ExecutionStatus): Promise<ActionResult<{ achievements: Achievement[] }>> {
+  return withUser("coach", async ({ supabase }) => {
+    if (!STATUSES.includes(status)) return { ok: false, error: "Nieznany status." };
+    const parsed = executionFormSchema.safeParse(values);
+    if (!parsed.success) return validationError(parsed.error);
+    const { data: session } = await supabase
+      .from("training_sessions")
+      .select("id, kind, athlete_id")
+      .eq("id", parsed.data.session_id)
+      .maybeSingle();
+    const s = session as { id: string; kind: string; athlete_id: string } | null;
+    if (!s || s.athlete_id !== athleteId) return { ok: false, error: "Nie znaleziono treningu tego zawodnika." };
+    const payload = { ...executionToPayload(parsed.data, status, s.kind), athlete_id: athleteId };
+    const { error } = await supabase.rpc("save_execution", { p: payload });
+    if (error) {
+      if (error.message?.includes("FORBIDDEN") || error.code === "42501") return { ok: false, error: "Wyniki za zawodnika wpisujesz tylko wtedy, gdy nie ma on konta w aplikacji." };
+      return dbError(error);
+    }
+    revalidatePath("/coach", "layout");
+    revalidatePath(`/coach/sessions/${s.id}`);
+    return { ok: true, message: "Zapisano wynik zawodnika.", data: { achievements: [] } };
+  });
+}
+
 export async function deleteExecution(sessionId: string): Promise<ActionResult> {
   return withUser("athlete", async ({ supabase, user }) => {
     const { error } = await supabase.from("workout_executions").delete().eq("session_id", sessionId).eq("athlete_id", user.id);

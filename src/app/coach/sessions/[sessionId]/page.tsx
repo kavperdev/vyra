@@ -12,6 +12,10 @@ import { requireRole } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { listAthletes } from "@/lib/data/people";
 import { getSessionDetail, listComments } from "@/lib/data/sessions";
+import { isManagedAthlete } from "@/lib/data/clubs";
+import { ExecutionForm } from "@/components/training/execution-form";
+import { executionDefaults } from "@/lib/validation/execution";
+import { canPlan } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -29,7 +33,8 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ s
   const supabase = await createClient();
   const session = await getSessionDetail(supabase, sessionId);
   if (!session) notFound();
-  const [comments, athletes] = await Promise.all([listComments(supabase, sessionId), listAthletes(supabase, user.id)]);
+  const [comments, athletes, managed] = await Promise.all([listComments(supabase, sessionId), listAthletes(supabase, user.id), isManagedAthlete(supabase, session.athlete_id)]);
+  const logForAthlete = managed && canPlan(user.profile.staff_role);
   const today = todayISO(user.profile.timezone);
 
   return (
@@ -58,7 +63,22 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ s
           <PlanDetails session={session} />
         </div>
         <div className="grid content-start gap-6">
-          {session.execution ? (
+          {logForAthlete && (!session.execution || session.execution.status === "in_progress") ? (
+            <section className="grid gap-3" aria-labelledby="log-for-title">
+              <h2 id="log-for-title" className="eyebrow">
+                {tl("Wpisz wynik za zawodnika (bez konta)", "Log result for the athlete (no account)")}
+              </h2>
+              <ExecutionForm
+                kind={session.kind}
+                initial={executionDefaults(session, today)}
+                exercises={session.exercises}
+                segments={session.segments}
+                hasExecution={!!session.execution}
+                lastSavedAt={session.execution?.updated_at ?? null}
+                forAthleteId={session.athlete_id}
+              />
+            </section>
+          ) : session.execution ? (
             <ExecutionSummary session={session} />
           ) : (
             <Card>

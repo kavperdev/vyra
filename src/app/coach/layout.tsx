@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { staffRoleLabel } from "@/lib/i18n/labels";
 import { canPlan } from "@/lib/types";
+import { getMyClub } from "@/lib/data/clubs";
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("coach");
@@ -13,7 +14,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   const staffRole = user.profile.staff_role;
   const founder = staffRole === "founder";
   const supabase = await createClient();
-  const [unread, newApplications] = await Promise.all([
+  const [unread, newApplications, club] = await Promise.all([
     unreadCount(supabase),
     founder
       ? supabase
@@ -22,12 +23,15 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           .eq("status", "new")
           .then((r) => r.count ?? 0)
       : Promise.resolve(0),
+    getMyClub(supabase, user.id),
   ]);
+  const clubStaff = !!club && !founder;
   const items: NavItem[] = [
     { href: "/coach", label: t("Pulpit", "Dashboard"), icon: "dashboard", mobile: true },
     { href: "/coach/athletes", label: t("Zawodnicy", "Athletes"), icon: "athletes", mobile: true },
     { href: "/coach/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
-    { href: "/coach/camps", label: t("Obozy", "Camps"), icon: "camps" },
+    ...(club || founder ? [{ href: "/coach/klub", label: club ? club.name : t("Kluby", "Clubs"), icon: "club" } as NavItem] : []),
+    ...(clubStaff ? [] : [{ href: "/coach/camps", label: t("Obozy", "Camps"), icon: "camps" } as NavItem]),
     ...(canPlan(staffRole) ? [{ href: "/coach/templates", label: t("Szablony", "Templates"), icon: "templates" } as NavItem] : []),
     ...(founder
       ? [
@@ -44,7 +48,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   return (
     <AppShell
       role="coach"
-      roleLabel={staffRole ? staffRoleLabel(staffRole, t) : undefined}
+      roleLabel={staffRole ? staffRoleLabel(staffRole, t) + (clubStaff ? ` · ${club.name}` : "") : undefined}
       name={user.profile.full_name}
       items={items}
       unread={unread}
