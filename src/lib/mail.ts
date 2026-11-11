@@ -23,6 +23,8 @@ export interface MailContent {
   /** Optional highlighted box, e.g. a voucher code. */
   highlight?: { label: string; value: string };
   after?: string[];
+  /** Sign-off instead of "Kacper, VYRA" (e.g. a club's coach). */
+  signature?: string;
 }
 
 function html(m: MailContent): string {
@@ -42,7 +44,7 @@ ${m.paragraphs.map(p).join("")}
 ${m.highlight ? `<div style="margin:8px 0 24px;padding:18px 20px;border:1px dashed #b0b0b8;border-radius:12px"><div style="font-size:11px;letter-spacing:3px;color:#7c7c85;text-transform:uppercase">${esc(m.highlight.label)}</div><div style="font-family:Menlo,Consolas,monospace;font-size:24px;letter-spacing:3px;color:#09090b;margin-top:6px">${esc(m.highlight.value)}</div></div>` : ""}
 ${m.cta ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px"><tr><td style="background:#d92b31;border-radius:999px"><a href="${esc(m.cta.url)}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">${esc(m.cta.label)}</a></td></tr></table>` : ""}
 ${(m.after ?? []).map(p).join("")}
-<p style="margin:24px 0 0;font-size:16px;color:#2b2b30">Kacper, VYRA</p>
+<p style="margin:24px 0 0;font-size:16px;color:#2b2b30">${esc(m.signature ?? "Kacper, VYRA")}</p>
 </td></tr>
 <tr><td style="padding:20px 32px;border-top:1px solid #e4e4e9;font-size:12px;line-height:1.5;color:#7c7c85">
 <a href="${publicOrigin()}" style="color:#7c7c85">vyraathl.pl</a> · Instagram @vyra.athl<br>Masz pytanie? Odpowiedz na tego maila.
@@ -59,7 +61,7 @@ function text(m: MailContent): string {
     ...(m.cta ? ["", `${m.cta.label}: ${m.cta.url}`] : []),
     ...(m.after?.length ? ["", ...m.after] : []),
     "",
-    "Kacper, VYRA",
+    m.signature ?? "Kacper, VYRA",
     publicOrigin(),
   ].join("\n");
 }

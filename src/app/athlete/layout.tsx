@@ -25,6 +25,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
     ...(hasCamp ? [{ href: "/athlete/camp", label: t("Mój obóz", "My camp"), icon: "camps", mobile: true } as NavItem] : []),
     { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+    ...(club ? [{ href: "/athlete/klub", label: club.name, icon: "club" } as NavItem] : []),
     { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },
     { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress", mobile: true },
     { href: "/athlete/records", label: t("Rekordy i cele", "Records & goals"), icon: "records", mobile: true },

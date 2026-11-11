@@ -93,13 +93,14 @@ const managedSchema = z.object({
 });
 
 /** A coach adds an athlete without an account (e.g. a child): the coach keeps their plan and results. */
-export async function createManagedAthlete(input: { full_name: string; birth_year: string }): Promise<ActionResult<{ id: string }>> {
+export async function createManagedAthlete(input: { full_name: string; birth_year: string; club_id?: string }): Promise<ActionResult<{ id: string }>> {
   return withUser("coach", async ({ supabase }) => {
     const parsed = managedSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const { data, error } = await supabase.rpc("create_managed_athlete", {
       p_name: parsed.data.full_name,
       p_birth_year: parsed.data.birth_year ? Number(parsed.data.birth_year) : null,
+      ...(input.club_id ? { p_club: input.club_id } : {}),
     });
     if (error) return dbError(error);
     refresh();

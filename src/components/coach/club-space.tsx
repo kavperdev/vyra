@@ -239,7 +239,7 @@ export function ClubsAdmin({ clubs, members, siteUrl }: { clubs: SportClub[]; me
 }
 
 /** Coaches add athletes who don't have an account (e.g. children). */
-export function ManagedAthleteForm() {
+export function ManagedAthleteForm({ clubId }: { clubId?: string }) {
   const router = useRouter();
   const [v, setV] = useState({ full_name: "", birth_year: "" });
   const [pending, start] = useTransition();
@@ -255,7 +255,7 @@ export function ManagedAthleteForm() {
           onSubmit={(e) => {
             e.preventDefault();
             start(async () => {
-              const res = await createManagedAthlete(v);
+              const res = await createManagedAthlete({ ...v, club_id: clubId });
               if (!res.ok) return void toast.error(res.error);
               toast.success(res.message);
               setV({ full_name: "", birth_year: "" });
@@ -312,7 +312,12 @@ export function AttendanceBoard({ rows, date }: { rows: AttendanceRow[]; date: s
           <p className="text-[13px] text-muted">{tl("Zaznacz, kto był na treningu. Zawodnicy z kontem nadal sami wpisują wyniki.", "Mark who came. Athletes with accounts still log their own results.")}</p>
         </div>
         <div className="w-44">
-          <Input type="date" aria-label={tl("Dzień", "Day")} value={date} onChange={(e) => e.target.value && router.push(`/coach/klub?date=${e.target.value}`)} />
+          <Input type="date" aria-label={tl("Dzień", "Day")} value={date} onChange={(e) => {
+              if (!e.target.value) return;
+              const u = new URL(window.location.href);
+              u.searchParams.set("date", e.target.value);
+              router.push(u.pathname + u.search);
+            }} />
         </div>
       </CardHeader>
       <CardContent className="grid gap-5">
