@@ -105,6 +105,8 @@ export interface TrainingSession {
   planned_duration_s: number | null;
   status: SessionStatus;
   version: number;
+  /** Who added the session: staff, or the athlete themself when self-planning is on. */
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }

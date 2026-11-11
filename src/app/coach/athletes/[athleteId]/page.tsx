@@ -23,6 +23,7 @@ import { InjuriesSection } from "@/components/athlete/injuries";
 import { listInjuries, painHistory } from "@/lib/data/injuries";
 import { AthleteAccountCard, AthleteProfileForm, CoachNotes, PlansManager } from "@/components/coach/athlete-tools";
 import { IntakeView } from "@/components/coach/intake-view";
+import { getSelfPlanning } from "@/lib/data/self-planning";
 import { SessionList } from "@/components/training/session-bits";
 import { StrengthHistory } from "@/components/training/strength-history";
 import { requireRole } from "@/lib/auth";
@@ -443,10 +444,11 @@ async function TabContent({
   }
 
   // settings
+  const selfPlanning = await getSelfPlanning(supabase, athleteId);
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <AthleteProfileForm athleteId={athleteId} profile={athlete.profile} />
-      <AthleteAccountCard athleteId={athleteId} status={athlete.link_status} from={addDaysISO(today, -27)} to={today} />
+      <AthleteAccountCard athleteId={athleteId} status={athlete.link_status} from={addDaysISO(today, -27)} to={today} selfPlanning={selfPlanning} />
     </div>
   );
 }

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Archive, FileDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, BookOpen, FileDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/form-controls";
 import { EmptyState } from "@/components/ui/misc";
-import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus } from "@/lib/actions/athletes";
+import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus, setSelfPlanning } from "@/lib/actions/athletes";
 import { deletePlan, savePlan } from "@/lib/actions/sessions";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { STAFF_ROLE_LABEL, type AthleteProfile, type CoachNote, type TrainingPlan } from "@/lib/types";
@@ -274,8 +274,9 @@ export function AthleteProfileForm({ athleteId, profile, title = tl("Dane zawodn
 
 // ------------------------------------------------------------------ account & export
 
-export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId: string; status: "active" | "archived"; from: string; to: string }) {
+export function AthleteAccountCard({ athleteId, status, from, to, selfPlanning = null }: { athleteId: string; status: "active" | "archived"; from: string; to: string; selfPlanning?: boolean | null }) {
   const [pending, start] = useTransition();
+  const [self, setSelf] = useState(selfPlanning);
   const [range, setRange] = useState({ from, to });
   const qs = `from=${range.from}&to=${range.to}`;
   return (
@@ -307,6 +308,33 @@ export function AthleteAccountCard({ athleteId, status, from, to }: { athleteId:
             </Button>
           </div>
         </div>
+        {self !== null ? (
+          <div className="grid gap-2 border-t border-border pt-4">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              <BookOpen className="size-4" /> {tl("Dziennik treningowy", "Training diary")}
+              <span className={self ? "text-[12px] text-done" : "text-[12px] text-muted"}>{self ? tl("włączony", "on") : tl("wyłączony", "off")}</span>
+            </p>
+            <p className="text-sm text-muted">
+              {tl("Zawodnik sam dodaje, edytuje i usuwa treningi w swoim kalendarzu i wpisuje do nich wyniki. Treningi zaplanowane przez trenera może tylko wykonać.", "The athlete adds, edits and deletes sessions in their own calendar and logs results. Sessions planned by staff stay read-only for them.")}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const res = await setSelfPlanning(athleteId, !self);
+                  if (!res.ok) return void toast.error(res.error);
+                  setSelf(!self);
+                  toast.success(res.message);
+                })
+              }
+            >
+              {self ? tl("Wyłącz samodzielne planowanie", "Turn off self-planning") : tl("Pozwól planować samemu", "Allow self-planning")}
+            </Button>
+          </div>
+        ) : null}
         <div className="grid gap-2 border-t border-border pt-4">
           {status === "active" ? (
             <>

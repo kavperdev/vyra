@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { saveSession, saveTemplate } from "@/lib/actions/sessions";
+import { saveOwnSession } from "@/lib/actions/self-sessions";
 import { categoriesFor, defaultCategory, INTENSITY_LABEL, KIND_LABEL, RECOVERY_LABEL, SEGMENT_TYPE_LABEL, STRUCTURE_LABEL, ZONES } from "@/lib/training/categories";
 import type { SessionKind, SessionPayload } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ export function SessionForm({
   templateMeta,
   executed = false,
   cancelHref,
+  self = false,
 }: {
   mode: Mode;
   initial: SessionFormValues;
@@ -58,6 +60,8 @@ export function SessionForm({
   templateMeta?: { id?: string; name: string; description: string };
   executed?: boolean;
   cancelHref: string;
+  /** The athlete plans their own session (training diary): no athlete picker, plans or templates. */
+  self?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -129,6 +133,15 @@ export function SessionForm({
           router.refresh();
           return;
         }
+        if (self) {
+          const own = await saveOwnSession(values);
+          if (!own.ok) return void toast.error(own.error);
+          submitted.current = true;
+          toast.success(own.message);
+          router.push(`/athlete/sessions/${own.data?.id ?? ""}`);
+          router.refresh();
+          return;
+        }
         const res = await saveSession(values);
         if (!res.ok) {
           toast.error(res.error);
@@ -173,7 +186,7 @@ export function SessionForm({
       {mode !== "template" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="eyebrow text-[11px]">{tl("Dla kogo i kiedy", "Who and when")}</CardTitle>
+            <CardTitle className="eyebrow text-[11px]">{self ? tl("Kiedy", "When") : tl("Dla kogo i kiedy", "Who and when")}</CardTitle>
             {mode === "create" && templates.length ? (
               <div className="w-full sm:w-64">
                 <label htmlFor="load-template" className="sr-only">
@@ -191,7 +204,7 @@ export function SessionForm({
             ) : null}
           </CardHeader>
           <CardContent className="grid gap-4">
-            {mode === "create" ? (
+            {mode === "create" && !self ? (
               <fieldset className="grid gap-2">
                 <legend className="mb-1 text-[13px] font-medium text-muted">{tl("Zawodnicy", "Athletes")}</legend>
                 {athletes.length ? (
@@ -277,7 +290,7 @@ export function SessionForm({
           <Field label={tl("Cel treningu", "Session goal")} htmlFor="goal" error={errors.goal?.message}>
             <Input id="goal" placeholder={tl("np. VO2max, utrzymanie tempa na zmęczeniu", "e.g. VO2max, holding pace when tired")} {...register("goal")} />
           </Field>
-          <Field label={tl("Instrukcje dla zawodnika", "Instructions for the athlete")} htmlFor="instructions" error={errors.instructions?.message}>
+          <Field label={self ? tl("Opis i wskazówki", "Description and cues") : tl("Instrukcje dla zawodnika", "Instructions for the athlete")} htmlFor="instructions" error={errors.instructions?.message}>
             <Textarea id="instructions" placeholder={tl("Rozgrzewka, technika, na co uważać…", "Warm-up, technique, what to watch out for…")} {...register("instructions")} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -290,7 +303,7 @@ export function SessionForm({
               </Field>
             ) : null}
           </div>
-          <Field label={tl("Notatki (widoczne dla zawodnika)", "Notes (visible to the athlete)")} htmlFor="notes" error={errors.notes?.message}>
+          <Field label={self ? tl("Notatki", "Notes") : tl("Notatki (widoczne dla zawodnika)", "Notes (visible to the athlete)")} htmlFor="notes" error={errors.notes?.message}>
             <Textarea id="notes" className="min-h-16" {...register("notes")} />
           </Field>
         </CardContent>
@@ -353,7 +366,7 @@ export function SessionForm({
           <Link href={cancelHref}>{tl("Anuluj", "Cancel")}</Link>
         </Button>
         <Button type="submit" disabled={pending}>
-          {pending ? tl("Zapisywanie…", "Saving…") : mode === "template" ? tl("Zapisz szablon", "Save template") : mode === "edit" ? tl("Zapisz zmiany", "Save changes") : athleteIds.length > 1 ? `Przypisz ${athleteIds.length} zawodnikom` : tl("Dodaj trening", "Add session")}
+          {pending ? tl("Zapisywanie…", "Saving…") : mode === "template" ? tl("Zapisz szablon", "Save template") : mode === "edit" ? tl("Zapisz zmiany", "Save changes") : !self && athleteIds.length > 1 ? `Przypisz ${athleteIds.length} zawodnikom` : tl("Dodaj trening", "Add session")}
         </Button>
       </div>
     </form>

@@ -12,6 +12,8 @@ import { PlanDetails, PlanVsActual } from "@/components/training/session-views";
 import { requireRole } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { getSessionDetail, listComments } from "@/lib/data/sessions";
+import { getSelfPlanning } from "@/lib/data/self-planning";
+import { OwnSessionActions } from "@/components/athlete/own-session-actions";
 import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { executionDefaults } from "@/lib/validation/execution";
@@ -31,7 +33,8 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
   const supabase = await createClient();
   const session = await getSessionDetail(supabase, sessionId);
   if (!session || session.athlete_id !== user.id) notFound();
-  const comments = await listComments(supabase, sessionId);
+  const [comments, selfPlanning] = await Promise.all([listComments(supabase, sessionId), getSelfPlanning(supabase, user.id)]);
+  const own = !!selfPlanning && session.created_by === user.id;
   const today = todayISO(user.profile.timezone);
   const done = session.execution && session.execution.status !== "in_progress";
 
@@ -44,6 +47,7 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
         eyebrow={formatDate(session.scheduled_date, "EEEE, d MMMM") + (session.scheduled_time ? ` · ${session.scheduled_time.slice(0, 5)}` : "")}
         title={session.title}
         description={<StatusBadge status={session.status} date={session.scheduled_date} today={today} />}
+        actions={own ? <OwnSessionActions sessionId={session.id} /> : undefined}
       />
       {!done && (session.segments.length || session.exercises.length) ? (
         <WorkoutPlayer sessionId={session.id} title={session.title} segments={session.segments} exercises={session.exercises} autoStart={start === "1"} />

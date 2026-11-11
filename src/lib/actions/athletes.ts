@@ -57,6 +57,22 @@ export async function setAthleteStatus(athleteId: string, status: "active" | "ar
   });
 }
 
+/** Let the athlete add and edit their own sessions (training diary), or turn it off again. */
+export async function setSelfPlanning(athleteId: string, on: boolean): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const { error } = await supabase.rpc("set_self_planning", { p_athlete: athleteId, p_on: on });
+    if (error) return dbError(error);
+    revalidatePath(`/coach/athletes/${athleteId}`);
+    revalidatePath("/athlete", "layout");
+    return {
+      ok: true,
+      message: on
+        ? "Zawodnik może teraz sam dodawać treningi do swojego kalendarza."
+        : "Wyłączono samodzielne dodawanie treningów. Dodane wcześniej treningi zostają.",
+    };
+  });
+}
+
 /** Athlete details: editable by the athlete and by an active coach (RLS). */
 export async function saveAthleteProfile(input: Record<string, string>): Promise<ActionResult> {
   return withUser(null, async ({ supabase }) => {
