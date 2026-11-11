@@ -311,3 +311,16 @@
 @keyframes site-nudge-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .site-nudge { animation: site-nudge-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 @media (prefers-reduced-motion: reduce) { .site-nudge { animation: none; } }
+
+/* iOS Safari: date inputs ignore the width of their box and render empty; keep them inside the layout */
+input[type="date"], input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+}
+input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.25em;
+}

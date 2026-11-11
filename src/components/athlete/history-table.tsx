@@ -41,32 +41,38 @@ export function HistoryTable({ sessions, today, hrefBase, showAthlete = false }:
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative sm:col-span-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="relative col-span-2">
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle" />
           <Input aria-label={tl("Szukaj w historii", "Search history")} placeholder={tl("Szukaj w nazwach i komentarzach", "Search names and comments")} className="h-10 pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <Input aria-label={tl("Od daty", "From date")} type="date" className="h-10" value={from} onChange={(e) => setFrom(e.target.value)} />
-        <Input aria-label={tl("Do daty", "To date")} type="date" className="h-10" value={to} onChange={(e) => setTo(e.target.value)} />
-        <Select aria-label={tl("Typ", "Type")} className="h-10" value={kind} onChange={(e) => { setKind(e.target.value as "" | SessionKind); setCategory(""); }}>
+        <label className="grid min-w-0 gap-1">
+          <span className="text-[11px] text-muted">{tl("Od", "From")}</span>
+          <Input aria-label={tl("Od daty", "From date")} type="date" className="h-10 min-w-0" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label className="grid min-w-0 gap-1">
+          <span className="text-[11px] text-muted">{tl("Do", "To")}</span>
+          <Input aria-label={tl("Do daty", "To date")} type="date" className="h-10 min-w-0" value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
+        <Select aria-label={tl("Typ", "Type")} className="h-10 min-w-0" value={kind} onChange={(e) => { setKind(e.target.value as "" | SessionKind); setCategory(""); }}>
           <option value="">{tl("Wszystkie typy", "All types")}</option>
           {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
             <option key={k} value={k}>{KIND_LABEL[k]}</option>
           ))}
         </Select>
-        <Select aria-label={tl("Rodzaj", "Category")} className="h-10" value={category} onChange={(e) => setCategory(e.target.value)}>
+        <Select aria-label={tl("Rodzaj", "Category")} className="h-10 min-w-0" value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">{tl("Każdy rodzaj", "Any category")}</option>
           {CATEGORIES.filter((c) => !kind || c.kind === kind).map((c) => (
             <option key={c.key} value={c.key}>{c.label}</option>
           ))}
         </Select>
-        <Select aria-label={tl("Status", tl("Status", "Status"))} className="h-10" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <Select aria-label={tl("Status", "Status")} className="h-10 min-w-0" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">{tl("Każdy status", "Any status")}</option>
           {ALL_DISPLAY_STATUSES.map((s) => (
             <option key={s} value={s}>{STATUS_META[s].label}</option>
           ))}
         </Select>
-        <Select aria-label={tl("Sortowanie", "Sort")} className="h-10" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+        <Select aria-label={tl("Sortowanie", "Sort")} className="h-10 min-w-0" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
           <option value="date_desc">{tl("Najnowsze", "Newest")}</option>
           <option value="date_asc">{tl("Najstarsze", "Oldest")}</option>
           <option value="title">{tl("Nazwa A–Z", "Name A–Z")}</option>
