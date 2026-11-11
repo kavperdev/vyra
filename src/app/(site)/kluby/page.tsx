@@ -12,13 +12,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("Dla klubów", "For clubs"),
     description: t(
-      "VYRA dla klubów lekkoatletycznych: grupy i harmonogram, plany treningowe, obecność, składki, strona rodzica i dokumenty w jednej aplikacji. Od 49 zł miesięcznie, pierwszy miesiąc za darmo.",
-      "VYRA for athletics clubs: groups and schedule, training plans, attendance, fees, a parent page and documents in one app. From 49 zł a month, first month free.",
+      "VYRA dla klubów lekkoatletycznych: grupy i harmonogram, plany treningowe, obecność, składki, strona rodzica i dokumenty w jednej aplikacji. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
+      "VYRA for athletics clubs: groups and schedule, training plans, attendance, fees, a parent page and documents in one app. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
     ),
     robots: { index: true, follow: true },
     alternates: { canonical: "/kluby" },
   };
 }
+
+const fmtZl = (n: number) => `${n.toLocaleString("pl-PL").replace(/\u00a0/g, " ")} zł`;
 
 const features = (t: T) => [
   {
@@ -90,8 +92,9 @@ const features = (t: T) => [
 const plans = (t: T) => [
   {
     name: "Sekcja",
-    price: 49,
-    per: t("ok. 2 zł na zawodnika", "about 2 zł per athlete"),
+    price: 79,
+    lifetime: 1990,
+    per: t("ok. 3 zł na zawodnika", "about 3 zł per athlete"),
     lead: t("Dla nowej sekcji albo jednej grupy.", "For a new section or a single group."),
     items: [
       t("do 25 zawodników", "up to 25 athletes"),
@@ -102,8 +105,9 @@ const plans = (t: T) => [
   },
   {
     name: "Klub",
-    price: 99,
-    per: t("ok. 1,25 zł na zawodnika", "about 1.25 zł per athlete"),
+    price: 149,
+    lifetime: 3990,
+    per: t("ok. 1,90 zł na zawodnika", "about 1.90 zł per athlete"),
     lead: t("Dla typowego UKS-u lub klubu z kilkoma grupami.", "For a typical school or community club with several groups."),
     highlight: true,
     items: [
@@ -116,8 +120,9 @@ const plans = (t: T) => [
   },
   {
     name: "Klub+",
-    price: 169,
-    per: t("od 0,85 zł na zawodnika", "from 0.85 zł per athlete"),
+    price: 249,
+    lifetime: 5990,
+    per: t("od 1,25 zł na zawodnika", "from 1.25 zł per athlete"),
     lead: t("Dla dużego klubu z wieloma grupami i trenerami.", "For a large club with many groups and coaches."),
     items: [
       t("do 200 zawodników", "up to 200 athletes"),
@@ -131,8 +136,8 @@ const plans = (t: T) => [
 const services = (t: T) => [
   {
     name: t("Wdrożenie", "Setup"),
-    price: t("199 zł jednorazowo", "199 zł one-off"),
-    note: t("w Klub+ w cenie", "included in Klub+"),
+    price: t("349 zł jednorazowo", "349 zł one-off"),
+    note: t("w cenie Klub+ i licencji bezterminowej", "included in Klub+ and the lifetime licence"),
     body: t(
       "Wprowadzamy za Was zawodników, grupy, godziny treningów, składki i linki dla rodziców. Do tego godzinne szkolenie online dla trenerów.",
       "We add your athletes, groups, training times, fees and parent links for you, plus a one-hour online session for your coaches.",
@@ -140,7 +145,7 @@ const services = (t: T) => [
   },
   {
     name: t("Prowadzenie panelu", "Running the panel"),
-    price: t("149 zł / mies.", "149 zł / month"),
+    price: t("249 zł / mies.", "249 zł / month"),
     note: t("dla każdego pakietu", "with any package"),
     body: t(
       "Co miesiąc naliczamy składki, rozliczamy wyciąg z banku, wysyłamy przypomnienia i komunikaty, aktualizujemy harmonogram. Na koniec miesiąca zarząd dostaje krótkie podsumowanie.",
@@ -149,7 +154,7 @@ const services = (t: T) => [
   },
   {
     name: t("Plany treningowe od VYRA", "Training plans by VYRA"),
-    price: t("129 zł / mies. za grupę", "129 zł / month per group"),
+    price: t("199 zł / mies. za grupę", "199 zł / month per group"),
     note: t("biegi i ogólnorozwojowe", "running and general conditioning"),
     body: t(
       "Rozpisujemy tygodniowe plany dla wybranej grupy, dopasowane do wieku i kalendarza startów, i co tydzień je korygujemy na podstawie wyników.",
@@ -158,7 +163,7 @@ const services = (t: T) => [
   },
   {
     name: t("Trening z VYRA na miejscu", "VYRA session on site"),
-    price: t("120 zł / wizyta", "120 zł / visit"),
+    price: t("180 zł / wizyta", "180 zł / visit"),
     note: t("w zasięgu dojazdu, po ustaleniu", "within travel range, by arrangement"),
     body: t(
       "Trener VYRA prowadzi zajęcia z Waszą grupą, np. raz w tygodniu albo przed ważnymi startami. Do 90 minut.",
@@ -211,6 +216,13 @@ const faq = (t: T) => [
     ),
   },
   {
+    q: t("Czym jest licencja bezterminowa?", "What is the lifetime licence?"),
+    a: t(
+      "Płacicie raz i korzystacie z platformy bez abonamentu, razem z aktualizacjami i nowymi funkcjami, w limicie zawodników wybranego pakietu. Wdrożenie jest w cenie. Usługi dodatkowe, jak prowadzenie panelu czy plany treningowe, są płatne osobno. Liczba licencji jest ograniczona.",
+      "Pay once and use the platform with no subscription, including updates and new features, within your package’s athlete limit. Setup is included. Add-on services such as running the panel or training plans are paid separately. Lifetime licences are limited.",
+    ),
+  },
+  {
     q: t("Mamy ponad 200 zawodników albo kilka sekcji.", "We have over 200 athletes or several sections."),
     a: t("Napiszcie przez formularz. Przygotujemy wycenę dla Waszego klubu.", "Write to us via the form and we’ll prepare a quote for your club."),
   },
@@ -225,8 +237,8 @@ export default async function ClubsPage() {
         eyebrow={t("VYRA dla klubów", "VYRA for clubs")}
         title={t("Cały klub w jednej aplikacji", "Your whole club in one app")}
         lead={t(
-          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu. Dla klubów i sekcji lekkoatletycznych. Od 49 zł miesięcznie, pierwszy miesiąc za darmo.",
-          "Schedule, training plans, attendance, fees, parents and medical checks in one place. For athletics clubs and sections. From 49 zł a month, first month free.",
+          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu. Dla klubów i sekcji lekkoatletycznych. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
+          "Schedule, training plans, attendance, fees, parents and medical checks in one place. For athletics clubs and sections. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
         )}
       >
         <div className="flex flex-wrap gap-3">
@@ -290,10 +302,10 @@ export default async function ClubsPage() {
 
       <section id="cennik" className="scroll-mt-24 border-t border-white/10">
         <div className={`${wrap} py-24 sm:py-32`}>
-          <SectionHead eyebrow={t("Cennik", "Pricing")} title={t("Mniej niż 2 zł na zawodnika miesięcznie", "Less than 2 zł per athlete a month")}>
+          <SectionHead eyebrow={t("Cennik", "Pricing")} title={t("Abonament albo licencja na zawsze", "Subscription or a lifetime licence")}>
             {t(
-              "Pierwszy miesiąc za darmo, bez umowy na czas określony. Za rok z góry płacicie za 10 miesięcy.",
-              "First month free, no fixed-term contract. Pay a year upfront and you pay for 10 months.",
+              "Płaćcie co miesiąc, bez umowy na czas określony, albo raz i korzystajcie bez abonamentu. Za rok z góry płacicie za 10 miesięcy. Pierwszy miesiąc za darmo.",
+              "Pay monthly with no fixed-term contract, or pay once and use it with no subscription. Pay a year upfront and you pay for 10 months. First month free.",
             )}
           </SectionHead>
           <div className="mt-14 grid gap-5 lg:grid-cols-3">
@@ -318,7 +330,14 @@ export default async function ClubsPage() {
                       <span className="ml-2 text-white/50">{t("/ mies.", "/ month")}</span>
                     </p>
                     <p className="font-mono text-[13px] text-white/45">
-                      {p.per} · {t("rocznie", "yearly")} {p.price * 10} zł
+                      {p.per} · {t("rocznie", "yearly")} {fmtZl(p.price * 10)}
+                    </p>
+                  </div>
+                  <div className="grid gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                    <p className="text-[13px] text-white/55">{t("albo licencja bezterminowa", "or a lifetime licence")}</p>
+                    <p className="text-white">
+                      <span className="display text-2xl">{fmtZl(p.lifetime)}</span>
+                      <span className="ml-2 text-[13px] text-white/50">{t("jednorazowo, bez abonamentu", "one-off, no subscription")}</span>
                     </p>
                   </div>
                   <ul className="grid gap-2.5">
@@ -367,8 +386,8 @@ export default async function ClubsPage() {
           </div>
           <p className="mt-6 text-sm text-white/45">
             {t(
-              "Przykład: klub z 50 zawodnikami, pakiet Klub i prowadzenie panelu to 248 zł miesięcznie, czyli ok. 5 zł na zawodnika.",
-              "Example: a club with 50 athletes on Klub with panel management pays 248 zł a month, about 5 zł per athlete.",
+              "Przykład: klub z 50 zawodnikami, pakiet Klub i prowadzenie panelu to 398 zł miesięcznie, czyli ok. 8 zł na zawodnika.",
+              "Example: a club with 50 athletes on Klub with panel management pays 398 zł a month, about 8 zł per athlete.",
             )}
           </p>
         </div>
