@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ArrowUpDown, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export interface AthleteListItem {
 type Sort = "name" | "activity" | "completion";
 
 export function AthletesTable({ athletes }: { athletes: AthleteListItem[] }) {
+  const router = useRouter();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"active" | "archived" | "all">("active");
   const [sort, setSort] = useState<Sort>("name");
@@ -82,9 +84,9 @@ export function AthletesTable({ athletes }: { athletes: AthleteListItem[] }) {
               </thead>
               <tbody className="divide-y divide-border">
                 {rows.map((a) => (
-                  <tr key={a.id} className="group relative hover:bg-surface">
+                  <tr key={a.id} className="group cursor-pointer hover:bg-surface" onClick={(e) => { if (!(e.target as HTMLElement).closest("a,button")) router.push(`/coach/athletes/${a.id}`); }}>
                     <td className="px-4 py-3">
-                      <Link href={`/coach/athletes/${a.id}`} className="flex items-center gap-3 after:absolute after:inset-0">
+                      <Link href={`/coach/athletes/${a.id}`} className="flex items-center gap-3">
                         <Initials name={a.full_name} size="sm" />
                         <span className="grid min-w-0">
                           <span className="truncate font-medium">{a.full_name}</span>

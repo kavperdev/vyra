@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input, Select } from "@/components/ui/form-controls";
@@ -15,6 +16,7 @@ import { tl } from "@/lib/i18n/runtime";
 type Sort = "date_desc" | "date_asc" | "title";
 
 export function HistoryTable({ sessions, today, hrefBase, showAthlete = false }: { sessions: SessionSummary[]; today: string; hrefBase: string; showAthlete?: boolean }) {
+  const router = useRouter();
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -82,7 +84,32 @@ export function HistoryTable({ sessions, today, hrefBase, showAthlete = false }:
       <p className="text-[12px] text-muted">{rows.length} {tl("treningów", "sessions")}</p>
 
       {rows.length ? (
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <>
+        <ul className="grid gap-2 sm:hidden">
+          {rows.map((s) => {
+            const e = s.execution;
+            const actual = e ? [e.distance_m ? formatDistance(e.distance_m) : null, e.duration_s ? formatDuration(e.duration_s) : null, e.avg_pace_s ? `${formatPace(e.avg_pace_s)}/km` : null].filter(Boolean).join(" · ") : null;
+            return (
+              <li key={s.id}>
+                <Link href={`${hrefBase}/${s.id}`} className="grid gap-1.5 rounded-lg border border-border bg-surface px-3 py-3 active:bg-surface-2">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="num text-[12px] text-muted">{formatDate(s.scheduled_date, "EEE, d MMM yy")}</span>
+                    <StatusBadge status={s.status} date={s.scheduled_date} today={today} />
+                  </span>
+                  <span className="flex min-w-0 items-center gap-2 font-medium">
+                    <KindIcon kind={s.kind} /> <span className="truncate">{s.title}</span>
+                  </span>
+                  {showAthlete && s.athlete_name ? <span className="text-[12px] text-muted">{s.athlete_name}</span> : null}
+                  <span className="num text-[12px] text-muted">
+                    {actual ? actual : plannedVolume(s) ? `plan ${plannedVolume(s)}` : ""}
+                    {e?.rpe ? ` · RPE ${e.rpe}` : ""}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-surface text-left text-[12px] text-muted">
               <tr>
@@ -104,10 +131,10 @@ export function HistoryTable({ sessions, today, hrefBase, showAthlete = false }:
                       .join(" · ") || "zapisano"
                   : "—";
                 return (
-                  <tr key={s.id} className="relative hover:bg-surface">
+                  <tr key={s.id} className="cursor-pointer hover:bg-surface" onClick={(ev) => { if (!(ev.target as HTMLElement).closest("a,button")) router.push(`${hrefBase}/${s.id}`); }}>
                     <td className="num whitespace-nowrap px-3 py-2.5 text-muted">{formatDate(s.scheduled_date, "d MMM yy")}</td>
                     <td className="px-3 py-2.5">
-                      <Link href={`${hrefBase}/${s.id}`} className="flex items-center gap-2 font-medium after:absolute after:inset-0">
+                      <Link href={`${hrefBase}/${s.id}`} className="flex items-center gap-2 font-medium">
                         <KindIcon kind={s.kind} /> <span className="truncate">{s.title}</span>
                       </Link>
                     </td>
@@ -124,6 +151,7 @@ export function HistoryTable({ sessions, today, hrefBase, showAthlete = false }:
             </tbody>
           </table>
         </div>
+        </>
       ) : (
         <EmptyState title={tl("Brak treningów", "No sessions")} description={tl("Zmień filtry albo zakres dat.", "Change the filters or date range.")} />
       )}
