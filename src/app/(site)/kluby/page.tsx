@@ -94,10 +94,10 @@ const plans = (t: T) => [
     name: "Sekcja",
     price: 79,
     lifetime: 1990,
-    per: t("ok. 3 zł na zawodnika", "about 3 zł per athlete"),
+    per: t("ok. 2,60 zł na zawodnika", "about 2.60 zł per athlete"),
     lead: t("Dla nowej sekcji albo jednej grupy.", "For a new section or a single group."),
     items: [
-      t("do 25 zawodników", "up to 25 athletes"),
+      t("do 30 zawodników", "up to 30 athletes"),
       t("2 trenerów", "2 coaches"),
       t("wszystkie funkcje: harmonogram, plany, obecność, składki, rodzice, dokumenty", "every feature: schedule, plans, attendance, fees, parents, documents"),
       t("pomoc mailowa", "email support"),
@@ -106,12 +106,12 @@ const plans = (t: T) => [
   {
     name: "Klub",
     price: 149,
-    lifetime: 3990,
-    per: t("ok. 1,90 zł na zawodnika", "about 1.90 zł per athlete"),
+    lifetime: 3690,
+    per: t("ok. 1,50 zł na zawodnika", "about 1.50 zł per athlete"),
     lead: t("Dla typowego UKS-u lub klubu z kilkoma grupami.", "For a typical school or community club with several groups."),
     highlight: true,
     items: [
-      t("do 80 zawodników", "up to 80 athletes"),
+      t("do 100 zawodników", "up to 100 athletes"),
       t("do 6 osób kadry: trenerzy, asystenci, fizjoterapeuta", "up to 6 staff: coaches, assistants, physio"),
       t("logo i nazwa klubu w aplikacji", "club logo and name in the app"),
       t("wgrywanie wyciągu z banku", "bank statement upload"),
@@ -122,10 +122,10 @@ const plans = (t: T) => [
     name: "Klub+",
     price: 249,
     lifetime: 5990,
-    per: t("od 1,25 zł na zawodnika", "from 1.25 zł per athlete"),
+    per: t("od 1 zł na zawodnika", "from 1 zł per athlete"),
     lead: t("Dla dużego klubu z wieloma grupami i trenerami.", "For a large club with many groups and coaches."),
     items: [
-      t("do 200 zawodników", "up to 200 athletes"),
+      t("do 250 zawodników", "up to 250 athletes"),
       t("kadra bez limitu", "unlimited staff"),
       t("wdrożenie przez VYRA w cenie", "setup by VYRA included"),
       t("odpowiedź na zgłoszenie w ciągu 24 godzin", "reply within 24 hours"),
@@ -216,14 +216,14 @@ const faq = (t: T) => [
     ),
   },
   {
-    q: t("Czym jest licencja bezterminowa?", "What is the lifetime licence?"),
+    q: t("Czym jest licencja założycielska?", "What is the founding licence?"),
     a: t(
-      "Płacicie raz i korzystacie z platformy bez abonamentu, razem z aktualizacjami i nowymi funkcjami, w limicie zawodników wybranego pakietu. Wdrożenie jest w cenie. Usługi dodatkowe, jak prowadzenie panelu czy plany treningowe, są płatne osobno. Liczba licencji jest ograniczona.",
-      "Pay once and use the platform with no subscription, including updates and new features, within your package’s athlete limit. Setup is included. Add-on services such as running the panel or training plans are paid separately. Lifetime licences are limited.",
+      "Płacicie raz i korzystacie z platformy bez abonamentu, razem z aktualizacjami i nowymi funkcjami, w limicie zawodników wybranego pakietu. Wdrożenie jest w cenie. Usługi dodatkowe, jak prowadzenie panelu czy plany treningowe, są płatne osobno. Licencja założycielska jest tylko dla 10 pierwszych klubów, potem zostaje sam abonament. Dostęp trwa tak długo, jak działa VYRA; gdyby platforma kiedyś miała się zamknąć, klub dostaje eksport danych i co najmniej 6 miesięcy wypowiedzenia.",
+      "Pay once and use the platform with no subscription, including updates and new features, within your package’s athlete limit. Setup is included. Add-on services such as running the panel or training plans are paid separately. The founding licence is for the first 10 clubs only, then it is subscription only. Access lasts as long as VYRA runs; if the platform ever closed, the club gets a data export and at least 6 months’ notice.",
     ),
   },
   {
-    q: t("Mamy ponad 200 zawodników albo kilka sekcji.", "We have over 200 athletes or several sections."),
+    q: t("Mamy ponad 250 zawodników albo kilka sekcji.", "We have over 250 athletes or several sections."),
     a: t("Napiszcie przez formularz. Przygotujemy wycenę dla Waszego klubu.", "Write to us via the form and we’ll prepare a quote for your club."),
   },
 ];
@@ -334,7 +334,7 @@ export default async function ClubsPage() {
                     </p>
                   </div>
                   <div className="grid gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[13px] text-white/55">{t("albo licencja bezterminowa", "or a lifetime licence")}</p>
+                    <p className="text-[13px] text-white/55">{t("albo licencja założycielska, bezterminowa", "or a founding lifetime licence")}</p>
                     <p className="text-white">
                       <span className="display text-2xl">{fmtZl(p.lifetime)}</span>
                       <span className="ml-2 text-[13px] text-white/50">{t("jednorazowo, bez abonamentu", "one-off, no subscription")}</span>
@@ -361,6 +361,12 @@ export default async function ClubsPage() {
               </Reveal>
             ))}
           </div>
+          <p className="mt-6 text-sm text-white/45">
+            {t(
+              "Licencja założycielska: tylko dla 10 pierwszych klubów. Jednorazowa opłata, wdrożenie w cenie, limit zawodników pakietu. Podane kwoty są kwotami końcowymi.",
+              "Founding licence: first 10 clubs only. One-off payment, setup included, package athlete limit applies. Prices shown are final amounts.",
+            )}
+          </p>
         </div>
       </section>
 
