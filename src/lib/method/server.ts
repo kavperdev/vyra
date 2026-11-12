@@ -175,7 +175,7 @@ export async function ensureWeeks(supabase: ServerSupabase, userId: string, data
   const isSunday = addDays(thisMonday, 6) === today;
   const targets = isSunday ? [thisMonday, addDays(thisMonday, 7)] : [thisMonday];
   const known = new Set(data.weeks.map((w) => w.week_start));
-  let assessment = p.assessment ?? assess(profile, today);
+  const assessment = p.assessment ?? assess(profile, today);
   if (!p.assessment) await supabase.from("method_profiles").update({ assessment }).eq("athlete_id", userId);
   if (!assessment.eligible) return 0;
   let state: MethodState = p.state ?? initialState(profile, assessment);

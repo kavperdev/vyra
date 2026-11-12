@@ -41,7 +41,7 @@ export default async function AthleteDashboard() {
   // VYRA Method: this week's plan is generated before the calendar is read (null before the migration).
   const method = await loadMethod(supabase, user.id).catch(() => null);
   if (method?.access && method.profile) await ensureWeeks(supabase, user.id, method).catch((e) => console.error("[method]", e));
-  const methodSetup = !!method?.access && !method.profile;
+  const methodSetup = !!method && method.access === true && !method.profile;
   const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals, feedbackDue] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -70), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
