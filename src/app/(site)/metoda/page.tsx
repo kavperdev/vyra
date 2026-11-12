@@ -58,7 +58,7 @@ export default async function MethodPage() {
       >
         <div className="flex flex-wrap gap-3">
           <PrimaryLink href={selling ? "#cennik" : "#lista"}>{selling ? "Zacznij za 29 zł/mies." : "Zapisz się na start"}</PrimaryLink>
-          <GhostLink href="#jak">Jak to działa</GhostLink>
+          <GhostLink href="/pobierz">Pobierz aplikację</GhostLink>
         </div>
       </PageHero>
 
@@ -141,6 +141,33 @@ export default async function MethodPage() {
         </div>
       </section>
 
+      <section className="border-t border-white/10">
+        <div className={`${wrap} grid gap-10 py-24`}>
+          <SectionHead eyebrow="Jak zacząć" title="Od zakupu do pierwszego treningu w 10 minut">
+            VYRA Method działa w aplikacji VYRA na telefonie. Nie szukasz jej w sklepie: instalujesz ją prosto ze strony w 30 sekund.
+          </SectionHead>
+          <ol className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-4">
+            {[
+              ["Wybierz plan", "Miesięcznie albo na rok. Płacisz online przez bezpieczną bramkę Stripe."],
+              ["Załóż konto", "Zaraz po płatności ustawiasz hasło. Adres e-mail jest już przypisany."],
+              ["Zainstaluj aplikację", "Ikona VYRA na ekranie telefonu, pełny ekran i powiadomienia o treningach."],
+              ["Wypełnij ankietę", "4 minuty i pierwszy tydzień jest w kalendarzu."],
+            ].map(([t, b], i) => (
+              <li key={t} className="grid content-start gap-3 bg-black p-7">
+                <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                <h3 className="text-lg font-semibold text-white">{t}</h3>
+                <p className="leading-relaxed text-white/60">{b}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap gap-3">
+            <PrimaryLink href={selling ? "#cennik" : "#lista"}>{selling ? "Wybierz plan" : "Zapisz się na start"}</PrimaryLink>
+            <GhostLink href="/pobierz">Jak zainstalować aplikację</GhostLink>
+            <GhostLink href="/login?next=/athlete/metoda">Mam już konto</GhostLink>
+          </div>
+        </div>
+      </section>
+
       {selling ? (
         <section id="cennik" className="scroll-mt-24 border-t border-white/10">
           <div className={`${wrap} grid gap-14 py-24`}>
@@ -154,9 +181,9 @@ export default async function MethodPage() {
         <section id="lista" className="scroll-mt-24 border-t border-white/10">
           <div className={`${wrap} grid gap-10 py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]`}>
             <div className="grid content-start gap-4">
-              <Eyebrow accent>Start w styczniu 2027</Eyebrow>
-              <h2 className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">Zapisz się na start</h2>
-              <p className="text-lg leading-relaxed text-white/60">Osoby z listy dowiedzą się pierwsze i dostaną pierwszy miesiąc taniej. Później: 29 zł miesięcznie albo 199 zł za rok.</p>
+              <Eyebrow accent>Ruszamy lada dzień</Eyebrow>
+              <h2 className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">Zapisz się, a napiszemy pierwsi</h2>
+              <p className="text-lg leading-relaxed text-white/60">Płatności dla VYRA Method właśnie włączamy. Zostaw e-mail, a dostaniesz link do zakupu, gdy tylko ruszą. Cena: 29 zł miesięcznie albo 199 zł za rok.</p>
             </div>
             <MethodWaitlistForm />
           </div>

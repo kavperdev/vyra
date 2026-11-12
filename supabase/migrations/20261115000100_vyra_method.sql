@@ -111,15 +111,18 @@ revoke execute on function public.has_method_access(uuid), public.method_enable(
 grant execute on function public.has_method_access(uuid), public.method_enable(), public.set_method_access(uuid, boolean) to authenticated;
 
 -- Packages: sold on /metoda, hidden from the coaching list on /prowadzenie (filtered by name).
--- They start hidden: /metoda shows the waiting list until a founder makes them visible in the panel.
+-- Visible right away: /metoda sells them as soon as online payments work (hide them in the panel to pause sales).
 insert into public.coaching_plans (name, tagline, kind, price_pln, commit_price_pln, features, badge, highlighted, visible, sort)
 select 'VYRA Method', 'Plan z metody trenerów VYRA, dopasowany do Twoich danych i aktualizowany co tydzień.', 'monthly', 29, null,
   E'Plan na każdy tydzień z Twoich danych: wiek, waga, forma, czas\nTempa i tętno przeliczane po każdym teście\nLżejsze tygodnie i ochrona przed przeciążeniem\nCotygodniowa ankieta, po której plan się dopasowuje\nAplikacja VYRA na telefonie',
-  null, false, false, 60
+  null, false, true, 60
 where not exists (select 1 from public.coaching_plans where name = 'VYRA Method');
 
 insert into public.coaching_plans (name, tagline, kind, price_pln, commit_price_pln, features, badge, highlighted, visible, sort)
 select 'VYRA Method · rok', 'Rok planu VYRA Method w jednej płatności: dwa miesiące gratis.', 'once', 199, null,
   E'Wszystko z VYRA Method przez 12 miesięcy\nJedna płatność, bez odnawiania\nCena jak za ok. 7 miesięcy',
-  'Najtaniej', true, false, 61
+  'Najtaniej', true, true, 61
 where not exists (select 1 from public.coaching_plans where name = 'VYRA Method · rok');
+
+-- Sales open: also for databases where an earlier version of this file added them hidden.
+update public.coaching_plans set visible = true where name in ('VYRA Method', 'VYRA Method · rok') and not visible;
