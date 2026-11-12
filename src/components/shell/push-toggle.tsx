@@ -160,7 +160,10 @@ export function PushSettings() {
           {t(
             "Na iPhonie powiadomienia działają w aplikacji z ekranu głównego: w Safari kliknij Udostępnij → Do ekranu początkowego, otwórz VYRA z ikony i wróć tutaj.",
             "On iPhone, notifications work in the app on your home screen: in Safari tap Share → Add to Home Screen, open VYRA from the icon and come back here.",
-          )}
+          )}{" "}
+          <a href="/pobierz" className="font-medium underline underline-offset-2">
+            {t("Pokaż mi krok po kroku", "Show me step by step")}
+          </a>
         </p>
       ) : state === "denied" ? (
         <p className="text-sm">{t("Powiadomienia są zablokowane w ustawieniach przeglądarki lub telefonu. Odblokuj je tam dla tej strony.", "Notifications are blocked in your browser or phone settings. Allow them there for this site.")}</p>

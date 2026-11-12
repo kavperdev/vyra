@@ -22,7 +22,9 @@ export function InstallHint() {
   useEffect(() => {
     let dismissed = false;
     try {
-      dismissed = localStorage.getItem(KEY) === "1";
+      const at = Number(localStorage.getItem(KEY) ?? 0);
+      // "1" was the old never-again flag; now a dismissal hides the card for 14 days.
+      dismissed = at > 1 && Date.now() - at < 14 * 86400000;
     } catch {
       // storage unavailable: show the hint
     }
@@ -47,7 +49,7 @@ export function InstallHint() {
 
   const close = () => {
     try {
-      localStorage.setItem(KEY, "1");
+      localStorage.setItem(KEY, String(Date.now()));
     } catch {
       // storage unavailable: hide for this visit only
     }
@@ -62,7 +64,10 @@ export function InstallHint() {
           <p className="text-[13px] text-muted">
             {t("Kliknij", "Tap")} <Share className="inline size-3.5 align-[-2px]" /> <b>{t("Udostępnij", "Share")}</b>{" "}
             {t("na dole Safari, a potem", "at the bottom of Safari, then")} <b>{t("Do ekranu początkowego", "Add to Home Screen")}</b>.{" "}
-            {t("VYRA otworzy się jak aplikacja.", "VYRA will open like an app.")}
+            {t("VYRA otworzy się jak aplikacja i będzie wysyłać powiadomienia.", "VYRA will open like an app and send notifications.")}{" "}
+            <a href="/pobierz" className="font-medium text-foreground underline underline-offset-2">
+              {t("Pokaż krok po kroku", "Show me how")}
+            </a>
           </p>
         ) : (
           <>

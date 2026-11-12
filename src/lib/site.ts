@@ -35,6 +35,7 @@ export const SITE_NAV = [
 
 /** Secondary links: in the mobile menu and the footer, not in the desktop bar. */
 export const SITE_NAV_MORE = [
+  { href: "/pobierz", label: "Pobierz aplikację", en: "Get the app" },
   { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
