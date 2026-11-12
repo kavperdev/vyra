@@ -24,6 +24,24 @@ const fmtZl = (n: number) => `${n.toLocaleString("pl-PL").replace(/\u00a0/g, " "
 
 const features = (t: T) => [
   {
+    img: "raport",
+    badge: t("Tego nie ma nikt inny", "Only in VYRA"),
+    title: t("Sprawozdanie z dotacji jednym kliknięciem", "Grant report in one click"),
+    body: t(
+      "Wybierasz okres i grupę, a VYRA składa raport dla gminy: lista uczestników z rocznikami, odbyte zajęcia i godziny, frekwencja każdego zawodnika, zawody i rekordy. Do druku, w PDF albo w Excelu. Zamiast kilku dni przepisywania dzienników.",
+      "Pick a period and a group and VYRA builds the report for the council: participants with birth years, classes held and hours, each athlete’s attendance, competitions and records. Print, PDF or Excel, instead of days of copying registers.",
+    ),
+  },
+  {
+    img: "rozwoj",
+    badge: t("Tego nie ma nikt inny", "Only in VYRA"),
+    title: t("Karta rozwoju zawodnika", "Athlete development card"),
+    body: t(
+      "Co kwartał test sprawności: 60 m, skok w dal z miejsca, 600 m i inne. Trener wpisuje wyniki całej grupy w minutę i widzi ranking oraz postęp każdego dziecka. Rodzic co miesiąc dostaje podsumowanie: frekwencję i wyniki. Widzi, za co płaci składkę.",
+      "A fitness test every quarter: 60 m, standing long jump, 600 m and more. The coach enters the whole group in a minute and sees the ranking and each child’s progress. Parents get a monthly summary of attendance and results, so they see what the fee pays for.",
+    ),
+  },
+  {
     img: "harmonogram",
     title: t("Grupy i stałe godziny", "Groups and fixed times"),
     body: t(
@@ -237,8 +255,8 @@ export default async function ClubsPage() {
         eyebrow={t("VYRA dla klubów", "VYRA for clubs")}
         title={t("Cały klub w jednej aplikacji", "Your whole club in one app")}
         lead={t(
-          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu. Dla klubów i sekcji lekkoatletycznych. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
-          "Schedule, training plans, attendance, fees, parents and medical checks in one place. For athletics clubs and sections. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
+          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu, a do tego sprawozdanie z dotacji jednym kliknięciem i karta rozwoju każdego zawodnika. Dla klubów i sekcji lekkoatletycznych. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
+          "Schedule, training plans, attendance, fees, parents and medical checks in one place, plus a one-click grant report and a development card for every athlete. For athletics clubs and sections. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
         )}
       >
         <div className="flex flex-wrap gap-3">
@@ -290,7 +308,10 @@ export default async function ClubsPage() {
                 />
               </Reveal>
               <Reveal delay={100} className="grid gap-4">
-                <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                <span className="flex flex-wrap items-center gap-3">
+                  <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                  {"badge" in f && f.badge ? <span className="rounded-full border border-[var(--accent)]/50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--accent)]">{f.badge}</span> : null}
+                </span>
                 <h3 className="display text-[clamp(1.6rem,3vw,2.25rem)] leading-tight text-white">{f.title}</h3>
                 <p className="text-lg leading-relaxed text-white/60">{f.body}</p>
               </Reveal>
