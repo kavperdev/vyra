@@ -281,10 +281,10 @@ export default async function ClubsPage() {
             controls
             playsInline
             preload="none"
-            poster="/site/kluby/film-poster.jpg"
+            poster="/site/kluby/sport/vyra-ogolny-poster.jpg"
             aria-label={t("Film: VYRA dla klubów", "Video: VYRA for clubs")}
           >
-            <source src="/site/kluby/vyra-dla-klubow-v4.mp4" type="video/mp4" />
+            <source src="/site/kluby/sport/vyra-dla-klubow-ogolny-v1.mp4" type="video/mp4" />
           </video>
         </Reveal>
       </section>

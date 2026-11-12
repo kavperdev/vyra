@@ -57,39 +57,49 @@ const COPY: Partial<Record<SportKey, { who: string; pain: string; season: string
 };
 
 /** What only this sport gets: screens from the app and the promo film (4 sports so far). */
-const SPECIAL: Partial<Record<SportKey, { film: string; items: { img: string; phone?: boolean; title: string; body: string }[] }>> = {
-  football: {
-    film: "pilka-nozna",
+const SPECIAL: Partial<Record<SportKey, { film: string; poster?: string; items: { img: string; phone?: boolean; title: string; body: string }[] }>> = {
+  athletics: {
+    film: "/site/kluby/vyra-dla-klubow-v4.mp4",
+    poster: "/site/kluby/film-poster.jpg",
     items: [
-      { img: "football-mecz", title: "Powołania z potwierdzeniem rodziców", body: "Zaznaczasz skład na mecz, a zawodnicy i rodzice dostają powiadomienie. Rodzic potwierdza jednym kliknięciem ze swojej strony, bez konta. Widzisz, kto będzie, zanim zaczniesz rozpisywać ustawienie." },
-      { img: "football-czas-gry", title: "Równy czas gry", body: "Po meczu wpisujesz minuty, gole i asysty. VYRA liczy, ile procent możliwych minut zagrał każdy zawodnik w sezonie, i ostrzega, kto gra wyraźnie mniej. Koniec z pretensjami rodziców i dziećmi, które siedzą na ławce cały sezon." },
-      { img: "football-umiejetnosci", title: "Umiejętności piłkarskie", body: "Raz na kwartał oceniasz przyjęcie, podanie, drybling, strzał, słabszą nogę i grę głową. Widzisz najsłabszy element całej grupy, a rodzic widzi postęp dziecka." },
-      { img: "football-rodzic", phone: true, title: "Strona rodzica", body: "Powołanie z godziną zbiórki, wynik ostatniego meczu, minuty i gole dziecka. Rodzic przestaje dopytywać na Messengerze." },
+      { img: "/site/kluby/trening.jpg", title: "Plan treningowy dla całej grupy", body: "Trener rozpisuje trening raz, dla całej grupy: odcinki, tempa, przerwy i tętno, dokładnie tak, jak w swojej metodzie. Każdy zawodnik dostaje powiadomienie na telefon." },
+      { img: "/site/kluby/wyniki.jpg", title: "Czas każdego odcinka", body: "Po treningu zawodnik wpisuje czasy odcinków i odczucia. Trener widzi wynik, zanim zawodnik wróci do domu, a postęp na dystansach liczy się sam." },
+      { img: "/site/kluby/rozwoj.jpg", title: "Karta rozwoju z testami lekkoatletycznymi", body: "Co kwartał 60 m, 600 m, 1000 m, skok w dal, rzut piłeczką i testy ogólnorozwojowe. Ranking grupy, postęp każdego dziecka i miesięczne podsumowanie dla rodzica." },
+      { img: "/site/kluby/raport.jpg", title: "Sprawozdanie z dotacji", body: "Lista uczestników z rocznikami, odbyte zajęcia, godziny i frekwencja za wybrany okres. Do druku, w PDF albo w Excelu, gotowe dla gminy." },
+    ],
+  },
+  football: {
+    film: "/site/kluby/sport/vyra-pilka-nozna-v2.mp4",
+    items: [
+      { img: "/site/kluby/sport/football-mecz.jpg", title: "Powołania z potwierdzeniem rodziców", body: "Zaznaczasz skład na mecz, a zawodnicy i rodzice dostają powiadomienie. Rodzic potwierdza jednym kliknięciem ze swojej strony, bez konta. Widzisz, kto będzie, zanim zaczniesz rozpisywać ustawienie." },
+      { img: "/site/kluby/sport/football-czas-gry.jpg", title: "Równy czas gry", body: "Po meczu wpisujesz minuty, gole i asysty. VYRA liczy, ile procent możliwych minut zagrał każdy zawodnik w sezonie, i ostrzega, kto gra wyraźnie mniej. Koniec z pretensjami rodziców i dziećmi, które siedzą na ławce cały sezon." },
+      { img: "/site/kluby/sport/football-umiejetnosci.jpg", title: "Umiejętności piłkarskie", body: "Raz na kwartał oceniasz przyjęcie, podanie, drybling, strzał, słabszą nogę i grę głową. Widzisz najsłabszy element całej grupy, a rodzic widzi postęp dziecka." },
+      { img: "/site/kluby/sport/football-rodzic.jpg", phone: true, title: "Strona rodzica", body: "Powołanie z godziną zbiórki, wynik ostatniego meczu, minuty i gole dziecka. Rodzic przestaje dopytywać na Messengerze." },
     ],
   },
   volleyball: {
-    film: "siatkowka",
+    film: "/site/kluby/sport/vyra-siatkowka-v2.mp4",
     items: [
-      { img: "volleyball-tracker", phone: true, title: "Statystyka meczu z telefonu", body: "Przy linii klikasz akcje: as, zagrywka w boisku, błąd, przyjęcie idealne, dobre, błąd, atak, blok, obrona. Skuteczność każdej zawodniczki liczy się w trakcie meczu." },
-      { img: "volleyball-mecz", title: "Mecz na żywo", body: "Na komputerze w szatni widzisz punkty, przyjęcie, atak i zagrywkę całego składu. Między setami wiesz, kto przyjmuje najgorzej i komu dać odpocząć." },
-      { img: "volleyball-statystyki", title: "Statystyki sezonu", body: "Skuteczność ataku liczona jak u trenerów: (punkty − błędy) / próby, przyjęcie pozytywne i zagrywka. Decyzje o składzie opierasz na liczbach, a nie na wrażeniu z trybun." },
-      { img: "volleyball-rodzic", phone: true, title: "Powołania i potwierdzenia", body: "Zawodniczki i rodzice potwierdzają udział w meczu z telefonu. Wynik z setami i punkty dziecka widać na stronie rodzica." },
+      { img: "/site/kluby/sport/volleyball-tracker.jpg", phone: true, title: "Statystyka meczu z telefonu", body: "Przy linii klikasz akcje: as, zagrywka w boisku, błąd, przyjęcie idealne, dobre, błąd, atak, blok, obrona. Skuteczność każdej zawodniczki liczy się w trakcie meczu." },
+      { img: "/site/kluby/sport/volleyball-mecz.jpg", title: "Mecz na żywo", body: "Na komputerze w szatni widzisz punkty, przyjęcie, atak i zagrywkę całego składu. Między setami wiesz, kto przyjmuje najgorzej i komu dać odpocząć." },
+      { img: "/site/kluby/sport/volleyball-statystyki.jpg", title: "Statystyki sezonu", body: "Skuteczność ataku liczona jak u trenerów: (punkty − błędy) / próby, przyjęcie pozytywne i zagrywka. Decyzje o składzie opierasz na liczbach, a nie na wrażeniu z trybun." },
+      { img: "/site/kluby/sport/volleyball-rodzic.jpg", phone: true, title: "Powołania i potwierdzenia", body: "Zawodniczki i rodzice potwierdzają udział w meczu z telefonu. Wynik z setami i punkty dziecka widać na stronie rodzica." },
     ],
   },
   swimming: {
-    film: "plywanie",
+    film: "/site/kluby/sport/vyra-plywanie-v2.mp4",
     items: [
-      { img: "swimming-czasy", title: "Czasy całej grupy w minutę", body: "Po treningu albo zawodach wybierasz styl, dystans i basen 25 lub 50 m i wpisujesz czasy całej grupy. Rekordy życiowe aktualizują się same, a nowy rekord od razu widać." },
-      { img: "swimming-limity", title: "Ile brakuje do limitu", body: "Dodajesz limity z regulaminu zawodów, z rocznikami i płcią. Przy każdym zawodniku widzisz, który limit już zrobił, a do którego brakuje mu 0,08 s." },
-      { img: "swimming-rodzic", phone: true, title: "Rekordy dla rodziców", body: "Rodzic widzi rekordy życiowe dziecka na każdym dystansie i ile brakuje do limitu na mistrzostwa. Pytanie „ile jeszcze?” znika z Messengera." },
+      { img: "/site/kluby/sport/swimming-czasy.jpg", title: "Czasy całej grupy w minutę", body: "Po treningu albo zawodach wybierasz styl, dystans i basen 25 lub 50 m i wpisujesz czasy całej grupy. Rekordy życiowe aktualizują się same, a nowy rekord od razu widać." },
+      { img: "/site/kluby/sport/swimming-limity.jpg", title: "Ile brakuje do limitu", body: "Dodajesz limity z regulaminu zawodów, z rocznikami i płcią. Przy każdym zawodniku widzisz, który limit już zrobił, a do którego brakuje mu 0,08 s." },
+      { img: "/site/kluby/sport/swimming-rodzic.jpg", phone: true, title: "Rekordy dla rodziców", body: "Rodzic widzi rekordy życiowe dziecka na każdym dystansie i ile brakuje do limitu na mistrzostwa. Pytanie „ile jeszcze?” znika z Messengera." },
     ],
   },
   martial_arts: {
-    film: "sztuki-walki",
+    film: "/site/kluby/sport/vyra-sztuki-walki-v2.mp4",
     items: [
-      { img: "martial_arts-stopnie", title: "Stopnie, pasy i egzaminy", body: "Aktualny stopień każdego zawodnika z kolorem pasa i historią egzaminów. VYRA pokazuje, kto jest gotowy do egzaminu, a zdany egzamin wpisujesz całej grupie naraz. Kyu, kup, BJJ albo własny system." },
-      { img: "martial_arts-waga", title: "Ważenie i kategorie", body: "Przed turniejem wpisujesz wagi i kategorie zgłoszonych. Od razu widzisz, kto mieści się w limicie, a komu brakuje 0,8 kg, zanim będzie za późno." },
-      { img: "martial_arts-rodzic", phone: true, title: "Turnieje i pasy dla rodziców", body: "Rodzic potwierdza udział dziecka w turnieju z telefonu, widzi kategorię wagową i kolejne zdobyte stopnie." },
+      { img: "/site/kluby/sport/martial_arts-stopnie.jpg", title: "Stopnie, pasy i egzaminy", body: "Aktualny stopień każdego zawodnika z kolorem pasa i historią egzaminów. VYRA pokazuje, kto jest gotowy do egzaminu, a zdany egzamin wpisujesz całej grupie naraz. Kyu, kup, BJJ albo własny system." },
+      { img: "/site/kluby/sport/martial_arts-waga.jpg", title: "Ważenie i kategorie", body: "Przed turniejem wpisujesz wagi i kategorie zgłoszonych. Od razu widzisz, kto mieści się w limicie, a komu brakuje 0,8 kg, zanim będzie za późno." },
+      { img: "/site/kluby/sport/martial_arts-rodzic.jpg", phone: true, title: "Turnieje i pasy dla rodziców", body: "Rodzic potwierdza udział dziecka w turnieju z telefonu, widzi kategorię wagową i kolejne zdobyte stopnie." },
     ],
   },
 };
@@ -152,8 +162,8 @@ export default async function SportClubsPage({ params }: { params: Promise<{ spo
         <>
           <section className={`${wrap} pt-20 sm:pt-28`}>
             <Reveal className="overflow-hidden rounded-2xl border border-white/10 bg-black">
-              <video className="aspect-video w-full" controls playsInline preload="none" poster={`/site/kluby/sport/${special.items[0].img}.jpg`} aria-label={`Film: VYRA dla ${c.who}`}>
-                <source src={`/site/kluby/sport/vyra-${special.film}-v1.mp4`} type="video/mp4" />
+              <video className="aspect-video w-full" controls playsInline preload="none" poster={special.poster ?? special.items[0].img} aria-label={`Film: VYRA dla ${c.who}`}>
+                <source src={special.film} type="video/mp4" />
               </video>
             </Reveal>
           </section>
@@ -165,10 +175,10 @@ export default async function SportClubsPage({ params }: { params: Promise<{ spo
               <div key={f.img} className="grid items-center gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:gap-14">
                 <Reveal className={`flex justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#070708] ${i % 2 ? "lg:order-2" : ""} ${f.phone ? "py-8" : ""}`}>
                   <Image
-                    src={`/site/kluby/sport/${f.img}.jpg`}
+                    src={f.img}
                     alt={f.title}
-                    width={f.phone ? 780 : 2200}
-                    height={f.phone ? 1688 : 1376}
+                    width={f.phone ? 780 : f.img.includes("/sport/") ? 2200 : 1600}
+                    height={f.phone ? 1688 : f.img.includes("/sport/") ? 1376 : 783}
                     sizes={f.phone ? "320px" : "(min-width: 1024px) 60vw, 100vw"}
                     className={f.phone ? "h-auto w-[300px] rounded-[28px] border border-white/10" : "h-auto w-full"}
                   />
