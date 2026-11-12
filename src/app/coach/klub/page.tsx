@@ -5,6 +5,10 @@ import { AttendanceBoard, ClubBadge, ClubHeaderCard, ClubsAdmin, ManagedAthleteF
 import { AnnouncementsTab, ClubOverview, FeesTab, GroupsTab, PeopleTab } from "@/components/club/club-panel";
 import { DevelopmentTab } from "@/components/club/development";
 import { ReportTab } from "@/components/club/report";
+import { MatchesTab } from "@/components/club/matches";
+import { GradesTab, SkillsCard, SwimTab } from "@/components/club/sport-records";
+import { modulesFor } from "@/lib/clubs/sports";
+import { loadAthleteBasics, loadGrades, loadMatches, loadSkills, loadSwimStandards, loadSwimTimes, loadWeights } from "@/lib/data/club-sport";
 import { loadFitness, loadGrantReport } from "@/lib/data/club-reports";
 import { requireRole } from "@/lib/auth";
 import { attendanceForDay, getMyClub, listClubMembers, listClubs, type SportClub } from "@/lib/data/clubs";
@@ -23,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("Klub", "Club") };
 }
 
-const TABS = ["przeglad", "grupy", "skladki", "zawodnicy", "rozwoj", "komunikaty", "raporty"] as const;
+const TABS = ["przeglad", "grupy", "mecze", "turnieje", "czasy", "stopnie", "skladki", "zawodnicy", "rozwoj", "komunikaty", "raporty"] as const;
 
 export default async function ClubPage({ searchParams }: { searchParams: Promise<{ date?: string; tab?: string; club?: string; month?: string; from?: string; to?: string; group?: string }> }) {
   await getLang();
@@ -83,9 +87,15 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
   const groupName = (id: string) => ws.groups.find((g) => g.id === id)?.name ?? "";
   const occurrences = expandSchedule(ws.slots, ws.events, groupName, from, to);
   const base = `/coach/klub?${founder && sp.club ? `club=${picked.id}&` : ""}`;
+  const sport = picked.sport ?? "athletics";
+  const mods = modulesFor(sport);
   const tabs = [
     { key: "przeglad", label: tl("Przegląd", "Overview") },
     { key: "grupy", label: tl("Grupy i harmonogram", "Groups & schedule") },
+    ...(mods.includes("matches") ? [{ key: "mecze", label: tl("Mecze", "Matches") }] : []),
+    ...(mods.includes("tournaments") ? [{ key: "turnieje", label: tl("Turnieje", "Tournaments") }] : []),
+    ...(mods.includes("swim") ? [{ key: "czasy", label: tl("Czasy i limity", "Times & standards") }] : []),
+    ...(mods.includes("grades") ? [{ key: "stopnie", label: tl("Stopnie i waga", "Grades & weight") }] : []),
     { key: "skladki", label: tl("Składki", "Fees") },
     { key: "zawodnicy", label: tl("Zawodnicy i rodzice", "Athletes & guardians") },
     { key: "rozwoj", label: tl("Rozwój zawodników", "Development") },
@@ -120,7 +130,7 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
       {tab === "rozwoj" && ws.ready
         ? await (async () => {
             const fit = await loadFitness(supabase, ws.athletes.map((a) => a.id));
-            return (
+            const dev = (
               <DevelopmentTab
                 clubId={picked.id}
                 today={today}
@@ -132,6 +142,20 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
                 sport={picked.sport ?? null}
               />
             );
+            if (!mods.includes("skills")) return dev;
+            const skills = await loadSkills(supabase, ws.athletes.map((a) => a.id));
+            return (
+              <div className="grid gap-6">
+                <SkillsCard
+                  ready={skills.ready}
+                  today={today}
+                  groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
+                  athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
+                  ratings={skills.rows}
+                />
+                {dev}
+              </div>
+            );
           })()
         : null}
       {tab === "raporty" && ws.ready
@@ -141,6 +165,65 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
             const rGroup = sp.group && ws.groups.some((g) => g.id === sp.group) ? sp.group : "";
             const report = await loadGrantReport(supabase, ws, picked.id, rFrom, rTo, rGroup || null);
             return <ReportTab report={report} groups={ws.groups.map((g) => ({ id: g.id, name: g.name }))} clubParam={founder && sp.club ? picked.id : null} query={{ from: rFrom, to: rTo, group: rGroup }} />;
+          })()
+        : null}
+      {(tab === "mecze" || tab === "turnieje") && ws.ready
+        ? await (async () => {
+            const [{ ready, matches, callups }, weights] = await Promise.all([
+              loadMatches(supabase, picked.id),
+              mods.includes("grades") ? loadWeights(supabase, ws.athletes.map((a) => a.id)) : Promise.resolve({ ready: true, rows: [] }),
+            ]);
+            const tournaments = tab === "turnieje";
+            return (
+              <MatchesTab
+                clubId={picked.id}
+                clubName={picked.name}
+                sport={sport}
+                ready={ready}
+                groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
+                athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
+                matches={matches.filter((m) => (m.kind === "tournament") === tournaments)}
+                callups={callups}
+                weights={weights.rows}
+                tournaments={tournaments}
+              />
+            );
+          })()
+        : null}
+      {tab === "czasy" && ws.ready
+        ? await (async () => {
+            const ids = ws.athletes.map((a) => a.id);
+            const [times, standards, basics] = await Promise.all([loadSwimTimes(supabase, ids), loadSwimStandards(supabase, picked.id), loadAthleteBasics(supabase, ids)]);
+            return (
+              <SwimTab
+                ready={times.ready}
+                clubId={picked.id}
+                today={today}
+                groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
+                athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
+                times={times.rows}
+                standards={standards}
+                basics={basics}
+              />
+            );
+          })()
+        : null}
+      {tab === "stopnie" && ws.ready
+        ? await (async () => {
+            const ids = ws.athletes.map((a) => a.id);
+            const [grades, weights] = await Promise.all([loadGrades(supabase, ids), loadWeights(supabase, ids)]);
+            return (
+              <GradesTab
+                ready={grades.ready}
+                clubId={picked.id}
+                today={today}
+                minMonths={Number((picked as { grade_min_months?: number }).grade_min_months ?? 6)}
+                groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
+                athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
+                grades={grades.rows}
+                weights={weights.rows}
+              />
+            );
           })()
         : null}
       {tab === "komunikaty" && ws.ready ? <AnnouncementsTab ws={ws} clubId={picked.id} mailReady={mailConfigured()} /> : null}

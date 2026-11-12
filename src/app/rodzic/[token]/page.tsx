@@ -3,6 +3,27 @@ import { notFound } from "next/navigation";
 import { ClubBadge } from "@/components/coach/club-space";
 import { MemberClubView } from "@/components/club/member-view";
 import { FitnessCard } from "@/components/club/fitness-card";
+import { CallupList } from "@/components/club/callup-list";
+import { SportRecords } from "@/components/club/sport-summary";
+import { callupItem, type ClubMatch } from "@/lib/data/club-sport";
+
+type FamilyMatches = {
+  sport: string | null;
+  club: string | null;
+  matches: (Pick<ClubMatch, "id" | "kind" | "title" | "opponent" | "home" | "starts_at" | "meet_at" | "place" | "competition" | "status" | "score_for" | "score_against" | "sets"> & {
+    answer: "pending" | "yes" | "no";
+    minutes: number | null;
+    goals: number | null;
+    assists: number | null;
+    category_kg: number | null;
+    result: string | null;
+  })[];
+};
+type FamilySport = {
+  skills: { skill: string; score: number; rated_on: string }[];
+  grades: { grade: string; color: string | null; awarded_on: string }[];
+  swim: { stroke: string; distance: number; pool: number; time_s: number; swum_on: string }[];
+};
 import { expandSchedule, type ClubEvent, type ScheduleSlot } from "@/lib/clubs/schedule";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +51,14 @@ export default async function FamilyPage({ params }: { params: Promise<{ token: 
   const { token } = await params;
   if (!/^[0-9a-f]{24,64}$/.test(token)) notFound();
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_family_view", { p_token: token });
+  const [{ data, error }, fm, fs] = await Promise.all([
+    supabase.rpc("get_family_view", { p_token: token }),
+    supabase.rpc("get_family_matches", { p_token: token }),
+    supabase.rpc("get_family_sport", { p_token: token }),
+  ]);
+  // Both null before the sport-modules migration: sections stay hidden.
+  const fam = (fm.error ? null : fm.data) as FamilyMatches | null;
+  const sport = (fs.error ? null : fs.data) as FamilySport | null;
   const v = (error ? null : data) as FamilyView | null;
   if (!v) notFound();
 
@@ -65,6 +93,16 @@ export default async function FamilyPage({ params }: { params: Promise<{ token: 
           bank: { account: v.club?.bank_account ?? null, recipient: v.club?.bank_recipient ?? null },
         }}
       />
+      {fam?.matches.length ? (
+        <section className="grid gap-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="eyebrow text-[11px]">{fam.matches.some((m) => m.kind === "tournament") && !fam.matches.some((m) => m.kind === "match") ? "Turnieje" : "Mecze i powołania"}</h2>
+          <CallupList
+            token={token}
+            items={fam.matches.map((m) => callupItem(m, { status: m.answer, minutes: m.minutes, goals: m.goals ?? 0, assists: m.assists ?? 0, category_kg: m.category_kg, result: m.result }, fam.club ?? "", fam.sport ?? "athletics"))}
+          />
+        </section>
+      ) : null}
+      {sport ? <SportRecords plain grades={sport.grades} swim={sport.swim} skills={sport.skills} /> : null}
       {v.fitness ? (
         <section className="grid gap-3 rounded-xl border border-border bg-surface p-5">
           <h2 className="eyebrow text-[11px]">Rozwój dziecka</h2>
