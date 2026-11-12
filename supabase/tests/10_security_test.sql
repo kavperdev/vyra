@@ -618,7 +618,7 @@ select pg_temp.check((select count(*) from public.camp_budget_items) = 0, 'parti
 -- ---------------------------------------------------------------- coaching plans
 select pg_temp.as_admin();
 set role anon;
-select pg_temp.check((select count(*) from public.coaching_plans) = 5, 'visitors see published coaching plans');
+select pg_temp.check((select count(*) from public.coaching_plans) = 7, 'visitors see published coaching plans (5 coaching + 2 VYRA Method)');
 reset role;
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000f1');
 update public.coaching_plans set price_pln = 1 where name = 'Elite';

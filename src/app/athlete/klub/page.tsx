@@ -5,8 +5,8 @@ import { MemberClubView } from "@/components/club/member-view";
 import { FitnessCard } from "@/components/club/fitness-card";
 import { CallupList } from "@/components/club/callup-list";
 import { SportRecords } from "@/components/club/sport-summary";
-import { hasModule, personalBests } from "@/lib/clubs/sports";
-import { callupItem, loadGrades, loadSkills, loadSwimTimes, myCallups } from "@/lib/data/club-sport";
+import { hasModule, personalBests, type SwimTime } from "@/lib/clubs/sports";
+import { callupItem, loadGrades, loadSkills, loadSwimTimes, myCallups, type Grade, type SkillRating } from "@/lib/data/club-sport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { loadFitness, recentAttendance } from "@/lib/data/club-reports";
 import { requireRole } from "@/lib/auth";
@@ -46,9 +46,9 @@ export default async function AthleteClubPage() {
     loadFitness(supabase, [user.id]),
     recentAttendance(supabase, user.id, today, addDaysISO(today, -30)),
     myCallups(supabase, user.id),
-    hasModule(sport, "swim") ? loadSwimTimes(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] }),
-    hasModule(sport, "grades") ? loadGrades(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] }),
-    hasModule(sport, "skills") ? loadSkills(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] }),
+    hasModule(sport, "swim") ? loadSwimTimes(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] as SwimTime[] }),
+    hasModule(sport, "grades") ? loadGrades(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] as Grade[] }),
+    hasModule(sport, "skills") ? loadSkills(supabase, [user.id]) : Promise.resolve({ ready: false, rows: [] as SkillRating[] }),
   ]);
   return (
     <div className="grid gap-6">

@@ -28,7 +28,6 @@ type Group = { id: string; name: string; color: string };
 const when = (iso: string) =>
   new Date(iso).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const hhmm = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("pl-PL", { timeZone: "Europe/Warsaw", hour: "2-digit", minute: "2-digit" }) : "");
-const dateOf = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Warsaw" });
 
 function matchName(m: ClubMatch, club: string) {
   if (m.kind === "tournament" || !m.opponent) return m.title ?? "Turniej";

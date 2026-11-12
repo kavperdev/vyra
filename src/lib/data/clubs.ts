@@ -10,6 +10,8 @@ export interface SportClub {
   created_at: string;
   /** Missing before the multi-sport migration: treated as athletics. */
   sport?: string | null;
+  /** Martial arts: minimum months between grade exams (sport-modules migration). */
+  grade_min_months?: number | null;
 }
 
 export interface ClubMember {

@@ -8,7 +8,7 @@ import { ReportTab } from "@/components/club/report";
 import { MatchesTab } from "@/components/club/matches";
 import { GradesTab, SkillsCard, SwimTab } from "@/components/club/sport-records";
 import { modulesFor } from "@/lib/clubs/sports";
-import { loadAthleteBasics, loadGrades, loadMatches, loadSkills, loadSwimStandards, loadSwimTimes, loadWeights } from "@/lib/data/club-sport";
+import { loadAthleteBasics, loadGrades, loadMatches, loadSkills, loadSwimStandards, loadSwimTimes, loadWeights, type Weight } from "@/lib/data/club-sport";
 import { loadFitness, loadGrantReport } from "@/lib/data/club-reports";
 import { requireRole } from "@/lib/auth";
 import { attendanceForDay, getMyClub, listClubMembers, listClubs, type SportClub } from "@/lib/data/clubs";
@@ -171,7 +171,7 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
         ? await (async () => {
             const [{ ready, matches, callups }, weights] = await Promise.all([
               loadMatches(supabase, picked.id),
-              mods.includes("grades") ? loadWeights(supabase, ws.athletes.map((a) => a.id)) : Promise.resolve({ ready: true, rows: [] }),
+              mods.includes("grades") ? loadWeights(supabase, ws.athletes.map((a) => a.id)) : Promise.resolve({ ready: true, rows: [] as Weight[] }),
             ]);
             const tournaments = tab === "turnieje";
             return (
@@ -217,7 +217,7 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
                 ready={grades.ready}
                 clubId={picked.id}
                 today={today}
-                minMonths={Number((picked as { grade_min_months?: number }).grade_min_months ?? 6)}
+                minMonths={Number(picked.grade_min_months ?? 6)}
                 groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
                 athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
                 grades={grades.rows}
