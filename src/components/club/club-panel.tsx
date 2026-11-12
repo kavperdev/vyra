@@ -241,7 +241,7 @@ function GroupCard({ ws, groupId }: { ws: ClubWorkspace; groupId: string }) {
             </Select>
             <Input type="time" aria-label={tl("Od", "From")} value={slot.start_time} onChange={(e) => setSlot({ ...slot, start_time: e.target.value })} />
             <Input type="time" aria-label={tl("Do", "To")} value={slot.end_time} onChange={(e) => setSlot({ ...slot, end_time: e.target.value })} />
-            <Input aria-label={tl("Miejsce", "Place")} placeholder={tl("Miejsce, np. stadion MOSiR", "Place")} value={slot.place} onChange={(e) => setSlot({ ...slot, place: e.target.value })} />
+            <Input aria-label={tl("Miejsce", "Place")} placeholder={tl("Miejsce, np. hala MOSiR, basen, boisko", "Place")} value={slot.place} onChange={(e) => setSlot({ ...slot, place: e.target.value })} />
             <Button type="submit" variant="outline" disabled={pending}>
               <Plus className="size-4" /> {tl("Termin", "Time")}
             </Button>

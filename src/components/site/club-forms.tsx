@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { ArrowRight, Bell, CalendarPlus, Check, Copy, MessageCircle, Send, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
+import { SPORTS } from "@/lib/clubs/fitness";
 import { submitApplication } from "@/lib/actions/applications";
 import { signUpRunClub, subscribeRunClub } from "@/lib/actions/club";
 import { tl } from "@/lib/i18n/runtime";
@@ -280,8 +281,8 @@ const CLUB_SIZES = ["do 25", "26–80", "81–200", "ponad 200"];
 const CLUB_PACKAGES = ["Sekcja", "Klub", "Klub+", "Nie wiem jeszcze"];
 
 /** "Chcę pokaz": a club asks for a demo of the club platform. */
-export function ClubDemoForm({ defaultPackage = "" }: { defaultPackage?: string }) {
-  const [v, setV] = useState({ full_name: "", email: "", phone: "", goal: "", city: "", athletes: "", package: defaultPackage, message: "", consent: false, website: "" });
+export function ClubDemoForm({ defaultPackage = "", defaultSport = "" }: { defaultPackage?: string; defaultSport?: string }) {
+  const [v, setV] = useState({ full_name: "", email: "", phone: "", goal: "", city: "", sport: defaultSport, athletes: "", package: defaultPackage, message: "", consent: false, website: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -324,6 +325,16 @@ export function ClubDemoForm({ defaultPackage = "" }: { defaultPackage?: string 
         </Field>
         <Field label={tl("Miejscowość", "Town")} htmlFor="k-city" hint={tl("Opcjonalnie", "Optional")} error={err("city")}>
           <Input id="k-city" autoComplete="address-level2" value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} />
+        </Field>
+        <Field label={tl("Dyscyplina", "Sport")} htmlFor="k-sport" className="sm:col-span-2">
+          <Select id="k-sport" value={v.sport} onChange={(e) => setV({ ...v, sport: e.target.value })}>
+            <option value="">{tl("Wybierz…", "Choose…")}</option>
+            {SPORTS.map((sp) => (
+              <option key={sp.key} value={sp.name}>
+                {sp.name}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label={tl("Imię i nazwisko", "Full name")} htmlFor="k-name" error={err("full_name")}>
           <Input id="k-name" autoComplete="name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} />

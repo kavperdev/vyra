@@ -17,6 +17,11 @@ const STATIC: { path: string; priority: number; changeFrequency: MetadataRoute.S
   { path: "/klub", priority: 0.8, changeFrequency: "monthly" },
   { path: "/team", priority: 0.7, changeFrequency: "monthly" },
   { path: "/kluby", priority: 0.8, changeFrequency: "monthly" },
+  ...["lekkoatletyka", "pilka-nozna", "plywanie", "sztuki-walki", "siatkowka", "koszykowka", "pilka-reczna", "tenis", "gimnastyka"].map((s) => ({
+    path: `/kluby/${s}`,
+    priority: 0.7,
+    changeFrequency: "monthly" as const,
+  })),
   { path: "/metoda", priority: 0.8, changeFrequency: "monthly" },
   { path: "/pobierz", priority: 0.6, changeFrequency: "monthly" },
   { path: "/dla-firm", priority: 0.7, changeFrequency: "monthly" },

@@ -12,6 +12,7 @@ import { Field, Input, Select } from "@/components/ui/form-controls";
 import { PhotoUpload } from "@/components/content/photo-upload";
 import { createManagedAthlete, createSportClub, inviteClubStaff, setAttendance, updateSportClub } from "@/lib/actions/clubs";
 import type { AttendanceRow, ClubMember, SportClub } from "@/lib/data/clubs";
+import { SPORTS, sportOf } from "@/lib/clubs/fitness";
 import { cn } from "@/lib/utils";
 import { tl } from "@/lib/i18n/runtime";
 
@@ -32,7 +33,9 @@ export function ClubBadge({ club, size = 56 }: { club: Pick<SportClub, "name" | 
   );
 }
 
-function ClubForm({ initial, onSave, submitLabel, canUploadLogo }: { initial: { name: string; city: string; logo_url: string }; onSave: (v: { name: string; city: string; logo_url: string }) => Promise<boolean>; submitLabel: string; canUploadLogo: boolean }) {
+type ClubValues = { name: string; city: string; logo_url: string; sport?: string };
+
+function ClubForm({ initial, onSave, submitLabel, canUploadLogo }: { initial: ClubValues; onSave: (v: ClubValues) => Promise<boolean>; submitLabel: string; canUploadLogo: boolean }) {
   const [v, setV] = useState(initial);
   const [pending, start] = useTransition();
   return (
@@ -41,7 +44,7 @@ function ClubForm({ initial, onSave, submitLabel, canUploadLogo }: { initial: { 
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          if (await onSave(v)) setV(initial.name ? v : { name: "", city: "", logo_url: "" });
+          if (await onSave(v)) setV(initial.name ? v : { ...initial, name: "", city: "", logo_url: "" });
         });
       }}
     >
@@ -52,6 +55,17 @@ function ClubForm({ initial, onSave, submitLabel, canUploadLogo }: { initial: { 
         <Field label={tl("Miejscowość", "Town")} htmlFor="club-city">
           <Input id="club-city" value={v.city} onChange={(e) => setV({ ...v, city: e.target.value })} maxLength={80} />
         </Field>
+        {v.sport !== undefined ? (
+          <Field label={tl("Dyscyplina", "Sport")} htmlFor="club-sport" hint={tl("Od niej zależą testy w karcie rozwoju zawodnika.", "It sets the tests in the athlete development card.")}>
+            <Select id="club-sport" value={v.sport} onChange={(e) => setV({ ...v, sport: e.target.value })}>
+              {SPORTS.map((sp) => (
+                <option key={sp.key} value={sp.key}>
+                  {sp.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
       </div>
       {canUploadLogo ? (
         <Field label={tl("Logo", "Logo")} htmlFor="club-logo">
@@ -77,7 +91,7 @@ export function ClubHeaderCard({ club, founder }: { club: SportClub; founder: bo
           <div className="grid min-w-0 flex-1">
             <p className="eyebrow text-[11px]">{tl("Klub na platformie VYRA", "Club on the VYRA platform")}</p>
             <p className="truncate text-xl font-semibold">{club.name}</p>
-            {club.city ? <p className="text-sm text-muted">{club.city}</p> : null}
+            <p className="text-sm text-muted">{[club.city, club.sport ? sportOf(club.sport).name : null].filter(Boolean).join(" · ")}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setEditing(!editing)}>
             {editing ? tl("Zamknij", "Close") : tl("Edytuj dane klubu", "Edit club details")}
@@ -85,7 +99,7 @@ export function ClubHeaderCard({ club, founder }: { club: SportClub; founder: bo
         </div>
         {editing ? (
           <ClubForm
-            initial={{ name: club.name, city: club.city ?? "", logo_url: club.logo_url ?? "" }}
+            initial={{ name: club.name, city: club.city ?? "", logo_url: club.logo_url ?? "", ...(club.sport !== undefined ? { sport: club.sport ?? "athletics" } : {}) }}
             canUploadLogo={founder}
             submitLabel={tl("Zapisz", "Save")}
             onSave={async (v) => {
@@ -176,7 +190,7 @@ export function ClubsAdmin({ clubs, members, siteUrl }: { clubs: SportClub[]; me
         </CardHeader>
         <CardContent>
           <ClubForm
-            initial={{ name: "", city: "", logo_url: "" }}
+            initial={{ name: "", city: "", logo_url: "", sport: "athletics" }}
             canUploadLogo
             submitLabel={tl("Utwórz klub", "Create club")}
             onSave={async (v) => {

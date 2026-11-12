@@ -68,6 +68,7 @@ function schemas(t: T) {
     city: optional(80),
     athletes: z.string().trim().max(20),
     package: z.string().trim().max(40),
+    sport: z.string().trim().max(40).optional(),
     message: optional(2000),
     consent,
     website: z.string().max(0).optional(),
@@ -88,12 +89,12 @@ export async function submitApplication(input: ApplicationInput): Promise<Action
   if (website) return { ok: true };
   let row: Record<string, unknown> = data;
   if (data.kind === "club") {
-    const { athletes, city, package: pkg, goal, message, ...rest } = data;
+    const { athletes, city, package: pkg, goal, message, sport, ...rest } = data;
     row = {
       ...rest,
       kind: "business",
       package: `VYRA dla klubów${pkg ? `: ${pkg}` : ""}`.slice(0, 80),
-      goal: `Klub: ${goal}${city ? `, ${city}` : ""}`,
+      goal: `Klub: ${goal}${city ? `, ${city}` : ""}${sport ? ` · ${sport}` : ""}`,
       message: [`Zawodników: ${athletes || "?"}`, message].filter(Boolean).join("\n"),
     };
   }

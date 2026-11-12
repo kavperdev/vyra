@@ -129,6 +129,7 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
                 groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
                 athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
                 results={fit.results}
+                sport={picked.sport ?? null}
               />
             );
           })()

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/form-controls";
 import { deleteFitnessResult, saveFitnessResults, sendDevelopmentReports } from "@/lib/actions/club-development";
-import { FITNESS_TESTS, fitnessTest, formatFitnessValue, improvementPct, parseFitnessValue, type FitnessResult } from "@/lib/clubs/fitness";
+import { FITNESS_TESTS, fitnessTest, testsForSport, formatFitnessValue, improvementPct, parseFitnessValue, type FitnessResult } from "@/lib/clubs/fitness";
 import { cn } from "@/lib/utils";
 
 const fmt = (iso: string) => iso.split("-").reverse().join(".");
@@ -21,13 +21,20 @@ interface Props {
   groups: { id: string; name: string; color: string }[];
   athletes: { id: string; full_name: string; group_ids: string[] }[];
   results: FitnessResult[];
+  sport?: string | null;
 }
 
 /** Coach side of the athlete development card: enter a test for a group, see progress and rankings. */
-export function DevelopmentTab({ clubId, today, ready, mailReady, groups, athletes, results }: Props) {
+export function DevelopmentTab({ clubId, today, ready, mailReady, groups, athletes, results, sport = null }: Props) {
+  const tests = useMemo(() => {
+    // The club's own tests, plus any test already recorded (e.g. from before a change of sport).
+    const own = testsForSport(sport);
+    const extra = FITNESS_TESTS.filter((t) => !own.some((o) => o.key === t.key) && results.some((r) => r.test_key === t.key));
+    return [...own, ...extra];
+  }, [sport, results]);
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [testKey, setTestKey] = useState("sprint_60");
+  const [testKey, setTestKey] = useState(() => testsForSport(sport)[0]?.key ?? "sprint_30");
   const [date, setDate] = useState(today);
   const [groupId, setGroupId] = useState(groups[0]?.id ?? "");
   const [values, setValues] = useState<Record<string, string>>({});
@@ -76,7 +83,7 @@ export function DevelopmentTab({ clubId, today, ready, mailReady, groups, athlet
   const topMovers = useMemo(() => {
     const all: { name: string; test: string; change: number; value: string }[] = [];
     for (const a of roster) {
-      for (const t of FITNESS_TESTS) {
+      for (const t of tests) {
         const rs = results.filter((r) => r.athlete_id === a.id && r.test_key === t.key).sort((x, y) => x.tested_on.localeCompare(y.tested_on));
         if (rs.length < 2) continue;
         const ch = improvementPct(rs[rs.length - 2].value, rs[rs.length - 1].value, t);
@@ -84,7 +91,7 @@ export function DevelopmentTab({ clubId, today, ready, mailReady, groups, athlet
       }
     }
     return all.sort((x, y) => y.change - x.change).slice(0, 3);
-  }, [roster, results]);
+  }, [roster, results, tests]);
 
   if (!ready)
     return (
@@ -103,7 +110,7 @@ export function DevelopmentTab({ clubId, today, ready, mailReady, groups, athlet
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Test" htmlFor="ft-test">
               <Select id="ft-test" value={testKey} onChange={(e) => setTestKey(e.target.value)}>
-                {FITNESS_TESTS.map((t) => (
+                {tests.map((t) => (
                   <option key={t.key} value={t.key}>
                     {t.name}
                   </option>

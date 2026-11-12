@@ -8,6 +8,8 @@ export interface SportClub {
   city: string | null;
   logo_url: string | null;
   created_at: string;
+  /** Missing before the multi-sport migration: treated as athletics. */
+  sport?: string | null;
 }
 
 export interface ClubMember {
@@ -27,13 +29,13 @@ export async function getMyClub(supabase: ServerSupabase, userId: string): Promi
   const { data: me, error } = await supabase.from("profiles").select("club_id").eq("id", userId).maybeSingle();
   const clubId = !error && me ? (me as { club_id: string | null }).club_id : null;
   if (!clubId) return null;
-  const { data } = await supabase.from("sport_clubs").select("id, name, city, logo_url, created_at").eq("id", clubId).maybeSingle();
+  const { data } = await supabase.from("sport_clubs").select("*").eq("id", clubId).maybeSingle();
   return (data as SportClub | null) ?? null;
 }
 
 /** All clubs (founders), or null when the migration hasn't been run. */
 export async function listClubs(supabase: ServerSupabase): Promise<SportClub[] | null> {
-  const { data, error } = await supabase.from("sport_clubs").select("id, name, city, logo_url, created_at").order("name");
+  const { data, error } = await supabase.from("sport_clubs").select("*").order("name");
   if (error) return null;
   return (data ?? []) as SportClub[];
 }

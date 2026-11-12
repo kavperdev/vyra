@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { ClubDemoForm, PickClubPackage } from "@/components/site/club-forms";
+import { SPORTS } from "@/lib/clubs/fitness";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
 import { cn } from "@/lib/utils";
@@ -12,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("Dla klubów", "For clubs"),
     description: t(
-      "VYRA dla klubów lekkoatletycznych: grupy i harmonogram, plany treningowe, obecność, składki, strona rodzica i dokumenty w jednej aplikacji. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
-      "VYRA for athletics clubs: groups and schedule, training plans, attendance, fees, a parent page and documents in one app. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
+      "VYRA dla klubów sportowych: lekkoatletyka, piłka nożna, pływanie, sztuki walki, siatkówka i inne. Grupy i harmonogram, plany treningowe, obecność, składki, strona rodzica i dokumenty w jednej aplikacji. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
+      "VYRA for sports clubs of every discipline: groups and schedule, training plans, attendance, fees, a parent page and documents in one app. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
     ),
     robots: { index: true, follow: true },
     alternates: { canonical: "/kluby" },
@@ -37,8 +39,8 @@ const features = (t: T) => [
     badge: t("Tego nie ma nikt inny", "Only in VYRA"),
     title: t("Karta rozwoju zawodnika", "Athlete development card"),
     body: t(
-      "Co kwartał test sprawności: 60 m, skok w dal z miejsca, 600 m i inne. Trener wpisuje wyniki całej grupy w minutę i widzi ranking oraz postęp każdego dziecka. Rodzic co miesiąc dostaje podsumowanie: frekwencję i wyniki. Widzi, za co płaci składkę.",
-      "A fitness test every quarter: 60 m, standing long jump, 600 m and more. The coach enters the whole group in a minute and sees the ranking and each child’s progress. Parents get a monthly summary of attendance and results, so they see what the fee pays for.",
+      "Co kwartał test sprawności dopasowany do dyscypliny: 60 m i skok w dal w lekkoatletyce, sprint 10 m i żonglerka w piłce, 50 m kraulem w pływaniu. Trener wpisuje wyniki całej grupy w minutę i widzi ranking oraz postęp każdego dziecka. Rodzic co miesiąc dostaje podsumowanie: frekwencję i wyniki. Widzi, za co płaci składkę.",
+      "A fitness test every quarter, matched to the sport: 60 m and long jump in athletics, a 10 m sprint and juggling in football, 50 m freestyle in swimming. The coach enters the whole group in a minute and sees the ranking and each child’s progress. Parents get a monthly summary of attendance and results, so they see what the fee pays for.",
     ),
   },
   {
@@ -255,8 +257,8 @@ export default async function ClubsPage() {
         eyebrow={t("VYRA dla klubów", "VYRA for clubs")}
         title={t("Cały klub w jednej aplikacji", "Your whole club in one app")}
         lead={t(
-          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu, a do tego sprawozdanie z dotacji jednym kliknięciem i karta rozwoju każdego zawodnika. Dla klubów i sekcji lekkoatletycznych. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
-          "Schedule, training plans, attendance, fees, parents and medical checks in one place, plus a one-click grant report and a development card for every athlete. For athletics clubs and sections. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
+          "Harmonogram, plany treningowe, obecność, składki, rodzice i badania w jednym miejscu, a do tego sprawozdanie z dotacji jednym kliknięciem i karta rozwoju każdego zawodnika. Dla klubów i sekcji każdej dyscypliny: od lekkoatletyki, przez piłkę i pływanie, po sztuki walki. Abonament od 79 zł miesięcznie albo licencja bezterminowa bez abonamentu. Pierwszy miesiąc za darmo.",
+          "Schedule, training plans, attendance, fees, parents and medical checks in one place, plus a one-click grant report and a development card for every athlete. For clubs and sections of every sport. From 79 zł a month, or a lifetime licence with no subscription. First month free.",
         )}
       >
         <div className="flex flex-wrap gap-3">
@@ -284,6 +286,19 @@ export default async function ClubsPage() {
           >
             <source src="/site/kluby/vyra-dla-klubow-v4.mp4" type="video/mp4" />
           </video>
+        </Reveal>
+      </section>
+
+      <section className={`${wrap} pb-20`}>
+        <Reveal className="grid gap-5">
+          <Eyebrow>{t("Dla każdej dyscypliny", "For every sport")}</Eyebrow>
+          <div className="flex flex-wrap gap-2">
+            {SPORTS.filter((sp) => sp.key !== "other").map((sp) => (
+              <Link key={sp.key} href={`/kluby/${sp.slug}`} className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 transition-colors hover:border-white/50 hover:text-white">
+                {sp.name}
+              </Link>
+            ))}
+          </div>
         </Reveal>
       </section>
 

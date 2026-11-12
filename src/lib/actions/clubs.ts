@@ -11,6 +11,7 @@ const clubSchema = z.object({
   name: z.string().trim().min(2, "Podaj nazwę klubu").max(120),
   city: z.string().trim().max(80),
   logo_url: z.string().trim().max(500),
+  sport: z.enum(["athletics", "football", "swimming", "martial_arts", "volleyball", "basketball", "handball", "tennis", "gymnastics", "other"]).optional(),
 });
 
 function refresh() {
@@ -19,14 +20,14 @@ function refresh() {
 }
 
 /** Founders create a club space on the platform. */
-export async function createSportClub(input: { name: string; city: string; logo_url: string }): Promise<ActionResult<{ id: string }>> {
+export async function createSportClub(input: { name: string; city: string; logo_url: string; sport?: string }): Promise<ActionResult<{ id: string }>> {
   return withUser("coach", async ({ supabase, user }) => {
     if (user.profile.staff_role !== "founder") return { ok: false, error: "Kluby tworzy tylko założyciel VYRA." };
     const parsed = clubSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const { data, error } = await supabase
       .from("sport_clubs")
-      .insert({ name: parsed.data.name, city: toText(parsed.data.city), logo_url: toText(parsed.data.logo_url) })
+      .insert({ name: parsed.data.name, city: toText(parsed.data.city), logo_url: toText(parsed.data.logo_url), ...(parsed.data.sport && parsed.data.sport !== "athletics" ? { sport: parsed.data.sport } : {}) })
       .select("id")
       .single();
     if (error) return dbError(error);
@@ -36,13 +37,13 @@ export async function createSportClub(input: { name: string; city: string; logo_
 }
 
 /** Founders, or the club's own staff, change its name, city and logo. */
-export async function updateSportClub(id: string, input: { name: string; city: string; logo_url: string }): Promise<ActionResult> {
+export async function updateSportClub(id: string, input: { name: string; city: string; logo_url: string; sport?: string }): Promise<ActionResult> {
   return withUser("coach", async ({ supabase }) => {
     const parsed = clubSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const { data, error } = await supabase
       .from("sport_clubs")
-      .update({ name: parsed.data.name, city: toText(parsed.data.city), logo_url: toText(parsed.data.logo_url) })
+      .update({ name: parsed.data.name, city: toText(parsed.data.city), logo_url: toText(parsed.data.logo_url), ...(parsed.data.sport ? { sport: parsed.data.sport } : {}) })
       .eq("id", id)
       .select("id");
     if (error) return dbError(error);
