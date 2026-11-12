@@ -282,7 +282,7 @@ export default async function ClubsPage() {
             poster="/site/kluby/film-poster.jpg"
             aria-label={t("Film: VYRA dla klubów", "Video: VYRA for clubs")}
           >
-            <source src="/site/kluby/vyra-dla-klubow-v3.mp4" type="video/mp4" />
+            <source src="/site/kluby/vyra-dla-klubow-v4.mp4" type="video/mp4" />
           </video>
         </Reveal>
       </section>
