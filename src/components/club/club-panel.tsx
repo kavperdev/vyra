@@ -34,6 +34,8 @@ import type { ActionResult } from "@/lib/types";
 import type { ClubWorkspace } from "@/lib/data/club-management";
 import { WEEKDAYS, WEEKDAYS_SHORT, zl, type Occurrence } from "@/lib/clubs/schedule";
 import { cn } from "@/lib/utils";
+import { FitnessCard } from "@/components/club/fitness-card";
+import type { FitnessResult } from "@/lib/clubs/fitness";
 import { tl } from "@/lib/i18n/runtime";
 
 const COLORS = ["#f03339", "#6b9bff", "#3fcf8e", "#f5a524", "#c084fc", "#2dd4bf"];
@@ -672,7 +674,7 @@ export function FeesTab({ ws, clubId, month, today }: { ws: ClubWorkspace; clubI
 }
 
 // ======================================================================== people (guardians, documents)
-export function PeopleTab({ ws, siteUrl, today }: { ws: ClubWorkspace; siteUrl: string; today: string }) {
+export function PeopleTab({ ws, siteUrl, today, fitness = [] }: { ws: ClubWorkspace; siteUrl: string; today: string; fitness?: FitnessResult[] }) {
   const [open, setOpen] = useState<string | null>(null);
   const groupsOf = (ids: string[]) => ws.groups.filter((g) => ids.includes(g.id));
   return (
@@ -707,7 +709,7 @@ export function PeopleTab({ ws, siteUrl, today }: { ws: ClubWorkspace; siteUrl: 
                       {gs.length} {tl("opiek.", "guard.")}
                     </span>
                   </button>
-                  {open === a.id ? <AthleteDetails ws={ws} athleteId={a.id} siteUrl={siteUrl} /> : null}
+                  {open === a.id ? <AthleteDetails ws={ws} athleteId={a.id} siteUrl={siteUrl} fitness={fitness} /> : null}
                 </li>
               );
             })}
@@ -720,7 +722,7 @@ export function PeopleTab({ ws, siteUrl, today }: { ws: ClubWorkspace; siteUrl: 
   );
 }
 
-function AthleteDetails({ ws, athleteId, siteUrl }: { ws: ClubWorkspace; athleteId: string; siteUrl: string }) {
+function AthleteDetails({ ws, athleteId, siteUrl, fitness = [] }: { ws: ClubWorkspace; athleteId: string; siteUrl: string; fitness?: FitnessResult[] }) {
   const { pending, run } = useRun();
   const [g, setG] = useState({ full_name: "", email: "", phone: "", relation: "" });
   const [d, setD] = useState({ kind: "medical" as "medical" | "rodo" | "photo_consent" | "other", title: "", signed_on: "", valid_until: "", note: "" });
@@ -736,6 +738,10 @@ function AthleteDetails({ ws, athleteId, siteUrl }: { ws: ClubWorkspace; athlete
   };
   return (
     <div className="grid gap-5 border-t border-border p-3 md:grid-cols-2">
+      <section className="grid content-start gap-2 md:col-span-2">
+        <h3 className="eyebrow text-[11px]">{tl("Karta rozwoju", "Development card")}</h3>
+        <FitnessCard results={fitness.filter((r) => r.athlete_id === athleteId)} emptyText={tl("Brak testów sprawności. Wpisz je w zakładce Rozwój zawodników.", "No fitness tests yet.")} />
+      </section>
       <section className="grid content-start gap-2">
         <h3 className="eyebrow text-[11px]">{tl("Rodzice i opiekunowie", "Guardians")}</h3>
         {gs.map((x) => (

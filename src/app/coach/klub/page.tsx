@@ -3,6 +3,9 @@ import Link from "next/link";
 import { EmptyState, LinkTabs, PageHeader } from "@/components/ui/misc";
 import { AttendanceBoard, ClubBadge, ClubHeaderCard, ClubsAdmin, ManagedAthleteForm } from "@/components/coach/club-space";
 import { AnnouncementsTab, ClubOverview, FeesTab, GroupsTab, PeopleTab } from "@/components/club/club-panel";
+import { DevelopmentTab } from "@/components/club/development";
+import { ReportTab } from "@/components/club/report";
+import { loadFitness, loadGrantReport } from "@/lib/data/club-reports";
 import { requireRole } from "@/lib/auth";
 import { attendanceForDay, getMyClub, listClubMembers, listClubs, type SportClub } from "@/lib/data/clubs";
 import { loadClubWorkspace } from "@/lib/data/club-management";
@@ -20,9 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("Klub", "Club") };
 }
 
-const TABS = ["przeglad", "grupy", "skladki", "zawodnicy", "komunikaty"] as const;
+const TABS = ["przeglad", "grupy", "skladki", "zawodnicy", "rozwoj", "komunikaty", "raporty"] as const;
 
-export default async function ClubPage({ searchParams }: { searchParams: Promise<{ date?: string; tab?: string; club?: string; month?: string }> }) {
+export default async function ClubPage({ searchParams }: { searchParams: Promise<{ date?: string; tab?: string; club?: string; month?: string; from?: string; to?: string; group?: string }> }) {
   await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
@@ -85,7 +88,9 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
     { key: "grupy", label: tl("Grupy i harmonogram", "Groups & schedule") },
     { key: "skladki", label: tl("Składki", "Fees") },
     { key: "zawodnicy", label: tl("Zawodnicy i rodzice", "Athletes & guardians") },
+    { key: "rozwoj", label: tl("Rozwój zawodników", "Development") },
     { key: "komunikaty", label: tl("Komunikaty", "Notices") },
+    { key: "raporty", label: tl("Raporty", "Reports") },
   ].map((t) => ({ ...t, href: `${base}tab=${t.key}` }));
   const manager = canPlan(user.profile.staff_role);
 
@@ -111,7 +116,32 @@ export default async function ClubPage({ searchParams }: { searchParams: Promise
       ) : null}
       {tab === "grupy" && ws.ready ? <GroupsTab ws={ws} clubId={picked.id} occurrences={occurrences} today={today} /> : null}
       {tab === "skladki" && ws.ready ? <FeesTab ws={ws} clubId={picked.id} month={month} today={today} /> : null}
-      {tab === "zawodnicy" && ws.ready ? <PeopleTab ws={ws} siteUrl={siteUrl()} today={today} /> : null}
+      {tab === "zawodnicy" && ws.ready ? <PeopleTab ws={ws} siteUrl={siteUrl()} today={today} fitness={(await loadFitness(supabase, ws.athletes.map((a) => a.id))).results} /> : null}
+      {tab === "rozwoj" && ws.ready
+        ? await (async () => {
+            const fit = await loadFitness(supabase, ws.athletes.map((a) => a.id));
+            return (
+              <DevelopmentTab
+                clubId={picked.id}
+                today={today}
+                ready={fit.ready}
+                mailReady={mailConfigured()}
+                groups={ws.groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
+                athletes={ws.athletes.map((a) => ({ id: a.id, full_name: a.full_name, group_ids: a.group_ids }))}
+                results={fit.results}
+              />
+            );
+          })()
+        : null}
+      {tab === "raporty" && ws.ready
+        ? await (async () => {
+            const rFrom = isISODate(sp.from) ? sp.from! : `${today.slice(0, 7)}-01`;
+            const rTo = isISODate(sp.to) ? sp.to! : today;
+            const rGroup = sp.group && ws.groups.some((g) => g.id === sp.group) ? sp.group : "";
+            const report = await loadGrantReport(supabase, ws, picked.id, rFrom, rTo, rGroup || null);
+            return <ReportTab report={report} groups={ws.groups.map((g) => ({ id: g.id, name: g.name }))} clubParam={founder && sp.club ? picked.id : null} query={{ from: rFrom, to: rTo, group: rGroup }} />;
+          })()
+        : null}
       {tab === "komunikaty" && ws.ready ? <AnnouncementsTab ws={ws} clubId={picked.id} mailReady={mailConfigured()} /> : null}
     </div>
   );

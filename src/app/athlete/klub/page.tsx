@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { ClubBadge } from "@/components/coach/club-space";
 import { MemberClubView } from "@/components/club/member-view";
+import { FitnessCard } from "@/components/club/fitness-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { loadFitness, recentAttendance } from "@/lib/data/club-reports";
 import { requireRole } from "@/lib/auth";
 import { getMyClub } from "@/lib/data/clubs";
 import { loadMemberClubView } from "@/lib/data/club-management";
@@ -34,6 +37,7 @@ export default async function AthleteClubPage() {
   const to = addDaysISO(today, 21);
   const v = await loadMemberClubView(supabase, user.id, club.id, from, to);
   const occurrences = expandSchedule(v.slots, v.events, (id) => v.groups.find((g) => g.id === id)?.name ?? "", from, to);
+  const [fit, att] = await Promise.all([loadFitness(supabase, [user.id]), recentAttendance(supabase, user.id, today, addDaysISO(today, -30))]);
   return (
     <div className="grid gap-6">
       <div className="flex items-center gap-4">
@@ -55,6 +59,16 @@ export default async function AthleteClubPage() {
           bank: { account: v.bank.bank_account, recipient: v.bank.bank_recipient ?? club.name },
         }}
       />
+      {fit.ready ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tl("Moja karta rozwoju", "My development card")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FitnessCard results={fit.results} attendance={att} />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

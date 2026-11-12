@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ClubBadge } from "@/components/coach/club-space";
 import { MemberClubView } from "@/components/club/member-view";
+import { FitnessCard } from "@/components/club/fitness-card";
 import { expandSchedule, type ClubEvent, type ScheduleSlot } from "@/lib/clubs/schedule";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,8 @@ type FamilyView = {
   charges: { title: string; amount: number | string; due_date: string; status: string; code: string }[];
   sessions: { title: string; date: string; time: string | null; status: string }[];
   documents: { kind: string; valid_until: string | null }[];
+  fitness?: { test: string; value: number | string; tested_on: string }[];
+  attendance?: { present: number; marked: number } | null;
 };
 
 /** Read-only page for a parent: opened by the secret link the coach shares, no login. */
@@ -62,6 +65,15 @@ export default async function FamilyPage({ params }: { params: Promise<{ token: 
           bank: { account: v.club?.bank_account ?? null, recipient: v.club?.bank_recipient ?? null },
         }}
       />
+      {v.fitness ? (
+        <section className="grid gap-3 rounded-xl border border-border bg-surface p-5">
+          <h2 className="eyebrow text-[11px]">Rozwój dziecka</h2>
+          <FitnessCard
+            results={v.fitness.map((f) => ({ athlete_id: v.athlete.id, test_key: f.test, value: Number(f.value), tested_on: f.tested_on }))}
+            attendance={v.attendance ?? null}
+          />
+        </section>
+      ) : null}
       {v.sessions.length ? (
         <section className="grid gap-2 rounded-xl border border-border bg-surface p-5">
           <h2 className="eyebrow text-[11px]">Plan treningowy na najbliższe 2 tygodnie</h2>
