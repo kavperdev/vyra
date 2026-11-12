@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/form-controls";
 import { EmptyState } from "@/components/ui/misc";
-import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus, setSelfPlanning } from "@/lib/actions/athletes";
+import { addCoachNote, deleteCoachNote, saveAthleteProfile, setAthleteStatus, setMethodAccess, setSelfPlanning } from "@/lib/actions/athletes";
 import { deletePlan, savePlan } from "@/lib/actions/sessions";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { STAFF_ROLE_LABEL, type AthleteProfile, type CoachNote, type TrainingPlan } from "@/lib/types";
@@ -274,9 +274,10 @@ export function AthleteProfileForm({ athleteId, profile, title = tl("Dane zawodn
 
 // ------------------------------------------------------------------ account & export
 
-export function AthleteAccountCard({ athleteId, status, from, to, selfPlanning = null }: { athleteId: string; status: "active" | "archived"; from: string; to: string; selfPlanning?: boolean | null }) {
+export function AthleteAccountCard({ athleteId, status, from, to, selfPlanning = null, methodAccess = null }: { athleteId: string; status: "active" | "archived"; from: string; to: string; selfPlanning?: boolean | null; methodAccess?: boolean | null }) {
   const [pending, start] = useTransition();
   const [self, setSelf] = useState(selfPlanning);
+  const [method, setMethod] = useState(methodAccess);
   const [range, setRange] = useState({ from, to });
   const qs = `from=${range.from}&to=${range.to}`;
   return (
@@ -332,6 +333,31 @@ export function AthleteAccountCard({ athleteId, status, from, to, selfPlanning =
               }
             >
               {self ? tl("Wyłącz samodzielne planowanie", "Turn off self-planning") : tl("Pozwól planować samemu", "Allow self-planning")}
+            </Button>
+          </div>
+        ) : null}
+        {method !== null ? (
+          <div className="grid gap-2 border-t border-border pt-4">
+            <p className="flex items-center gap-2 text-sm font-medium">
+              VYRA Method
+              <span className={method ? "text-[12px] text-done" : "text-[12px] text-muted"}>{method ? "darmowy dostęp" : "bez darmowego dostępu"}</span>
+            </p>
+            <p className="text-sm text-muted">Plan z metody VYRA, który układa się sam z danych zawodnika. Darmowy dostęp dla znajomych i testerów; kupujący online mają go automatycznie.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const res = await setMethodAccess(athleteId, !method);
+                  if (!res.ok) return void toast.error(res.error);
+                  setMethod(!method);
+                  toast.success(res.message);
+                })
+              }
+            >
+              {method ? "Odbierz darmowy dostęp" : "Daj darmowy dostęp"}
             </Button>
           </div>
         ) : null}

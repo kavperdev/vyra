@@ -246,3 +246,62 @@ export function CoachingInquiryForm({ plans = [] }: { plans?: { value: string; l
     </form>
   );
 }
+
+/** VYRA Method waiting list (before payments open): name, e-mail and goal, saved as a request in the panel. */
+export function MethodWaitlistForm() {
+  const [v, setV] = useState({ full_name: "", email: "", goal: "", consent: false, website: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [pending, start] = useTransition();
+  const err = (k: string) => errors[k]?.[0];
+  if (done) return <Done title="Jesteś na liście VYRA Method" body="Napiszemy, gdy ruszy start. Osoby z listy dostaną pierwszy miesiąc taniej." />;
+  return (
+    <form
+      noValidate
+      className="relative grid gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setFormError(null);
+        start(async () => {
+          const res = await submitApplication({
+            kind: "coaching",
+            package: "VYRA Method: lista oczekujących",
+            full_name: v.full_name,
+            email: v.email,
+            goal: v.goal || "VYRA Method",
+            records: "",
+            message: "",
+            consent: v.consent as true,
+            website: v.website,
+          });
+          if (res.ok) return setDone(true);
+          setErrors(res.fieldErrors ?? {});
+          setFormError(res.fieldErrors ? null : res.error);
+        });
+      }}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Imię" htmlFor="mw-name" error={err("full_name")}>
+          <Input id="mw-name" autoComplete="given-name" value={v.full_name} onChange={(e) => setV({ ...v, full_name: e.target.value })} aria-invalid={!!err("full_name")} />
+        </Field>
+        <Field label="E-mail" htmlFor="mw-email" error={err("email")}>
+          <Input id="mw-email" type="email" autoComplete="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} aria-invalid={!!err("email")} />
+        </Field>
+      </div>
+      <Field label="Twój cel" htmlFor="mw-goal" hint="np. pierwsze 10 km, półmaraton poniżej 2 godzin" error={err("goal")}>
+        <Input id="mw-goal" value={v.goal} onChange={(e) => setV({ ...v, goal: e.target.value })} />
+      </Field>
+      <Honeypot value={v.website} onChange={(website) => setV({ ...v, website })} />
+      <Consent checked={v.consent} onChange={(consent) => setV({ ...v, consent })} error={err("consent")} />
+      {formError ? (
+        <p role="alert" className="text-sm text-problem">
+          {formError}
+        </p>
+      ) : null}
+      <Button type="submit" variant="accent" size="lg" disabled={pending} className="w-full sm:w-fit">
+        {pending ? "Zapisywanie…" : "Zapisz mnie na start"} <ArrowRight className="size-4" />
+      </Button>
+    </form>
+  );
+}

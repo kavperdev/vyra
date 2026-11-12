@@ -175,9 +175,9 @@ export default async function Home() {
         <ul className={`${wrap} grid grid-cols-2 gap-px py-0 md:grid-cols-4`}>
           {[
             [t("Wiedza", "Knowledge"), t("artykuły, plan i narzędzia za darmo", "articles, a plan and tools for free")],
-            [t("Wyzwania", "Challenges"), t("cała Polska, każdy klub", "all of Poland, every club")],
             [t("Run Club", "Run Club"), t("co tydzień, z trenerem", "every week, with a coach")],
-            [t("Prowadzenie", "Coaching"), t("plan i trener w aplikacji", "a plan and a coach in the app")],
+            ["VYRA Method", t("plan z Twoich danych, od 29 zł", "a plan from your data, from PLN 29")],
+            [t("Prowadzenie", "Coaching"), t("prawdziwy trener, nie automat", "a real coach, not a bot")],
           ].map(([a, b], i) => (
             <Reveal as="li" key={a} delay={i * 70} className="grid gap-1 py-6 pr-4 md:py-8">
               <span className="font-semibold text-white">{a}</span>
@@ -187,15 +187,15 @@ export default async function Home() {
         </ul>
       </section>
 
-      {/* 3. THREE WAYS IN: one idea, three depths. Every path is VYRA. */}
+      {/* 3. FOUR WAYS IN: one idea, four depths. Every path is VYRA. */}
       <section id="dolacz" className={`${wrap} scroll-mt-24 py-28 sm:py-36`}>
-        <SectionHead eyebrow={t("Dołącz do VYRA", "Join VYRA")} title={t("Jedna idea. Trzy drogi.", "One idea. Three ways in.")}>
+        <SectionHead eyebrow={t("Dołącz do VYRA", "Join VYRA")} title={t("Jedna idea. Cztery drogi.", "One idea. Four ways in.")}>
           {t(
-            "W VYRA jesteś, kiedy trenujesz z wiedzą. Możesz czytać i uczyć się, biegać z nami w wyzwaniach i na Run Clubie albo trenować z własnym trenerem. Każda droga to ta sama społeczność.",
-            "You’re part of VYRA when you train with know-how. Read and learn, run with us in challenges and at Run Club, or train with your own coach. Every path is the same community.",
+            "W VYRA jesteś, kiedy trenujesz z wiedzą. Czytaj i ucz się, biegaj z nami na Run Clubie, trenuj z planem VYRA Method albo z własnym trenerem. Za każdą drogą stoją prawdziwi trenerzy VYRA, nie automat z internetu.",
+            "You’re part of VYRA when you train with know-how. Read and learn, run with us at Run Club, train with a VYRA Method plan or with your own coach. Behind every path are real VYRA coaches, not an internet bot.",
           )}
         </SectionHead>
-        <div className="mt-16 grid gap-5 lg:grid-cols-3">
+        <div className="mt-16 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {[
             {
               href: "/wiedza",
@@ -212,17 +212,26 @@ export default async function Home() {
               tag: t("Za darmo · każdy klub", "Free · every club"),
               kicker: "02 · " + t("Razem", "Together"),
               title: t("Biegaj ze społecznością", "Run with the community"),
-              body: t("Wyzwania z rankingiem biegaczy i klubów z całej Polski, numer członka VYRA i co tydzień Run Club z trenerem na żywo.", "Challenges with runner and club rankings from all of Poland, a VYRA member number and a weekly live Run Club with a coach."),
+              body: t("Co tydzień Run Club z trenerem na żywo, wyzwania z rankingiem biegaczy i klubów z całej Polski i numer członka VYRA.", "A weekly live Run Club with a coach, challenges with runner and club rankings from all of Poland and a VYRA member number."),
               cta: t("Dołącz do wyzwania", "Join a challenge"),
+            },
+            {
+              href: "/metoda",
+              img: "/site/tone-sky.jpg",
+              tag: t("Od 29 zł · nowość", "From PLN 29 · new"),
+              kicker: "03 · VYRA Method",
+              title: t("Plan z Twoich danych", "A plan from your data"),
+              body: t("Metoda trenerów VYRA dopasowana do Twojego wieku, wagi, formy i czasu. Co tydzień zmienia się razem z Tobą.", "The VYRA coaches’ method fitted to your age, weight, form and time. It changes with you every week."),
+              cta: t("Poznaj VYRA Method", "Discover VYRA Method"),
               highlight: true,
             },
             {
               href: plans.length ? "/prowadzenie#pakiety" : "/prowadzenie",
               img: "/site/track.jpg",
               tag: minPrice != null ? t(`Od ${minPrice} zł`, `From PLN ${minPrice}`) : t("Prowadzenie", "Coaching"),
-              kicker: "03 · " + t("Osobiście", "One to one"),
-              title: t("Trenuj z własnym trenerem", "Train with your own coach"),
-              body: t("Plan pod Twój cel w aplikacji VYRA, analiza każdego treningu i stały kontakt z trenerem. Do tego obozy.", "A plan for your goal in the VYRA app, analysis of every session and ongoing contact with your coach. Plus camps."),
+              kicker: "04 · " + t("Osobiście", "One to one"),
+              title: t("Trenuj z prawdziwym trenerem", "Train with a real coach"),
+              body: t("Trener, który zna Cię z imienia, rozpisuje plan pod Twój cel, komentuje każdy trening i jest w stałym kontakcie. Do tego obozy.", "A coach who knows you by name writes your plan, comments on every session and stays in touch. Plus camps."),
               cta: t("Zobacz prowadzenie", "See coaching"),
             },
           ].map((c, i) => (
@@ -231,7 +240,7 @@ export default async function Home() {
                 href={c.href}
                 className={`group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border p-8 sm:aspect-[4/4.4] ${c.highlight ? "border-white/35" : "border-white/10"}`}
               >
-                <Image src={c.img} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
+                <Image src={c.img} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
                 <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/60 to-black/10" />
                 <span className={`mb-auto w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.highlight ? "bg-[var(--accent)] text-white" : "border border-white/25 text-white/80"}`}>
                   {c.tag}

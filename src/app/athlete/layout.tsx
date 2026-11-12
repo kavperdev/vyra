@@ -10,7 +10,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
   const user = await requireRole("athlete");
   const { t } = await getT();
   const supabase = await createClient();
-  const [unread, campCount, club] = await Promise.all([
+  const [unread, campCount, club, method] = await Promise.all([
     unreadCount(supabase),
     supabase
       .from("camp_participants")
@@ -19,12 +19,15 @@ export default async function AthleteLayout({ children }: { children: React.Reac
       .neq("status", "cancelled")
       .then((r) => r.count ?? 0),
     getMyClub(supabase, user.id),
+    // VYRA Method in the menu for runners who have it (null before the migration: hidden).
+    supabase.rpc("has_method_access", { p_user: user.id }).then((r) => (r.error ? false : !!r.data)),
   ]);
   const hasCamp = campCount > 0;
   const items: NavItem[] = [
     { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
     ...(hasCamp ? [{ href: "/athlete/camp", label: t("Mój obóz", "My camp"), icon: "camps", mobile: true } as NavItem] : []),
     { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+    ...(method ? [{ href: "/athlete/metoda", label: "VYRA Method", icon: "method" } as NavItem] : []),
     ...(club ? [{ href: "/athlete/klub", label: club.name, icon: "club" } as NavItem] : []),
     { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },
     { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress", mobile: true },

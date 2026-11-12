@@ -60,7 +60,7 @@ export async function startCheckout(
         ? { ui_mode: "embedded", return_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}` }
         : {
             success_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/prowadzenie#pakiety`,
+            cancel_url: /method/i.test(plan.name) ? `${origin}/metoda#cennik` : `${origin}/prowadzenie#pakiety`,
           }),
       customer_email: email,
       metadata: { plan_id: plan.id, plan_name: plan.name, full_name: fullName, terms: "regulamin+start_przed_14_dniami", source: source ?? "", ref: refCode ?? "" },

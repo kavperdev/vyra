@@ -56,7 +56,7 @@ export default async function SiteContentPage() {
   const [articles, team, plans, events, signups, testimonials, ambassadors, sourceRows, company, terms, privacy, feedback] = await Promise.all([
     listArticles(supabase),
     listSiteTeam(supabase),
-    listCoachingPlans(supabase),
+    listCoachingPlans(supabase, "all"),
     listRunClubEvents(supabase),
     listRunClubSignups(supabase),
     listTestimonials(supabase),

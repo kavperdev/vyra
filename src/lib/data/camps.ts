@@ -146,7 +146,11 @@ export async function getCampBudget(supabase: ServerSupabase, campId: string): P
   };
 }
 
-export async function listCoachingPlans(supabase: ServerSupabase): Promise<CoachingPlan[]> {
+/** VYRA Method packages live in the same table but are sold on /metoda, not with coaching. */
+export const isMethodPlan = (p: { name: string }) => /method/i.test(p.name);
+
+export async function listCoachingPlans(supabase: ServerSupabase, scope: "coaching" | "method" | "all" = "coaching"): Promise<CoachingPlan[]> {
   const { data } = await supabase.from("coaching_plans").select("*").order("sort").order("created_at");
-  return (data ?? []) as CoachingPlan[];
+  const all = (data ?? []) as CoachingPlan[];
+  return scope === "all" ? all : all.filter((p) => (scope === "method") === isMethodPlan(p));
 }

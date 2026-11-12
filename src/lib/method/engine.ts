@@ -298,7 +298,7 @@ export function assess(p: MethodProfile, today: string): Assessment {
     const weeks = p.race_date ? Math.max(0, Math.floor(daysBetween(today, p.race_date) / 7)) : 12;
     // A realistic gain: about 0.3–0.5% of VDOT a week for most amateurs, less for advanced.
     const gain = Math.min(0.12, weeks * (level === "advanced" ? 0.0025 : level === "intermediate" ? 0.004 : 0.006));
-    const reachable = timeFor(vdotOf(5000, p5k) * (1 + gain), goalDist);
+    const reachable = timeFor(vdotOf(5000, p5k as number) * (1 + gain), goalDist);
     if (p.target_seconds < reachable * 0.985) notes.push(`Twój cel ${fmtTime(p.target_seconds)} jest dziś bardzo ambitny: realnie w tym czasie ok. ${fmtTime(reachable)}. Trenujemy w tempach z Twojej obecnej formy i poprawiamy je po każdym teście, więc jeśli będziesz szybciej się rozwijać, plan za tym pójdzie.`);
     else notes.push(`Cel ${fmtTime(p.target_seconds)} jest realny: dziś Twoja forma to ok. ${fmtTime(predicted)}.`);
   }
@@ -538,7 +538,7 @@ function testRun(date: string, c: Ctx, starterish: boolean): PlannedSession {
     category: "test",
     title: `Test: ${dist / 1000} km na czas`,
     goal: "Sprawdzamy formę. Z tego wyniku plan przelicza Twoje tempa.",
-    instructions: `15 min rozgrzewki z 3 przebieżkami, potem ${dist / 1000} km tak szybko, jak dasz radę równym tempem (płasko, najlepiej bieżnia albo równa ścieżka). Wpisz czas w wyniku treningu.`,
+    instructions: `15 min rozgrzewki z 3 przebieżkami, potem ${dist / 1000} km tak szybko, jak dasz radę równym tempem (płasko, najlepiej bieżnia albo równa ścieżka). Czas wpisz w cotygodniowej ankiecie VYRA Method.`,
     planned_rpe: 9,
     planned_duration_s: 40 * 60,
     planned_distance_m: dist + 3000,
@@ -758,12 +758,16 @@ export function nextWeek(p: MethodProfile, assessed: Assessment, prev: MethodSta
     usedMin += 40;
   }
 
-  sessions.push(longRun(dateOf(long), longMin, ctx, period, raceShareLong));
   const easyDays = others.filter((d) => !qDays.includes(d));
   const left = Math.max(0, totalMin - usedMin);
+  const share = clamp(left / Math.max(1, easyDays.length), 25, 75);
+  // The long run is the longest run of the week: at least 10 min more than an easy day when time allows,
+  // otherwise easy days get shorter.
+  const longFinal = Math.max(longMin, Math.min(p.minutes[long as 1], share + 10));
+  sessions.push(longRun(dateOf(long), longFinal, ctx, period, raceShareLong));
   for (const [i, d] of easyDays.entries()) {
-    const share = left / Math.max(1, easyDays.length);
-    sessions.push(easyRun(dateOf(d), cap(d, clamp(share, 25, 75)), ctx, mode !== "easy" && i === easyDays.length - 1));
+    const m = Math.min(cap(d, share), Math.max(20, longFinal - 10));
+    sessions.push(easyRun(dateOf(d), m, ctx, mode !== "easy" && i === easyDays.length - 1));
   }
   sessions.sort((x, y) => x.date.localeCompare(y.date));
 

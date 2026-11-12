@@ -25,24 +25,25 @@ export const SITE: SiteSettings = {
 
 /** Main navigation, in the order of the three ways in: together (club, challenges, Run Club, team), one to one (coaching), knowledge. */
 export const SITE_NAV = [
-  { href: "/klub", label: "VYRA Club", en: "VYRA Club" },
-  { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
   { href: "/run-club", label: "Run Club", en: "Run Club" },
-  { href: "/team", label: "Zawodnicy", en: "Athletes" },
+  { href: "/metoda", label: "VYRA Method", en: "VYRA Method" },
   { href: "/prowadzenie", label: "Prowadzenie", en: "Coaching" },
+  { href: "/team", label: "VYRA Athletics", en: "VYRA Athletics" },
   { href: "/wiedza", label: "Wiedza", en: "Journal" },
+  { href: "/kluby", label: "Dla klubów", en: "For clubs" },
 ] as const;
 
 /** Secondary links: in the mobile menu and the footer, not in the desktop bar. */
 export const SITE_NAV_MORE = [
   { href: "/pobierz", label: "Pobierz aplikację", en: "Get the app" },
+  { href: "/klub", label: "VYRA Club", en: "VYRA Club" },
+  { href: "/wyzwania", label: "Wyzwania", en: "Challenges" },
   { href: "/zacznij-biegac", label: "Darmowy plan", en: "Free plan" },
   { href: "/obozy", label: "Obozy", en: "Camps" },
   { href: "/kalkulator", label: "Kalkulator", en: "Calculator" },
   { href: "/tapety", label: "Tapety", en: "Wallpapers" },
   { href: "/voucher", label: "Voucher na prezent", en: "Gift voucher" },
   { href: "/zespol", label: "Zespół", en: "Team" },
-  { href: "/kluby", label: "Dla klubów", en: "For clubs" },
   { href: "/dla-firm", label: "Dla firm", en: "For companies" },
   { href: "/prasa", label: "Dla mediów", en: "Press" },
   { href: "/kontakt", label: "Kontakt", en: "Contact" },

@@ -445,10 +445,17 @@ async function TabContent({
 
   // settings
   const selfPlanning = await getSelfPlanning(supabase, athleteId);
+  // null before the VYRA Method migration: the switch stays hidden.
+  const methodAccess = await supabase
+    .from("profiles")
+    .select("method_access")
+    .eq("id", athleteId)
+    .maybeSingle()
+    .then((r) => (r.error || !r.data ? null : !!(r.data as { method_access: boolean | null }).method_access));
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <AthleteProfileForm athleteId={athleteId} profile={athlete.profile} />
-      <AthleteAccountCard athleteId={athleteId} status={athlete.link_status} from={addDaysISO(today, -27)} to={today} selfPlanning={selfPlanning} />
+      <AthleteAccountCard athleteId={athleteId} status={athlete.link_status} from={addDaysISO(today, -27)} to={today} selfPlanning={selfPlanning} methodAccess={methodAccess} />
     </div>
   );
 }

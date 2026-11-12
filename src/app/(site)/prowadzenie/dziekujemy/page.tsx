@@ -14,12 +14,20 @@ export default async function ThankYouPage({ searchParams }: { searchParams: Pro
   const res = session_id ? await recordCheckout(session_id) : { status: "invalid" as const };
 
   if (res.status === "paid" && (res.token || res.existing)) {
-    const steps = [
+    const method = /method/i.test(res.plan ?? "");
+    const steps = method
+      ? [
+          t("Załóż konto (30 sekund)", "Create your account (30 seconds)"),
+          t("Wypełnij ankietę VYRA Method (ok. 4 minut)", "Fill in the VYRA Method questionnaire (about 4 minutes)"),
+          t("Pierwszy tydzień od razu trafia do kalendarza", "Your first week goes straight into your calendar"),
+          t("Co tydzień 20-sekundowe podsumowanie, a plan się dopasowuje", "A 20-second weekly check-in, and the plan adapts"),
+        ]
+      : [
       t("Załóż konto (30 sekund)", "Create your account (30 seconds)"),
       t("Wypełnij ankietę startową (5 minut)", "Fill in the starting questionnaire (5 minutes)"),
       t("Od razu dostajesz plan na pierwszy tydzień", "Get your first week of training right away"),
       t("Trener odezwie się w ciągu dnia roboczego i umówicie rozmowę", "Your coach gets in touch within a working day to book a call"),
-    ];
+        ];
     return (
       <>
         <PageHero
@@ -54,7 +62,7 @@ export default async function ThankYouPage({ searchParams }: { searchParams: Pro
                 <p className="text-sm text-white/60">
                   {t(`Pakiet dodaliśmy do konta ${res.email ?? ""}. Zaloguj się, żeby zacząć.`, `We added the package to ${res.email ?? ""}. Sign in to start.`)}
                 </p>
-                <Link href="/login?next=/athlete" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black">
+                <Link href={method ? "/login?next=/athlete/metoda" : "/login?next=/athlete"} className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black">
                   {t("Zaloguj się", "Sign in")}
                 </Link>
               </div>

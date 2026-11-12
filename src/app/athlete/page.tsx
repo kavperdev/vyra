@@ -22,6 +22,7 @@ import { categoryLabel } from "@/lib/training/categories";
 import { bestRecords, formatRecordValue } from "@/lib/training/records";
 import { isDone } from "@/lib/training/status";
 import { createClient } from "@/lib/supabase/server";
+import { ensureWeeks, loadMethod } from "@/lib/method/server";
 import { cn } from "@/lib/utils";
 import { getLang, getT } from "@/lib/i18n/server";
 import { tl } from "@/lib/i18n/runtime";
@@ -37,6 +38,10 @@ export default async function AthleteDashboard() {
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);
   const weekStart = weekStartISO(today);
+  // VYRA Method: this week's plan is generated before the calendar is read (null before the migration).
+  const method = await loadMethod(supabase, user.id).catch(() => null);
+  if (method?.access && method.profile) await ensureWeeks(supabase, user.id, method).catch((e) => console.error("[method]", e));
+  const methodSetup = !!method?.access && !method.profile;
   const [sessions, records, coachComments, readiness, intakeMissing, lastWeekReadiness, membershipEnded, goals, feedbackDue] = await Promise.all([
     listSessions(supabase, { athleteIds: [user.id], from: addDaysISO(weekStart, -70), to: addDaysISO(today, 14) }),
     listRecords(supabase, user.id),
@@ -149,7 +154,23 @@ export default async function AthleteDashboard() {
         </Card>
       ) : null}
 
-      {intakeMissing ? (
+      {methodSetup ? (
+        <Card className="border-accent/50">
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
+            <div className="grid gap-1">
+              <p className="font-semibold">Pierwszy krok: ankieta VYRA Method</p>
+              <p className="text-[13px] text-muted">Około 4 minut. Wiek, waga, forma, czas i zdrowie. Na tej podstawie powstanie Twój pierwszy tydzień.</p>
+            </div>
+            <Button asChild variant="accent">
+              <Link href="/athlete/metoda">
+                Ułóż mój plan <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {intakeMissing && !method?.access ? (
         <Card className="border-accent/50">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
             <div className="grid gap-1">
@@ -183,7 +204,7 @@ export default async function AthleteDashboard() {
         </Card>
       ) : null}
 
-      {intakeMissing ? null : <RaceCountdownCard race={race} goalsHref="/athlete/records" />}
+      {intakeMissing && !method?.access ? null : <RaceCountdownCard race={race} goalsHref="/athlete/records" />}
 
       {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
 

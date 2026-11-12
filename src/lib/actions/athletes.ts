@@ -57,6 +57,16 @@ export async function setAthleteStatus(athleteId: string, status: "active" | "ar
   });
 }
 
+/** Founders give VYRA Method for free (friends, testers, partners), or take it back. */
+export async function setMethodAccess(athleteId: string, on: boolean): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const { error } = await supabase.rpc("set_method_access", { p_user: athleteId, p_on: on });
+    if (error) return error.code === "42501" ? { ok: false, error: "Dostęp do VYRA Method mogą dawać tylko założyciele." } : dbError(error);
+    revalidatePath(`/coach/athletes/${athleteId}`);
+    return { ok: true, message: on ? "Zawodnik ma teraz VYRA Method. Zobaczy go w menu aplikacji." : "Wyłączono darmowy dostęp do VYRA Method." };
+  });
+}
+
 /** Let the athlete add and edit their own sessions (training diary), or turn it off again. */
 export async function setSelfPlanning(athleteId: string, on: boolean): Promise<ActionResult> {
   return withUser("coach", async ({ supabase }) => {

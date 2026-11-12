@@ -123,11 +123,11 @@ export default async function CoachingPage() {
     <>
       <PageHero
         image="/site/track.jpg"
-        eyebrow={t("Prowadzenie indywidualne", "Individual coaching")}
+        eyebrow={t("Prowadzenie z prawdziwym trenerem", "Coaching with a real coach")}
         title={t("Indywidualny proces treningowy", "An individual training process")}
         lead={t(
-          "Plan zbudowany pod Twój cel, poziom, kalendarz i ograniczenia. Prowadzimy biegaczy na każdym etapie, od pierwszych startów po walkę o rekordy życiowe.",
-          "A plan built around your goal, level, schedule and constraints. We coach runners at every stage, from first races to chasing personal bests.",
+          "Plan zbudowany pod Twój cel, poziom, kalendarz i ograniczenia przez trenera, który zna Cię osobiście. Nie automat i nie szablon: człowiek, który czyta każdy Twój trening.",
+          "A plan built around your goal, level, schedule and constraints by a coach who knows you personally. Not a bot or a template: a person who reads every session you do.",
         )}
       >
         <a
