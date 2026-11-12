@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check } from "lucide-react";
@@ -55,6 +56,44 @@ const COPY: Partial<Record<SportKey, { who: string; pain: string; season: string
   },
 };
 
+/** What only this sport gets: screens from the app and the promo film (4 sports so far). */
+const SPECIAL: Partial<Record<SportKey, { film: string; items: { img: string; phone?: boolean; title: string; body: string }[] }>> = {
+  football: {
+    film: "pilka-nozna",
+    items: [
+      { img: "football-mecz", title: "Powołania z potwierdzeniem rodziców", body: "Zaznaczasz skład na mecz, a zawodnicy i rodzice dostają powiadomienie. Rodzic potwierdza jednym kliknięciem ze swojej strony, bez konta. Widzisz, kto będzie, zanim zaczniesz rozpisywać ustawienie." },
+      { img: "football-czas-gry", title: "Równy czas gry", body: "Po meczu wpisujesz minuty, gole i asysty. VYRA liczy, ile procent możliwych minut zagrał każdy zawodnik w sezonie, i ostrzega, kto gra wyraźnie mniej. Koniec z pretensjami rodziców i dziećmi, które siedzą na ławce cały sezon." },
+      { img: "football-umiejetnosci", title: "Umiejętności piłkarskie", body: "Raz na kwartał oceniasz przyjęcie, podanie, drybling, strzał, słabszą nogę i grę głową. Widzisz najsłabszy element całej grupy, a rodzic widzi postęp dziecka." },
+      { img: "football-rodzic", phone: true, title: "Strona rodzica", body: "Powołanie z godziną zbiórki, wynik ostatniego meczu, minuty i gole dziecka. Rodzic przestaje dopytywać na Messengerze." },
+    ],
+  },
+  volleyball: {
+    film: "siatkowka",
+    items: [
+      { img: "volleyball-tracker", phone: true, title: "Statystyka meczu z telefonu", body: "Przy linii klikasz akcje: as, zagrywka w boisku, błąd, przyjęcie idealne, dobre, błąd, atak, blok, obrona. Skuteczność każdej zawodniczki liczy się w trakcie meczu." },
+      { img: "volleyball-mecz", title: "Mecz na żywo", body: "Na komputerze w szatni widzisz punkty, przyjęcie, atak i zagrywkę całego składu. Między setami wiesz, kto przyjmuje najgorzej i komu dać odpocząć." },
+      { img: "volleyball-statystyki", title: "Statystyki sezonu", body: "Skuteczność ataku liczona jak u trenerów: (punkty − błędy) / próby, przyjęcie pozytywne i zagrywka. Decyzje o składzie opierasz na liczbach, a nie na wrażeniu z trybun." },
+      { img: "volleyball-rodzic", phone: true, title: "Powołania i potwierdzenia", body: "Zawodniczki i rodzice potwierdzają udział w meczu z telefonu. Wynik z setami i punkty dziecka widać na stronie rodzica." },
+    ],
+  },
+  swimming: {
+    film: "plywanie",
+    items: [
+      { img: "swimming-czasy", title: "Czasy całej grupy w minutę", body: "Po treningu albo zawodach wybierasz styl, dystans i basen 25 lub 50 m i wpisujesz czasy całej grupy. Rekordy życiowe aktualizują się same, a nowy rekord od razu widać." },
+      { img: "swimming-limity", title: "Ile brakuje do limitu", body: "Dodajesz limity z regulaminu zawodów, z rocznikami i płcią. Przy każdym zawodniku widzisz, który limit już zrobił, a do którego brakuje mu 0,08 s." },
+      { img: "swimming-rodzic", phone: true, title: "Rekordy dla rodziców", body: "Rodzic widzi rekordy życiowe dziecka na każdym dystansie i ile brakuje do limitu na mistrzostwa. Pytanie „ile jeszcze?” znika z Messengera." },
+    ],
+  },
+  martial_arts: {
+    film: "sztuki-walki",
+    items: [
+      { img: "martial_arts-stopnie", title: "Stopnie, pasy i egzaminy", body: "Aktualny stopień każdego zawodnika z kolorem pasa i historią egzaminów. VYRA pokazuje, kto jest gotowy do egzaminu, a zdany egzamin wpisujesz całej grupie naraz. Kyu, kup, BJJ albo własny system." },
+      { img: "martial_arts-waga", title: "Ważenie i kategorie", body: "Przed turniejem wpisujesz wagi i kategorie zgłoszonych. Od razu widzisz, kto mieści się w limicie, a komu brakuje 0,8 kg, zanim będzie za późno." },
+      { img: "martial_arts-rodzic", phone: true, title: "Turnieje i pasy dla rodziców", body: "Rodzic potwierdza udział dziecka w turnieju z telefonu, widzi kategorię wagową i kolejne zdobyte stopnie." },
+    ],
+  },
+};
+
 const fromSlug = (slug: string) => SPORTS.find((s) => s.slug === slug && s.key !== "other");
 
 export function generateStaticParams() {
@@ -77,6 +116,7 @@ export default async function SportClubsPage({ params }: { params: Promise<{ spo
   if (!sp || !COPY[sp.key]) notFound();
   const c = COPY[sp.key]!;
   const tests = testsForSport(sp.key).slice(0, 8);
+  const special = SPECIAL[sp.key] ?? null;
   const features = [
     ["Grupy i harmonogram", `Stałe zajęcia, odwołane treningi i ${c.season} w jednym kalendarzu. Zawodnicy i rodzice dostają powiadomienie o każdej zmianie.`],
     ["Obecność w 10 sekund", "Trener odhacza listę na telefonie przy wejściu na zajęcia. Frekwencja liczy się sama."],
@@ -108,8 +148,45 @@ export default async function SportClubsPage({ params }: { params: Promise<{ spo
         </div>
       </PageHero>
 
+      {special ? (
+        <>
+          <section className={`${wrap} pt-20 sm:pt-28`}>
+            <Reveal className="overflow-hidden rounded-2xl border border-white/10 bg-black">
+              <video className="aspect-video w-full" controls playsInline preload="none" poster={`/site/kluby/sport/${special.items[0].img}.jpg`} aria-label={`Film: VYRA dla ${c.who}`}>
+                <source src={`/site/kluby/sport/vyra-${special.film}-v1.mp4`} type="video/mp4" />
+              </video>
+            </Reveal>
+          </section>
+          <section className={`${wrap} grid gap-16 py-24 sm:gap-24`}>
+            <SectionHead eyebrow={`Tylko dla: ${sp.name.toLowerCase()}`} title={`Funkcje zrobione pod ${sp.name.toLowerCase()}`}>
+              Oprócz wszystkiego, co dostaje każdy klub, VYRA ma moduły zbudowane pod Waszą dyscyplinę. Tego nie mają ogólne programy do klubów.
+            </SectionHead>
+            {special.items.map((f, i) => (
+              <div key={f.img} className="grid items-center gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:gap-14">
+                <Reveal className={`flex justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#070708] ${i % 2 ? "lg:order-2" : ""} ${f.phone ? "py-8" : ""}`}>
+                  <Image
+                    src={`/site/kluby/sport/${f.img}.jpg`}
+                    alt={f.title}
+                    width={f.phone ? 780 : 2200}
+                    height={f.phone ? 1688 : 1376}
+                    sizes={f.phone ? "320px" : "(min-width: 1024px) 60vw, 100vw"}
+                    className={f.phone ? "h-auto w-[300px] rounded-[28px] border border-white/10" : "h-auto w-full"}
+                  />
+                </Reveal>
+                <Reveal delay={100} className="grid gap-4">
+                  <span className="font-mono text-sm text-[var(--accent)]">{String(i + 1).padStart(2, "0")}</span>
+                  <h3 className="display text-[clamp(1.6rem,3vw,2.25rem)] leading-tight text-white">{f.title}</h3>
+                  <p className="text-lg leading-relaxed text-white/60">{f.body}</p>
+                </Reveal>
+              </div>
+            ))}
+            <p className="text-[13px] text-white/40">Na zrzutach dane przykładowe.</p>
+          </section>
+        </>
+      ) : null}
+
       <section className={`${wrap} grid gap-14 py-24`}>
-        <SectionHead eyebrow="Co dostaje klub" title="Wszystko, co dziś jest w zeszycie, Excelu i na Messengerze">
+        <SectionHead eyebrow="Co dostaje każdy klub" title="Wszystko, co dziś jest w zeszycie, Excelu i na Messengerze">
           Każda funkcja jest w każdym pakiecie. Pakiety różnią się tylko liczbą zawodników.
         </SectionHead>
         <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
