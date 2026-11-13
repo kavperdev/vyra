@@ -718,7 +718,7 @@ function FairnessCard({ athletes, matches, callups, groups }: { athletes: Athlet
   const assists = (id: string) => callups.filter((c) => c.athlete_id === id && played.some((m) => m.id === c.match_id)).reduce((s, c) => s + c.assists, 0);
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid gap-1.5">
         <CardTitle>Równy czas gry w sezonie</CardTitle>
         <p className="text-sm text-muted">Procent minut, które zawodnik mógł zagrać w meczach, na które był dostępny. Czerwone: grał wyraźnie mniej niż reszta drużyny.</p>
       </CardHeader>
@@ -762,7 +762,7 @@ function VolleySeasonCard({ athletes, callups }: { athletes: Athlete[]; callups:
   if (!rows.length) return null;
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid gap-1.5">
         <CardTitle>Statystyki sezonu</CardTitle>
         <p className="text-sm text-muted">Skuteczność: (punkty − błędy) / próby. Przyjęcie: idealne i dobre / wszystkie.</p>
       </CardHeader>

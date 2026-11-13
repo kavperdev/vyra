@@ -230,7 +230,7 @@ export function assess(p: MethodProfile, today: string): Assessment {
   let p5k: number | null = null;
   if (p.ref.kind === "race" && p.ref.distance_m >= 1000 && p.ref.seconds > 0) p5k = timeFor(vdotOf(p.ref.distance_m, p.ref.seconds), 5000);
   else if (p.ref.kind === "cooper" && p.ref.meters >= 1200) p5k = timeFor(vdotOf(p.ref.meters, 720), 5000);
-  else if (p.ref.kind === "none" && p.ref.can_run_30) {
+  else if (p.ref.kind === "none" && (p.ref.can_run_30 || p.weekly_km >= 10 || p.experience === "1to3" || p.experience === "3plus")) {
     // Can jog 30 minutes but never raced: a cautious guess, replaced by the first test in week 3.
     const base = p.sex === "f" ? 36 * 60 : 33 * 60;
     p5k = base * (1 + Math.max(0, age - 35) * 0.008) * (bmi > 27 ? 1 + (bmi - 27) * 0.02 : 1);

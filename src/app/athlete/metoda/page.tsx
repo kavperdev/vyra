@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarDays } from "lucide-react";
+import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
 import { MethodCheckin, MethodControls } from "@/components/method/checkin";
 import { MethodQuestionnaire } from "@/components/method/questionnaire";
+import { CoachFeed, RefreshSoon, type FeedNote } from "@/components/method/coach-feed";
+import { coachReady, listNotes } from "@/lib/method/coach";
 import { requireRole } from "@/lib/auth";
 import { todayISO } from "@/lib/dates";
 import { answersFrom, EMPTY_ANSWERS } from "@/lib/method/answers";
@@ -89,8 +91,28 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
 
   // Check-in: the most recent week from Friday on, without a summary yet (at most two weeks back).
   const fourDaysAgo = new Date(Date.parse(`${today}T12:00:00Z`) - 4 * 86_400_000).toISOString().slice(0, 10);
+  const addDays = (iso: string, d: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + d * 86_400_000).toISOString().slice(0, 10);
   const twoWeeks = new Date(Date.parse(`${today}T12:00:00Z`) - 14 * 86_400_000).toISOString().slice(0, 10);
-  const due = weeks.find((w) => !w.checkin && w.week_start <= fourDaysAgo && w.week_start >= twoWeeks) ?? null;
+  // Only for a week the runner actually trained in: the plan existed by its Thursday and it has passed Friday.
+  const due =
+    weeks.find((w) => !w.checkin && w.week_start <= fourDaysAgo && w.week_start >= twoWeeks && (!w.created_at || w.created_at.slice(0, 10) <= addDays(w.week_start, 3))) ?? null;
+  const notes = await listNotes(supabase, user.id, 40);
+  const titles = new Map(sessions.map((x) => [x.id, x.title]));
+  const feed: FeedNote[] = (notes ?? []).map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    body: n.body,
+    created_at: n.created_at,
+    label: n.session_id ? (titles.get(n.session_id) ?? "trening") : null,
+    href: n.session_id ? `/athlete/sessions/${n.session_id}` : null,
+  }));
+  const notedIds = new Set((notes ?? []).filter((n) => n.session_id).map((n) => n.session_id!));
+  const yesterday = addDays(today, -1);
+  const waiting =
+    coachReady() &&
+    notes !== null &&
+    (sessions.some((x) => ["completed", "partial", "skipped"].includes(x.status) && x.scheduled_date >= yesterday && !notedIds.has(x.id)) ||
+      (!feed.some((f) => f.kind === "welcome") && weeks.length === 1));
   const dueTest = due ? byWeek(due.session_ids).some((s) => s.category === "test") : false;
 
   return (
@@ -126,7 +148,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
 
       {due ? (
         <Card className="border-foreground/30">
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle>Podsumuj tydzień {due.idx}</CardTitle>
             <p className="text-sm text-muted">20 sekund. Od tego zależy, czy następny tydzień będzie mocniejszy, taki sam, czy lżejszy.</p>
           </CardHeader>
@@ -136,9 +158,22 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
         </Card>
       ) : null}
 
+      <Card>
+        <CardHeader className="grid gap-1.5">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="size-4" /> Asystent VYRA Method
+          </CardTitle>
+          <p className="text-sm text-muted">Komentuje każdy zapisany trening, podsumowuje tydzień i odpowiada na pytania, według metody trenerów VYRA.</p>
+        </CardHeader>
+        <CardContent>
+          <CoachFeed notes={feed} ready={coachReady() && notes !== null} />
+          {waiting ? <RefreshSoon /> : null}
+        </CardContent>
+      </Card>
+
       {[current, next].filter(Boolean).map((w) => (
         <Card key={w!.id}>
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle className="flex flex-wrap items-center gap-2">
               {w === next ? "Następny tydzień" : "Ten tydzień"}
               <span className="text-sm font-normal text-muted">od {dayName(w!.week_start)}</span>
@@ -148,13 +183,14 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <ul className="grid gap-2">
+            <ul className="grid min-w-0 gap-2">
               {byWeek(w!.session_ids).map((s) => (
-                <li key={s.id}>
-                  <Link href={`/athlete/sessions/${s.id}`} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 hover:bg-surface-2">
+                <li key={s.id} className="min-w-0">
+                  <Link href={`/athlete/sessions/${s.id}`} className="flex min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-border px-3 py-2.5 hover:bg-surface-2">
                     <span className="w-14 shrink-0 text-[12px] text-muted">{dayName(s.scheduled_date)}</span>
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{s.title}</span>
-                    {s.status === "completed" ? <Badge>zrobione</Badge> : s.planned_duration_s ? <span className="num text-[12px] text-muted">{Math.round(s.planned_duration_s / 60)} min</span> : null}
+                    {notedIds.has(s.id) ? <Sparkles className="size-3.5 shrink-0 text-muted" aria-label="Asystent skomentował" /> : null}
+                    {s.status === "completed" ? <Badge>zrobione</Badge> : s.planned_duration_s ? <span className="num shrink-0 text-[12px] text-muted">{Math.round(s.planned_duration_s / 60)} min</span> : null}
                   </Link>
                 </li>
               ))}
@@ -183,7 +219,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle>Twoje tempa</CardTitle>
             <p className="text-sm text-muted">{p5k ? `Z formy na 5 km: ${fmtTime(p5k)}. Przeliczamy je po każdym teście.` : "Pojawią się po pierwszym teście."}</p>
           </CardHeader>
@@ -214,7 +250,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
           ) : null}
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle>Masz pytanie do trenera?</CardTitle>
             <p className="text-sm text-muted">Za VYRA Method stoi metoda prawdziwych trenerów. Jeśli chcesz, żeby trener prowadził Cię osobiście i odpowiadał na pytania, przejdź na prowadzenie.</p>
           </CardHeader>
@@ -230,7 +266,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
 
       {a?.notes.length ? (
         <Card>
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle>Jak metoda dopasowała plan do Ciebie</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2 text-sm text-muted">

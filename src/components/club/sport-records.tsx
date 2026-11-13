@@ -86,7 +86,7 @@ export function SkillsCard({ ready, today, groups, athletes, ratings }: { ready:
   const latest = (id: string, key: string) => ratings.filter((r) => r.athlete_id === id && r.skill_key === key).sort((a, b) => b.rated_on.localeCompare(a.rated_on));
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid gap-1.5">
         <CardTitle>Umiejętności piłkarskie</CardTitle>
         <p className="text-sm text-muted">Raz na kwartał oceń każdą umiejętność w skali 1–5. Rodzic widzi postęp dziecka, a Ty widzisz, nad czym pracować z grupą.</p>
       </CardHeader>
@@ -249,7 +249,7 @@ export function SwimTab({
   return (
     <div className="grid gap-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="grid gap-1.5">
           <CardTitle>Wpisz czasy</CardTitle>
           <p className="text-sm text-muted">Z treningu albo zawodów, dla całej grupy naraz. Rekordy życiowe i limity liczą się same.</p>
         </CardHeader>
@@ -308,7 +308,7 @@ export function SwimTab({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="grid gap-1.5">
           <CardTitle>Rekordy i limity</CardTitle>
           <p className="text-sm text-muted">Przy każdym zawodniku: rekordy życiowe i ile sekund brakuje do limitów, które ustawisz niżej (np. na mistrzostwa województwa).</p>
         </CardHeader>
@@ -418,7 +418,7 @@ function StandardsCard({ clubId, standards }: { clubId: string; standards: SwimS
   const [v, setV] = useState({ name: "", stroke: "free", distance: 50, pool: 25 as 25 | 50, sex: "" as "" | "f" | "m", from: "", to: "", time: "" });
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid gap-1.5">
         <CardTitle>Limity na zawody</CardTitle>
         <p className="text-sm text-muted">Wpisz limity czasowe z regulaminu zawodów. Aplikacja pokaże, kto już je zrobił i komu ile brakuje.</p>
       </CardHeader>
@@ -553,7 +553,7 @@ export function GradesTab({
   return (
     <div className="grid gap-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="grid gap-1.5">
           <CardTitle>Stopnie i pasy</CardTitle>
           <p className="text-sm text-muted">
             Aktualny stopień każdego zawodnika i historia egzaminów. Gotowi do egzaminu: co najmniej {minMonths} mies. od ostatniego stopnia. Teraz: <span className="font-semibold text-foreground">{readyFor.length}</span>.
@@ -657,7 +657,7 @@ export function GradesTab({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="grid gap-1.5">
           <CardTitle>Ważenie</CardTitle>
           <p className="text-sm text-muted">Wpisz wagi z ważenia. W zakładce Turnieje przy każdym zawodniku zobaczysz, ile brakuje mu do limitu jego kategorii.</p>
         </CardHeader>

@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { commentSession, isMethodSession } from "@/lib/method/coach";
 import type { ActionResult, ExecutionStatus } from "@/lib/types";
 import { executionFormSchema, executionToPayload, type ExecutionFormValues } from "@/lib/validation/execution";
 import { detectAchievements, type Achievement, type LiftRow, type RunRow } from "@/lib/training/achievements";
@@ -37,6 +39,13 @@ export async function saveExecution(values: ExecutionFormValues, status: Executi
       skipped: "Oznaczono trening jako pominięty.",
     };
     const achievements = status === "completed" || status === "partial" ? await findAchievements(supabase, user.id, s.id).catch(() => []) : [];
+    // VYRA Method: the assistant comments the session after the answer is sent (the runner doesn't wait).
+    if (status !== "in_progress" && (await isMethodSession(supabase, user.id, s.id).catch(() => false))) {
+      after(async () => {
+        await commentSession(supabase, user.id, s.id).catch((e) => console.error("[method-coach]", e));
+      });
+      return { ok: true, message: `${messages[status].replace(" Trener zobaczy wyniki.", "")} Asystent VYRA Method skomentuje go za chwilę.`, data: { achievements } };
+    }
     return { ok: true, message: messages[status], data: { achievements } };
   });
 }

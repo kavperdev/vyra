@@ -22,6 +22,7 @@ export interface MethodWeekRow {
   plan: Pick<WeekPlan, "period" | "lighter" | "mode" | "km" | "notes"> & { titles?: string[] };
   session_ids: string[];
   checkin: Checkin | null;
+  created_at?: string;
 }
 
 export interface MethodProfileRow {
@@ -173,7 +174,10 @@ export async function ensureWeeks(supabase: ServerSupabase, userId: string, data
   const today = todayISO();
   const thisMonday = mondayOf(today);
   const isSunday = addDays(thisMonday, 6) === today;
-  const targets = isSunday ? [thisMonday, addDays(thisMonday, 7)] : [thisMonday];
+  // From Sunday the next week is ready; a plan that starts Thursday or later gets next week at once too,
+  // so a new runner never sees an almost empty first week.
+  const dow = new Date(`${today}T12:00:00Z`).getUTCDay() || 7;
+  const targets = isSunday || (!data.weeks.length && dow >= 4) ? [thisMonday, addDays(thisMonday, 7)] : [thisMonday];
   const known = new Set(data.weeks.map((w) => w.week_start));
   const assessment = p.assessment ?? assess(profile, today);
   if (!p.assessment) await supabase.from("method_profiles").update({ assessment }).eq("athlete_id", userId);

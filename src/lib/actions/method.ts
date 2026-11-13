@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { chat, summarizeWeek, welcome } from "@/lib/method/coach";
 import { todayISO } from "@/lib/dates";
 import { assess, initialState } from "@/lib/method/engine";
 import { answersFrom, parseTime, toProfile, type MethodAnswers } from "@/lib/method/answers";
@@ -36,9 +38,11 @@ export async function saveMethodAnswers(input: MethodAnswers): Promise<ActionRes
     const before = data.profile?.answers.profile;
     const old = data.profile?.state ?? null;
     // A new goal or race date restarts the progression (keeping the measured form); small changes continue it.
-    const restart = !old || !before || before.goal !== profile.goal || before.race_date !== profile.race_date;
+    // …and so does new form data (a race result instead of "no result", a new level).
+    const restart =
+      !old || !before || before.goal !== profile.goal || before.race_date !== profile.race_date || (!old.p5k && !!assessment.p5k) || data.profile?.assessment?.level !== assessment.level;
     const state = restart
-      ? { ...initialState(profile, assessment), week: old?.week ?? 0, p5k: old?.p5k ?? assessment.p5k, last_test_week: old?.last_test_week ?? 0 }
+      ? { ...initialState(profile, assessment), week: old?.week ?? 0, p5k: assessment.p5k ?? old?.p5k ?? null, last_test_week: old?.last_test_week ?? 0 }
       : old;
     const row = {
       athlete_id: user.id,
@@ -58,6 +62,10 @@ export async function saveMethodAnswers(input: MethodAnswers): Promise<ActionRes
     if (e2 || !enabled) return { ok: false, error: "Nie udało się włączyć planu na Twoim koncie. Napisz do nas, sprawdzimy to." };
     const fresh = await loadMethod(supabase, user.id);
     await ensureWeeks(supabase, user.id, fresh);
+    if (first)
+      after(async () => {
+        await welcome(supabase, user.id).catch((e) => console.error("[method-coach]", e));
+      });
     revalidate();
     return { ok: true, data: { blockers: [] }, message: first ? "Gotowe! Twój pierwszy tydzień jest już w kalendarzu." : "Zapisaliśmy zmiany. Kolejne tygodnie uwzględnią nowe dane." };
   });
@@ -84,6 +92,9 @@ export async function saveMethodCheckin(weekId: string, input: { fatigue: number
     const { data, error } = await supabase.from("method_weeks").update({ checkin }).eq("id", weekId).eq("athlete_id", user.id).select("id");
     if (error) return dbError(error);
     if (!data?.length) return { ok: false, error: "Nie znaleźliśmy tego tygodnia." };
+    after(async () => {
+      await summarizeWeek(supabase, user.id, weekId).catch((e) => console.error("[method-coach]", e));
+    });
     revalidate();
     return {
       ok: true,
@@ -106,11 +117,24 @@ export async function setMethodActive(active: boolean): Promise<ActionResult> {
 /** Withdraws the health-data consent: deletes the questionnaire and the plan history (sessions stay in the calendar). */
 export async function deleteMethodData(): Promise<ActionResult> {
   return withUser("athlete", async ({ supabase, user }) => {
+    await supabase.from("method_notes").delete().eq("athlete_id", user.id);
     const a = await supabase.from("method_weeks").delete().eq("athlete_id", user.id);
     if (a.error) return dbError(a.error);
     const b = await supabase.from("method_profiles").delete().eq("athlete_id", user.id);
     if (b.error) return dbError(b.error);
     revalidate();
     return { ok: true, message: "Usunęliśmy Twoją ankietę i historię planu. Treningi w kalendarzu zostały." };
+  });
+}
+
+/** A question to the VYRA Method assistant. */
+export async function askMethodCoach(question: string): Promise<ActionResult<{ answer: string }>> {
+  return withUser("athlete", async ({ supabase, user }) => {
+    const data = await loadMethod(supabase, user.id);
+    if (!data.access) return { ok: false, error: "Asystent jest dostępny w planie VYRA Method." };
+    const r = await chat(supabase, user.id, question);
+    if (!r.ok) return { ok: false, error: r.error };
+    revalidatePath("/athlete/metoda");
+    return { ok: true, data: { answer: r.answer } };
   });
 }

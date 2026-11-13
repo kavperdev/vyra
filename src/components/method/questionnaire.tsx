@@ -50,7 +50,7 @@ function Scale({ value, onChange, low, high }: { value: string; onChange: (v: st
 function Section({ n, title, lead, children }: { n: number; title: string; lead?: string; children: React.ReactNode }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="grid gap-1.5">
         <CardTitle>
           <span className="mr-2 font-mono text-[12px] text-muted">{String(n).padStart(2, "0")}</span>
           {title}
@@ -310,7 +310,7 @@ export function MethodQuestionnaire({ initial, today, editing }: { initial: Meth
 
       {preview ? (
         <Card className="border-foreground/30">
-          <CardHeader>
+          <CardHeader className="grid gap-1.5">
             <CardTitle>Tak widzi Cię metoda VYRA</CardTitle>
             <p className="text-sm text-muted">Podgląd na żywo z Twoich odpowiedzi. Po zapisaniu powstanie z tego pierwszy tydzień.</p>
           </CardHeader>

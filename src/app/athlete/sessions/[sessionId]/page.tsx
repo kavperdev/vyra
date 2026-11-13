@@ -5,6 +5,8 @@ import { ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/misc";
 import { Comments } from "@/components/training/comments";
+import { AssistantNote, RefreshSoon } from "@/components/method/coach-feed";
+import { coachReady, isMethodSession } from "@/lib/method/coach";
 import { ExecutionForm } from "@/components/training/execution-form";
 import { WorkoutPlayer } from "@/components/training/workout-player";
 import { StatusBadge } from "@/components/training/session-bits";
@@ -33,7 +35,20 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
   const supabase = await createClient();
   const session = await getSessionDetail(supabase, sessionId);
   if (!session || session.athlete_id !== user.id) notFound();
-  const [comments, selfPlanning] = await Promise.all([listComments(supabase, sessionId), getSelfPlanning(supabase, user.id)]);
+  const [comments, selfPlanning, isMethod] = await Promise.all([
+    listComments(supabase, sessionId),
+    getSelfPlanning(supabase, user.id),
+    isMethodSession(supabase, user.id, sessionId).catch(() => false),
+  ]);
+  const methodNote = isMethod
+    ? await supabase
+        .from("method_notes")
+        .select("body")
+        .eq("session_id", sessionId)
+        .eq("kind", "session")
+        .maybeSingle()
+        .then((r) => (r.error ? null : ((r.data as { body: string } | null)?.body ?? null)))
+    : null;
   const own = !!selfPlanning && session.created_by === user.id;
   const today = todayISO(user.profile.timezone);
   const done = session.execution && session.execution.status !== "in_progress";
@@ -55,12 +70,26 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="grid content-start gap-6">
           <PlanDetails session={session} />
+          {isMethod && done ? (
+            <Card>
+              <CardContent className="pt-5">
+                {methodNote ? (
+                  <AssistantNote body={methodNote} />
+                ) : coachReady() ? (
+                  <>
+                    <p className="text-sm text-muted">Asystent VYRA Method pisze komentarz do tego treningu…</p>
+                    <RefreshSoon />
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle className="eyebrow text-[11px]">{tl("Komentarze", "Comments")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder={tl("Napisz do trenera…", "Write to your coach…")} />
+              <Comments sessionId={session.id} comments={comments} currentUserId={user.id} placeholder={isMethod ? tl("Notatka do treningu…", "A note on this session…") : tl("Napisz do trenera…", "Write to your coach…")} />
             </CardContent>
           </Card>
         </div>
