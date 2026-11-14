@@ -21,6 +21,7 @@ export async function startVoucherCheckout(input: {
   recipient: string;
   message: string;
   accepted: boolean;
+  app?: boolean;
 }): Promise<VoucherStart> {
   const { lang, t } = await getT();
   if (!input.accepted) return { ok: false, error: t("Zaakceptuj regulamin, żeby przejść do płatności.", "Please accept the terms to continue.") };
@@ -48,8 +49,8 @@ export async function startVoucherCheckout(input: {
       mode: "payment",
       locale: lang === "en" ? "en" : "pl",
       allow_promotion_codes: "true",
-      success_url: `${origin}/voucher/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/voucher`,
+      success_url: input.app ? `${origin}/app/dziekujemy?k=voucher&session_id={CHECKOUT_SESSION_ID}` : `${origin}/voucher/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: input.app ? `${origin}/app/voucher` : `${origin}/voucher`,
       customer_email: buyerEmail,
       customer_creation: "always",
       invoice_creation: { enabled: "true" },

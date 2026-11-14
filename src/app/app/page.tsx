@@ -91,10 +91,10 @@ export default async function AppHome() {
 
       {live ? (
         <>
-          <SectionHead title={t("Wyzwanie", "Challenge")} href="/wyzwania" more={t("Wszystkie", "All")} />
+          <SectionHead title={t("Wyzwanie", "Challenge")} href="/app/wyzwania" more={t("Wszystkie", "All")} />
           <Group>
             <Row
-              href={`/wyzwania/${live.slug}`}
+              href={`/app/wyzwania/${live.slug}`}
               icon={<Trophy className="size-4" />}
               title={live.title}
               sub={`${formatDate(live.starts_on, "d.MM")} – ${formatDate(live.ends_on, "d.MM")}`}

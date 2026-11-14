@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowRight, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ type Errors = Record<string, string[] | undefined>;
 /** Join form on the challenge page. New participants go straight to their own page. */
 export function JoinChallenge({ challengeId, slug }: { challengeId: string; slug: string }) {
   const router = useRouter();
+  const base = usePathname()?.startsWith("/app") ? "/app/wyzwania" : "/wyzwania";
   const [v, setV] = useState({ name: "", club: "", email: "", consent: false, website: "" });
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
@@ -34,7 +35,7 @@ export function JoinChallenge({ challengeId, slug }: { challengeId: string; slug
         start(async () => {
           const res = await joinChallenge({ challenge_id: challengeId, slug, ...v });
           if (!res.ok) return void setErrors(res.fieldErrors ?? { form: [res.error] });
-          if (res.data?.token) router.push(`/wyzwania/moje?t=${res.data.token}&nowy=1`);
+          if (res.data?.token) router.push(`${base}/moje?t=${res.data.token}&nowy=1`);
           else setSent(true);
         });
       }}

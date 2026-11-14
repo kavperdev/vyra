@@ -62,14 +62,14 @@ export default async function AppShop() {
         {camps.slice(0, 3).map((camp) => (
           <Row
             key={camp.id}
-            href={`/obozy/${camp.slug}`}
+            href={`/app/obozy/${camp.slug}`}
             icon={<Tent className="size-4" />}
             title={camp.title}
             sub={[camp.starts_on ? formatDate(camp.starts_on, "d MMM yyyy") : null, camp.location, camp.price_pln ? `${camp.price_pln.toLocaleString("pl-PL")} zł` : null].filter(Boolean).join(" · ")}
           />
         ))}
-        {!camps.length ? <Row href="/obozy" icon={<Tent className="size-4" />} title={t("Obozy VYRA", "VYRA camps")} sub={t("Zapisz się na listę oczekujących", "Join the waiting list")} /> : null}
-        <Row href="/voucher" icon={<Gift className="size-4" />} title={t("Voucher na prezent", "Gift voucher")} sub={t("Plan albo trener dla kogoś bliskiego", "A plan or coach for someone close")} />
+        {!camps.length ? <Row href="/app/kontakt" icon={<Tent className="size-4" />} title={t("Obozy VYRA", "VYRA camps")} sub={t("Zapisz się na listę oczekujących", "Join the waiting list")} /> : null}
+        <Row href="/app/voucher" icon={<Gift className="size-4" />} title={t("Voucher na prezent", "Gift voucher")} sub={t("Plan albo trener dla kogoś bliskiego", "A plan or coach for someone close")} />
       </Group>
 
       <div className="mt-6 flex items-center justify-center gap-2 text-[12px] text-white/40">

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Download, FileText, Globe, Mail, Shield, Users } from "lucide-react";
+import { FileText, Gift, Mail, Shield, Trophy, Users } from "lucide-react";
+import { InstallRow } from "@/components/app/install-row";
 import { ReopenOnboarding } from "@/components/app/onboarding";
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
@@ -40,12 +41,13 @@ export default async function AppYou() {
       <ReopenOnboarding className="mt-3 w-full rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-left text-[14px] text-white/75 active:scale-[0.985]" />
       <SectionHead title={t("Więcej", "More")} />
       <Group>
-        <Row href="/pobierz" icon={<Download className="size-4" />} title={t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")} />
+        <InstallRow />
+        <Row href="/app/wyzwania" icon={<Trophy className="size-4" />} title={t("Wyzwania", "Challenges")} />
         <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club Siedlce" sub={t("Wspólne bieganie w czwartki", "Group runs on Thursdays")} />
-        <Row href="/" icon={<Globe className="size-4" />} title={t("Strona vyraathl.pl", "vyraathl.pl website")} />
-        <Row href="/kontakt" icon={<Mail className="size-4" />} title={t("Kontakt", "Contact")} />
-        <Row href="/regulamin" icon={<FileText className="size-4" />} title={t("Regulamin", "Terms")} />
-        <Row href="/polityka-prywatnosci" icon={<Shield className="size-4" />} title={t("Prywatność", "Privacy")} />
+        <Row href="/app/voucher" icon={<Gift className="size-4" />} title={t("Voucher na prezent", "Gift voucher")} />
+        <Row href="/app/kontakt" icon={<Mail className="size-4" />} title={t("Kontakt", "Contact")} />
+        <Row href="/app/dokument/regulamin" icon={<FileText className="size-4" />} title={t("Regulamin", "Terms")} />
+        <Row href="/app/dokument/polityka-prywatnosci" icon={<Shield className="size-4" />} title={t("Prywatność", "Privacy")} />
       </Group>
     </div>
   );

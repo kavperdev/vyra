@@ -21,6 +21,7 @@ export async function startCheckout(
   planId: string,
   accepted = false,
   buyer: { full_name?: string; email?: string } = {},
+  app = false,
 ): Promise<CheckoutStart> {
   const { lang, t } = await getT();
   if (!accepted) return { ok: false, error: t("Zaakceptuj regulamin, żeby przejść do płatności.", "Please accept the terms to continue to payment.") };
@@ -59,8 +60,8 @@ export async function startCheckout(
       ...(embedded
         ? { ui_mode: "embedded", return_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}` }
         : {
-            success_url: `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: /method/i.test(plan.name) ? `${origin}/metoda#cennik` : `${origin}/prowadzenie#pakiety`,
+            success_url: app ? `${origin}/app/dziekujemy?session_id={CHECKOUT_SESSION_ID}` : `${origin}/prowadzenie/dziekujemy?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: app ? `${origin}/app/sklep` : /method/i.test(plan.name) ? `${origin}/metoda#cennik` : `${origin}/prowadzenie#pakiety`,
           }),
       customer_email: email,
       metadata: { plan_id: plan.id, plan_name: plan.name, full_name: fullName, terms: "regulamin+start_przed_14_dniami", source: source ?? "", ref: refCode ?? "" },

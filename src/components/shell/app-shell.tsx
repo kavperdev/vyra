@@ -30,7 +30,7 @@ export async function AppShell({
   const { t } = await getT();
   const roleLabel = roleLabelProp ?? (role === "coach" ? t("Trener", "Coach") : t("Zawodnik", "Athlete"));
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+    <div className={`app-skin min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)] ${role === "athlete" ? "app-native" : ""}`}>
       {/* desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-border bg-background lg:flex">
         <div className="flex items-center justify-between px-5 pb-6 pt-6">
@@ -49,10 +49,18 @@ export async function AppShell({
 
       <div className="min-w-0 overflow-x-clip">
         {/* phone top bar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur lg:hidden">
-          <Link href={root} aria-label="VYRA — start">
-            <Logo className="h-[13px]" />
-          </Link>
+        <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-background lg:hidden" />
+        <header className="relative z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between bg-background px-4 pt-[env(safe-area-inset-top)] lg:hidden">
+          <span className="flex items-center gap-2.5">
+            <Link href={role === "athlete" ? "/app" : root} aria-label="VYRA">
+              <Logo className="h-[13px]" />
+            </Link>
+            {role === "athlete" ? (
+              <Link href="/app" className="rounded-full bg-surface px-3 py-1.5 text-[12px] font-medium text-muted transition active:scale-95">
+                {t("Aplikacja", "App")}
+              </Link>
+            ) : null}
+          </span>
           <div className="flex items-center gap-1">
             <Link
               href={`${root}/notifications`}
@@ -68,7 +76,7 @@ export async function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
+        <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-3 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
           <InstallHint />
           <PushPrompt />
           <PageTransition>{children}</PageTransition>

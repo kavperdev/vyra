@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Check, X } from "lucide-react";
+import { useState } from "react";
+import { Check } from "lucide-react";
+import { Sheet } from "@/components/app/sheet";
 import { TrialForm } from "@/components/app/trial-form";
 import { BuyButton } from "@/components/site/buy-button";
 import { lines, type CoachingPlan } from "@/lib/camps";
@@ -13,29 +14,14 @@ const zl = (v: number) => `${v.toLocaleString("pl-PL")} zł`;
 /** Bottom sheet with the free-trial form. */
 export function TrialButton({ className, label = "Odbierz 14 dni za darmo" }: { className?: string; label?: string }) {
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    document.documentElement.style.overflow = open ? "hidden" : "";
-  }, [open]);
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={cn("h-12 w-full rounded-full bg-white text-[15px] font-semibold text-black transition active:scale-[0.98]", className)}>
         {label}
       </button>
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="app-sheet mx-auto w-full max-w-md rounded-t-[28px] border-t border-white/10 bg-[#121214] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-3" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
-            <div className="mb-1 flex items-center justify-between">
-              <p className="text-[18px] font-semibold">14 dni VYRA Method za darmo</p>
-              <button type="button" aria-label="Zamknij" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-full bg-white/[0.07]">
-                <X className="size-4" />
-              </button>
-            </div>
-            <p className="mb-4 text-[13px] text-white/50">Bez karty. Link do konta przyjdzie na e-mail.</p>
-            <TrialForm />
-          </div>
-        </div>
-      ) : null}
+      <Sheet open={open} onClose={() => setOpen(false)} title="14 dni VYRA Method za darmo" sub="Bez karty. Link do konta przyjdzie na e-mail.">
+        <TrialForm />
+      </Sheet>
     </>
   );
 }
@@ -88,9 +74,7 @@ export function MethodPicker({ plans, pay }: { plans: CoachingPlan[]; pay: boole
         {pay ? (
           <BuyButton key={plan.id} planId={plan.id} primary />
         ) : (
-          <Link href="/metoda#cennik" target="_blank" rel="noopener" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
-            Szczegóły i zakup
-          </Link>
+          <p className="rounded-full bg-white/[0.06] py-3 text-center text-[14px] text-white/50">Płatności wkrótce</p>
         )}
       </div>
     </div>
@@ -125,9 +109,7 @@ export function CoachCards({ plans, pay }: { plans: CoachingPlan[]; pay: boolean
             {pay ? (
               <BuyButton planId={p.id} primary={p.highlighted} />
             ) : (
-              <Link href="/prowadzenie#pakiety" target="_blank" rel="noopener" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
-                Zgłoś się
-              </Link>
+              <Link href="/app/kontakt" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">Zgłoś się</Link>
             )}
           </div>
         </div>

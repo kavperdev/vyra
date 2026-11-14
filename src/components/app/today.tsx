@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LocateFixed, MapPin, X } from "lucide-react";
+import { LocateFixed, MapPin } from "lucide-react";
+import { Sheet } from "@/components/app/sheet";
 import { CountUp, ParticleRing } from "@/components/charts/particle-ring";
 import { Card, Chip, Tile } from "@/components/app/ui";
 import { readinessLevel } from "@/lib/readiness";
@@ -301,16 +302,7 @@ export function Today() {
       )}
 
       {/* Sheets */}
-      {sheet ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm" onClick={() => setSheet(null)}>
-          <div className="app-sheet w-full rounded-t-[28px] border-t border-white/10 bg-[#121214] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-3" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-[18px] font-semibold">{sheet === "check" ? "Jak się dziś czujesz?" : "Gdzie biegasz?"}</p>
-              <button type="button" aria-label="Zamknij" onClick={() => setSheet(null)} className="grid size-8 place-items-center rounded-full bg-white/[0.07]">
-                <X className="size-4" />
-              </button>
-            </div>
+      <Sheet open={!!sheet} onClose={() => setSheet(null)} title={sheet === "check" ? "Jak się dziś czujesz?" : "Gdzie biegasz?"}>
             {sheet === "check" ? (
               <div className="grid gap-5">
                 <Scale label="Sen tej nocy" value={draft.sleep} onChange={(v) => setDraft({ ...draft, sleep: v })} low="fatalnie" high="świetnie" />
@@ -345,9 +337,7 @@ export function Today() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      ) : null}
+      </Sheet>
     </div>
   );
 }

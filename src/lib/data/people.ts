@@ -31,14 +31,26 @@ export async function listAthletes(supabase: ServerSupabase, coachId: string): P
       | { id: string; full_name: string; email: string | null; details: AthleteProfile | AthleteProfile[] | null }[]
       | null;
   };
-  return ((data ?? []) as unknown as Row[])
+  const rows = ((data ?? []) as unknown as Row[])
     .map((r) => {
       const a = one(r.athlete);
       if (!a) return null;
       return { id: a.id, full_name: a.full_name, email: a.email, link_status: r.status, linked_at: r.created_at, profile: one(a.details) };
     })
-    .filter((x): x is AthleteRow => x !== null)
-    .sort((a, b) => a.full_name.localeCompare(b.full_name, "pl"));
+    .filter((x): x is AthleteRow => x !== null);
+  // Free-trial users of the app are not the coach's athletes: hide anyone whose only access is a trial.
+  const emails = rows.map((r) => r.email?.toLowerCase()).filter((e): e is string => !!e);
+  let trialOnly = new Set<string>();
+  if (emails.length) {
+    const { data: ms } = await supabase.from("memberships").select("email, stripe_session").in("email", emails);
+    const by = new Map<string, boolean[]>();
+    for (const m of (ms ?? []) as { email: string; stripe_session: string | null }[]) {
+      const k = m.email.toLowerCase();
+      by.set(k, [...(by.get(k) ?? []), (m.stripe_session ?? "").startsWith("trial:")]);
+    }
+    trialOnly = new Set([...by].filter(([, v]) => v.length && v.every(Boolean)).map(([k]) => k));
+  }
+  return rows.filter((r) => !trialOnly.has(r.email?.toLowerCase() ?? "")).sort((a, b) => a.full_name.localeCompare(b.full_name, "pl"));
 }
 
 export async function getAthlete(supabase: ServerSupabase, coachId: string, athleteId: string): Promise<AthleteRow | null> {

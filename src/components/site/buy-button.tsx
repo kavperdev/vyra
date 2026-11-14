@@ -97,7 +97,7 @@ export function BuyButton({ planId, primary = false, className }: { planId: stri
   const pay = () =>
     start(async () => {
       setError(null);
-      const res = await startCheckout(planId, accepted, buyer);
+      const res = await startCheckout(planId, accepted, buyer, location.pathname.startsWith("/app"));
       if (!res.ok) return setError({ text: res.error, field: res.field });
       if ("clientSecret" in res) setSheet({ clientSecret: res.clientSecret, publishableKey: res.publishableKey });
       else window.location.assign(res.url);

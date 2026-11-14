@@ -367,3 +367,36 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
   text-align: left;
   min-height: 1.25em;
 }
+
+/* Forms shared with the website, restyled inside the app (and on the sign-in screens) so nothing looks borrowed. */
+.app-ui input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])[class*="rounded-lg"],
+.app-ui select[class*="rounded-lg"],
+.app-ui div[class*="bg-surface-2"][class*="rounded-lg"] {
+  height: 3.25rem;
+  border-radius: 14px;
+  border-color: rgb(255 255 255 / 0.08);
+  background-color: #111113;
+  padding-inline: 1rem;
+  font-size: 16px;
+}
+.app-ui textarea[class*="rounded-lg"] { border-radius: 14px; border-color: rgb(255 255 255 / 0.08); background-color: #111113; font-size: 16px; }
+.app-ui form button[type="submit"] { height: 3.25rem; width: 100%; border-radius: 9999px; background: #fff; color: #000; font-size: 15px; font-weight: 600; }
+.app-ui form button[type="submit"]:active { transform: scale(0.98); }
+.app-ui .eyebrow { font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 13px; color: rgb(255 255 255 / 0.45); }
+.app-ui .display { font-family: inherit; font-stretch: normal; text-transform: none; letter-spacing: -0.02em; font-weight: 600; line-height: 1.1; }
+.app-ui [role="alert"] { border-radius: 14px; }
+
+/* The training platform wears the app's skin in dark mode: same black, same cards, same corners. */
+.dark .app-skin {
+  --background: #000000;
+  --surface: #111113;
+  --surface-2: #18181b;
+  --border: rgb(255 255 255 / 0.07);
+  --border-strong: rgb(255 255 255 / 0.14);
+  background-color: #000;
+}
+.app-skin .app-card { border-radius: 20px; }
+.app-skin main input:not([type="checkbox"]):not([type="radio"]):not([type="range"])[class*="rounded-lg"],
+.app-skin main select[class*="rounded-lg"],
+.app-skin main textarea[class*="rounded-lg"] { border-radius: 14px; font-size: 16px; }
+.app-skin main button[class*="rounded-md"], .app-skin main a[class*="rounded-md"][class*="inline-flex"] { border-radius: 9999px; }

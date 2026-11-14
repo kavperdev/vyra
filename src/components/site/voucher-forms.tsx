@@ -40,7 +40,7 @@ export function VoucherBuyForm({ plans }: { plans: VoucherPlan[] }) {
         e.preventDefault();
         start(async () => {
           setError(null);
-          const res = await startVoucherCheckout({ planId, ...v, accepted });
+          const res = await startVoucherCheckout({ planId, ...v, accepted, app: location.pathname.startsWith("/app") });
           if (res.ok) window.location.assign(res.url);
           else setError({ text: res.error, field: res.field });
         });

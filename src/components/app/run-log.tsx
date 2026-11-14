@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import { Sheet } from "@/components/app/sheet";
 import { TimeInput } from "@/components/app/tools";
 import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
@@ -161,45 +162,34 @@ export function RunLog() {
         <p className="px-2 text-center text-[13px] text-white/40">Zapisuj biegi, a zobaczysz kilometry z tygodnia i miesiąca. Dane zostają na tym telefonie.</p>
       )}
 
-      {sheet ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 backdrop-blur-sm" onClick={() => setSheet(false)}>
-          <div className="app-sheet mx-auto w-full max-w-md rounded-t-[28px] border-t border-white/10 bg-[#121214] px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-3" onClick={(e) => e.stopPropagation()}>
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-[18px] font-semibold">Nowy bieg</p>
-              <button type="button" aria-label="Zamknij" onClick={() => setSheet(false)} className="grid size-8 place-items-center rounded-full bg-white/[0.07]">
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <label className="grid gap-1.5 text-[12px] text-white/45">
-                  Dzień
-                  <input type="date" value={d.day} max={day()} onChange={(e) => setD({ ...d, day: e.target.value })} className="h-12 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-[15px] outline-none [color-scheme:dark]" />
-                </label>
-                <label className="grid gap-1.5 text-[12px] text-white/45">
-                  Dystans (km)
-                  <input inputMode="decimal" enterKeyHint="next" placeholder="np. 6,5" value={d.km} onChange={(e) => setD({ ...d, km: e.target.value.replace(/[^0-9.,]/g, "").slice(0, 6) })} className="h-12 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-[16px] tabular-nums outline-none" />
-                </label>
-              </div>
-              <p className="text-[12px] text-white/45">Czas</p>
-              <TimeInput value={d.sec} onChange={(sec) => setD({ ...d, sec })} />
-              <p className="text-[12px] text-white/45">Jak ciężko było? {d.rpe}/10</p>
-              <div className="grid grid-cols-10 gap-1">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                  <button key={n} type="button" onClick={() => setD({ ...d, rpe: n })} className={cn("h-10 rounded-lg text-[13px] tabular-nums", d.rpe === n ? "bg-white text-black" : "bg-white/[0.06] text-white/60")}>
-                    {n}
-                  </button>
-                ))}
-              </div>
-              <input placeholder="Notatka (opcjonalnie)" value={d.note} onChange={(e) => setD({ ...d, note: e.target.value })} className="h-12 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[15px] outline-none" />
-              <button type="button" disabled={!valid} onClick={save} className="mt-1 h-13 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98] disabled:opacity-30">
-                Zapisz bieg
-              </button>
-            </div>
+      <Sheet open={sheet} onClose={() => setSheet(false)} title="Nowy bieg">
+        <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="grid min-w-0 gap-1.5 text-[12px] text-white/45">
+              Dzień
+              <input type="date" value={d.day} max={day()} onChange={(e) => setD({ ...d, day: e.target.value || day() })} className="h-12 w-full min-w-0 appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-left text-[16px] outline-none [color-scheme:dark]" />
+            </label>
+            <label className="grid min-w-0 gap-1.5 text-[12px] text-white/45">
+              Dystans (km)
+              <input inputMode="decimal" enterKeyHint="done" placeholder="np. 6,5" value={d.km} onChange={(e) => setD({ ...d, km: e.target.value.replace(/[^0-9.,]/g, "").slice(0, 6) })} className="h-12 w-full min-w-0 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-[16px] tabular-nums outline-none" />
+            </label>
           </div>
+          <p className="text-[12px] text-white/45">Czas</p>
+          <TimeInput value={d.sec} onChange={(sec) => setD({ ...d, sec })} />
+          <p className="text-[12px] text-white/45">Jak ciężko było? {d.rpe}/10</p>
+          <div className="grid grid-cols-10 gap-1">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <button key={n} type="button" onClick={() => setD({ ...d, rpe: n })} className={cn("h-10 min-w-0 rounded-lg text-[13px] tabular-nums transition", d.rpe === n ? "bg-white text-black" : "bg-white/[0.06] text-white/60")}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <input placeholder="Notatka (opcjonalnie)" value={d.note} onChange={(e) => setD({ ...d, note: e.target.value })} className="h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[16px] outline-none" />
+          <button type="button" disabled={!valid} onClick={save} className="mt-1 h-13 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98] disabled:opacity-30">
+            Zapisz bieg
+          </button>
         </div>
-      ) : null}
+      </Sheet>
     </div>
   );
 }

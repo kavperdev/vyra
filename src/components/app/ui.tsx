@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Pages of the vyraathl.pl website open in the browser, not inside the app. */
-export const isSite = (href: string) => href.startsWith("/") && !/^\/(app|panel|athlete|coach|login|invite|auth|signup)(\/|\?|$)/.test(href);
+/** Everything stays inside the app: links never open the website. */
+export const isSite = (href: string) => /^https?:/.test(href);
 export const siteProps = (href: string) => (isSite(href) ? { target: "_blank", rel: "noopener" } : {});
 
 /** Opus-like building blocks: quiet dark cards, small grey labels, light numbers. */
