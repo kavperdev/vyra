@@ -14,10 +14,9 @@ export default async function AppRunClub() {
   const visible = events.filter((e) => e.visible);
   return (
     <div className="app-rise grid grid-cols-1 gap-3.5">
-      <div className="pb-2 pt-1">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-white/45">VYRA Run Club · Siedlce</p>
-        <h1 className="app-h mt-3 text-[44px]">{t("Biegamy razem.", "We run together.")}</h1>
-        <p className="mt-4 text-[15px] leading-relaxed text-white/60">{t("Za darmo, jedna grupa, tempo rozmowy, każdy poziom.", "Free, one group, conversational pace, every level.")}</p>
+      <div className="pb-2 pt-2">
+        <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em]">Run Club Siedlce</h1>
+        <p className="mt-1 text-[14px] leading-relaxed text-white/50">{t("Za darmo, jedna grupa, tempo rozmowy, każdy poziom.", "Free, one group, conversational pace, every level.")}</p>
       </div>
       {visible.length ? (
         visible.map((e) => {
@@ -25,10 +24,10 @@ export default async function AppRunClub() {
           const full = e.capacity != null && taken >= e.capacity;
           const cal = { title: e.title, starts_at: e.starts_at, place: e.place, when: formatDate(e.starts_at, "EEEE, d MMMM · HH:mm") };
           return (
-            <section key={e.id} className="grid gap-4 border-t border-white/15 pt-5">
+            <section key={e.id} className="grid gap-4 rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
               <div className="grid gap-2">
-                <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-[var(--accent)]">{formatDate(e.starts_at, "EEEE, d MMMM · HH:mm")}</p>
-                <h2 className="app-h text-[26px]">{e.title}</h2>
+                <p className="text-[12px] capitalize text-[#ff6a6f]">{formatDate(e.starts_at, "EEEE, d MMMM · HH:mm")}</p>
+                <h2 className="text-[20px] font-semibold">{e.title}</h2>
                 <p className="flex items-start gap-2 text-white/70">
                   <MapPin className="mt-1 size-4 shrink-0" /> {e.place}
                 </p>
@@ -50,7 +49,7 @@ export default async function AppRunClub() {
           );
         })
       ) : (
-        <section className="border-t border-white/15 pt-5">
+        <section className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
           <p className="text-xl font-bold">{t("Co czwartek o 18:00", "Every Thursday at 6 pm")}</p>
           <p className="mt-2 flex items-start gap-2 text-white/70">
             <MapPin className="mt-1 size-4 shrink-0" /> Park Aleksandria, Siedlce · {t("zbiórka przy łosiu", "meet at the elk statue")}
@@ -58,7 +57,7 @@ export default async function AppRunClub() {
           <p className="mt-3 text-sm text-white/55">{t("Kolejne terminy pojawią się tutaj wkrótce.", "Next dates will appear here soon.")}</p>
         </section>
       )}
-      <section className="grid gap-2 border-t border-white/15 pt-5 text-[15px] text-white/70">
+      <section className="grid gap-2 rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 text-[14px] text-white/70">
         <p className="font-semibold text-white">{t("Co zabrać", "What to bring")}</p>
         <p>{t("Buty do biegania, strój na cebulkę, czapkę i rękawiczki. Po zmroku odblask albo czołówkę. Wodę, jeśli potrzebujesz.", "Running shoes, layers, a hat and gloves. After dark a reflector or head torch. Water if you need it.")}</p>
       </section>

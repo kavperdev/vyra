@@ -28,17 +28,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <img src="/branding/vyra-logo-white.svg" alt="VYRA" className="h-4 w-auto" />
           </Link>
           {user ? (
-            <Link href="/app/ty" aria-label={t("Twoje konto", "Your account")} className="grid size-8 place-items-center rounded-full border border-white/25 font-mono text-[12px] transition active:opacity-60">
+            <Link href="/app/ty" aria-label={t("Twoje konto", "Your account")} className="grid size-8 place-items-center rounded-full bg-white/[0.08] text-[13px] font-medium transition active:scale-95">
               {(user.profile.full_name || user.profile.email || "V").trim().charAt(0).toUpperCase()}
             </Link>
           ) : (
-            <Link href="/login" className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-white/70 transition active:opacity-60">
+            <Link href="/login" className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[13px] font-medium text-white/80 transition active:scale-95">
               {t("Zaloguj się", "Sign in")}
             </Link>
           )}
         </div>
       </header>
-      <main className="mx-auto w-full max-w-md px-4 pb-28 pt-4">{children}</main>
+      <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">{children}</main>
       <AppTabBar />
       <RevealObserver />
       <SourceTracker />

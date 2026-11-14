@@ -1,115 +1,82 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Calculator, Dumbbell, HeartPulse, Timer, Trophy } from "lucide-react";
 import { CourseCard } from "@/components/app/course-progress";
-import { Bleed, Label, Row, Section, Title } from "@/components/app/ui";
+import { Today } from "@/components/app/today";
+import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
-import { listArticles } from "@/lib/data/camps";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
-import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Start" };
+export const metadata = { title: "Dziś" };
 
 export default async function AppHome() {
-  const { t, lang } = await getT();
-  const ok = isSupabaseConfigured();
+  const { t } = await getT();
   const supabase = await createClient();
-  const [user, challenges, arts] = await Promise.all([
-    ok ? getCurrentUser().catch(() => null) : null,
-    listChallenges(supabase).catch(() => []),
-    listArticles(supabase, { publishedOnly: true }).catch(() => []),
-  ]);
-  const live = challenges.filter((c) => c.visible && challengeState(c) !== "ended").slice(0, 2);
-  const articles = articlesFor(arts, lang).items.slice(0, 4);
-  const today = new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
-  const name = user?.profile.full_name?.split(" ")[0];
+  const [user, challenges] = await Promise.all([isSupabaseConfigured() ? getCurrentUser().catch(() => null) : null, listChallenges(supabase).catch(() => [])]);
+  const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
+  const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
   return (
     <div className="app-rise grid grid-cols-1">
-      <div className="pb-5 pt-1">
-        <Label>
-          {today}
-          {name ? ` · ${name}` : ""}
-        </Label>
-        <Title className="mt-3">
-          {t("Biegaj", "Run")}
-          <br />
-          {t("mądrze.", "smart.")}
-        </Title>
-      </div>
+      <p className="pt-1 text-center text-[12px] capitalize text-white/40">{today}</p>
+      <Today />
 
       {user ? (
-        <Link href="/panel" className="mb-5 flex items-center justify-between bg-white px-5 py-4 text-black transition active:opacity-70">
+        <Link href="/panel" className="mt-6 flex items-center justify-between rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
           <span>
-            <span className="block font-mono text-[10.5px] uppercase tracking-[0.22em] text-black/50">{t("Twój plan", "Your plan")}</span>
-            <span className="mt-0.5 block text-[17px] font-bold">{t("Trening na dziś", "Today's session")}</span>
+            <span className="block text-[12px] text-black/50">{t("Twój plan", "Your plan")}</span>
+            <span className="block text-[16px] font-semibold">{t("Trening na dziś", "Today's session")}</span>
           </span>
           <ArrowUpRight className="size-5" />
         </Link>
       ) : null}
 
-      <Bleed href="/app/sklep" image="/site/night-city.jpg" position="center 55%">
-        <div className="flex min-h-[420px] flex-col justify-end px-4 pb-6">
-          <Label className="text-white/70">VYRA Method · {t("14 dni za darmo", "14 days free")}</Label>
-          <p className="app-h mt-3 text-[34px]">{t("Plan, który zmienia się razem z Tobą.", "A plan that changes with you.")}</p>
-          <p className="mt-4 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em]">
-            {t("Sprawdź", "Explore")} <ArrowUpRight className="size-4 text-[var(--accent)]" />
-          </p>
-        </div>
-      </Bleed>
+      <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
+      <CourseCard />
 
-      <Section label={t("Darmowy kurs · Biegaj mądrze", "Free course · Run smart")}>
-        <CourseCard />
-      </Section>
+      <SectionHead title={t("Narzędzia", "Tools")} href="/app/narzedzia" more={t("Wszystkie", "All")} />
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { href: "/app/narzedzia?t=prognoza", icon: Timer, title: t("Prognoza wyniku", "Race predictor"), sub: t("i Twoje tempa", "and your paces") },
+          { href: "/app/narzedzia?t=tetno", icon: HeartPulse, title: t("Strefy tętna", "HR zones"), sub: t("z wieku lub max", "from age or max") },
+          { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
+          { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("żele i picie", "gels and water") },
+        ].map((x) => (
+          <Card key={x.href} href={x.href} className="p-4">
+            <x.icon className="size-5 text-white/70" />
+            <p className="mt-6 text-[15px] font-medium leading-tight">{x.title}</p>
+            <p className="mt-0.5 text-[12px] text-white/45">{x.sub}</p>
+          </Card>
+        ))}
+      </div>
 
-      {live.length ? (
-        <Section label={t("Wyzwania", "Challenges")} href="/app/trening" more={t("Więcej", "More")}>
-          {live.map((c) => (
+      {live ? (
+        <>
+          <SectionHead title={t("Wyzwanie", "Challenge")} href="/wyzwania" more={t("Wszystkie", "All")} />
+          <Group>
             <Row
-              key={c.id}
-              href={`/wyzwania/${c.slug}`}
-              title={c.title}
-              meta={`${challengeState(c) === "live" ? t("Trwa", "Live") : t("Wkrótce", "Soon")} · ${formatDate(c.starts_on, "d.MM")} – ${formatDate(c.ends_on, "d.MM")}`}
+              href={`/wyzwania/${live.slug}`}
+              icon={<Trophy className="size-4" />}
+              title={live.title}
+              sub={`${formatDate(live.starts_on, "d.MM")} – ${formatDate(live.ends_on, "d.MM")}`}
+              right={<Chip tone={challengeState(live) === "live" ? "good" : "quiet"}>{challengeState(live) === "live" ? t("trwa", "live") : t("wkrótce", "soon")}</Chip>}
             />
-          ))}
-        </Section>
+          </Group>
+        </>
       ) : null}
 
-      {articles.length ? (
-        <Section label={t("Wiedza", "Journal")} href="/app/wiedza" more={t("Wszystko", "All")}>
-          {articles.map((a, i) => (
-            <Row key={a.id} href={`/app/wiedza/${a.slug}`} index={String(i + 1).padStart(2, "0")} title={a.title} meta={categoryLabel(a.category, t)} />
-          ))}
-        </Section>
+      {!user ? (
+        <Card href="/app/sklep" className="mt-7 overflow-hidden p-0">
+          <div className="h-32 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
+          <div className="p-4">
+            <Chip tone="accent">{t("14 dni za darmo", "14 days free")}</Chip>
+            <p className="mt-2.5 text-[17px] font-semibold leading-snug">{t("VYRA Method: plan, który co tydzień dopasowuje się do Ciebie", "VYRA Method: a plan that adapts to you every week")}</p>
+          </div>
+        </Card>
       ) : null}
-
-      <Section label={t("Na skróty", "Shortcuts")}>
-        <div className="grid grid-cols-2 border-l border-white/10">
-          {[
-            { href: "/zacznij-biegac", a: t("Zacznij", "Start"), b: t("biegać", "running") },
-            { href: "/kalkulator", a: t("Kalkulator", "Pace"), b: t("tempa", "calculator") },
-            { href: "/app/sklep", a: t("Trener", "Coach"), b: "1:1" },
-            { href: "/voucher", a: "Voucher", b: t("na prezent", "as a gift") },
-          ].map((x) => (
-            <Link key={x.href} href={x.href} className="flex aspect-[1.4] flex-col justify-between border-b border-r border-white/10 p-4 transition active:bg-white/5">
-              <ArrowUpRight className="size-4 self-end text-white/40" />
-              <span className="app-h text-[19px] leading-[1]">
-                {x.a}
-                <br />
-                <span className="text-white/45">{x.b}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      <Link href="/app/run-club" className="mt-6 flex items-center justify-between border border-white/10 px-4 py-3.5 text-[14px] text-white/60 transition active:opacity-60">
-        <span>{t("Jesteś z Siedlec? Biegaj z nami w Run Clubie.", "Near Siedlce? Join our Run Club.")}</span>
-        <ArrowUpRight className="size-4 shrink-0" />
-      </Link>
     </div>
   );
 }

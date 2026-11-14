@@ -1,5 +1,5 @@
 import { CourseCard } from "@/components/app/course-progress";
-import { Label, Row, Section, Title } from "@/components/app/ui";
+import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { listArticles } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
@@ -12,19 +12,21 @@ export default async function AppKnowledge() {
   const { items } = articlesFor(await listArticles(await createClient(), { publishedOnly: true }).catch(() => []), lang);
   return (
     <div className="app-rise grid grid-cols-1">
-      <div className="pb-2 pt-1">
-        <Label>{t("Od trenerów VYRA", "From VYRA coaches")}</Label>
-        <Title className="mt-3">{t("Wiedza.", "Learn.")}</Title>
-      </div>
-      <Section label={t("Kurs · Biegaj mądrze", "Course · Run smart")} href="/app/kurs" more={t("Lekcje", "Lessons")}>
-        <CourseCard />
-      </Section>
+      <PageHead title={t("Wiedza", "Learn")} sub={t("Kurs, biblioteka treningów i artykuły trenerów VYRA.", "Course, workout library and articles from VYRA coaches.")} />
+      <CourseCard />
+      <Group className="mt-2">
+        <Row href="/app/kurs" title={t("Wszystkie lekcje kursu", "All course lessons")} sub="Biegaj mądrze · 9 lekcji" />
+        <Row href="/app/biblioteka" title={t("Biblioteka treningów", "Workout library")} sub={t("Po co, jak i w jakim tempie", "Why, how and at what pace")} />
+      </Group>
       {items.length ? (
-        <Section label={t("Artykuły", "Articles")}>
-          {items.map((a, i) => (
-            <Row key={a.id} href={`/app/wiedza/${a.slug}`} index={String(i + 1).padStart(2, "0")} title={a.title} meta={categoryLabel(a.category, t)} />
-          ))}
-        </Section>
+        <>
+          <SectionHead title={t("Artykuły", "Articles")} />
+          <Group>
+            {items.map((a) => (
+              <Row key={a.id} href={`/app/wiedza/${a.slug}`} title={a.title} sub={categoryLabel(a.category, t)} />
+            ))}
+          </Group>
+        </>
       ) : null}
     </div>
   );

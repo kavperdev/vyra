@@ -7,9 +7,9 @@ import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/app", icon: Home, pl: "Start", en: "Home" },
-  { href: "/app/wiedza", icon: BookOpen, pl: "Wiedza", en: "Learn" },
+  { href: "/app", icon: Home, pl: "Dziś", en: "Today" },
   { href: "/app/trening", icon: Activity, pl: "Trening", en: "Train" },
+  { href: "/app/wiedza", icon: BookOpen, pl: "Wiedza", en: "Learn" },
   { href: "/app/sklep", icon: ShoppingBag, pl: "Sklep", en: "Shop" },
   { href: "/app/ty", icon: User, pl: "Ty", en: "You" },
 ];
@@ -22,13 +22,13 @@ function tap() {
   }
 }
 
-/** The VYRA app's bottom bar: a floating pill, the active tab widens with its name. */
+/** Floating pill bar: icons only, the active one sits on a soft pill. */
 export function AppTabBar() {
   const pathname = usePathname();
   const t = useT();
   return (
-    <nav aria-label={t("Nawigacja aplikacji", "App navigation")} className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-      <ul className="mx-auto grid max-w-md grid-cols-5">
+    <nav aria-label={t("Nawigacja aplikacji", "App navigation")} className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+      <ul className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/[0.08] bg-[#18181b]/90 p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         {TABS.map((tab) => {
           const active = tab.href === "/app" ? pathname === "/app" : pathname.startsWith(tab.href);
           const Icon = tab.icon;
@@ -37,12 +37,14 @@ export function AppTabBar() {
               <Link
                 href={tab.href}
                 onClick={tap}
+                aria-label={t(tab.pl, tab.en)}
                 aria-current={active ? "page" : undefined}
-                className={cn("relative flex h-[58px] flex-col items-center justify-center gap-1 transition-colors active:opacity-60", active ? "text-white" : "text-white/40")}
+                className={cn(
+                  "grid h-11 w-[54px] place-items-center rounded-full transition-colors duration-200 active:scale-95",
+                  active ? "bg-[#2c2c31] text-white" : "text-white/45",
+                )}
               >
-                {active ? <span aria-hidden className="absolute top-0 h-[2px] w-6 bg-[var(--accent)]" /> : null}
-                <Icon className="size-[21px]" strokeWidth={active ? 2.2 : 1.8} />
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em]">{t(tab.pl, tab.en)}</span>
+                <Icon className="size-[21px]" strokeWidth={active ? 2.1 : 1.8} />
               </Link>
             </li>
           );

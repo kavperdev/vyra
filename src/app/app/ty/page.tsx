@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Label, Row, Section, Title } from "@/components/app/ui";
+import { Download, FileText, Globe, Mail, Shield, Users } from "lucide-react";
+import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
@@ -11,40 +12,39 @@ export default async function AppYou() {
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   return (
     <div className="app-rise grid grid-cols-1">
-      <div className="pb-2 pt-1">
-        <Label>{user ? user.profile.email : t("Gość", "Guest")}</Label>
-        <Title className="mt-3">{user ? `${(user.profile.full_name || "").split(" ")[0] || t("Ty", "You")}.` : t("Ty.", "You.")}</Title>
-      </div>
+      <PageHead title={user ? (user.profile.full_name || t("Twoje konto", "Your account")) : t("Ty", "You")} sub={user ? user.profile.email ?? undefined : undefined} />
       {user ? (
-        <Link href="/panel" className="mt-5 block bg-white py-4 text-center font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-black active:opacity-70">
+        <Link href="/panel" className="block rounded-full bg-white py-3.5 text-center text-[15px] font-semibold text-black active:scale-[0.98]">
           {t("Mój plan i treningi", "My plan and sessions")}
         </Link>
       ) : (
-        <div className="mt-5">
-          <p className="text-[15px] leading-relaxed text-white/60">
+        <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
+          <p className="text-[15px] font-medium">{t("Konto nie jest potrzebne", "No account needed")}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-white/50">
             {t(
-              "Kurs, wiedza i sklep działają bez logowania. Konto zakłada się samo, gdy zaczynasz VYRA Method (także 14 dni za darmo) albo prowadzenie z trenerem: link do niego przychodzi na e-mail.",
-              "The course, journal and shop work without signing in. Your account is created when you start VYRA Method (including the 14-day free trial) or coaching: the link arrives by e-mail.",
+              "Dziś, kurs, biblioteka i narzędzia działają bez logowania. Konto zakłada się samo, gdy zaczynasz VYRA Method (także 14 dni za darmo) albo trenera.",
+              "Today, the course, library and tools work without signing in. Your account is created when you start VYRA Method (including the free trial) or coaching.",
             )}
           </p>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <Link href="/login" className="bg-white py-4 text-center font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-black active:opacity-70">
-              {t("Zaloguj", "Sign in")}
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Link href="/login" className="rounded-full bg-white py-3 text-center text-[14px] font-semibold text-black active:scale-[0.97]">
+              {t("Zaloguj się", "Sign in")}
             </Link>
-            <Link href="/app/sklep" className="border border-white/20 py-4 text-center font-mono text-[11px] uppercase tracking-[0.22em] active:opacity-60">
+            <Link href="/app/sklep" className="rounded-full bg-white/[0.07] py-3 text-center text-[14px] font-medium active:scale-[0.97]">
               {t("14 dni za darmo", "14 days free")}
             </Link>
           </div>
         </div>
       )}
-      <Section label={t("Więcej", "More")}>
-        <Row href="/app/run-club" title="Run Club Siedlce" meta={t("Wspólne bieganie w czwartki", "Group runs on Thursdays")} />
-        <Row href="/pobierz" title={t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")} />
-        <Row href="/" title={t("Strona vyraathl.pl", "vyraathl.pl website")} />
-        <Row href="/kontakt" title={t("Kontakt", "Contact")} />
-        <Row href="/polityka-prywatnosci" title={t("Prywatność", "Privacy")} />
-        <Row href="/regulamin" title={t("Regulamin", "Terms")} />
-      </Section>
+      <SectionHead title={t("Więcej", "More")} />
+      <Group>
+        <Row href="/pobierz" icon={<Download className="size-4" />} title={t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")} />
+        <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club Siedlce" sub={t("Wspólne bieganie w czwartki", "Group runs on Thursdays")} />
+        <Row href="/" icon={<Globe className="size-4" />} title={t("Strona vyraathl.pl", "vyraathl.pl website")} />
+        <Row href="/kontakt" icon={<Mail className="size-4" />} title={t("Kontakt", "Contact")} />
+        <Row href="/regulamin" icon={<FileText className="size-4" />} title={t("Regulamin", "Terms")} />
+        <Row href="/polityka-prywatnosci" icon={<Shield className="size-4" />} title={t("Prywatność", "Privacy")} />
+      </Group>
     </div>
   );
 }
