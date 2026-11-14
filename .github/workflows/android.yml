@@ -36,14 +36,14 @@ jobs:
 
       - name: Install Capacitor
         id: install
-        run: ./ci-step.sh install "npm install --no-audit --no-fund"
+        run: bash ci-step.sh install "npm install --no-audit --no-fund"
 
       - name: Create the Android project
         id: project
         run: |
-          ./ci-step.sh "cap add" "npx cap add android"
-          ./ci-step.sh assets "npx capacitor-assets generate --android --iconBackgroundColor '#050506' --iconBackgroundColorDark '#050506' --splashBackgroundColor '#050506' --splashBackgroundColorDark '#050506'"
-          ./ci-step.sh "cap sync" "npx cap sync android"
+          bash ci-step.sh "cap add" "npx cap add android"
+          bash ci-step.sh assets "npx capacitor-assets generate --android --iconBackgroundColor '#050506' --iconBackgroundColorDark '#050506' --splashBackgroundColor '#050506' --splashBackgroundColorDark '#050506'"
+          bash ci-step.sh "cap sync" "npx cap sync android"
 
       - name: Version
         id: v
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build
         id: build
-        run: ./ci-step.sh gradle "cd android && ./gradlew assembleRelease --no-daemon"
+        run: bash ci-step.sh gradle "cd android && ./gradlew assembleRelease --no-daemon"
 
       - name: Sign
         id: sign
