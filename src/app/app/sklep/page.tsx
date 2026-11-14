@@ -1,7 +1,6 @@
-import { Gift, Tent } from "lucide-react";
-import { Card, Chip, Group, PageHead, Row, SectionHead } from "@/components/app/ui";
-import { PlanCards } from "@/components/site/plan-cards";
-import { TrialForm } from "@/components/app/trial-form";
+import { Check, Gift, ShieldCheck, Tent } from "lucide-react";
+import { CoachCards, MethodPicker, TrialButton } from "@/components/app/shop";
+import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { listCamps, listCoachingPlans } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
@@ -20,41 +19,44 @@ export default async function AppShop() {
   ]);
   const pay = stripeConfigured();
   const m = method.filter((p) => p.visible);
-  const c = coaching.filter((p) => p.visible);
+  const c = coaching.filter((p) => p.visible).sort((a, b) => a.sort - b.sort);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Sklep", "Shop")} sub={t("Kupujesz bez zakładania konta. Dostęp przychodzi na e-mail.", "No account needed. Access arrives by e-mail.")} />
+      <PageHead title={t("Sklep", "Shop")} sub={t("Bez zakładania konta. Dostęp przychodzi na e-mail.", "No account needed. Access arrives by e-mail.")} />
+
+      {/* Free trial: the main door */}
+      <div className="relative isolate overflow-hidden rounded-[24px] border border-white/[0.08]">
+        <div aria-hidden className="app-kenburns absolute inset-0 -z-10 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/30 via-black/75 to-black" />
+        <div className="px-5 pb-5 pt-32">
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-medium backdrop-blur-md">VYRA Method</span>
+          <p className="mt-3 text-[28px] font-semibold leading-[1.1] tracking-[-0.02em]">{t("Twój plan biegowy. 14 dni za darmo.", "Your running plan. 14 days free.")}</p>
+          <ul className="mt-4 grid gap-1.5">
+            {[t("Plan na każdy tydzień z Twoich danych", "A weekly plan from your data"), t("Dopasowanie po każdym tygodniu", "Adjusted after every week"), t("Bez karty i bez zobowiązań", "No card, no commitment")].map((x) => (
+              <li key={x} className="flex items-center gap-2 text-[14px] text-white/80">
+                <Check className="size-4 shrink-0 text-emerald-300" /> {x}
+              </li>
+            ))}
+          </ul>
+          <TrialButton className="mt-5" />
+        </div>
+      </div>
+
       {m.length ? (
         <>
-          <Card className="overflow-hidden p-0">
-            <div className="h-36 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
-            <div className="p-4">
-              <Chip tone="accent">{t("14 dni za darmo, bez karty", "14 days free, no card")}</Chip>
-              <p className="mt-2.5 text-[20px] font-semibold">VYRA Method</p>
-              <p className="mt-1 text-[14px] leading-relaxed text-white/60">{t("Co tydzień nowy plan dopasowany do Twojej formy, czasu i samopoczucia.", "A new plan every week, fitted to your form, time and how you feel.")}</p>
-              <TrialForm className="mt-4" />
-            </div>
-          </Card>
-          <p className="mb-1 mt-6 px-0.5 text-[13px] text-white/50">{t("Albo od razu wybierz pakiet:", "Or pick a package right away:")}</p>
-          <div className="mt-3 grid grid-cols-1 gap-3">
-            <PlanCards plans={m} payments={pay} />
-          </div>
+          <SectionHead title={t("Zostań z VYRA Method", "Stay with VYRA Method")} />
+          <MethodPicker plans={m} pay={pay} />
         </>
       ) : null}
+
       {c.length ? (
         <>
           <SectionHead title={t("Trener 1:1", "1:1 coach")} />
-          {pay ? (
-            <div className="grid grid-cols-1 gap-3">
-              <PlanCards plans={c} payments />
-            </div>
-          ) : (
-            <Group>
-              <Row href="/prowadzenie#pakiety" title={t("Zobacz pakiety i zgłoś się", "See packages and apply")} />
-            </Group>
-          )}
+          <p className="-mt-1 mb-3 px-0.5 text-[13px] leading-relaxed text-white/50">{t("Indywidualny plan, analiza każdego treningu i stały kontakt z trenerem VYRA.", "A personal plan, analysis of every session and direct contact with a VYRA coach.")}</p>
+          <CoachCards plans={c} pay={pay} />
         </>
       ) : null}
+
       <SectionHead title={t("Obozy i prezenty", "Camps and gifts")} />
       <Group>
         {camps.slice(0, 3).map((camp) => (
@@ -69,6 +71,10 @@ export default async function AppShop() {
         {!camps.length ? <Row href="/obozy" icon={<Tent className="size-4" />} title={t("Obozy VYRA", "VYRA camps")} sub={t("Zapisz się na listę oczekujących", "Join the waiting list")} /> : null}
         <Row href="/voucher" icon={<Gift className="size-4" />} title={t("Voucher na prezent", "Gift voucher")} sub={t("Plan albo trener dla kogoś bliskiego", "A plan or coach for someone close")} />
       </Group>
+
+      <div className="mt-6 flex items-center justify-center gap-2 text-[12px] text-white/40">
+        <ShieldCheck className="size-4" /> {t("Bezpieczna płatność: BLIK, karta, Przelewy24", "Secure payment: BLIK, card, Przelewy24")}
+      </div>
     </div>
   );
 }
