@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Moon, Settings, Sun } from "lucide-react";
+import { Compass, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { LangSwitch } from "@/components/shared/lang-switch";
 import { Initials } from "@/components/ui/misc";
@@ -32,6 +32,11 @@ export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { n
         <DropdownMenuLabel>{name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link href="/app">
+            <Compass /> {t("Aplikacja VYRA: wiedza, kurs, sklep", "VYRA app: learn, course, shop")}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href={settingsHref}>
             <Settings /> {t("Ustawienia", "Settings")}
           </Link>
@@ -51,7 +56,7 @@ export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { n
               await fetch("/auth/signout", { method: "POST" });
             } finally {
               // Full reload clears cached screens of the signed-out account.
-              window.location.assign("/login");
+              window.location.assign("/app");
             }
           }}
         >

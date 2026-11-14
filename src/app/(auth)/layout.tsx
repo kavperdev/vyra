@@ -27,10 +27,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       <main className="relative flex flex-col px-5 pb-10 pt-[max(2rem,env(safe-area-inset-top))] sm:px-10">
         <LangSwitch tone="app" className="absolute right-5 top-[max(1.5rem,env(safe-area-inset-top))] sm:right-10" />
-        <Link href="/" aria-label="VYRA" className="mb-12 w-fit lg:hidden">
+        <Link href="/app" aria-label="VYRA" className="mb-12 w-fit lg:hidden">
           <Logo className="h-4" />
         </Link>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">{children}</div>
+        <Link href="/app" className="mx-auto mt-10 w-fit font-mono text-[11px] uppercase tracking-[0.22em] text-muted transition-colors hover:text-foreground">
+          ← Aplikacja VYRA bez logowania
+        </Link>
       </main>
     </div>
   );

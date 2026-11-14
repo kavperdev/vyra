@@ -23,16 +23,16 @@ export default async function AppYou() {
         <div className="mt-5">
           <p className="text-[15px] leading-relaxed text-white/60">
             {t(
-              "Kurs, wiedza i sklep działają bez logowania. Konto przyda się, gdy masz plan VYRA Method albo trenera.",
-              "The course, journal and shop work without signing in. You need an account once you have VYRA Method or a coach.",
+              "Kurs, wiedza i sklep działają bez logowania. Konto zakłada się samo, gdy zaczynasz VYRA Method (także 14 dni za darmo) albo prowadzenie z trenerem: link do niego przychodzi na e-mail.",
+              "The course, journal and shop work without signing in. Your account is created when you start VYRA Method (including the 14-day free trial) or coaching: the link arrives by e-mail.",
             )}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2">
             <Link href="/login" className="bg-white py-4 text-center font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-black active:opacity-70">
               {t("Zaloguj", "Sign in")}
             </Link>
-            <Link href="/signup" className="border border-white/20 py-4 text-center font-mono text-[11px] uppercase tracking-[0.22em] active:opacity-60">
-              {t("Załóż konto", "Sign up")}
+            <Link href="/app/sklep" className="border border-white/20 py-4 text-center font-mono text-[11px] uppercase tracking-[0.22em] active:opacity-60">
+              {t("14 dni za darmo", "14 days free")}
             </Link>
           </div>
         </div>

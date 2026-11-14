@@ -40,12 +40,12 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
         scrolled || open ? "border-b border-white/10 bg-black/85 backdrop-blur-md" : "border-b border-transparent bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-[max(1.25rem,env(safe-area-inset-left))] sm:h-20">
+      <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-6 px-[max(1.25rem,env(safe-area-inset-left))] sm:h-20">
         <Link href="/" aria-label={en ? "VYRA, home" : "VYRA, strona główna"} className="relative z-10">
           <Logo className="h-3.5 text-white sm:h-4" />
         </Link>
 
-        <nav aria-label={en ? "Main navigation" : "Główna nawigacja"} className="hidden items-center gap-5 lg:flex xl:gap-8">
+        <nav aria-label={en ? "Main navigation" : "Główna nawigacja"} className="hidden items-center gap-6 xl:flex 2xl:gap-8">
           {SITE_NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -53,7 +53,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={cn("site-link pb-0.5 text-[13px] tracking-wide", active ? "text-white" : "text-white/60 hover:text-white")}
+                className={cn("site-link whitespace-nowrap pb-0.5 text-[13px] tracking-wide", active ? "text-white" : "text-white/60 hover:text-white")}
               >
                 {en ? item.en : item.label}
               </Link>
@@ -65,26 +65,26 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
           <LangSwitch className="hidden sm:inline-flex" />
           <Link
             href="/zacznij-biegac"
-            className="hidden h-10 items-center gap-2 rounded-full border border-white/20 px-4 text-[13px] font-semibold text-white transition-colors hover:border-[var(--accent)] xl:inline-flex"
+            className="hidden h-10 items-center gap-2 whitespace-nowrap rounded-full border border-white/20 px-4 text-[13px] font-semibold text-white transition-colors hover:border-[var(--accent)] 2xl:inline-flex"
           >
             <span aria-hidden className="size-1.5 rounded-full bg-[var(--accent)]" />
             {en ? "Free plan" : "Darmowy plan"}
           </Link>
           <Link
             href={panel.href}
-            className="hidden h-10 items-center px-3 text-[13px] font-semibold text-white/70 transition-colors hover:text-white sm:inline-flex"
+            className="hidden h-10 items-center whitespace-nowrap px-3 text-[13px] font-semibold text-white/70 transition-colors hover:text-white sm:inline-flex"
           >
             {panel.label}
           </Link>
           <Link
             href="/klub"
-            className="hidden h-10 items-center rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white sm:inline-flex"
+            className="hidden h-10 items-center whitespace-nowrap rounded-full bg-white px-5 text-[13px] font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white sm:inline-flex"
           >
             {en ? "Join" : "Dołącz"}
           </Link>
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-full border border-white/20 text-white lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-white/20 text-white xl:hidden"
             aria-label={open ? (en ? "Close menu" : "Zamknij menu") : en ? "Open menu" : "Otwórz menu"}
             aria-expanded={open}
             aria-controls="site-menu"
@@ -96,7 +96,7 @@ export function SiteHeader({ panel }: { panel: { href: string; label: string } }
       </div>
 
       {open ? (
-        <div id="site-menu" className="site-fade h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/10 bg-black lg:hidden">
+        <div id="site-menu" className="site-fade h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/10 bg-black xl:hidden">
           <nav aria-label="Menu" className="mx-auto grid max-w-6xl gap-1 px-[max(1.25rem,env(safe-area-inset-left))] py-8">
             <Link
               href="/zacznij-biegac"
