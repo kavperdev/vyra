@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Bell, CalendarDays, Smartphone, Zap } from "lucide-react";
 import { Faq, PageHero, Reveal, wrap } from "@/components/site/blocks";
 import { InstallGuide } from "@/components/site/install-guide";
-import { AndroidDownload } from "@/components/site/android-download";
 import { POBIERZ_QR_SVG } from "@/components/site/pobierz-qr";
 import { getT } from "@/lib/i18n/server";
 
@@ -30,15 +29,14 @@ export default async function DownloadPage() {
     <>
       <PageHero
         eyebrow={t("Aplikacja VYRA", "The VYRA app")}
-        title={t("VYRA na Twoim telefonie", "VYRA on your phone")}
+        title={t("VYRA na Twoim telefonie w 30 sekund", "VYRA on your phone in 30 seconds")}
         lead={t(
-          "Na Androidzie pobierasz aplikację prosto stąd. Na iPhonie dodajesz VYRA do ekranu początkowego, a wersja z App Store jest w drodze.",
-          "On Android, download the app right here. On iPhone, add VYRA to your home screen; the App Store version is on its way.",
+          "Bez sklepu z aplikacjami i bez zakładania czegokolwiek. Pokażemy Ci dokładnie, co stuknąć na Twoim telefonie.",
+          "No app store, nothing to set up. We’ll show you exactly what to tap on your phone.",
         )}
       />
       <section className={`${wrap} pb-20`}>
-        <div className="mx-auto grid max-w-3xl gap-10">
-          <AndroidDownload />
+        <div className="mx-auto max-w-3xl">
           <InstallGuide qr={<span className="block" dangerouslySetInnerHTML={{ __html: POBIERZ_QR_SVG }} />} />
         </div>
       </section>
@@ -58,17 +56,10 @@ export default async function DownloadPage() {
           <Faq
             items={[
               {
-                q: t("Czy aplikacja na Androida jest bezpieczna? Telefon ostrzega przed nieznanym źródłem.", "Is the Android app safe? My phone warns about an unknown source."),
+                q: t("Czy to prawdziwa aplikacja? Nie ma jej w App Store.", "Is it a real app? It’s not in the App Store."),
                 a: t(
-                  "Tak. To standardowe ostrzeżenie przy każdej aplikacji spoza Sklepu Play. Plik pobierasz tylko z vyraathl.pl i jest podpisany kluczem VYRA, więc nikt nie podmieni go po drodze. Po instalacji możesz wyłączyć zgodę na instalowanie z przeglądarki.",
-                  "Yes. It’s the standard warning for any app from outside the Play Store. You only download it from vyraathl.pl and it’s signed with the VYRA key, so nobody can swap it on the way. After installing you can turn the browser install permission off again.",
-                ),
-              },
-              {
-                q: t("Kiedy VYRA będzie w App Store i Sklepie Play?", "When will VYRA be in the App Store and Play Store?"),
-                a: t(
-                  "Pracujemy nad tym. Do tego czasu na iPhonie dodaj VYRA do ekranu początkowego: ma własną ikonę, otwiera się na pełnym ekranie i wysyła powiadomienia.",
-                  "We’re working on it. Until then, on iPhone add VYRA to your home screen: it has its own icon, opens full screen and sends notifications.",
+                  "Tak. VYRA instaluje się prosto ze strony, ma własną ikonę, otwiera się na pełnym ekranie i wysyła powiadomienia. Nie zajmuje prawie miejsca i zawsze masz najnowszą wersję.",
+                  "Yes. VYRA installs straight from the website, has its own icon, opens full screen and sends notifications. It takes almost no space and is always the latest version.",
                 ),
               },
               {
