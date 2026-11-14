@@ -6,8 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/panel",
     name: "VYRA",
     short_name: "VYRA",
-    description: "Platforma treningowa VYRA: plan, wyniki, postępy i kontakt z trenerem.",
-    start_url: "/panel",
+    description: "VYRA: kurs i wiedza o bieganiu, Run Club, wyzwania, plany treningowe i sklep. Bez zakładania konta.",
+    start_url: "/app",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
@@ -29,7 +29,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/branding/screens/klub-raport.jpg", sizes: "1600x783", type: "image/jpeg", form_factor: "wide", label: "Panel klubu" },
     ],
     shortcuts: [
-      { name: "Panel", url: "/panel", icons: [{ src: "/branding/vyra-icon-96.png", sizes: "96x96" }] },
+      { name: "Mój plan", url: "/panel", icons: [{ src: "/branding/vyra-icon-96.png", sizes: "96x96" }] },
+      { name: "Kurs", url: "/app/kurs", icons: [{ src: "/branding/vyra-icon-96.png", sizes: "96x96" }] },
+      { name: "Run Club", url: "/app/run-club", icons: [{ src: "/branding/vyra-icon-96.png", sizes: "96x96" }] },
     ],
   };
 }

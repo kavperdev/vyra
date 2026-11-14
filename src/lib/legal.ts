@@ -14,7 +14,7 @@ export const REGULAMIN_PL = `## §1. Sprzedawca i usługi
 
 1. Aby kupić pakiet, kliknij „Kup teraz”, podaj imię, nazwisko i adres e-mail, zaakceptuj regulamin i zapłać na stronie operatora płatności Stripe (BLIK, karta płatnicza, Przelewy24). Umowa zostaje zawarta z chwilą zaksięgowania płatności. Potwierdzenie otrzymasz e-mailem.
 2. Ceny podane na stronie są cenami końcowymi w złotych polskich. Kod rabatowy wpisujesz na stronie płatności; rabaty nie łączą się, chyba że opis kodu mówi inaczej.
-3. Pakiety miesięczne odnawiają się automatycznie co miesiąc i są pobierane z tej samej metody płatności. Abonament możesz zakończyć w każdej chwili w ustawieniach aplikacji VYRA (Płatności) albo pisząc do nas; kończy się on z ostatnim dniem opłaconego okresu, bez dalszych opłat. Cena przy współpracy na 3 miesiące jest ustalana indywidualnie.
+3. Pakiety miesięczne odnawiają się automatycznie co miesiąc i są pobierane z tej samej metody płatności. Abonament możesz zakończyć w każdej chwili w ustawieniach aplikacji VYRA (Płatności) albo pisząc do nas; kończy się on z ostatnim dniem opłaconego okresu, bez dalszych opłat. Cena przy współpracy na 3 miesiące jest ustalana indywidualnie. Abonament VYRA Method zaczyna się od 14-dniowego okresu próbnego bez opłat: pierwsza płatność jest pobierana po jego zakończeniu, chyba że wcześniej zrezygnujesz w ustawieniach aplikacji (Płatności).
 4. Dostęp do aplikacji trwa przez okres opłaconego pakietu lub abonamentu. Po jego zakończeniu konto przestaje być prowadzone przez trenera, a historia treningów i rekordy zostają zachowane.
 
 ## §3. Realizacja usługi
@@ -63,7 +63,7 @@ export const REGULAMIN_EN = `## §1. Seller and services
 
 1. To buy a package, click “Buy now”, enter your name and e-mail, accept these terms and pay on the Stripe payment page (BLIK, card, Przelewy24). The contract is concluded when the payment is confirmed. You will receive a confirmation by e-mail.
 2. Prices on the website are final prices in Polish złoty. Discount codes are entered on the payment page; discounts cannot be combined unless the code says otherwise.
-3. Monthly packages renew automatically each month and are charged to the same payment method. You can cancel at any time in the VYRA app settings (Payments) or by writing to us; the subscription ends on the last day of the paid period with no further charges. The 3-month commitment price is arranged individually.
+3. Monthly packages renew automatically each month and are charged to the same payment method. You can cancel at any time in the VYRA app settings (Payments) or by writing to us; the subscription ends on the last day of the paid period with no further charges. The 3-month commitment price is arranged individually. The VYRA Method subscription starts with a free 14-day trial: the first payment is taken when it ends, unless you cancel earlier in the app settings (Payments).
 4. App access lasts for the paid package or subscription period. Afterwards the account is no longer coached, and your training history and records are kept.
 
 ## §3. Delivery of the service
