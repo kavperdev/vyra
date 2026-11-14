@@ -13,6 +13,7 @@ export interface Workout {
   levels: { start: string; mid: string; adv: string };
   tips: string[];
   mistake: string;
+  pro?: boolean;
 }
 
 export const CATS: Record<Workout["cat"], { name: string; lead: string }> = {
@@ -91,6 +92,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "odcinki-progowe",
+    pro: true,
     name: "Odcinki progowe",
     cat: "prog",
     minutes: "45–70 min razem",
@@ -104,6 +106,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "sub-threshold",
+    pro: true,
     name: "Lekko pod progiem (sub-threshold)",
     cat: "prog",
     minutes: "50–70 min razem",
@@ -130,6 +133,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "interwaly-400",
+    pro: true,
     name: "Czterechsetki",
     cat: "szybkosc",
     minutes: "45–55 min razem",
@@ -143,6 +147,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "30-30",
+    pro: true,
     name: "30/30",
     cat: "szybkosc",
     minutes: "35–45 min razem",
@@ -195,6 +200,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "podbiegi-dlugie",
+    pro: true,
     name: "Podbiegi długie",
     cat: "sila",
     minutes: "50–60 min razem",
@@ -247,6 +253,7 @@ export const WORKOUTS: Workout[] = [
   },
   {
     slug: "tydzien-przed-startem",
+    pro: true,
     name: "Tydzień przed startem (taper)",
     cat: "start",
     minutes: "cały tydzień",

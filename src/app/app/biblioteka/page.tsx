@@ -1,4 +1,5 @@
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { ProBadge } from "@/components/app/paywall";
 import { CATS, WORKOUTS } from "@/lib/app/workouts";
 
 export const metadata = { title: "Biblioteka treningów" };
@@ -14,7 +15,7 @@ export default function AppLibrary() {
           <p className="-mt-1 mb-2.5 px-0.5 text-[12.5px] text-white/45">{CATS[c].lead}</p>
           <Group>
             {WORKOUTS.filter((w) => w.cat === c).map((w) => (
-              <Row key={w.slug} href={`/app/biblioteka/${w.slug}`} title={w.name} sub={`${w.minutes} · wysiłek ${w.rpe}`} />
+              <Row key={w.slug} href={`/app/biblioteka/${w.slug}`} title={w.name} sub={`${w.minutes} · wysiłek ${w.rpe}`} right={w.pro ? <ProBadge /> : undefined} />
             ))}
           </Group>
         </div>

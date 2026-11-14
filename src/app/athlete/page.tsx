@@ -120,7 +120,7 @@ export default async function AthleteDashboard() {
   const firstName = user.profile.full_name.split(" ")[0];
 
   return (
-    <div className="app-rise grid gap-8">
+    <div className="app-rise grid grid-cols-1 gap-8">
       <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={tl(`Cześć, ${firstName}`, `Hi, ${firstName}`)}
@@ -139,7 +139,7 @@ export default async function AthleteDashboard() {
       {membershipEnded ? (
         <Card className="border-accent/50">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid gap-1">
+            <div className="grid grid-cols-1 gap-1">
               <p className="font-semibold">{tl("Twój pakiet się zakończył", "Your package has ended")}</p>
               <p className="text-[13px] text-muted">
                 {tl("Historia treningów i rekordy zostają. Wybierz pakiet, żeby wrócić do planu z trenerem.", "Your training history and records stay. Choose a package to get back to coaching.")}
@@ -157,7 +157,7 @@ export default async function AthleteDashboard() {
       {methodSetup ? (
         <Card className="border-accent/50">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid gap-1">
+            <div className="grid grid-cols-1 gap-1">
               <p className="font-semibold">Pierwszy krok: ankieta VYRA Method</p>
               <p className="text-[13px] text-muted">Około 4 minut. Wiek, waga, forma, czas i zdrowie. Na tej podstawie powstanie Twój pierwszy tydzień.</p>
             </div>
@@ -173,7 +173,7 @@ export default async function AthleteDashboard() {
       {intakeMissing && !method?.access ? (
         <Card className="border-accent/50">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid gap-1">
+            <div className="grid grid-cols-1 gap-1">
               <p className="font-semibold">{tl("Pierwszy krok: ankieta startowa", "First step: your starting questionnaire")}</p>
               <p className="text-[13px] text-muted">
                 {tl("5 minut. Cel, doświadczenie, kalendarz i zdrowie. Na tej podstawie trener ułoży Twój plan.", "5 minutes. Goal, experience, schedule and health. Your coach builds your plan from it.")}
@@ -191,7 +191,7 @@ export default async function AthleteDashboard() {
       {feedbackDue ? (
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid gap-1">
+            <div className="grid grid-cols-1 gap-1">
               <p className="font-semibold">{tl("Minął pierwszy miesiąc. Jak Ci się trenuje?", "Your first month is done. How is it going?")}</p>
               <p className="text-[13px] text-muted">{tl("2 minuty, szczerze. Twoja odpowiedź pomaga nam prowadzić Cię lepiej.", "2 minutes, honestly. Your answer helps us coach you better.")}</p>
             </div>
@@ -208,13 +208,13 @@ export default async function AthleteDashboard() {
 
       {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
 
-      <section aria-labelledby="today-title" className="grid gap-3">
+      <section aria-labelledby="today-title" className="grid grid-cols-1 gap-3">
         <h2 id="today-title" className="eyebrow">{tl("Dzisiejszy trening", "Today’s session")}</h2>
         {featured && featuredDetail ? (
           <Card className="overflow-hidden">
-            <CardContent className="grid gap-4 pt-5">
+            <CardContent className="grid grid-cols-1 gap-4 pt-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="grid gap-1">
+                <div className="grid grid-cols-1 gap-1">
                   <p className="flex items-center gap-2 text-[13px] text-muted">
                     <KindIcon kind={featured.kind} /> {categoryLabel(featured.category)}
                     {featured.scheduled_time ? ` · ${featured.scheduled_time.slice(0, 5)}` : ""}
@@ -226,7 +226,7 @@ export default async function AthleteDashboard() {
               </div>
               {featuredDetail.segments.length ? <WorkoutChart segments={featuredDetail.segments} compact /> : null}
               {featuredDetail.segments.length ? (
-                <ul className="grid gap-1 text-sm">
+                <ul className="grid grid-cols-1 gap-1 text-sm">
                   {featuredDetail.segments.slice(0, 5).map((s) => (
                     <li key={s.id} className="num text-muted">
                       — {describeSegment(s)}
@@ -272,7 +272,7 @@ export default async function AthleteDashboard() {
 
       {last && last.plannedSessions > 0 ? (
         <Card>
-          <CardContent className="grid gap-4 pt-5">
+          <CardContent className="grid grid-cols-1 gap-4 pt-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-semibold">
                 {tl("Podsumowanie poprzedniego tygodnia", "Last week in review")}
@@ -287,13 +287,13 @@ export default async function AthleteDashboard() {
               ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="grid gap-0.5">
+              <div className="grid grid-cols-1 gap-0.5">
                 <span className="text-[12px] text-muted">{tl("Treningi", "Sessions")}</span>
                 <span className="num text-xl font-semibold">
                   {last.doneSessions}/{last.plannedSessions}
                 </span>
               </div>
-              <div className="grid gap-0.5">
+              <div className="grid grid-cols-1 gap-0.5">
                 <span className="text-[12px] text-muted">{tl("Kilometry", "Distance")}</span>
                 <span className="num text-xl font-semibold">
                   {formatNumber(last.actualKm)} <span className="text-sm font-normal text-muted">km</span>
@@ -307,13 +307,13 @@ export default async function AthleteDashboard() {
                   <span className="num text-[12px] text-muted">plan {formatNumber(last.plannedKm)} km</span>
                 ) : null}
               </div>
-              <div className="grid gap-0.5">
+              <div className="grid grid-cols-1 gap-0.5">
                 <span className="text-[12px] text-muted">{tl("Czas biegu", "Running time")}</span>
                 <span className="num text-xl font-semibold">
                   {Math.floor(last.runningSeconds / 3600)}:{String(Math.round((last.runningSeconds % 3600) / 60)).padStart(2, "0")} <span className="text-sm font-normal text-muted">h</span>
                 </span>
               </div>
-              <div className="grid gap-0.5">
+              <div className="grid grid-cols-1 gap-0.5">
                 <span className="text-[12px] text-muted">{tl("Średnia gotowość", "Average readiness")}</span>
                 <span className="num text-xl font-semibold">{lastReady != null ? `${lastReady}%` : "–"}</span>
                 {lastWeekReadiness.length ? (
@@ -332,17 +332,17 @@ export default async function AthleteDashboard() {
         </Card>
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="grid content-start gap-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section className="grid grid-cols-1 content-start gap-3">
           <SectionTitle action={<Link href="/athlete/calendar" className="text-[13px] text-muted hover:text-foreground">{tl("Kalendarz", "Calendar")}</Link>}>{tl("Plan tygodnia", "This week’s plan")}</SectionTitle>
-          <ol className="grid gap-1.5">
+          <ol className="grid grid-cols-1 gap-1.5">
             {weekDays.map((d) => {
               const items = weekSessions.filter((s) => s.scheduled_date === d);
               return (
                 <li key={d} className={cn("grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-3 rounded-md border border-border bg-surface px-3 py-2.5", d === today && "border-accent/60")}>
                   <span className={cn("text-[13px] capitalize", d === today ? "font-semibold text-accent" : "text-muted")}>{formatDate(d, "EEE d")}</span>
                   {items.length ? (
-                    <div className="grid gap-1.5">
+                    <div className="grid grid-cols-1 gap-1.5">
                       {items.map((s) => (
                         <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="flex min-w-0 items-center justify-between gap-2 hover:underline">
                           <span className="truncate text-sm">{s.title}</span>
@@ -357,24 +357,24 @@ export default async function AthleteDashboard() {
               );
             })}
           </ol>
-          <div className="grid gap-1.5 pt-1">
+          <div className="grid grid-cols-1 gap-1.5 pt-1">
             <ProgressBar value={weekSessions.length ? (weekDone / weekSessions.length) * 100 : 0} tone="accent" />
           </div>
         </section>
 
-        <div className="grid content-start gap-8">
-          <section className="grid gap-3">
+        <div className="grid grid-cols-1 content-start gap-8">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Najbliższe treningi", "Upcoming sessions")}</SectionTitle>
             <SessionList sessions={upcoming.slice(0, 5)} hrefFor={(s) => `/athlete/sessions/${s.id}`} today={today} empty={<p className="text-sm text-muted">{tl("Brak treningów w najbliższych 7 dniach.", "No sessions in the next 7 days.")}</p>} />
           </section>
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Od trenera", "From your coach")}</SectionTitle>
             {coachComments.length ? (
-              <ul className="grid gap-2">
+              <ul className="grid grid-cols-1 gap-2">
                 {coachComments.map((c) => (
                   <li key={c.id}>
-                    <Link href={`/athlete/sessions/${c.session_id}`} className="grid gap-1 rounded-md border border-border border-l-2 border-l-accent bg-surface p-3 hover:border-border-strong">
+                    <Link href={`/athlete/sessions/${c.session_id}`} className="grid grid-cols-1 gap-1 rounded-md border border-border border-l-2 border-l-accent bg-surface p-3 hover:border-border-strong">
                       <p className="flex items-center gap-1.5 text-[12px] text-muted">
                         <MessageSquare className="size-3.5" /> {c.session_title}
                       </p>
@@ -389,10 +389,10 @@ export default async function AthleteDashboard() {
             )}
           </section>
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle action={<Link href="/athlete/records" className="text-[13px] text-muted hover:text-foreground">{tl("Wszystkie", "All")}</Link>}>{tl("Rekordy", "Records")}</SectionTitle>
             {prs.length ? (
-              <ul className="grid gap-2">
+              <ul className="grid grid-cols-1 gap-2">
                 {prs.map((r) => (
                   <li key={r.id} className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2.5">
                     <span className="flex items-center gap-2 text-sm">

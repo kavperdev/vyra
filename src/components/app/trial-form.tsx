@@ -53,11 +53,11 @@ export function TrialForm({ className, tone = "app" }: { className?: string; ton
         <input type="checkbox" checked={v.consent} onChange={(e) => setV({ ...v, consent: e.target.checked })} className="mt-0.5 size-4 accent-[var(--accent)]" />
         <span>
           Akceptuję{" "}
-          <Link href="/regulamin" className="underline">
+          <Link href="/regulamin" target="_blank" rel="noopener" className="underline">
             regulamin
           </Link>{" "}
           i{" "}
-          <Link href="/polityka-prywatnosci" className="underline">
+          <Link href="/polityka-prywatnosci" target="_blank" rel="noopener" className="underline">
             politykę prywatności
           </Link>
           .

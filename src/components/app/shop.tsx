@@ -88,7 +88,7 @@ export function MethodPicker({ plans, pay }: { plans: CoachingPlan[]; pay: boole
         {pay ? (
           <BuyButton key={plan.id} planId={plan.id} primary />
         ) : (
-          <Link href="/metoda#cennik" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
+          <Link href="/metoda#cennik" target="_blank" rel="noopener" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
             Szczegóły i zakup
           </Link>
         )}
@@ -125,7 +125,7 @@ export function CoachCards({ plans, pay }: { plans: CoachingPlan[]; pay: boolean
             {pay ? (
               <BuyButton planId={p.id} primary={p.highlighted} />
             ) : (
-              <Link href="/prowadzenie#pakiety" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
+              <Link href="/prowadzenie#pakiety" target="_blank" rel="noopener" className="block rounded-full bg-white/[0.08] py-3 text-center text-[14px] font-medium">
                 Zgłoś się
               </Link>
             )}

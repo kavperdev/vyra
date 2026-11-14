@@ -86,7 +86,7 @@ export default async function CoachDashboard() {
 
   if (!athletes.length) {
     return (
-      <div className="grid gap-8">
+      <div className="grid grid-cols-1 gap-8">
         <PageHeader eyebrow={tl("Pulpit", "Dashboard")} title={`Cześć, ${user.profile.full_name.split(" ")[0]}`} />
         <EmptyState
           title={tl("Zacznij od zaproszenia zawodnika", "Start by inviting an athlete")}
@@ -146,7 +146,7 @@ export default async function CoachDashboard() {
   const upcoming = sessions.filter((s) => s.scheduled_date > today).slice(0, 6);
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-1 gap-8">
       <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={`Cześć, ${user.profile.full_name.split(" ")[0]}`}
@@ -171,17 +171,17 @@ export default async function CoachDashboard() {
         <Stat label={tl("Kilometry w tym tyg.", "Km this week")} value={formatNumber(weekKm)} unit="km" hint={tl("wszyscy zawodnicy", "all athletes")} />
       </section>
 
-      <section className="grid gap-3">
+      <section className="grid grid-cols-1 gap-3">
         <SectionTitle>{tl("Wymagają uwagi", "Need attention")}</SectionTitle>
         {attention.length ? (
-          <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {attention.map((a) => (
               <li key={a.athleteId}>
                 <Link href={`/coach/athletes/${a.athleteId}`} className="flex gap-3 rounded-lg border border-warning/30 bg-surface p-3 hover:border-warning/60">
                   <Initials name={a.name} size="sm" />
-                  <div className="grid min-w-0 gap-1">
+                  <div className="grid grid-cols-1 min-w-0 gap-1">
                     <p className="text-sm font-semibold">{a.name}</p>
-                    <ul className="grid gap-0.5">
+                    <ul className="grid grid-cols-1 gap-0.5">
                       {a.reasons.map((r) => (
                         <li key={r} className="flex items-center gap-1.5 text-[13px] text-warning">
                           <AlertTriangle className="size-3.5 shrink-0" /> {r}
@@ -198,9 +198,9 @@ export default async function CoachDashboard() {
         )}
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="grid content-start gap-8">
-          <section className="grid gap-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-1 content-start gap-8">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle action={<Link href={`/coach/calendar?view=day&date=${today}`} className="text-[13px] text-muted hover:text-foreground">{tl("Kalendarz", "Calendar")}</Link>}>
               {tl("Dzisiaj", "Today")}
             </SectionTitle>
@@ -213,7 +213,7 @@ export default async function CoachDashboard() {
             />
           </section>
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Ostatnio wykonane", "Recently completed")}</SectionTitle>
             <SessionList
               sessions={recentDone}
@@ -224,17 +224,17 @@ export default async function CoachDashboard() {
             />
           </section>
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Najbliższe treningi", "Upcoming sessions")}</SectionTitle>
             <SessionList sessions={upcoming} hrefFor={(s) => `/coach/sessions/${s.id}`} today={today} showAthlete empty={<EmptyState title={tl("Brak zaplanowanych treningów", "No planned sessions")} description={tl("Zaplanuj treningi na najbliższe dni.", "Plan sessions for the coming days.")} />} />
           </section>
         </div>
 
-        <div className="grid content-start gap-8">
+        <div className="grid grid-cols-1 content-start gap-8">
           {readinessRows ? (
-            <section className="grid gap-3">
+            <section className="grid grid-cols-1 gap-3">
               <SectionTitle>{tl("Gotowość dziś", "Readiness today")}</SectionTitle>
-              <ul className="grid gap-1.5">
+              <ul className="grid grid-cols-1 gap-1.5">
                 {athletes.map((a) => {
                   const r = readinessBy.get(a.id);
                   const level = r ? readinessLevel(r) : null;
@@ -258,13 +258,13 @@ export default async function CoachDashboard() {
 
 
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Komentarze zawodników", "Athlete comments")}</SectionTitle>
             {comments.length ? (
               <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
                 {comments.map((c) => (
                   <li key={c.id}>
-                    <Link href={`/coach/sessions/${c.session_id}`} className="grid gap-1 px-4 py-3 hover:bg-surface-2">
+                    <Link href={`/coach/sessions/${c.session_id}`} className="grid grid-cols-1 gap-1 px-4 py-3 hover:bg-surface-2">
                       <p className="flex items-center gap-2 text-[13px] text-muted">
                         <MessageSquare className="size-3.5" /> {c.author_name} · {c.session_title}
                       </p>
@@ -279,7 +279,7 @@ export default async function CoachDashboard() {
             )}
           </section>
 
-          <section className="grid gap-3">
+          <section className="grid grid-cols-1 gap-3">
             <SectionTitle>{tl("Brakujące wpisy", "Missing entries")}</SectionTitle>
             <SessionList
               sessions={awaiting.slice(0, 6)}
@@ -292,7 +292,7 @@ export default async function CoachDashboard() {
         </div>
       </div>
 
-      <section className="grid gap-6 lg:grid-cols-2" aria-label={tl("Analityka zespołu", "Team analytics")}>
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2" aria-label={tl("Analityka zespołu", "Team analytics")}>
         <Card>
           <CardHeader>
             <CardTitle>{tl("Realizacja planów zespołu", "Team plan completion")}</CardTitle>

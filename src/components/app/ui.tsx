@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/** Pages of the vyraathl.pl website open in the browser, not inside the app. */
+export const isSite = (href: string) => href.startsWith("/") && !/^\/(app|panel|athlete|coach|login|invite|auth|signup)(\/|\?|$)/.test(href);
+export const siteProps = (href: string) => (isSite(href) ? { target: "_blank", rel: "noopener" } : {});
 
 /** Opus-like building blocks: quiet dark cards, small grey labels, light numbers. */
 
@@ -20,7 +24,7 @@ export function PageHead({ title, sub, className }: { title: string; sub?: strin
 export function Card({ href, className, children }: { href?: string; className?: string; children: React.ReactNode }) {
   const cls = cn("block rounded-[20px] border border-white/[0.06] bg-[#111113]", href && "transition active:scale-[0.985] active:bg-[#151518]", className);
   return href ? (
-    <Link href={href} className={cls}>
+    <Link href={href} className={cls} {...siteProps(href)}>
       {children}
     </Link>
   ) : (
@@ -54,13 +58,13 @@ export function SectionHead({ title, href, more }: { title: string; href?: strin
 /** A row inside a grouped card list (iOS settings style). */
 export function Row({ href, icon, title, sub, right, className }: { href: string; icon?: React.ReactNode; title: string; sub?: string; right?: React.ReactNode; className?: string }) {
   return (
-    <Link href={href} className={cn("flex min-w-0 items-center gap-3.5 px-4 py-3.5 transition active:bg-white/[0.04]", className)}>
+    <Link href={href} {...siteProps(href)} className={cn("flex min-w-0 items-center gap-3.5 px-4 py-3.5 transition active:bg-white/[0.04]", className)}>
       {icon ? <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-white/80">{icon}</span> : null}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-medium">{title}</span>
         {sub ? <span className="mt-0.5 block truncate text-[12.5px] text-white/45">{sub}</span> : null}
       </span>
-      {right ?? <ChevronRight className="size-4 shrink-0 text-white/25" />}
+      {right ?? (isSite(href) ? <ArrowUpRight className="size-4 shrink-0 text-white/25" /> : <ChevronRight className="size-4 shrink-0 text-white/25" />)}
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Activity, BookOpen, ChevronRight, Home, LocateFixed, ShoppingBag } from "lucide-react";
 import { CITIES, type Place } from "@/components/app/today";
+import { siteProps } from "@/components/app/ui";
 import { TimeInput } from "@/components/app/tools";
 import { GOALS, LEVELS, ME_KEY, ONBOARD_KEY, recommend, type Goal, type Level, type Me } from "@/lib/app/me";
 import { cn } from "@/lib/utils";
@@ -200,6 +201,7 @@ export function Onboarding() {
               <Link
                 key={r.href}
                 href={r.href}
+                {...siteProps(r.href)}
                 onClick={() => finish(false)}
                 className="flex items-center gap-3.5 rounded-[18px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 active:scale-[0.985]"
               >

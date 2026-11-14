@@ -3,16 +3,30 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { MyPace } from "@/components/app/my-pace";
 import { Card, Tile } from "@/components/app/ui";
-import { CATS, WORKOUTS, workout } from "@/lib/app/workouts";
-
-export function generateStaticParams() {
-  return WORKOUTS.map((w) => ({ slug: w.slug }));
-}
+import { Paywall } from "@/components/app/paywall";
+import { premiumStatus } from "@/lib/app/premium";
+import { CATS, workout } from "@/lib/app/workouts";
 
 export default async function AppWorkout({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const w = workout(slug);
   if (!w) notFound();
+  const { signedIn, premium } = w.pro ? await premiumStatus() : { signedIn: false, premium: true };
+  if (!premium) {
+    return (
+      <article className="app-rise grid grid-cols-1 gap-3">
+        <Link href="/app/biblioteka" className="-ml-1 flex w-fit items-center gap-0.5 text-[14px] text-white/55">
+          <ChevronLeft className="size-5" /> Biblioteka
+        </Link>
+        <div className="pt-1">
+          <p className="text-[12px] text-[#ff6a6f]">{CATS[w.cat].name}</p>
+          <h1 className="mt-1 text-[30px] font-semibold leading-tight tracking-[-0.02em]">{w.name}</h1>
+          <p className="mt-2 text-[15px] leading-relaxed text-white/65">{w.why}</p>
+        </div>
+        <Paywall title="Ten trening" signedIn={signedIn} />
+      </article>
+    );
+  }
   return (
     <article className="app-rise grid grid-cols-1 gap-3">
       <Link href="/app/biblioteka" className="-ml-1 flex w-fit items-center gap-0.5 text-[14px] text-white/55">

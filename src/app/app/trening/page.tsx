@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowUpRight, BookOpen, Calculator, Dumbbell, Footprints, HeartPulse, NotebookPen, Timer, TimerReset, Trophy } from "lucide-react";
+import { ArrowUpRight, BookOpen, Calculator, Dumbbell, Flag, Footprints, HeartPulse, NotebookPen, Timer, TimerReset, TrendingUp, Trophy } from "lucide-react";
 import { Chip, Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { ProBadge } from "@/components/app/paywall";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -33,6 +34,12 @@ export default async function AppTraining() {
         <Row href="/app/biblioteka" icon={<Dumbbell className="size-4" />} title={t("Biblioteka treningów", "Workout library")} sub={t("18 treningów z tempem dla Ciebie", "18 workouts with your paces")} />
         <Row href="/zacznij-biegac" icon={<Footprints className="size-4" />} title={t("Zacznij biegać", "Start running")} sub={t("Darmowy plan: od zera do 25 minut", "Free plan: zero to 25 minutes")} />
         <Row href="/app/kurs" icon={<BookOpen className="size-4" />} title={t("Kurs: Biegaj mądrze", "Course: Run smart")} sub={t("9 krótkich lekcji", "9 short lessons")} />
+      </Group>
+
+      <SectionHead title={t("Zaawansowane", "Advanced")} />
+      <Group>
+        <Row href="/app/strategia" icon={<Flag className="size-4" />} title={t("Strategia na start", "Race strategy")} sub={t("Tempo na każdy km i plan biegu", "Pace for every km and a race plan")} right={<ProBadge />} />
+        <Row href="/app/obciazenie" icon={<TrendingUp className="size-4" />} title={t("Obciążenie i ryzyko", "Load and injury risk")} sub={t("Czy nie przesadzasz z treningiem", "Are you overdoing it")} right={<ProBadge />} />
       </Group>
 
       <SectionHead title={t("Narzędzia", "Tools")} />
