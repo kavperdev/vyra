@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
+import { AppTabBar } from "@/components/app/tab-bar";
+import { StayInApp } from "@/components/app/stay-in-app";
+import { PlanNav } from "@/components/shell/plan-nav";
 import { InstallHint } from "@/components/shell/install-hint";
 import { PageTransition } from "@/components/shell/page-transition";
 import { PullToRefresh } from "@/components/shell/pull-to-refresh";
@@ -55,11 +58,6 @@ export async function AppShell({
             <Link href={role === "athlete" ? "/app" : root} aria-label="VYRA">
               <Logo className="h-[13px]" />
             </Link>
-            {role === "athlete" ? (
-              <Link href="/app" className="rounded-full bg-surface px-3 py-1.5 text-[12px] font-medium text-muted transition active:scale-95">
-                {t("Aplikacja", "App")}
-              </Link>
-            ) : null}
           </span>
           <div className="flex items-center gap-1">
             <Link
@@ -79,11 +77,19 @@ export async function AppShell({
         <main className="mx-auto w-full max-w-6xl px-4 pb-32 pt-3 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
           <InstallHint />
           <PushPrompt />
+          {role === "athlete" ? <PlanNav items={items} /> : null}
           <PageTransition>{children}</PageTransition>
         </main>
       </div>
 
-      <BottomNav items={items} root={root} />
+      {role === "athlete" ? (
+        <div className="lg:hidden">
+          <AppTabBar />
+          <StayInApp />
+        </div>
+      ) : (
+        <BottomNav items={items} root={root} />
+      )}
       <PullToRefresh />
     </div>
   );

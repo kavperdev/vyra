@@ -10,7 +10,7 @@ import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/dates";
 import { MyWeek, type WeekSession } from "@/components/app/my-week";
-import { CalendarDays, History, LineChart } from "lucide-react";
+import { Award, CalendarDays, ClipboardList, History, LineChart, Medal, Sparkles } from "lucide-react";
 
 export const metadata = { title: "Trening" };
 
@@ -26,7 +26,17 @@ export default async function AppTraining() {
   const days = Array.from({ length: 7 }, (_, i) => new Date(mon.getTime() + i * 864e5).toISOString().slice(0, 10));
   const athlete = user?.profile.role === "athlete";
   let week: WeekSession[] = [];
+  let access = false;
+  let method = false;
   if (athlete && user) {
+    const [links, m] = await Promise.all([
+      supabase.from("coach_athletes").select("status").eq("athlete_id", user.id).eq("status", "active").limit(1),
+      supabase.rpc("has_method_access", { p_user: user.id }).then((r) => (r.error ? false : !!r.data)),
+    ]);
+    access = !!links.data?.length || m;
+    method = m;
+  }
+  if (athlete && user && access) {
     const { data } = await supabase
       .from("training_sessions")
       .select("id, title, scheduled_date, planned_duration_s, status")
@@ -44,14 +54,26 @@ export default async function AppTraining() {
           <span className="block text-[16px] font-semibold">{t("Panel trenera", "Coach panel")}</span>
           <ArrowUpRight className="size-5 shrink-0" />
         </Link>
+      ) : athlete && !access ? (
+        <Link href="/app/sklep" className="flex items-center justify-between rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
+          <span>
+            <span className="block text-[12px] text-black/50">{t("Twój dostęp się skończył", "Your access has ended")}</span>
+            <span className="block text-[16px] font-semibold">{t("Odnów plan i wróć do treningów", "Renew your plan")}</span>
+          </span>
+          <ArrowUpRight className="size-5 shrink-0" />
+        </Link>
       ) : athlete ? (
         <>
           <SectionHead title={t("Twój tydzień", "Your week")} href="/athlete/calendar" more={t("Kalendarz", "Calendar")} />
           <MyWeek days={days} sessions={week} today={today} />
           <Group className="mt-2">
+            <Row href="/athlete" icon={<ClipboardList className="size-4" />} title={t("Plan i trening na dziś", "Plan and today")} />
+            {method ? <Row href="/athlete/metoda" icon={<Sparkles className="size-4" />} title="VYRA Method" sub={t("Ankieta, tydzień i podsumowania", "Questionnaire, week and check-ins")} /> : null}
             <Row href="/athlete/calendar" icon={<CalendarDays className="size-4" />} title={t("Kalendarz treningów", "Training calendar")} />
             <Row href="/athlete/progress" icon={<LineChart className="size-4" />} title={t("Postępy", "Progress")} />
             <Row href="/athlete/history" icon={<History className="size-4" />} title={t("Historia", "History")} />
+            <Row href="/athlete/records" icon={<Medal className="size-4" />} title={t("Rekordy i cele", "Records and goals")} />
+            <Row href="/athlete/odznaki" icon={<Award className="size-4" />} title={t("Odznaki", "Badges")} />
           </Group>
         </>
       ) : (

@@ -30,7 +30,12 @@ export function AppTabBar() {
     <nav aria-label={t("Nawigacja aplikacji", "App navigation")} className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
       <ul className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/[0.08] bg-[#18181b]/90 p-1.5 shadow-[0_10px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         {TABS.map((tab) => {
-          const active = tab.href === "/app" ? pathname === "/app" : pathname.startsWith(tab.href);
+          // The training platform lives under Trening; account pages under Ty.
+          const acct = /^\/athlete\/(settings|notifications|polecaj)/.test(pathname);
+          const active =
+            tab.href === "/app"
+              ? pathname === "/app"
+              : pathname.startsWith(tab.href) || (tab.href === "/app/trening" && pathname.startsWith("/athlete") && !acct) || (tab.href === "/app/ty" && acct);
           const Icon = tab.icon;
           return (
             <li key={tab.href}>
