@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Gift, Mail, Shield, Trophy, Users } from "lucide-react";
+import { Bell, CalendarDays, FileText, Gift, LayoutDashboard, Mail, Medal, Settings, Shield, Trophy, Users } from "lucide-react";
 import { InstallRow } from "@/components/app/install-row";
 import { ReopenOnboarding } from "@/components/app/onboarding";
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
@@ -16,9 +16,19 @@ export default async function AppYou() {
     <div className="app-rise grid grid-cols-1">
       <PageHead title={user ? (user.profile.full_name || t("Twoje konto", "Your account")) : t("Ty", "You")} sub={user ? user.profile.email ?? undefined : undefined} />
       {user ? (
-        <Link href="/panel" className="block rounded-full bg-white py-3.5 text-center text-[15px] font-semibold text-black active:scale-[0.98]">
-          {t("Mój plan i treningi", "My plan and sessions")}
-        </Link>
+        user.profile.role === "coach" ? (
+          <Group>
+            <Row href="/coach" icon={<LayoutDashboard className="size-4" />} title={t("Panel trenera", "Coach panel")} sub={t("Zawodnicy, plany i zgłoszenia", "Athletes, plans and requests")} />
+            <Row href="/coach/settings" icon={<Settings className="size-4" />} title={t("Ustawienia konta", "Account settings")} />
+          </Group>
+        ) : (
+          <Group>
+            <Row href="/athlete/calendar" icon={<CalendarDays className="size-4" />} title={t("Kalendarz treningów", "Training calendar")} />
+            <Row href="/athlete/records" icon={<Medal className="size-4" />} title={t("Rekordy i cele", "Records and goals")} />
+            <Row href="/athlete/notifications" icon={<Bell className="size-4" />} title={t("Powiadomienia", "Notifications")} />
+            <Row href="/athlete/settings" icon={<Settings className="size-4" />} title={t("Ustawienia konta", "Account settings")} />
+          </Group>
+        )
       ) : (
         <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
           <p className="text-[15px] font-medium">{t("Konto nie jest potrzebne", "No account needed")}</p>
