@@ -19,6 +19,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // The Android app: always the newest file, saved as an app, not opened as text.
+        source: "/download/vyra.apk",
+        headers: [
+          { key: "Content-Type", value: "application/vnd.android.package-archive" },
+          { key: "Content-Disposition", value: 'attachment; filename="VYRA.apk"' },
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        ],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },

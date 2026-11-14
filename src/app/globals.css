@@ -269,6 +269,25 @@
   .app-press:active { transform: scale(0.96); }
 }
 
+@keyframes vyra-bar-grow {
+  from { transform: scaleY(0); }
+  to { transform: none; }
+}
+@keyframes vyra-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@layer components {
+  .app-bar-grow { transform-origin: bottom; animation: vyra-bar-grow 0.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-rise > * { animation: vyra-rise-in 0.45s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-rise > *:nth-child(2) { animation-delay: 60ms; }
+  .app-rise > *:nth-child(3) { animation-delay: 120ms; }
+  .app-rise > *:nth-child(4) { animation-delay: 180ms; }
+  .app-rise > *:nth-child(5) { animation-delay: 240ms; }
+  .app-rise > *:nth-child(n + 6) { animation-delay: 300ms; }
+  .app-tab { transition: flex-grow 0.32s cubic-bezier(0.2, 0.7, 0.1, 1), background-color 0.25s ease, color 0.2s ease; }
+}
+
 @keyframes vyra-sheet-in {
   from { transform: translateY(100%); }
   to { transform: none; }

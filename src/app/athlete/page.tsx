@@ -120,7 +120,7 @@ export default async function AthleteDashboard() {
   const firstName = user.profile.full_name.split(" ")[0];
 
   return (
-    <div className="grid gap-8">
+    <div className="app-rise grid gap-8">
       <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={tl(`Cześć, ${firstName}`, `Hi, ${firstName}`)}

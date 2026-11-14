@@ -28,7 +28,7 @@ export function InstallHint() {
     } catch {
       // storage unavailable: show the hint
     }
-    const standalone =
+    const standalone = /VYRA-App/.test(navigator.userAgent) ||
       window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     const mobile = window.matchMedia("(max-width: 1023px)").matches;
     if (dismissed || standalone || !mobile) return;

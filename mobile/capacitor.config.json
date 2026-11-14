@@ -1,0 +1,35 @@
+{
+  "appId": "pl.vyraathl.app",
+  "appName": "VYRA",
+  "webDir": "www",
+  "server": {
+    "url": "https://vyraathl.pl/athlete",
+    "allowNavigation": [
+      "vyraathl.pl",
+      "*.vyraathl.pl",
+      "*.supabase.co",
+      "checkout.stripe.com",
+      "billing.stripe.com"
+    ]
+  },
+  "backgroundColor": "#050506",
+  "android": {
+    "backgroundColor": "#050506",
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "force"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "launchAutoHide": true,
+      "backgroundColor": "#050506",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#050506",
+      "overlaysWebView": false
+    }
+  },
+  "appendUserAgent": "VYRA-App/Android"
+}
