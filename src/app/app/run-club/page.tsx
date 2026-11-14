@@ -13,16 +13,19 @@ export default async function AppRunClub() {
   const [events, counts] = await Promise.all([listRunClubEvents(supabase, { upcoming: true }).catch(() => []), runClubCounts(supabase).catch(() => ({}) as Record<string, number>)]);
   const visible = events.filter((e) => e.visible);
   return (
-    <div className="app-rise grid gap-4">
-      <div className="pt-2">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.25em] text-[var(--accent)]">VYRA Run Club</p>
-        <h1 className="display mt-2 text-[34px] leading-[1.05]">{t("Biegamy razem. Za darmo.", "We run together. For free.")}</h1>
-        <p className="mt-2 leading-relaxed text-white/65">
-          {t(
-            "Jedna grupa, tempo rozmowy, każdy poziom. Nikt nie zostaje sam.",
-            "One group, conversational pace, every level. Nobody gets left behind.",
-          )}
-        </p>
+    <div className="app-rise grid grid-cols-1 gap-3.5">
+      <div className="relative isolate -mx-4 -mt-5 overflow-hidden px-4 pb-6 pt-28">
+        <div aria-hidden className="app-kenburns absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: "url(/site/hero.jpg)" }} />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/70 to-black/20" />
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--accent)]">VYRA Run Club · Siedlce</p>
+        <h1 className="display mt-2 text-[40px] leading-[0.98] tracking-tight">{t("Biegamy razem.", "We run together.")}</h1>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[t("Za darmo", "Free"), t("Każdy poziom", "Every level"), t("Tempo rozmowy", "Chatty pace")].map((x) => (
+            <span key={x} className="rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-[12.5px] font-semibold backdrop-blur-md">
+              {x}
+            </span>
+          ))}
+        </div>
       </div>
       {visible.length ? (
         visible.map((e) => {
@@ -30,10 +33,10 @@ export default async function AppRunClub() {
           const full = e.capacity != null && taken >= e.capacity;
           const cal = { title: e.title, starts_at: e.starts_at, place: e.place, when: formatDate(e.starts_at, "EEEE, d MMMM · HH:mm") };
           return (
-            <section key={e.id} className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+            <section key={e.id} className="grid gap-4 rounded-[28px] border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-5">
               <div className="grid gap-2">
                 <p className="font-mono text-[10.5px] uppercase tracking-[0.25em] text-[var(--accent)]">{formatDate(e.starts_at, "EEEE, d MMMM · HH:mm")}</p>
-                <h2 className="text-2xl font-bold">{e.title}</h2>
+                <h2 className="text-[24px] font-bold leading-tight">{e.title}</h2>
                 <p className="flex items-start gap-2 text-white/70">
                   <MapPin className="mt-1 size-4 shrink-0" /> {e.place}
                 </p>
@@ -55,7 +58,7 @@ export default async function AppRunClub() {
           );
         })
       ) : (
-        <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+        <section className="rounded-[28px] border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-5">
           <p className="text-xl font-bold">{t("Co czwartek o 18:00", "Every Thursday at 6 pm")}</p>
           <p className="mt-2 flex items-start gap-2 text-white/70">
             <MapPin className="mt-1 size-4 shrink-0" /> Park Aleksandria, Siedlce · {t("zbiórka przy łosiu", "meet at the elk statue")}
@@ -63,7 +66,7 @@ export default async function AppRunClub() {
           <p className="mt-3 text-sm text-white/55">{t("Kolejne terminy pojawią się tutaj wkrótce.", "Next dates will appear here soon.")}</p>
         </section>
       )}
-      <section className="grid gap-2 rounded-3xl border border-white/10 p-5 text-[15px] text-white/70">
+      <section className="grid gap-2 rounded-[28px] border border-white/[0.06] p-5 text-[15px] text-white/70">
         <p className="font-semibold text-white">{t("Co zabrać", "What to bring")}</p>
         <p>{t("Buty do biegania, strój na cebulkę, czapkę i rękawiczki. Po zmroku odblask albo czołówkę. Wodę, jeśli potrzebujesz.", "Running shoes, layers, a hat and gloves. After dark a reflector or head torch. Water if you need it.")}</p>
       </section>

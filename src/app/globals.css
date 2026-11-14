@@ -288,6 +288,24 @@
   .app-tab { transition: flex-grow 0.32s cubic-bezier(0.2, 0.7, 0.1, 1), background-color 0.25s ease, color 0.2s ease; }
 }
 
+@keyframes vyra-draw {
+  from { stroke-dasharray: 0 1; }
+  to { stroke-dasharray: 1 0; }
+}
+@keyframes vyra-kenburns {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+@layer components {
+  .app-draw { stroke-dasharray: 1 0; animation: vyra-draw 1.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-kenburns { animation: vyra-kenburns 2.4s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-scroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .app-scroll::-webkit-scrollbar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-draw, .app-kenburns, .app-rise > *, .app-bar-grow { animation: none !important; }
+}
+
 @keyframes vyra-sheet-in {
   from { transform: translateY(100%); }
   to { transform: none; }

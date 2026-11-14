@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { CourseBar } from "@/components/app/course-progress";
-import { COURSE } from "@/lib/app/course";
+import { Calculator, ChevronRight, Footprints } from "lucide-react";
+import { CourseCard } from "@/components/app/course-progress";
+import { Kicker, SectionTitle, Surface, TrackLines } from "@/components/app/ui";
 import { listArticles } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
@@ -12,37 +12,52 @@ export const metadata = { title: "Wiedza" };
 export default async function AppKnowledge() {
   const { t, lang } = await getT();
   const { items } = articlesFor(await listArticles(await createClient(), { publishedOnly: true }).catch(() => []), lang);
+  const tools = [
+    { href: "/zacznij-biegac", icon: Footprints, title: t("Darmowy plan: zacznij biegać", "Free plan: start running"), sub: t("Od zera do 25 minut biegu w 6 tygodni", "Zero to 25 minutes of running in 6 weeks") },
+    { href: "/kalkulator", icon: Calculator, title: t("Kalkulator tempa i stref", "Pace and zone calculator"), sub: t("Tempa treningowe z Twojego wyniku", "Training paces from your result") },
+  ];
   return (
-    <div className="app-rise grid gap-4">
-      <h1 className="display pt-2 text-[34px]">{t("Wiedza", "Learn")}</h1>
-      <Link href="/app/kurs" className="block rounded-3xl border border-[var(--accent)]/50 bg-[var(--accent)]/10 p-5 transition active:scale-[0.98]">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.25em] text-[var(--accent)]">{t("Darmowy kurs", "Free course")}</p>
-        <p className="mt-2 text-2xl font-bold">{COURSE.title}</p>
-        <p className="mt-2 text-sm leading-relaxed text-white/65">{COURSE.lead}</p>
-        <CourseBar className="mt-4" />
-        <p className="mt-4 flex items-center gap-1.5 text-sm font-semibold">
-          {t("Ucz się dalej", "Keep learning")} <ArrowRight className="size-4" />
-        </p>
-      </Link>
-      <Link href="/zacznij-biegac" className="block rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition active:scale-[0.98]">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.25em] text-[var(--accent)]">{t("Darmowy plan", "Free plan")}</p>
-        <p className="mt-2 text-xl font-bold">{t("Od zera do 25 minut biegu w 6 tygodni", "From zero to 25 minutes of running in 6 weeks")}</p>
-      </Link>
-      <Link href="/kalkulator" className="block rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition active:scale-[0.98]">
-        <p className="font-mono text-[10.5px] uppercase tracking-[0.25em] text-[var(--accent)]">{t("Narzędzie", "Tool")}</p>
-        <p className="mt-2 text-xl font-bold">{t("Kalkulator tempa i stref", "Pace and zone calculator")}</p>
-      </Link>
+    <div className="app-rise grid grid-cols-1 gap-3.5">
+      <div className="relative -mx-4 -mt-5 overflow-hidden px-4 pb-1 pt-6">
+        <TrackLines className="-right-24 -top-28 size-[380px] opacity-80" />
+        <Kicker className="relative">{t("Ucz się z VYRA", "Learn with VYRA")}</Kicker>
+        <h1 className="display relative mt-2 text-[40px] leading-[0.98] tracking-tight">{t("Wiedza", "Learn")}</h1>
+      </div>
+      <CourseCard />
+      {tools.map((x) => (
+        <Surface key={x.href} href={x.href}>
+          <div className="flex items-center gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/[0.07]">
+              <x.icon className="size-6 text-white/85" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold leading-snug">{x.title}</span>
+              <span className="mt-0.5 block text-[13px] text-white/50">{x.sub}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-white/30" />
+          </div>
+        </Surface>
+      ))}
       {items.length ? (
-        <section className="mt-2 grid gap-2">
-          <h2 className="text-lg font-bold">{t("Artykuły", "Articles")}</h2>
-          {items.map((a) => (
-            <Link key={a.id} href={`/app/wiedza/${a.slug}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition active:scale-[0.98]">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">{categoryLabel(a.category, t)}</p>
-              <p className="mt-1 font-semibold">{a.title}</p>
-              {a.excerpt ? <p className="mt-1 line-clamp-2 text-sm text-white/55">{a.excerpt}</p> : null}
+        <>
+          <SectionTitle title={t("Artykuły", "Articles")} />
+          {items.map((a, i) => (
+            <Link
+              key={a.id}
+              href={`/app/wiedza/${a.slug}`}
+              className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 rounded-[24px] border border-white/[0.06] bg-white/[0.03] p-4 transition active:scale-[0.98]"
+            >
+              <span className="display grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-[var(--accent)]/30 to-transparent text-lg text-white/80">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="min-w-0">
+                <Kicker>{categoryLabel(a.category, t)}</Kicker>
+                <span className="mt-1 block font-bold leading-snug">{a.title}</span>
+                {a.excerpt ? <span className="mt-1 line-clamp-2 block text-[13px] text-white/50">{a.excerpt}</span> : null}
+              </span>
             </Link>
           ))}
-        </section>
+        </>
       ) : null}
     </div>
   );
