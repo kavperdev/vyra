@@ -299,6 +299,7 @@
 @layer components {
   .app-draw { stroke-dasharray: 1 0; animation: vyra-draw 1.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .app-kenburns { animation: vyra-kenburns 2.4s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-h { font-stretch: 125%; font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.92; }
   .app-scroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .app-scroll::-webkit-scrollbar { display: none; }
 }
