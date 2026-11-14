@@ -300,6 +300,11 @@
   .app-draw { stroke-dasharray: 1 0; animation: vyra-draw 1.6s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .app-kenburns { animation: vyra-kenburns 2.4s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
   .app-h { font-stretch: 125%; font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.92; }
+  /* Installed-app feel: no text selection, no long-press callouts, no tap flash, no double-tap zoom. */
+  .app-native { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; overscroll-behavior-y: none; }
+  .app-native input, .app-native textarea, .app-native [contenteditable], .app-native .app-select { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+  .app-native img, .app-native svg { -webkit-user-drag: none; }
+  .app-native a, .app-native button { -webkit-touch-callout: none; }
   .app-scroll { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .app-scroll::-webkit-scrollbar { display: none; }
 }

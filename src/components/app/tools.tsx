@@ -232,38 +232,126 @@ export function HrTool() {
   );
 }
 
+type Heat = "cold" | "mild" | "hot";
+type Gut = "sensitive" | "normal" | "trained";
+
+/** Carbs per hour by race duration and how trained the stomach is (current sports-nutrition guidance). */
+function carbsPerHour(h: number, gut: Gut) {
+  if (h < 1) return 0;
+  if (h < 1.25) return gut === "trained" ? 30 : 0;
+  if (h < 2.5) return gut === "sensitive" ? 30 : gut === "normal" ? 45 : 60;
+  return gut === "sensitive" ? 45 : gut === "normal" ? 60 : 80;
+}
+
 export function FuelTool() {
   const [dist, setDist] = useState("half");
   const [sec, setSec] = useState<number | null>(null);
+  const [heat, setHeat] = useState<Heat>("mild");
+  const [gut, setGut] = useState<Gut>("normal");
+  const [gel, setGel] = useState(25);
+  const [kg, setKg] = useState("");
+  const d = DIST.find((x) => x.k === dist)!;
   const h = sec ? sec / 3600 : 0;
-  const carbs = h < 1.25 ? 0 : h < 2.5 ? 45 : 70;
-  const gels = carbs ? Math.max(1, Math.round((carbs * h - carbs * 0.5) / 25)) : 0;
+  const km = d.m / 1000;
+  const pace = sec ? sec / km : 0; // s/km
+  const cph = carbsPerHour(h, gut);
+  const fluid = heat === "hot" ? [600, 800] : heat === "cold" ? [300, 500] : [400, 600];
+  const salt = h >= 2 || (heat === "hot" && h >= 1);
+  const weight = Number(kg) >= 35 && Number(kg) <= 150 ? Number(kg) : null;
+
+  // Gels from ~30–45 min, then every (gel / carbs-per-hour) hours, never in the last 15 minutes.
+  const plan: { min: number; km: number; what: string }[] = [];
+  if (sec && cph > 0) {
+    const every = (gel / cph) * 60;
+    for (let m = Math.min(40, Math.max(30, every)); m < sec / 60 - 15; m += every) {
+      plan.push({ min: Math.round(m), km: Math.round((m * 60) / pace * 10) / 10, what: `Żel ${gel} g + 2–3 łyki wody` });
+    }
+  }
+  const total = plan.length * gel;
+
   return (
     <div className="grid gap-3">
       <Card className="grid gap-3 p-4">
         <Seg value={dist} onChange={setDist} opts={DIST.map(({ k, label }) => ({ k, label }))} />
-        <p className="text-[12px] text-white/45">Planowany czas</p>
-        <TimeInput value={sec} onChange={setSec} />
+        <p className="text-[12px] text-white/45">Planowany czas na mecie</p>
+        <TimeInput key={dist} value={sec} onChange={setSec} hours={dist === "half" || dist === "marathon"} />
+        <p className="mt-1 text-[12px] text-white/45">Pogoda w dniu startu</p>
+        <Seg value={heat} onChange={(v) => setHeat(v as Heat)} opts={[{ k: "cold", label: "Chłodno <10°" }, { k: "mild", label: "10–20°" }, { k: "hot", label: "Gorąco >20°" }]} />
+        <p className="mt-1 text-[12px] text-white/45">Jedzenie w biegu</p>
+        <Seg value={gut} onChange={(v) => setGut(v as Gut)} opts={[{ k: "sensitive", label: "Wrażliwy brzuch" }, { k: "normal", label: "Normalnie" }, { k: "trained", label: "Trenuję to" }]} />
+        <div className="grid grid-cols-2 gap-2">
+          <label className="grid gap-1.5 text-[12px] text-white/45">
+            Żel (g węglowodanów)
+            <Seg value={String(gel)} onChange={(v) => setGel(Number(v))} opts={[{ k: "20", label: "20" }, { k: "25", label: "25" }, { k: "40", label: "40" }]} />
+          </label>
+          <label className="grid gap-1.5 text-[12px] text-white/45">
+            Waga (opcjonalnie)
+            <input inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" placeholder="kg" value={kg} onChange={(e) => setKg(e.target.value.replace(/\D/g, "").slice(0, 3))} className={input} />
+          </label>
+        </div>
       </Card>
-      {sec ? (
+
+      {!sec ? (
+        <p className="px-1 text-center text-[13px] text-white/40">Wpisz planowany czas, a ułożymy plan jedzenia i picia na trasie.</p>
+      ) : (
         <>
           <div className="grid grid-cols-3 gap-2">
-            <Tile k="Węgle" v={carbs ? `${carbs} g` : "—"} s="na godzinę" />
-            <Tile k="Żele (25 g)" v={gels || "—"} s="na cały bieg" />
-            <Tile k="Picie" v="400–800" s="ml na godzinę" />
+            <Tile k="Węgle" v={cph ? `${cph} g` : "0"} s="na godzinę" />
+            <Tile k="Picie" v={`${fluid[0]}–${fluid[1]}`} s="ml na godzinę" />
+            <Tile k="Tempo" v={fmtPace(pace)} s="min/km" />
           </div>
-          <Card className="p-4 text-[13.5px] leading-relaxed text-white/70">
-            {carbs ? (
-              <>
-                Pierwszy żel po około 30–45 minutach, potem co 20–30 minut, zawsze z kilkoma łykami wody. Dzień przed startem jedz więcej węglowodanów, a rano lekkie śniadanie 2–3 godziny przed startem.
-              </>
+
+          <Card className="p-4">
+            <p className="text-[12px] text-white/45">Na trasie</p>
+            {plan.length ? (
+              <ol className="mt-2.5 grid gap-0">
+                {plan.map((p, i) => (
+                  <li key={i} className="flex items-center gap-3 border-b border-white/[0.05] py-2.5 last:border-0">
+                    <span className="w-14 shrink-0 text-[13px] tabular-nums text-white/50">{p.min} min</span>
+                    <span className="w-16 shrink-0 text-[13px] tabular-nums text-white/50">~{p.km.toString().replace(".", ",")} km</span>
+                    <span className="text-[14px]">{p.what}</span>
+                  </li>
+                ))}
+                <li className="pt-2.5 text-[12.5px] text-white/45">
+                  Razem {plan.length} {plan.length === 1 ? "żel" : plan.length < 5 ? "żele" : "żeli"} ({total} g). Weź jeden zapasowy.
+                </li>
+              </ol>
             ) : (
-              <>Przy wysiłku do około 75 minut nie potrzebujesz żeli. Wystarczy dobre śniadanie 2–3 godziny przed startem i picie według pragnienia.</>
+              <p className="mt-2 text-[14px] leading-relaxed text-white/75">
+                {h < 1.25 ? "Przy tak krótkim biegu jedzenie na trasie nie jest potrzebne. Wystarczy dobre śniadanie i picie według pragnienia." : "Bez żeli: przy wrażliwym brzuchu i tym czasie wystarczy picie z punktów."}
+              </p>
             )}
-            <span className="mt-2 block text-[11.5px] text-white/35">Wszystko, co zjesz na zawodach, przetestuj wcześniej na długim treningu.</span>
+            <p className="mt-3 text-[13px] leading-relaxed text-white/65">
+              Pij małymi łykami co 15–20 minut, najlepiej na punktach odżywczych{salt ? ". Biegnij z napojem izotonicznym albo tabletkami z sodem, bo pot wypłukuje sól." : "."}
+            </p>
           </Card>
+
+          <Card className="p-4">
+            <p className="text-[12px] text-white/45">Przed startem</p>
+            <ul className="mt-2 grid gap-2 text-[14px] leading-relaxed text-white/80">
+              {h >= 1.5 ? (
+                <li>
+                  <b className="font-semibold text-white">Dzień przed:</b> więcej węglowodanów (makaron, ryż, pieczywo){weight ? `, około ${Math.round(weight * 7)}–${Math.round(weight * 8)} g w ciągu dnia` : ""}. Mniej błonnika i tłuszczu.
+                </li>
+              ) : (
+                <li>
+                  <b className="font-semibold text-white">Dzień przed:</b> normalne jedzenie, bez eksperymentów.
+                </li>
+              )}
+              <li>
+                <b className="font-semibold text-white">Śniadanie 2–3 h przed:</b> lekkie, węglowodanowe{weight ? `, około ${Math.round(weight * 1)}–${Math.round(weight * 2)} g węglowodanów` : ""}, np. bułka z dżemem i banan.
+              </li>
+              {h >= 1.25 ? (
+                <li>
+                  <b className="font-semibold text-white">10–15 min przed:</b> możesz zjeść pół żelu albo kilka łyków napoju.
+                </li>
+              ) : null}
+            </ul>
+          </Card>
+
+          <p className="px-1 text-[11.5px] leading-relaxed text-white/35">Każdy żel i napój przetestuj wcześniej na długim treningu. Na zawodach nic nowego.</p>
         </>
-      ) : null}
+      )}
     </div>
   );
 }

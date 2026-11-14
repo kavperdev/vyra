@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   const { t } = await getT();
   return (
-    <div className="dark min-h-dvh overflow-x-clip bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
+    <div className="app-native dark min-h-dvh overflow-x-clip bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
       <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
       {/* The status bar is translucent in the installed app: keep a solid strip behind it. */}
       <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-black" />

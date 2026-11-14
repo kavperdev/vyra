@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Calculator, Dumbbell, HeartPulse, Timer, Trophy } from "lucide-react";
+import { ArrowUpRight, Calculator, Dumbbell, Timer, TimerReset, Trophy } from "lucide-react";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
+import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
@@ -64,6 +65,9 @@ export default async function AppHome() {
         )
       ) : null}
 
+      <SectionHead title={t("Dziennik", "Log")} href="/app/dziennik" more={t("Dodaj bieg", "Add run")} />
+      <HomeWeek />
+
       <ForYou />
 
       <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
@@ -72,10 +76,10 @@ export default async function AppHome() {
       <SectionHead title={t("Narzędzia", "Tools")} href="/app/narzedzia" more={t("Wszystkie", "All")} />
       <div className="grid grid-cols-2 gap-2">
         {[
-          { href: "/app/narzedzia?t=prognoza", icon: Timer, title: t("Prognoza wyniku", "Race predictor"), sub: t("i Twoje tempa", "and your paces") },
-          { href: "/app/narzedzia?t=tetno", icon: HeartPulse, title: t("Strefy tętna", "HR zones"), sub: t("z wieku lub max", "from age or max") },
+          { href: "/app/timer", icon: TimerReset, title: t("Timer interwałów", "Interval timer"), sub: t("sygnał przy każdej zmianie", "a beep at every change") },
           { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
-          { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("żele i picie", "gels and water") },
+          { href: "/app/narzedzia?t=prognoza", icon: Timer, title: t("Prognoza wyniku", "Race predictor"), sub: t("i Twoje tempa", "and your paces") },
+          { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("plan żeli i picia", "gels and drinks plan") },
         ].map((x) => (
           <Card key={x.href} href={x.href} className="p-4">
             <x.icon className="size-5 text-white/70" />
