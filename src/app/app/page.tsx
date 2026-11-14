@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Calculator, Dumbbell, HeartPulse, Timer, Trophy } from "lucide-react";
 import { CourseCard } from "@/components/app/course-progress";
+import { ForYou } from "@/components/app/for-you";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
@@ -33,6 +34,8 @@ export default async function AppHome() {
           <ArrowUpRight className="size-5" />
         </Link>
       ) : null}
+
+      <ForYou />
 
       <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
       <CourseCard />

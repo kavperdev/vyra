@@ -1,5 +1,6 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Onboarding } from "@/components/app/onboarding";
 import { AppTabBar } from "@/components/app/tab-bar";
 import { RevealObserver } from "@/components/site/reveal";
 import { SourceTracker } from "@/components/site/source-tracker";
@@ -12,7 +13,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export const viewport: Viewport = { themeColor: "#000000" };
 
 /** The VYRA app: open to everyone, no account needed. Training plans and purchases sign in when needed. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +21,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="dark min-h-dvh overflow-x-clip bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
       <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
-      <header className="sticky top-0 z-30 bg-black/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      {/* The status bar is translucent in the installed app: keep a solid strip behind it. */}
+      <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-black" />
+      <header className="relative z-30 bg-black pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <Link href="/app" aria-label="VYRA">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -40,6 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">{children}</main>
       <AppTabBar />
+      <Onboarding />
       <RevealObserver />
       <SourceTracker />
     </div>

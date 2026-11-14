@@ -13,10 +13,10 @@ type Conditions = {
   air: { level: number; label: string; station: string; km: number } | null;
   sun: { today: { sunrise: string | null; sunset: string | null }; tomorrow: { sunrise: string | null; sunset: string | null } };
 };
-type Place = { lat: number; lon: number; label: string };
+export type Place = { lat: number; lon: number; label: string };
 type Check = { sleep: number; energy: number; soreness: number; pain: boolean };
 
-const CITIES: Place[] = [
+export const CITIES: Place[] = [
   { label: "Warszawa", lat: 52.23, lon: 21.01 },
   { label: "Kraków", lat: 50.06, lon: 19.94 },
   { label: "Wrocław", lat: 51.11, lon: 17.03 },

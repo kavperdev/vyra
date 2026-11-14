@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Download, FileText, Globe, Mail, Shield, Users } from "lucide-react";
+import { ReopenOnboarding } from "@/components/app/onboarding";
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -36,6 +37,7 @@ export default async function AppYou() {
           </div>
         </div>
       )}
+      <ReopenOnboarding className="mt-3 w-full rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-left text-[14px] text-white/75 active:scale-[0.985]" />
       <SectionHead title={t("Więcej", "More")} />
       <Group>
         <Row href="/pobierz" icon={<Download className="size-4" />} title={t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")} />

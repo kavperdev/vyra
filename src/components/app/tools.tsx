@@ -51,6 +51,53 @@ export function useResult() {
   return { r, save, p5k };
 }
 
+/** Time as three number fields (h · min · s): the phone shows a digit keypad that has no colon. */
+export function TimeInput({ value, onChange, hours = true }: { value: number | null; onChange: (s: number | null) => void; hours?: boolean }) {
+  const [h, setH] = useState("");
+  const [m, setM] = useState("");
+  const [sec, setSec] = useState("");
+  useEffect(() => {
+    if (value == null) return;
+    setH(value >= 3600 ? String(Math.floor(value / 3600)) : "");
+    setM(String(Math.floor((value % 3600) / 60)));
+    setSec(String(Math.round(value % 60)).padStart(2, "0"));
+    // only when the value comes from outside (saved result)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const push = (nh: string, nm: string, ns: string) => {
+    const t = (Number(nh) || 0) * 3600 + (Number(nm) || 0) * 60 + (Number(ns) || 0);
+    onChange(t > 0 && (Number(ns) || 0) < 60 ? t : null);
+  };
+  const box = "h-14 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] text-center text-[22px] font-light tabular-nums outline-none focus:border-white/30";
+  const field = (label: string, v: string, set: (x: string) => void, max: number, which: 0 | 1 | 2) => (
+    <label className="grid gap-1 text-center text-[11px] text-white/40">
+      <input
+        inputMode="numeric"
+        pattern="[0-9]*"
+        enterKeyHint="done"
+        placeholder="0"
+        value={v}
+        onChange={(e) => {
+          const x = e.target.value.replace(/\D/g, "").slice(0, max);
+          set(x);
+          push(which === 0 ? x : h, which === 1 ? x : m, which === 2 ? x : sec);
+        }}
+        className={box}
+      />
+      {label}
+    </label>
+  );
+  return (
+    <div className={cn("grid gap-2", hours ? "grid-cols-3" : "grid-cols-2")}>
+      {hours ? field("godz.", h, setH, 1, 0) : null}
+      {field("min", m, setM, hours ? 2 : 3, 1)}
+      {field("s", sec, setSec, 2, 2)}
+    </div>
+  );
+}
+
+const fmtStore = (t: number) => `${Math.floor(t / 3600)}:${String(Math.floor((t % 3600) / 60)).padStart(2, "0")}:${String(Math.round(t % 60)).padStart(2, "0")}`;
+
 const input = "h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[16px] tabular-nums outline-none focus:border-white/30";
 
 function Seg({ value, onChange, opts }: { value: string; onChange: (v: string) => void; opts: { k: string; label: string }[] }) {
@@ -68,14 +115,15 @@ function Seg({ value, onChange, opts }: { value: string; onChange: (v: string) =
 export function PredictTool() {
   const { r, save, p5k } = useResult();
   const [dist, setDist] = useState("5k");
-  const [time, setTime] = useState("");
+  const [sec, setSec] = useState<number | null>(null);
+  const [key, setKey] = useState(0);
   useEffect(() => {
     if (r) {
       setDist(r.dist);
-      setTime(r.time);
+      setSec(parseTime(r.time));
+      setKey((k) => k + 1);
     }
   }, [r]);
-  const sec = parseTime(time);
   const d = DIST.find((x) => x.k === dist)!;
   const vdot = sec ? vdotOf(d.m, sec) : null;
   const z = p5k ? zonesFor(p5k) : null;
@@ -84,11 +132,15 @@ export function PredictTool() {
       <Card className="grid gap-3 p-4">
         <p className="text-[13px] text-white/60">Twój ostatni wynik</p>
         <Seg value={dist} onChange={setDist} opts={DIST.map(({ k, label }) => ({ k, label }))} />
-        <input inputMode="numeric" placeholder={dist === "5k" ? "np. 24:30" : dist === "10k" ? "np. 52:00" : "np. 1:55:00"} value={time} onChange={(e) => setTime(e.target.value)} className={input} />
+        <TimeInput key={key} value={sec} onChange={setSec} />
         <button
           type="button"
           disabled={!sec}
-          onClick={() => sec && save({ dist, time })}
+          onClick={() => {
+            if (!sec) return;
+            (document.activeElement as HTMLElement | null)?.blur();
+            save({ dist, time: fmtStore(sec) });
+          }}
           className="h-12 rounded-full bg-white text-[15px] font-semibold text-black transition active:scale-[0.98] disabled:opacity-30"
         >
           Policz
@@ -152,11 +204,11 @@ export function HrTool() {
       <Card className="grid grid-cols-2 gap-2 p-4">
         <label className="grid gap-1.5 text-[12px] text-white/50">
           Wiek
-          <input inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} placeholder="np. 30" className={input} />
+          <input inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" value={age} onChange={(e) => setAge(e.target.value)} placeholder="np. 30" className={input} />
         </label>
         <label className="grid gap-1.5 text-[12px] text-white/50">
           Tętno max (jeśli znasz)
-          <input inputMode="numeric" value={max} onChange={(e) => setMax(e.target.value)} placeholder="np. 192" className={input} />
+          <input inputMode="numeric" pattern="[0-9]*" enterKeyHint="done" value={max} onChange={(e) => setMax(e.target.value)} placeholder="np. 192" className={input} />
         </label>
       </Card>
       {hrMax ? (
@@ -182,8 +234,7 @@ export function HrTool() {
 
 export function FuelTool() {
   const [dist, setDist] = useState("half");
-  const [time, setTime] = useState("");
-  const sec = parseTime(time);
+  const [sec, setSec] = useState<number | null>(null);
   const h = sec ? sec / 3600 : 0;
   const carbs = h < 1.25 ? 0 : h < 2.5 ? 45 : 70;
   const gels = carbs ? Math.max(1, Math.round((carbs * h - carbs * 0.5) / 25)) : 0;
@@ -191,7 +242,8 @@ export function FuelTool() {
     <div className="grid gap-3">
       <Card className="grid gap-3 p-4">
         <Seg value={dist} onChange={setDist} opts={DIST.map(({ k, label }) => ({ k, label }))} />
-        <input inputMode="numeric" value={time} onChange={(e) => setTime(e.target.value)} placeholder="Planowany czas, np. 1:50:00" className={input} />
+        <p className="text-[12px] text-white/45">Planowany czas</p>
+        <TimeInput value={sec} onChange={setSec} />
       </Card>
       {sec ? (
         <>
