@@ -11,9 +11,6 @@ import { accessDays } from "@/lib/access";
 import { MAILS, sendMailOnce } from "@/lib/mail";
 import { creditReferrer, referralCoupon, referralFromSource } from "@/lib/referral";
 
-/** Free trial of the VYRA Method monthly plan, in days. */
-const METHOD_TRIAL_DAYS = 14;
-
 /** Creates a Stripe Checkout for a coaching package and returns its URL. The price always comes from the database. */
 export type CheckoutStart =
   | { ok: true; url: string }
@@ -79,8 +76,6 @@ export async function startCheckout(
         },
       },
       ...(monthly ? {} : { customer_creation: "always", invoice_creation: { enabled: "true" } }),
-      // VYRA Method monthly: the first 14 days are free; Stripe charges only after the trial unless cancelled.
-      ...(monthly && /method/i.test(plan.name) ? { subscription_data: { trial_period_days: String(METHOD_TRIAL_DAYS) } } : {}),
     });
     if (embedded && session.client_secret && publishableKey) return { ok: true, clientSecret: session.client_secret, publishableKey };
     if (!session.url) throw new Error("no url");

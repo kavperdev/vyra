@@ -1,6 +1,7 @@
 import { Gift, Tent } from "lucide-react";
 import { Card, Chip, Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { PlanCards } from "@/components/site/plan-cards";
+import { TrialForm } from "@/components/app/trial-form";
 import { listCamps, listCoachingPlans } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
@@ -28,11 +29,13 @@ export default async function AppShop() {
           <Card className="overflow-hidden p-0">
             <div className="h-36 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
             <div className="p-4">
-              <Chip tone="accent">{t("Pierwsze 14 dni za darmo", "First 14 days free")}</Chip>
+              <Chip tone="accent">{t("14 dni za darmo, bez karty", "14 days free, no card")}</Chip>
               <p className="mt-2.5 text-[20px] font-semibold">VYRA Method</p>
               <p className="mt-1 text-[14px] leading-relaxed text-white/60">{t("Co tydzień nowy plan dopasowany do Twojej formy, czasu i samopoczucia.", "A new plan every week, fitted to your form, time and how you feel.")}</p>
+              <TrialForm className="mt-4" />
             </div>
           </Card>
+          <p className="mb-1 mt-6 px-0.5 text-[13px] text-white/50">{t("Albo od razu wybierz pakiet:", "Or pick a package right away:")}</p>
           <div className="mt-3 grid grid-cols-1 gap-3">
             <PlanCards plans={m} payments={pay} />
           </div>

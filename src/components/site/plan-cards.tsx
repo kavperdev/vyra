@@ -73,7 +73,7 @@ function MonthlyCard({ plan, index, lang, t, payments }: { plan: CoachingPlan; i
         </div>
         <p className="mt-2 min-h-5 text-[13px] text-white/45">
           {/method/i.test(plan.name)
-            ? t("Pierwsze 14 dni za darmo, potem co miesiąc. Rezygnujesz w każdej chwili.", "First 14 days free, then monthly. Cancel anytime.")
+            ? t("Co miesiąc. Rezygnujesz w każdej chwili.", "Monthly. Cancel anytime.")
             : plan.commit_price_pln != null
             ? t(
                 `${amount(plan.commit_price_pln, lang)} zł / mies. przy współpracy na 3 miesiące`,

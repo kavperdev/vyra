@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
+import { todayISO } from "@/lib/dates";
 
 export const metadata = { title: "Dziś" };
 
@@ -17,6 +18,17 @@ export default async function AppHome() {
   const { t } = await getT();
   const supabase = await createClient();
   const [user, challenges] = await Promise.all([isSupabaseConfigured() ? getCurrentUser().catch(() => null) : null, listChallenges(supabase).catch(() => [])]);
+  // Signed in: today's sessions straight from the plan (VYRA Method or the coach).
+  let todays: { id: string; title: string; planned_duration_s: number | null; goal: string | null }[] = [];
+  if (user) {
+    const { data } = await supabase
+      .from("training_sessions")
+      .select("id, title, planned_duration_s, goal")
+      .eq("athlete_id", user.id)
+      .eq("scheduled_date", todayISO())
+      .limit(3);
+    todays = (data ?? []) as typeof todays;
+  }
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
   const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
@@ -26,13 +38,30 @@ export default async function AppHome() {
       <Today />
 
       {user ? (
-        <Link href="/panel" className="mt-6 flex items-center justify-between rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
-          <span>
-            <span className="block text-[12px] text-black/50">{t("Twój plan", "Your plan")}</span>
-            <span className="block text-[16px] font-semibold">{t("Trening na dziś", "Today's session")}</span>
-          </span>
-          <ArrowUpRight className="size-5" />
-        </Link>
+        todays.length ? (
+          <>
+            <SectionHead title={t("Twój trening na dziś", "Today's session")} href="/panel" more={t("Plan", "Plan")} />
+            {todays.map((s) => (
+              <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="mb-2 block rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
+                <span className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block text-[16px] font-semibold leading-snug">{s.title}</span>
+                    {s.goal ? <span className="mt-0.5 line-clamp-2 block text-[13px] text-black/55">{s.goal}</span> : null}
+                  </span>
+                  {s.planned_duration_s ? <span className="shrink-0 rounded-full bg-black/[0.07] px-2.5 py-1 text-[12px] font-medium tabular-nums">{Math.round(s.planned_duration_s / 60)} min</span> : null}
+                </span>
+              </Link>
+            ))}
+          </>
+        ) : (
+          <Link href="/panel" className="mt-6 flex items-center justify-between rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-4 transition active:scale-[0.985]">
+            <span>
+              <span className="block text-[12px] text-white/45">{t("Twój plan", "Your plan")}</span>
+              <span className="block text-[15px] font-medium">{t("Dziś dzień bez treningu. Zobacz cały tydzień", "Rest day. See your week")}</span>
+            </span>
+            <ArrowUpRight className="size-5 text-white/50" />
+          </Link>
+        )
       ) : null}
 
       <ForYou />
@@ -75,7 +104,7 @@ export default async function AppHome() {
         <Card href="/app/sklep" className="mt-7 overflow-hidden p-0">
           <div className="h-32 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
           <div className="p-4">
-            <Chip tone="accent">{t("14 dni za darmo", "14 days free")}</Chip>
+            <Chip tone="accent">{t("14 dni za darmo, bez karty", "14 days free, no card")}</Chip>
             <p className="mt-2.5 text-[17px] font-semibold leading-snug">{t("VYRA Method: plan, który co tydzień dopasowuje się do Ciebie", "VYRA Method: a plan that adapts to you every week")}</p>
           </div>
         </Card>

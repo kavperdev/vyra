@@ -165,6 +165,23 @@ export const MAILS = {
         };
   },
 
+  trial(o: { name: string | null; token: string | null }): MailContent {
+    const origin = publicOrigin();
+    return {
+      subject: "VYRA Method: Twoje 14 dni za darmo",
+      preview: "Bez karty i bez opłat. Pierwszy tydzień planu czeka.",
+      title: hi(o.name),
+      paragraphs: [
+        "Twoje 14 dni VYRA Method za darmo jest aktywne. Bez karty i bez żadnych opłat: po 14 dniach dostęp po prostu się kończy, chyba że zdecydujesz się zostać.",
+        o.token
+          ? "Załóż konto (30 sekund), wypełnij krótką ankietę, a plan na pierwszy tydzień pojawi się od razu w kalendarzu."
+          : "Zaloguj się do aplikacji VYRA, wejdź w VYRA Method i wypełnij krótką ankietę: plan na pierwszy tydzień pojawi się od razu.",
+      ],
+      cta: o.token ? { label: "Załóż konto i zacznij", url: `${origin}/invite/${o.token}` } : { label: "Zaloguj się", url: `${origin}/login?next=/athlete/metoda` },
+      after: [o.token ? "Link jest ważny 30 dni." : "Nie pamiętasz hasła? Na stronie logowania możesz je zresetować."],
+    };
+  },
+
   voucher(o: { buyer: string | null; recipient: string | null; plan: string; code: string }): MailContent {
     const origin = publicOrigin();
     return {

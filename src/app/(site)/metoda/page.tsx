@@ -3,6 +3,7 @@ import { Activity, CalendarClock, HeartPulse, Scale, ShieldCheck, Target } from 
 import { Eyebrow, Faq, GhostLink, PageHero, PrimaryLink, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { MethodWaitlistForm } from "@/components/site/lead-forms";
 import { PlanCards } from "@/components/site/plan-cards";
+import { TrialForm } from "@/components/app/trial-form";
 import { listCoachingPlans } from "@/lib/data/camps";
 import { stripeConfigured } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
@@ -164,6 +165,21 @@ export default async function MethodPage() {
             <PrimaryLink href={selling ? "#cennik" : "#lista"}>{selling ? "Wybierz plan" : "Zapisz się na start"}</PrimaryLink>
             <GhostLink href="/pobierz">Jak zainstalować aplikację</GhostLink>
             <GhostLink href="/login?next=/athlete/metoda">Mam już konto</GhostLink>
+          </div>
+        </div>
+      </section>
+
+      <section id="za-darmo" className="scroll-mt-24 border-t border-white/10">
+        <div className={`${wrap} grid gap-10 py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,5fr)] lg:items-center`}>
+          <div className="grid content-start gap-4">
+            <Eyebrow accent>Za darmo, bez karty</Eyebrow>
+            <h2 className="display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] text-white">Wypróbuj VYRA Method przez 14 dni</h2>
+            <p className="max-w-md text-[17px] leading-relaxed text-white/60">
+              Podaj imię i e-mail. Dostaniesz link do konta, wypełnisz krótką ankietę i od razu zobaczysz swój pierwszy tydzień treningów. Po 14 dniach dostęp kończy się sam.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#070708] p-6 sm:p-8">
+            <TrialForm tone="site" />
           </div>
         </div>
       </section>
