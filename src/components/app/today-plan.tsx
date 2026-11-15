@@ -6,6 +6,7 @@ import { Check, Flag, Footprints, Rocket, Sprout, TimerReset } from "lucide-reac
 import { completeRef, readinessToday, setSwap, todayItem, type TodayItem } from "@/lib/app/plans";
 import { useStoreTick } from "@/lib/app/store";
 import { SectionHead } from "@/components/app/ui";
+import { useAccess } from "@/components/app/access";
 import { cn } from "@/lib/utils";
 
 const dayName = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
@@ -13,6 +14,7 @@ const dayName = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "lo
 /** Home: today's session from the active free plan, ready to start; or a choice of plan when there is none. */
 export function TodayPlan() {
   const tick = useStoreTick();
+  const { premium } = useAccess();
   const [item, setItem] = useState<TodayItem | null | undefined>(undefined);
   const [ready, setReady] = useState<number | null>(null);
   useEffect(() => {
@@ -29,7 +31,7 @@ export function TodayPlan() {
           {[
             { href: "/app/plan", icon: Sprout, t: "Zacznij biegać", d: "Od zera do 25 minut biegu w 6 tygodni. Timer prowadzi każdy trening." },
             { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." },
-            { href: "/app/sklep", icon: Rocket, t: "VYRA Method", d: "Plan, który co tydzień dopasowuje się do Ciebie. 14 dni za darmo." },
+            ...(premium ? [] : [{ href: "/app/sklep", icon: Rocket, t: "VYRA Method", d: "Masz start albo wracasz po kontuzji? Plan liczony co tydzień od nowa. 14 dni za darmo." }]),
           ].map((x) => (
             <Link key={x.href} href={x.href} className="flex items-center gap-3.5 rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]">
@@ -78,6 +80,11 @@ export function TodayPlan() {
                 <button type="button" onClick={() => setSwap(id, true)} className="mt-2 block w-full rounded-full bg-amber-900 py-2 text-[13px] font-semibold text-amber-50 active:scale-[0.98]">
                   Zamień na spokojny bieg
                 </button>
+                {premium ? null : (
+                  <Link href="/app/sklep" className="mt-2 block text-center text-[12px] underline underline-offset-2">
+                    VYRA Method zmniejsza obciążenie na cały tydzień, gdy coś boli
+                  </Link>
+                )}
               </div>
             ) : null}
             {item.title.includes("zamiast akcentu") ? (

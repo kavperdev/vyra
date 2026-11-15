@@ -1,5 +1,6 @@
 import { Check, Gift, ShieldCheck, Tent } from "lucide-react";
 import { CoachCards, MethodPicker, TrialButton } from "@/components/app/shop";
+import { MethodCompare } from "@/components/app/method-compare";
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { listCamps, listCoachingPlans } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
@@ -25,6 +26,9 @@ export default async function AppShop() {
   // Bought (or trial) VYRA Method: show it as owned, never offer it again.
   const premium = pro && me?.profile.role === "athlete";
   const m = method.filter((p) => p.visible);
+  // The panel: price is the deciding factor for many; lead with the lowest honest monthly figure (yearly plan / 12).
+  const yearlyPlan = m.find((p) => p.kind === "once");
+  const perMonth = yearlyPlan ? (yearlyPlan.price_pln / 12).toFixed(2).replace(".", ",") : null;
   const c = coaching.filter((p) => p.visible).sort((a, b) => a.sort - b.sort);
   return (
     <div className="app-rise grid grid-cols-1">
@@ -48,9 +52,10 @@ export default async function AppShop() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/30 via-black/75 to-black" />
         <div className="px-5 pb-5 pt-32">
           <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-medium backdrop-blur-md">VYRA Method</span>
-          <p className="mt-3 text-[28px] font-semibold leading-[1.1] tracking-[-0.02em]">{t("Twój plan biegowy. 14 dni za darmo.", "Your running plan. 14 days free.")}</p>
+          <p className="mt-3 text-[28px] font-semibold leading-[1.1] tracking-[-0.02em]">{t("Plan, który zmienia się razem z Tobą.", "A plan that changes with you.")}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/70">{t("Dla tych, którzy mają start w kalendarzu, wracają po przerwie albo kontuzji i nie chcą płacić 300 zł za trenera.", "For runners with a race on the calendar, coming back after a break or injury, who don't want to pay for a personal coach.")}</p>
           <ul className="mt-4 grid gap-1.5">
-            {[t("Plan na każdy tydzień z Twoich danych", "A weekly plan from your data"), t("Dopasowanie po każdym tygodniu", "Adjusted after every week"), t("Bez karty i bez zobowiązań", "No card, no commitment")].map((x) => (
+            {[t("14 dni za darmo, bez karty", "14 days free, no card"), perMonth ? t(`Potem od ${perMonth} zł miesięcznie`, `Then from PLN ${perMonth} a month`) : t("Potem 29 zł miesięcznie", "Then PLN 29 a month"), t("Rezygnujesz jednym kliknięciem", "Cancel with one tap")].map((x) => (
               <li key={x} className="flex items-center gap-2 text-[14px] text-white/80">
                 <Check className="size-4 shrink-0 text-emerald-300" /> {x}
               </li>
@@ -59,6 +64,9 @@ export default async function AppShop() {
           <TrialButton className="mt-5" />
         </div>
       </div>
+
+      <SectionHead title={t("Co dostajesz ponad darmowy plan", "What you get beyond the free plan")} />
+      <MethodCompare />
 
       {m.length ? (
         <>

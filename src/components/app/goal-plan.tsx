@@ -139,6 +139,7 @@ export function GoalPlanView() {
     if (!raceRun) addRun({ day: g.race, km: raceDist.m / 1000, sec: result, rpe: 9, note: `Start: ${g.name || raceDist.label}`, ref: race ? `goal:${race.id}` : undefined });
     if (race) completeRef(`goal:${race.id}`);
   };
+  const missed = all.filter((s) => s.date < today && s.kind !== "race" && !doneSet.has(s.id)).length;
   const newForm = formNow && Math.abs(formNow - g.p5k) / g.p5k > 0.015 ? Math.round(formNow) : null;
   const curIdx = Math.max(0, plan.weeks.findIndex((w) => addDays(w.monday, 6) >= today));
   const shown = openWeek ?? plan.weeks[curIdx]?.n;
@@ -279,8 +280,12 @@ export function GoalPlanView() {
       })}
 
       {premium ? null : <Link href="/app/sklep" className="mt-2 block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
-        <p className="text-[15px] font-medium">Plan, który reaguje na Ciebie</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-white/50">Ten plan jest stały. VYRA Method co tydzień przelicza tempa i obciążenie po Twoich treningach, samopoczuciu i tętnie. 14 dni za darmo.</p>
+        <p className="text-[15px] font-medium">{missed >= 2 ? `Opuszczone treningi: ${missed}. Ten plan tego nie widzi.` : "Ten plan jest stały. Twoja forma nie."}</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-white/50">
+          {missed >= 2
+            ? "VYRA Method liczy każdy tydzień od nowa z tego, co faktycznie zrobiłeś, i odpuszcza, gdy coś boli. 14 dni za darmo, bez karty."
+            : "VYRA Method co tydzień przelicza plan z Twoich treningów, snu i samopoczucia, a tempa po każdym teście formy. 14 dni za darmo, bez karty."}
+        </p>
       </Link>}
 
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.title ?? ""} sub={open ? `${day(open.date)} · ok. ${open.km} km` : undefined}>
