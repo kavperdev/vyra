@@ -230,6 +230,11 @@ export function InstallGuide({ qr }: { qr: React.ReactNode }) {
 
   const androidSteps = (
     <div className="grid gap-5">
+      {device.kind !== "android" ? (
+        <p className="rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white/60">
+          {t("Plik aplikacji na Androida pobierzesz tylko na telefonie z Androidem. iPhone go nie otworzy: na iPhonie użyj instrukcji dla Safari.", "The Android app file can only be downloaded on an Android phone. An iPhone can’t open it: on iPhone use the Safari steps.")}
+        </p>
+      ) : (
       <div className="grid gap-3 rounded-2xl border border-white/15 bg-white/5 p-5">
         <a href="/download/vyra.apk" download="VYRA.apk" className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white text-base font-semibold text-black sm:w-fit sm:px-10">
           <Download className="size-5" /> {t("Pobierz aplikację VYRA (Android, 1 MB)", "Download the VYRA app (Android, 1 MB)")}
@@ -241,6 +246,7 @@ export function InstallGuide({ qr }: { qr: React.ReactNode }) {
           )}
         </p>
       </div>
+      )}
       <p className="text-sm text-white/45">{t("Wolisz bez pobierania pliku? Zainstaluj prosto z przeglądarki:", "Rather not download a file? Install straight from the browser:")}</p>
       {prompt ? (
         <button type="button" onClick={install} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/25 text-sm font-semibold text-white sm:w-fit sm:px-8">

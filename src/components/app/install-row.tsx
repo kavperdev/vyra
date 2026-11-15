@@ -12,7 +12,7 @@ export function InstallRow() {
   useEffect(() => {
     const standalone = matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
     setShow(!standalone);
-    setIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    setIos(!/android/i.test(navigator.userAgent));
   }, []);
   if (!show) return null;
   const steps = ios
