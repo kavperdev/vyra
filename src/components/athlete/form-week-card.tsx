@@ -4,7 +4,7 @@ import type { FormIndex, IntensitySplit } from "@/lib/training/form-index";
 import { formatDate, formatNumber } from "@/lib/format";
 import { tl } from "@/lib/i18n/runtime";
 import { cn } from "@/lib/utils";
-import { CountUp, ParticleRing } from "@/components/charts/particle-ring";
+import { CountUp, TickRing } from "@/components/charts/particle-ring";
 
 const LABEL: Record<string, [string, string]> = {
   peak: ["Szczyt formy", "Peak form"],
@@ -28,15 +28,15 @@ export function FormWeekCard({ form, split, week, buckets }: { form: FormIndex |
     <Card className="overflow-hidden">
       <CardContent className="grid gap-6 pt-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
         <div className="grid justify-items-center gap-2 text-center sm:gap-1">
-          <ParticleRing value={form ? score : null} size={232}>
+          <TickRing value={form ? score : null} size={232}>
             <span className="text-[10px] uppercase tracking-[0.18em] text-muted">{tl("Indeks formy", "Form index")}</span>
             {form ? <CountUp value={score} className="num text-[64px] font-light leading-none tracking-tight" /> : <span className="num text-[56px] font-light leading-none text-muted">–</span>}
             {form?.delta != null && form.delta !== 0 ? (
-              <span className={cn("num mx-auto mt-2 rounded-full px-2.5 py-1 text-[11.5px] font-semibold", form.delta > 0 ? "bg-accent/15 text-accent" : "bg-surface-2 text-muted")}>
+              <span className={cn("num mx-auto mt-2 rounded-full px-2.5 py-1 text-[11.5px] font-semibold", form.delta > 0 ? "bg-emerald-400/15 text-emerald-400" : "bg-surface-2 text-muted")}>
                 {form.delta > 0 ? `↗ +${form.delta}` : `↘ ${form.delta}`} {tl("pkt", "pts")}
               </span>
             ) : null}
-          </ParticleRing>
+          </TickRing>
           <p className="text-[17px] font-bold">{label ? tl(label[0], label[1]) : tl("Za mało danych", "Not enough data yet")}</p>
           {form ? (
             <p className="text-[11.5px] leading-snug text-subtle">

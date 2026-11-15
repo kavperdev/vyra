@@ -123,3 +123,53 @@ export function CountUp({ value, duration = 1600, className }: { value: number; 
     </span>
   );
 }
+
+/**
+ * Form index ring: a precise segmented gauge (like a watch bezel) instead of particles, so it never
+ * looks like the morning readiness ring. Filled ticks sweep in from the top, the last one glows.
+ */
+export function TickRing({ value, size = 232, className, children }: { value: number | null; size?: number; className?: string; children?: React.ReactNode }) {
+  const ref = useRef<SVGSVGElement>(null);
+  const n = 60;
+  const fill = value == null ? 0 : Math.round((Math.max(0, Math.min(100, value)) / 100) * n);
+  const c = size / 2;
+  const r1 = size * 0.4;
+  const r2 = size * 0.46;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.querySelectorAll<SVGLineElement>("line[data-on]").forEach((l, i) => {
+      l.animate([{ opacity: 0.12 }, { opacity: 1 }], { duration: 260, delay: 250 + i * 22, fill: "backwards", easing: "ease-out" });
+    });
+  }, [fill]);
+  return (
+    <div className={className} style={{ position: "relative", width: size, height: size }}>
+      <svg ref={ref} width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden style={{ position: "absolute", inset: 0 }}>
+        <circle cx={c} cy={c} r={size * 0.355} fill="none" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="2 5" />
+        {Array.from({ length: n }, (_, i) => {
+          const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+          const on = i < fill;
+          const tip = on && i === fill - 1;
+          const major = i % 5 === 0;
+          const ri = major ? r1 - size * 0.02 : r1;
+          return (
+            <line
+              key={i}
+              data-on={on ? "" : undefined}
+              x1={c + Math.cos(a) * ri}
+              y1={c + Math.sin(a) * ri}
+              x2={c + Math.cos(a) * r2}
+              y2={c + Math.sin(a) * r2}
+              stroke={tip ? "#34d399" : "currentColor"}
+              strokeOpacity={on ? (tip ? 1 : 0.35 + 0.65 * (i / Math.max(1, fill))) : 0.1}
+              strokeWidth={tip ? 4 : major ? 2.6 : 2}
+              strokeLinecap="round"
+              style={tip ? { filter: "drop-shadow(0 0 6px #34d399)" } : undefined}
+            />
+          );
+        })}
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "grid", placeContent: "center", textAlign: "center" }}>{children}</div>
+    </div>
+  );
+}

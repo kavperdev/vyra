@@ -133,9 +133,11 @@ export function Today({ synced = null, athlete = false }: { synced?: Check | nul
     // Signed-in athletes share one morning check-in with the training platform.
     const local = store.get<Check>(dayKey());
     if (!local && synced) store.set(dayKey(), synced);
+    // Answered here before the account knew about it: send it to the plan too.
+    if (local && !synced && athlete) saveReadiness(local).catch(() => undefined);
     setCheck(local ?? synced);
     setReady(true);
-  }, [synced]);
+  }, [synced, athlete]);
 
   useEffect(() => {
     if (!place) return;
