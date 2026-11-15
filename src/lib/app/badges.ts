@@ -81,3 +81,12 @@ export function badges(input: { log: Run[]; today: string; startDone: number; co
     b("course", "plan", "Biegam mądrze", "Ukończ kurs Biegaj mądrze", input.courseDone, Math.max(1, input.courseTotal)),
   ];
 }
+
+/** Runner level from all kilometres in the log. */
+const LEVELS: [number, string][] = [[0, "Nowicjusz"], [25, "Truchtacz"], [100, "Biegacz"], [250, "Regularny"], [500, "Wytrwały"], [1000, "Maszyna"], [2000, "Legenda"]];
+export function levelOf(totalKm: number) {
+  let i = 0;
+  while (i + 1 < LEVELS.length && totalKm >= LEVELS[i + 1][0]) i++;
+  const next = LEVELS[i + 1] ?? null;
+  return { n: i + 1, name: LEVELS[i][1], next: next ? { km: next[0], name: next[1], left: Math.max(0, next[0] - totalKm), progress: (totalKm - LEVELS[i][0]) / (next[0] - LEVELS[i][0]) } : null };
+}

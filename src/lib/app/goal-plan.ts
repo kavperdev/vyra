@@ -1,5 +1,4 @@
 import { fmtPace, timeFor, vdotOf, zonesFor } from "@/lib/method/engine";
-import { save } from "@/lib/app/store";
 
 /** Free race-goal plan, built on the phone from the race date and current form. */
 
@@ -197,16 +196,4 @@ export function buildPlan(inp: GoalInput, today = todayLocal()): GoalPlan {
     w.sessions.sort((a, b) => a.date.localeCompare(b.date));
   }
   return { weeks, start, predicted, racePace, skipped };
-}
-
-export function readGoal(): GoalStore | null {
-  try {
-    const v = JSON.parse(localStorage.getItem(GOAL_KEY) ?? "null");
-    return v && v.race && v.p5k ? { done: [], ...v } : null;
-  } catch {
-    return null;
-  }
-}
-export function writeGoal(v: GoalStore | null) {
-  save(GOAL_KEY, v);
 }

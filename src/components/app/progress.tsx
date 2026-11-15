@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Award, Flame, Lock } from "lucide-react";
+import { Award, Flame, Lock, Users } from "lucide-react";
+import { WeekSummary } from "@/components/app/week-summary";
 import { badges, records, weekStreak, weeklyKm, type Badge } from "@/lib/app/badges";
 import { LESSONS } from "@/lib/app/course";
 import { useLog } from "@/lib/app/log";
@@ -66,6 +67,14 @@ export function ProgressView() {
 
   return (
     <div className="grid gap-3">
+      <WeekSummary />
+      <Link href="/app/znajomi" className="flex items-center justify-between rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 active:scale-[0.985]">
+        <span>
+          <span className="block text-[15px] font-medium">Znajomi i ranking kilometrów</span>
+          <span className="block text-[12.5px] text-white/45">Dodaj kogoś kodem i porównujcie tydzień</span>
+        </span>
+        <Users className="size-5 text-white/50" />
+      </Link>
       <div className="grid grid-cols-3 gap-2">
         <Tile k="Razem" v={`${rec.totalKm.toFixed(0)} km`} s={`${rec.runs} treningów`} />
         <Tile k="Czas" v={`${Math.round(rec.totalSec / 3600)} h`} s="w ruchu" />

@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { StravaSync } from "@/components/app/strava-sync";
+import { useWeekNumbers } from "@/components/app/week-summary";
 import { TimeInput } from "@/components/app/tools";
 import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
@@ -186,6 +187,7 @@ export function RunLog() {
 /** Home widget: this week's kilometres and the weekly streak. */
 export function HomeWeek() {
   const w = useWeek();
+  const n = useWeekNumbers();
   return (
     <a href="/app/postepy" className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
       <div className="flex items-end justify-between">
@@ -193,13 +195,17 @@ export function HomeWeek() {
           <p className="text-[12px] text-white/45">Ten tydzień</p>
           <p className="mt-1 text-[32px] font-light leading-none tabular-nums tracking-tight">
             {w.km.toFixed(1).replace(".", ",")}
-            <span className="ml-1 text-[14px] text-white/45">km</span>
+            <span className="ml-1 text-[14px] text-white/45">/ {n.goal} km</span>
           </p>
         </div>
         <div className="text-right">
+          <p className="text-[12px] font-medium text-white/75">Poziom {n.level.n}: {n.level.name}</p>
           {w.streak > 1 ? <p className="text-[12px] text-emerald-300">{w.streak} tyg. z rzędu</p> : null}
           <p className="text-[12px] text-white/45">{w.total ? `${w.runs} w tym tygodniu` : "Dodaj pierwszy bieg"}</p>
         </div>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+        <div className={cn("h-full rounded-full transition-all duration-700", n.pct >= 1 ? "bg-emerald-400" : "bg-[var(--accent)]")} style={{ width: `${Math.round(n.pct * 100)}%` }} />
       </div>
       <div className="mt-3">
         <WeekBars per={w.per} days={w.days} />

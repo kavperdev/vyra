@@ -1,5 +1,6 @@
 import { FREE_PLAN } from "@/lib/free-plan";
-import { GOAL_KEY, buildPlan, readGoal, todayLocal, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { GOAL_KEY, buildPlan, todayLocal, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { readGoal } from "@/lib/app/goal-store";
 import { readLog, type Run } from "@/lib/app/log";
 import { load, save } from "@/lib/app/store";
 import { fmtPace } from "@/lib/method/engine";
