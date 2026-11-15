@@ -6,6 +6,7 @@ import { ArrowRight, CalendarPlus, Check, CloudOff, Link2, Lock, Mail, Printer, 
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/form-controls";
 import { requestFreePlan } from "@/lib/actions/applications";
+import { ClaimPlan } from "@/components/site/claim-plan";
 import { loadFreePlan, saveFreePlan } from "@/lib/actions/free-plan";
 import { FREE_PLAN, FREE_PLAN_RULES, type FreeWeek } from "@/lib/free-plan";
 import { useLang } from "@/lib/i18n/client";
@@ -584,36 +585,7 @@ export function FreePlan() {
         </div>
       </div>
 
-      <div className="relative grid gap-5 rounded-2xl border border-white/15 bg-[#070708] p-6 sm:p-8 lg:sticky lg:top-28">
-        <p className="display text-2xl text-white">{tl("Odbierz cały plan za darmo", "Get the full plan for free")}</p>
-        <p className="text-sm leading-relaxed text-white/60">
-          {tl("Plan działa w aplikacji VYRA: odhaczasz treningi, timer sam odlicza marsz i trucht, a postęp zapisuje się na Twoim koncie.", "The plan lives in the VYRA app: tick off sessions, the timer counts walk and jog for you and your progress is saved to your account.")}
-        </p>
-        <ol className="grid gap-3 text-sm text-white/75">
-          {[
-            tl("Załóż darmowe konto (30 sekund)", "Create a free account (30 seconds)"),
-            tl("Dodaj aplikację VYRA do ekranu telefonu", "Add the VYRA app to your phone's home screen"),
-            tl("Zaczynasz pierwszy trening z timerem", "Start your first session with the timer"),
-          ].map((x, i) => (
-            <li key={x} className="flex items-center gap-3">
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/10 font-mono text-xs text-white">{i + 1}</span> {x}
-            </li>
-          ))}
-        </ol>
-        <Link
-          href="/app/konto?next=/app/plan"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-semibold text-white transition hover:brightness-110"
-        >
-          {tl("Odbierz plan za darmo", "Get the free plan")} <ArrowRight className="size-4" />
-        </Link>
-        <Link href="/login?next=/app/plan" className="text-center text-sm text-white/55 hover:text-white">
-          {tl("Masz już konto? Zaloguj się", "Already have an account? Sign in")}
-        </Link>
-        <p className="hidden text-center text-[12px] text-white/40 lg:block">
-          {tl("Jesteś na komputerze? Otwórz vyraathl.pl/app na telefonie.", "On a computer? Open vyraathl.pl/app on your phone.")}
-        </p>
-        <p className="text-center text-[12px] text-white/40">{tl("Za darmo. Bez karty. Bez spamu.", "Free. No card. No spam.")}</p>
-      </div>
+      <ClaimPlan />
     </div>
   );
 }

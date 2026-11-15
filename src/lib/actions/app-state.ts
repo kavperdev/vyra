@@ -12,7 +12,10 @@ export async function pullAppState(): Promise<StateRow[] | null> {
   if (!user) return null;
   const { data, error } = await supabase.from("app_state").select("key, value, ts").eq("user_id", user.id);
   if (error) return null;
-  return (data ?? []).map((r) => ({ key: r.key as string, value: r.value, ts: Number(r.ts) || 0 }));
+  const rows = (data ?? []).map((r) => ({ key: r.key as string, value: r.value, ts: Number(r.ts) || 0 }));
+  // Free plan claimed on the website before the e-mail was confirmed: switch it on in the app.
+  if (user.user_metadata?.plan === "start" && !rows.some((r) => r.key === "vyra-start-on")) rows.push({ key: "vyra-start-on", value: true, ts: 1 });
+  return rows;
 }
 
 export async function pushAppState(rows: StateRow[]): Promise<boolean> {

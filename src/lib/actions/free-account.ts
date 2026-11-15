@@ -13,7 +13,7 @@ import { validationError } from "./helpers";
 const safeNext = (n: unknown) => (typeof n === "string" && n.startsWith("/app") && !n.startsWith("//") ? n : "/app/plan");
 
 /** Free VYRA app account: the free plan and the log follow the runner to every phone. No coach, no paid access. */
-export async function signUpFree(input: { full_name: string; email: string; password: string; consent: boolean; next?: string; website?: string }): Promise<ActionResult> {
+export async function signUpFree(input: { full_name: string; email: string; password: string; consent: boolean; next?: string; website?: string; plan?: "start"; stay?: boolean }): Promise<ActionResult<{ session: boolean }>> {
   if (input.website) return { ok: true }; // honeypot
   const parsed = signupSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
@@ -33,7 +33,7 @@ export async function signUpFree(input: { full_name: string; email: string; pass
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.full_name, signup: "free" }, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
+    options: { data: { full_name: parsed.data.full_name, signup: "free", ...(input.plan === "start" ? { plan: "start" } : {}) }, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
   });
   if (error) {
     const m = error.message.toLowerCase();
@@ -48,6 +48,11 @@ export async function signUpFree(input: { full_name: string; email: string; pass
   }
   // The free plan's saved progress is tied to the e-mail, so it is the same on every device.
   await startPlan(parsed.data.email, parsed.data.full_name).catch(() => null);
+  if (data.session && input.plan === "start" && data.user) {
+    // The claimed plan is waiting in the app as soon as the runner signs in there.
+    await supabase.from("app_state").upsert({ user_id: data.user.id, key: "vyra-start-on", value: true, ts: Date.now() }, { onConflict: "user_id,key" });
+  }
+  if (input.stay) return { ok: true, data: { session: !!data.session } };
   if (data.session) redirect(next);
   return { ok: true, message: "Sprawdź skrzynkę i kliknij link od nas. Konto będzie gotowe, a plan otworzy się w aplikacji." };
 }
