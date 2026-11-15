@@ -238,15 +238,15 @@ export default async function Home() {
             <Reveal key={c.href} delay={i * 110}>
               <Link
                 href={c.href}
-                className={`group relative isolate flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border p-8 sm:aspect-[4/4.4] ${c.highlight ? "border-white/35" : "border-white/10"}`}
+                className={`group relative isolate flex min-h-[26rem] flex-col justify-end overflow-hidden rounded-2xl border p-8 xl:min-h-[30rem] xl:p-7 ${c.highlight ? "border-white/35" : "border-white/10"}`}
               >
                 <Image src={c.img} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="-z-20 object-cover opacity-55 transition-transform duration-[1.6s] ease-out group-hover:scale-[1.05]" />
                 <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/60 to-black/10" />
                 <span className={`mb-auto w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.highlight ? "bg-[var(--accent)] text-white" : "border border-white/25 text-white/80"}`}>
                   {c.tag}
                 </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">{c.kicker}</span>
-                <h3 className="display mt-2 text-3xl text-white">{c.title}</h3>
+                <span className="pt-10 font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">{c.kicker}</span>
+                <h3 className="display mt-2 text-3xl text-balance text-white xl:text-[1.75rem]">{c.title}</h3>
                 <p className="mt-3 text-white/70">{c.body}</p>
                 <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">
                   {c.cta} <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
