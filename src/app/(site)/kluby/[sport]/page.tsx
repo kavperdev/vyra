@@ -234,7 +234,8 @@ export default async function SportClubsPage({ params }: { params: Promise<{ spo
         <div className={`${wrap} mx-auto max-w-3xl py-24`}>
           <Faq
             items={[
-              { q: "Ile to kosztuje?", a: "Od 79 zł miesięcznie dla sekcji do 30 zawodników, 149 zł do 100 i 249 zł do 250. Za rok z góry płacicie za 10 miesięcy. Pierwszy miesiąc za darmo. Szczegóły w cenniku." },
+              { q: "Ile to kosztuje?", a: ["football", "volleyball", "basketball", "handball"].includes(sp.key) ? "Od 199 zł miesięcznie dla drużyny do 30 zawodników, 349 zł do 100 i 549 zł do 250, z meczami, powołaniami i statystykami. Za rok z góry płacicie za 10 miesięcy. Pierwszy miesiąc za darmo." : "Od 79 zł miesięcznie dla sekcji do 30 zawodników, 149 zł do 100 i 249 zł do 250. Za rok z góry płacicie za 10 miesięcy. Pierwszy miesiąc za darmo. Szczegóły w cenniku." },
+              { q: "Czy możecie dopasować system do naszego klubu?", a: "Tak. Dorabiamy branding klubu (490 zł), funkcje na zamówienie (od 1 500 zł) i prowadzimy kluby ligowe w pakiecie Pro z dedykowanym opiekunem. Wycena po krótkiej rozmowie." },
               { q: "Czy rodzice muszą zakładać konta?", a: "Nie. Rodzic dostaje własny link do strony dziecka. Zawodnicy bez telefonu też mogą być w klubie, prowadzeni przez trenera." },
               { q: "Czy możemy dopisać własne testy?", a: `Zestaw testów dla dyscypliny ${sp.name.toLowerCase()} jest gotowy, a do tego są testy ogólnorozwojowe. Jeśli robicie inny test, napiszcie, a dodamy go.` },
               { q: "Kto pomoże nam zacząć?", a: "Na pokazie online ustawiamy z Wami grupy i harmonogram. Za dodatkową opłatą możemy też wprowadzić zawodników i prowadzić panel za Was." },

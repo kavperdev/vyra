@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
 import { Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
-import { ClubDemoForm, PickClubPackage } from "@/components/site/club-forms";
+import { ClubDemoForm } from "@/components/site/club-forms";
+import { ClubPricing, type ClubLine } from "@/components/site/club-pricing";
 import { SPORTS } from "@/lib/clubs/fitness";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
@@ -109,55 +109,56 @@ const features = (t: T) => [
   },
 ];
 
-const plans = (t: T) => [
+const base = (t: T) => [
+  t("harmonogram, plany treningowe, obecność", "schedule, training plans, attendance"),
+  t("składki z wyciągiem z banku, strona rodzica, dokumenty", "fees with bank statements, parent page, documents"),
+];
+const team = (t: T) => [
+  t("mecze i powołania z odpowiedzią rodzica", "matches and call-ups with parent replies"),
+  t("statystyki meczowe albo oceny umiejętności", "match stats or skill ratings"),
+  t("„uczciwe minuty” i raporty dla rodziców", "fair playing time and parent reports"),
+];
+
+const lines = (t: T): ClubLine[] => [
   {
-    name: "Sekcja",
-    price: 79,
-    lifetime: 1990,
-    per: t("ok. 2,60 zł na zawodnika", "about 2.60 zł per athlete"),
-    lead: t("Dla nowej sekcji albo jednej grupy.", "For a new section or a single group."),
-    items: [
-      t("do 30 zawodników", "up to 30 athletes"),
-      t("2 trenerów", "2 coaches"),
-      t("wszystkie funkcje: harmonogram, plany, obecność, składki, rodzice, dokumenty", "every feature: schedule, plans, attendance, fees, parents, documents"),
-      t("pomoc mailowa", "email support"),
+    key: "ind",
+    label: t("Sporty indywidualne", "Individual sports"),
+    desc: t(
+      "Lekkoatletyka, biegi, pływanie, sztuki walki, gimnastyka, tenis. Wszystkie narzędzia klubu i moduł Waszej dyscypliny.",
+      "Athletics, running, swimming, martial arts, gymnastics, tennis. Every club tool plus your sport’s module.",
+    ),
+    plans: [
+      { name: "Sekcja", price: 79, lifetime: 1990, per: t("ok. 2,60 zł na zawodnika", "about 2.60 zł per athlete"), lead: t("Dla nowej sekcji albo jednej grupy.", "For a new section or a single group."), items: [t("do 30 zawodników, 2 trenerów", "up to 30 athletes, 2 coaches"), ...base(t), t("pomoc mailowa", "email support")] },
+      { name: "Klub", price: 149, lifetime: 3690, per: t("ok. 1,50 zł na zawodnika", "about 1.50 zł per athlete"), lead: t("Dla typowego UKS-u lub klubu z kilkoma grupami.", "For a typical community club with several groups."), highlight: true, items: [t("do 100 zawodników, 6 osób kadry", "up to 100 athletes, 6 staff"), ...base(t), t("logo i nazwa klubu w aplikacji", "club logo and name in the app"), t("pomoc mailowa i telefoniczna", "email and phone support")] },
+      { name: "Klub+", price: 249, lifetime: 5990, per: t("od 1 zł na zawodnika", "from 1 zł per athlete"), lead: t("Dla dużego klubu z wieloma grupami.", "For a large club with many groups."), items: [t("do 250 zawodników, kadra bez limitu", "up to 250 athletes, unlimited staff"), ...base(t), t("wdrożenie przez VYRA w cenie", "setup by VYRA included"), t("odpowiedź w ciągu 24 godzin", "reply within 24 hours")] },
     ],
   },
   {
-    name: "Klub",
-    price: 149,
-    lifetime: 3690,
-    per: t("ok. 1,50 zł na zawodnika", "about 1.50 zł per athlete"),
-    lead: t("Dla typowego UKS-u lub klubu z kilkoma grupami.", "For a typical school or community club with several groups."),
-    highlight: true,
-    items: [
-      t("do 100 zawodników", "up to 100 athletes"),
-      t("do 6 osób kadry: trenerzy, asystenci, fizjoterapeuta", "up to 6 staff: coaches, assistants, physio"),
-      t("logo i nazwa klubu w aplikacji", "club logo and name in the app"),
-      t("wgrywanie wyciągu z banku", "bank statement upload"),
-      t("pomoc mailowa i telefoniczna", "email and phone support"),
+    key: "team",
+    label: t("Gry zespołowe", "Team sports"),
+    desc: t(
+      "Piłka nożna, siatkówka, koszykówka, piłka ręczna. Wszystko z pakietów indywidualnych plus mecze, powołania i statystyki.",
+      "Football, volleyball, basketball, handball. Everything in the individual packages plus matches, call-ups and stats.",
+    ),
+    plans: [
+      { name: "Drużyna", price: 199, lifetime: 4990, per: t("ok. 6,60 zł na zawodnika", "about 6.60 zł per athlete"), lead: t("Dla jednej drużyny albo rocznika.", "For one team or age group."), items: [t("do 30 zawodników, 3 osoby kadry", "up to 30 players, 3 staff"), ...base(t), ...team(t)] },
+      { name: "Akademia", price: 349, lifetime: 8690, per: t("ok. 3,50 zł na zawodnika", "about 3.50 zł per athlete"), lead: t("Dla akademii lub klubu z kilkoma rocznikami.", "For an academy or club with several age groups."), highlight: true, items: [t("do 100 zawodników, 8 osób kadry", "up to 100 players, 8 staff"), ...base(t), ...team(t), t("logo i kolory klubu", "club logo and colours")] },
+      { name: "Akademia+", price: 549, lifetime: 13490, per: t("ok. 2,20 zł na zawodnika", "about 2.20 zł per athlete"), lead: t("Dla dużej akademii i grup młodzieżowych klubu ligowego.", "For a large academy and a league club’s youth teams."), items: [t("do 250 zawodników, kadra bez limitu", "up to 250 players, unlimited staff"), ...base(t), ...team(t), t("wdrożenie i szkolenie kadry w cenie", "setup and staff training included")] },
     ],
   },
-  {
-    name: "Klub+",
-    price: 249,
-    lifetime: 5990,
-    per: t("od 1 zł na zawodnika", "from 1 zł per athlete"),
-    lead: t("Dla dużego klubu z wieloma grupami i trenerami.", "For a large club with many groups and coaches."),
-    items: [
-      t("do 250 zawodników", "up to 250 athletes"),
-      t("kadra bez limitu", "unlimited staff"),
-      t("wdrożenie przez VYRA w cenie", "setup by VYRA included"),
-      t("odpowiedź na zgłoszenie w ciągu 24 godzin", "reply within 24 hours"),
-    ],
-  },
+];
+
+const custom = (t: T) => [
+  { name: t("Branding klubu", "Club branding"), price: t("490 zł jednorazowo", "490 zł one-off"), body: t("Wasze logo, kolory i nazwa w aplikacji, którą widzą zawodnicy i rodzice.", "Your logo, colours and name in the app athletes and parents see.") },
+  { name: t("Funkcje na zamówienie", "Custom features"), price: t("od 1 500 zł", "from 1,500 zł"), body: t("Własne testy sprawności, raporty dla zarządu, eksport do związku, integracja z Waszą stroną. Robimy to, czego potrzebujecie, a nie tylko to, co jest w pudełku.", "Your own fitness tests, board reports, federation exports, integration with your website. We build what you need, not just what’s in the box.") },
+  { name: t("Pakiet Pro", "Pro package"), price: t("od 899 zł / mies.", "from 899 zł / month"), body: t("Dla klubów z pierwszą drużyną ligową i dużych akademii: dedykowany opiekun, priorytet w zgłoszeniach, branding w cenie i plan rozwoju systemu pod Wasz klub. Wycena po rozmowie.", "For clubs with a league first team and large academies: a dedicated contact, priority support, branding included and a roadmap built around your club. Priced after a call.") },
 ];
 
 const services = (t: T) => [
   {
     name: t("Wdrożenie", "Setup"),
-    price: t("349 zł jednorazowo", "349 zł one-off"),
-    note: t("w cenie Klub+ i licencji bezterminowej", "included in Klub+ and the lifetime licence"),
+    price: t("od 490 zł jednorazowo", "from 490 zł one-off"),
+    note: t("w cenie Klub+, Akademia+ i licencji bezterminowej", "included in Klub+, Akademia+ and the lifetime licence"),
     body: t(
       "Wprowadzamy za Was zawodników, grupy, godziny treningów, składki i linki dla rodziców. Do tego godzinne szkolenie online dla trenerów.",
       "We add your athletes, groups, training times, fees and parent links for you, plus a one-hour online session for your coaches.",
@@ -344,58 +345,42 @@ export default async function ClubsPage() {
               "Pay monthly with no fixed-term contract, or pay once and use it with no subscription. Pay a year upfront and you pay for 10 months. First month free.",
             )}
           </SectionHead>
-          <div className="mt-14 grid gap-5 lg:grid-cols-3">
-            {plans(t).map((p, i) => (
-              <Reveal
-                key={p.name}
-                delay={i * 80}
-                className={cn(
-                  "grid content-between gap-8 rounded-2xl border bg-[#070708] p-8",
-                  p.highlight ? "border-[var(--accent)]/70 shadow-[0_0_80px_-30px_var(--accent)]" : "border-white/10",
+          <ClubPricing
+            lines={lines(t)}
+            labels={{
+              month: t("/ mies.", "/ month"),
+              yearly: t("rocznie", "yearly"),
+              lifetimeLead: t("albo licencja założycielska, bezterminowa", "or a founding lifetime licence"),
+              lifetimeNote: t("jednorazowo, bez abonamentu", "one-off, no subscription"),
+              popular: t("Najczęściej wybierany", "Most popular"),
+              cta: t("Miesiąc za darmo", "Free month"),
+            }}
+          />
+          <div className="mt-16 grid gap-6">
+            <div className="grid gap-2">
+              <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--accent)]">{t("Dopasowanie", "Customisation")}</p>
+              <h3 className="display text-[clamp(1.6rem,3vw,2.4rem)] leading-tight text-white">{t("Dopasujemy system do Waszego klubu", "We fit the system to your club")}</h3>
+              <p className="max-w-2xl text-white/60">
+                {t(
+                  "Każdy klub pracuje trochę inaczej. Jeśli czegoś brakuje, dorabiamy to dla Was: od kolorów klubu po funkcje, których nie ma nikt inny.",
+                  "Every club works a little differently. If something is missing, we build it for you: from club colours to features nobody else has.",
                 )}
-              >
-                <div className="grid gap-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-xl font-semibold text-white">{p.name}</h3>
-                    {p.highlight ? <Eyebrow accent>{t("Najczęściej wybierany", "Most popular")}</Eyebrow> : null}
+              </p>
+            </div>
+            <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:grid-cols-3">
+              {custom(t).map((c) => (
+                <div key={c.name} className="grid content-start gap-3 bg-[#070708] p-8">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h4 className="text-lg font-semibold text-white">{c.name}</h4>
+                    <span className="font-mono text-[14px] text-white">{c.price}</span>
                   </div>
-                  <p className="text-white/60">{p.lead}</p>
-                  <div className="grid gap-1">
-                    <p className="text-white">
-                      <span className="display text-5xl">{p.price} zł</span>
-                      <span className="ml-2 text-white/50">{t("/ mies.", "/ month")}</span>
-                    </p>
-                    <p className="font-mono text-[13px] text-white/45">
-                      {p.per} · {t("rocznie", "yearly")} {fmtZl(p.price * 10)}
-                    </p>
-                  </div>
-                  <div className="grid gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[13px] text-white/55">{t("albo licencja założycielska, bezterminowa", "or a founding lifetime licence")}</p>
-                    <p className="text-white">
-                      <span className="display text-2xl">{fmtZl(p.lifetime)}</span>
-                      <span className="ml-2 text-[13px] text-white/50">{t("jednorazowo, bez abonamentu", "one-off, no subscription")}</span>
-                    </p>
-                  </div>
-                  <ul className="grid gap-2.5">
-                    {p.items.map((it) => (
-                      <li key={it} className="flex gap-3 text-[15px] text-white/75">
-                        <Check className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
-                        {it}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="leading-relaxed text-white/60">{c.body}</p>
                 </div>
-                <PickClubPackage
-                  name={p.name}
-                  className={cn(
-                    "inline-flex h-12 items-center justify-center rounded-full px-7 text-sm font-semibold transition-colors",
-                    p.highlight ? "bg-white text-black hover:bg-[var(--accent)] hover:text-white" : "border border-white/20 text-white hover:border-white/60",
-                  )}
-                >
-                  {t("Miesiąc za darmo", "Free month")}
-                </PickClubPackage>
-              </Reveal>
-            ))}
+              ))}
+            </div>
+            <a href="#pokaz" className="inline-flex h-12 w-fit items-center justify-center rounded-full bg-white px-7 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white">
+              {t("Umów rozmowę", "Book a call")}
+            </a>
           </div>
           <p className="mt-6 text-sm text-white/45">
             {t(
