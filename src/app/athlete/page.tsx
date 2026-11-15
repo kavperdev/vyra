@@ -89,9 +89,6 @@ export default async function AthleteDashboard() {
   const featured = todays.find((s) => s.status === "planned" || s.status === "in_progress") ?? todays[0];
   const featuredDetail = featured ? await getSessionDetail(supabase, featured.id) : null;
   const upcoming = sessions.filter((s) => s.scheduled_date > today && s.scheduled_date <= addDaysISO(today, 7));
-  const lastDone = sessions
-    .filter((s) => s.execution && isDone(s.execution.status))
-    .sort((a, b) => b.execution!.performed_on.localeCompare(a.execution!.performed_on))[0];
   const comp = completionStats(sessions, addDaysISO(today, -27), today);
   const buckets = weeklyBuckets(sessions, today, 8);
   const week = buckets[buckets.length - 1];
