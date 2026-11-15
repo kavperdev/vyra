@@ -205,7 +205,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
             <Link href="/app/konto?next=/app" onClick={() => finish(false)} className="mt-3 flex h-14 items-center justify-center rounded-full bg-[var(--accent)] text-[16px] font-semibold text-white active:scale-[0.98]">
               Załóż konto za darmo
             </Link>
-            <Link href="/login?next=/app" onClick={() => finish(false)} className="flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-medium active:scale-[0.98]">
+            <Link href="/app/zaloguj?next=/app" onClick={() => finish(false)} className="flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-medium active:scale-[0.98]">
               Mam konto, zaloguj się
             </Link>
           </>

@@ -7,7 +7,6 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, homeFor } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
-import { athleteHasAccess } from "@/lib/data/access";
 import type { ActionResult } from "@/lib/types";
 import { friendlyDbError } from "@/lib/utils";
 import { forgotSchema, inviteSignupSchema, loginSchema, newPasswordSchema, signupSchema } from "@/lib/validation/forms";
@@ -37,7 +36,8 @@ async function signInImpl(input: { email: string; password: string; next?: strin
   }
   const user = await getCurrentUser();
   const next = safeNext(input.next);
-  if (!next && user?.profile.role === "athlete" && !(await athleteHasAccess(supabase, user.id))) redirect("/app");
+  // Runners land in the app; their plan from the coach or VYRA Method is on its home screen.
+  if (!next && user?.profile.role === "athlete") redirect("/app");
   redirect(next ?? (user ? homeFor(user.profile.role) : "/panel"));
 }
 

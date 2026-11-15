@@ -9,6 +9,13 @@ export async function middleware(request: NextRequest) {
     url.search = "?apk=0";
     return NextResponse.redirect(url);
   }
+  // Signing in happens inside the app, in its own look.
+  const moved = { "/login": "/app/zaloguj", "/forgot-password": "/app/haslo" }[request.nextUrl.pathname];
+  if (moved) {
+    const url = request.nextUrl.clone();
+    url.pathname = moved;
+    return NextResponse.redirect(url);
+  }
   return updateSession(request);
 }
 

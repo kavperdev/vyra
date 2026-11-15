@@ -13,7 +13,7 @@ export async function updateSession(request: NextRequest) {
   if (!url || !key) {
     // Without configuration only the setup notice on the public pages can work.
     if (PROTECTED.some((p) => request.nextUrl.pathname.startsWith(p))) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(new URL("/app/zaloguj", request.url));
     }
     return response;
   }
@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.json({ error: "Wymagane logowanie" }, { status: 401 });
     }
     const redirect = request.nextUrl.clone();
-    redirect.pathname = "/login";
+    redirect.pathname = "/app/zaloguj";
     redirect.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(redirect);
   }

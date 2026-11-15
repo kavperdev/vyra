@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {(user.profile.full_name || user.profile.email || "V").trim().charAt(0).toUpperCase()}
             </Link>
           ) : (
-            <Link href="/login" className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[13px] font-medium text-white/80 transition active:scale-95">
+            <Link href="/app/zaloguj" className="rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[13px] font-medium text-white/80 transition active:scale-95">
               {t("Zaloguj się", "Sign in")}
             </Link>
           )}

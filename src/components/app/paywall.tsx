@@ -38,7 +38,7 @@ export function Paywall({ title, signedIn }: { title: string; signedIn: boolean 
       {signedIn ? null : (
         <p className="text-center text-[13px] text-white/45">
           Masz już VYRA Method?{" "}
-          <Link href="/login" className="text-white underline underline-offset-2">
+          <Link href="/app/zaloguj" className="text-white underline underline-offset-2">
             Zaloguj się
           </Link>
         </p>

@@ -40,7 +40,7 @@ export default async function AppYou() {
             )}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Link href="/login" className="rounded-full bg-white py-3 text-center text-[14px] font-semibold text-black active:scale-[0.97]">
+            <Link href="/app/zaloguj" className="rounded-full bg-white py-3 text-center text-[14px] font-semibold text-black active:scale-[0.97]">
               {t("Zaloguj się", "Sign in")}
             </Link>
             <Link href="/app/sklep" className="rounded-full bg-white/[0.07] py-3 text-center text-[14px] font-medium active:scale-[0.97]">

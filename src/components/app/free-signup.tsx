@@ -78,7 +78,7 @@ export function FreeSignup({ next }: { next: string }) {
       <button type="submit" disabled={pending} className="rounded-full bg-white py-3.5 text-[15px] font-semibold text-black transition active:scale-[0.98] disabled:opacity-50">
         {pending ? "Chwila…" : "Załóż darmowe konto"}
       </button>
-      <Link href={`/login?next=${encodeURIComponent(next)}`} className="py-2 text-center text-[14px] text-white/55">
+      <Link href={`/app/zaloguj?next=${encodeURIComponent(next)}`} className="py-2 text-center text-[14px] text-white/55">
         Masz już konto? <span className="text-white">Zaloguj się</span>
       </Link>
     </form>
