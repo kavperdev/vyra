@@ -1,5 +1,6 @@
 /* VYRA service worker: push notifications, a friendly offline screen, and cached brand assets. */
 const CACHE = "vyra-v1";
+const PAGES = "vyra-pages-v1"; // last good copy of app screens, for running without signal
 const PRECACHE = ["/offline.html", "/branding/vyra-icon-192.png", "/branding/vyra-logo-white.svg"];
 
 self.addEventListener("install", (event) => {
@@ -16,7 +17,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== PAGES).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -29,7 +30,21 @@ self.addEventListener("fetch", (event) => {
 
   // Pages: always from the network (data must be fresh); offline screen when there is no connection.
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req).catch(() => caches.match("/offline.html")));
+    // App screens (timer, GPS run, plan, log) keep working without signal: network first, last good copy otherwise.
+    const app = url.pathname === "/app" || url.pathname.startsWith("/app/");
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (app && res.ok && res.type === "basic" && !res.redirected) {
+            const copy = res.clone();
+            caches.open(PAGES).then((c) => c.put(url.pathname, copy)).catch(() => undefined);
+          }
+          return res;
+        })
+        .catch(() =>
+          (app ? caches.open(PAGES).then((c) => c.match(url.pathname)) : Promise.resolve(undefined)).then((hit) => hit || caches.match("/offline.html")),
+        ),
+    );
     return;
   }
 

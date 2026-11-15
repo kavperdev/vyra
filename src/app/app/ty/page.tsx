@@ -53,6 +53,7 @@ export default async function AppYou() {
       <SectionHead title={t("Więcej", "More")} />
       <Group>
         <InstallRow />
+        <Row href="/app/postepy" icon={<Medal className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} />
         <Row href="/app/wyzwania" icon={<Trophy className="size-4" />} title={t("Wyzwania", "Challenges")} />
         <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club Siedlce" sub={t("Wspólne bieganie w czwartki", "Group runs on Thursdays")} />
         <Row href="/app/voucher" icon={<Gift className="size-4" />} title={t("Voucher na prezent", "Gift voucher")} />
