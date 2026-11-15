@@ -7,7 +7,6 @@ import { ClubPricing, type ClubLine } from "@/components/site/club-pricing";
 import { SPORTS } from "@/lib/clubs/fitness";
 import { getT } from "@/lib/i18n/server";
 import type { T } from "@/lib/i18n/shared";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -22,7 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const fmtZl = (n: number) => `${n.toLocaleString("pl-PL").replace(/\u00a0/g, " ")} zł`;
 
 const features = (t: T) => [
   {
