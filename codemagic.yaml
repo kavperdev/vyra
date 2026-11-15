@@ -1,0 +1,33 @@
+# iPhone app (WKWebView shell of vyraathl.pl/app) built in the cloud, no Mac needed.
+# Codemagic: connect this repo, add the App Store Connect API key as an integration named "VYRA ASC",
+# then start the workflow "VYRA iPhone → TestFlight".
+workflows:
+  ios-testflight:
+    name: VYRA iPhone → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: VYRA ASC
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: pl.vyraathl
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install pods
+        script: cd ios && pod install
+      - name: Use signing profiles
+        script: xcode-project use-profiles
+      - name: Build number
+        script: |
+          cd ios
+          agvtool new-version -all $((BUILD_NUMBER + 1))
+      - name: Build ipa
+        script: xcode-project build-ipa --workspace ios/VYRA.xcworkspace --scheme VYRA
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
