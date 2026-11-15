@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
+import { StravaSync } from "@/components/app/strava-sync";
 import { TimeInput } from "@/components/app/tools";
 import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
@@ -83,6 +84,11 @@ export function RunLog() {
   const [sheet, setSheet] = useState(false);
   const [d, setD] = useState({ day: day(), km: "", sec: null as number | null, rpe: 4, note: "" });
   useEffect(() => setLog(readLog()), []);
+  const getLog = useCallback(() => readLog(), []);
+  const onImport = useCallback((next: Run[]) => {
+    writeLog(next);
+    setLog(next);
+  }, []);
   const save = () => {
     const km = Number(d.km.replace(",", "."));
     if (!(km > 0 && km < 400) || !d.sec) return;
@@ -139,6 +145,7 @@ export function RunLog() {
       <button type="button" onClick={() => setSheet(true)} className="flex h-13 items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
         <Plus className="size-5" /> Dodaj bieg
       </button>
+      <StravaSync getLog={getLog} onImport={onImport} />
 
       {log.length ? (
         <div className="divide-y divide-white/[0.05] rounded-[20px] border border-white/[0.06] bg-[#111113]">
@@ -149,7 +156,7 @@ export function RunLog() {
                   {r.km.toString().replace(".", ",")} km · {fmtTime(r.sec)} · {fmtPace(r.sec / r.km)}/km
                 </p>
                 <p className="mt-0.5 truncate text-[12px] capitalize text-white/45">
-                  {fmtDay(r.day)} · wysiłek {r.rpe}/10{r.note ? ` · ${r.note}` : ""}
+                  {fmtDay(r.day)}{r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}{r.note ? ` · ${r.note}` : ""}
                 </p>
               </div>
               <button type="button" aria-label="Usuń" onClick={() => remove(r.id)} className="grid size-8 place-items-center rounded-full text-white/30 active:bg-white/10">
