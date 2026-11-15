@@ -100,7 +100,7 @@ const fmtStore = (t: number) => `${Math.floor(t / 3600)}:${String(Math.floor((t 
 
 const input = "h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[16px] tabular-nums outline-none focus:border-white/30";
 
-function Seg({ value, onChange, opts }: { value: string; onChange: (v: string) => void; opts: { k: string; label: string }[] }) {
+export function Seg({ value, onChange, opts }: { value: string; onChange: (v: string) => void; opts: { k: string; label: string }[] }) {
   return (
     <div className="grid grid-flow-col gap-1 rounded-xl bg-white/[0.04] p-1">
       {opts.map((o) => (

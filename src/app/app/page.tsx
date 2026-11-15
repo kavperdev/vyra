@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Calculator, Dumbbell, Footprints, Timer, TimerReset, Trophy } from "lucide-react";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
+import { GoalCountdown } from "@/components/app/goal-plan";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
@@ -44,6 +45,7 @@ export default async function AppHome() {
     <div className="app-rise grid grid-cols-1">
       <p className="pt-1 text-center text-[12px] capitalize text-white/40">{today}</p>
       <Today synced={synced} athlete={athlete} />
+      <GoalCountdown />
 
       {user ? (
         todays.length ? (

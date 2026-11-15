@@ -92,6 +92,7 @@ export default async function AppTraining() {
         <Row href="/app/bieg" icon={<Footprints className="size-4" />} title={t("Biegnij z GPS", "Run with GPS")} sub={t("Dystans, tempo i głos co kilometr", "Distance, pace and a voice split every km")} />
         <Row href="/app/timer" icon={<TimerReset className="size-4" />} title={t("Timer interwałów", "Interval timer")} sub={t("Dźwięk i wibracja przy każdej zmianie", "Sound and vibration at every change")} />
         <Row href="/app/biblioteka" icon={<Dumbbell className="size-4" />} title={t("Biblioteka treningów", "Workout library")} sub={t("18 treningów z tempem dla Ciebie", "18 workouts with your paces")} />
+        <Row href="/app/cel" icon={<Flag className="size-4" />} title={t("Plan pod start", "Race plan")} sub={t("5 km, 10 km, półmaraton, maraton", "5k, 10k, half, marathon")} />
         <Row href="/app/plan" icon={<Footprints className="size-4" />} title={t("Zacznij biegać", "Start running")} sub={t("Darmowy plan: od zera do 25 minut", "Free plan: zero to 25 minutes")} />
         <Row href="/app/kurs" icon={<BookOpen className="size-4" />} title={t("Kurs: Biegaj mądrze", "Course: Run smart")} sub={t("9 krótkich lekcji", "9 short lessons")} />
       </Group>
