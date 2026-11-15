@@ -203,21 +203,21 @@ export function InstallGuide({ qr }: { qr: React.ReactNode }) {
 
   const iosSafari = (modern: boolean) => (
     <ol className="grid gap-4">
-      <Step n={1} title={modern ? t("Stuknij ⋯ obok paska adresu", "Tap ⋯ next to the address bar") : t("Stuknij ikonę Udostępnij na dole ekranu", "Tap the Share icon at the bottom")} picture={<SafariBar modern={modern} />}>
-        {modern ? t("Potem w menu wybierz „Udostępnij”.", "Then choose “Share” in the menu.") : t("To kwadrat ze strzałką w górę.", "It’s the square with an arrow pointing up.")}
+      <Step n={1} title={modern ? t("Stuknij ⋯ (trzy kropki) obok paska adresu", "Tap ⋯ (three dots) next to the address bar") : t("Stuknij ikonę Udostępnij na dole ekranu", "Tap the Share icon at the bottom")} picture={<SafariBar modern={modern} />}>
+        {modern ? t("Potem w menu wybierz „Udostępnij”, a na dole listy „Pokaż więcej”.", "Then choose “Share” in the menu and “View More” at the bottom of the list.") : t("To kwadrat ze strzałką w górę.", "It’s the square with an arrow pointing up.")}
       </Step>
       <Step
         n={2}
-        title={t("Przewiń w dół i wybierz „Do ekranu początkowego”", "Scroll down and choose “Add to Home Screen”")}
+        title={t("Wybierz „Dodaj do ekranu głównego”", "Choose “Add to Home Screen”")}
         picture={
           <div className="grid gap-1.5 rounded-2xl border border-white/15 bg-[#1c1c1f] p-2.5">
             <SheetRow icon={<Copy className="size-4" />} label="Kopiuj" />
             <SheetRow icon={<span>☆</span>} label="Dodaj do ulubionych" />
-            <SheetRow icon={<Plus className="size-4" />} label="Do ekranu początkowego" on />
+            <SheetRow icon={<Plus className="size-4" />} label="Dodaj do ekranu głównego" on />
           </div>
         }
       >
-        {t("Jeśli go nie widzisz, stuknij „Więcej” albo „Edytuj czynności” na dole listy.", "If you can’t see it, tap “More” or “Edit Actions” at the bottom of the list.")}
+        {t("Jeśli go nie widzisz, stuknij „Pokaż więcej” na dole listy udostępniania.", "If you can’t see it, tap “View More” at the bottom of the share list.")}
       </Step>
       <Step n={3} title={t("Stuknij „Dodaj” w prawym górnym rogu", "Tap “Add” in the top right")} picture={<AddDialog />}>
         {t("Jeśli jest przełącznik „Otwórz jako aplikację”, zostaw go włączonego.", "If there’s an “Open as Web App” switch, leave it on.")}

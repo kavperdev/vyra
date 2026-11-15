@@ -62,8 +62,8 @@ export function InstallHint() {
         <p className="text-sm font-semibold">{t("Dodaj VYRA do ekranu głównego", "Add VYRA to your home screen")}</p>
         {mode === "ios" ? (
           <p className="text-[13px] text-muted">
-            {t("Kliknij", "Tap")} <Share className="inline size-3.5 align-[-2px]" /> <b>{t("Udostępnij", "Share")}</b>{" "}
-            {t("na dole Safari, a potem", "at the bottom of Safari, then")} <b>{t("Do ekranu początkowego", "Add to Home Screen")}</b>.{" "}
+            {t("Stuknij ⋯, potem", "Tap ⋯, then")} <Share className="inline size-3.5 align-[-2px]" /> <b>{t("Udostępnij", "Share")}</b>{t(", „Pokaż więcej”", ", “View More”")}{" "}
+            {t("i", "and")} <b>{t("Dodaj do ekranu głównego", "Add to Home Screen")}</b>.{" "}
             {t("VYRA otworzy się jak aplikacja i będzie wysyłać powiadomienia.", "VYRA will open like an app and send notifications.")}{" "}
             <a href="/pobierz" className="font-medium text-foreground underline underline-offset-2">
               {t("Pokaż krok po kroku", "Show me how")}

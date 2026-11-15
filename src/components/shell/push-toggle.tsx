@@ -158,7 +158,7 @@ export function PushSettings() {
       ) : state === "ios-install" ? (
         <p className="text-sm">
           {t(
-            "Na iPhonie powiadomienia działają w aplikacji z ekranu głównego: w Safari kliknij Udostępnij → Do ekranu początkowego, otwórz VYRA z ikony i wróć tutaj.",
+            "Na iPhonie powiadomienia działają w aplikacji z ekranu głównego: w Safari stuknij ⋯ → Udostępnij → Pokaż więcej → Dodaj do ekranu głównego, otwórz VYRA z ikony i wróć tutaj.",
             "On iPhone, notifications work in the app on your home screen: in Safari tap Share → Add to Home Screen, open VYRA from the icon and come back here.",
           )}{" "}
           <a href="/pobierz" className="font-medium underline underline-offset-2">

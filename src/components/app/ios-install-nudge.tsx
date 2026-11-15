@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Share, SquarePlus, X } from "lucide-react";
+import { ChevronsDown, MoreHorizontal, Share, SquarePlus, X } from "lucide-react";
 import { load, save } from "@/lib/app/store";
 
 const KEY = "vyra-ios-nudge";
@@ -28,15 +28,19 @@ export function IosInstallNudge() {
         <X className="size-4" />
       </button>
       <p className="pr-8 text-[15px] font-semibold">Zainstaluj VYRA na iPhonie</p>
-      <p className="mt-0.5 text-[12.5px] text-white/55">Za darmo, 2 stuknięcia. Pełny ekran, ikona i powiadomienia.</p>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[12.5px]">
-        <span className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-3 py-2.5">
-          <Share className="size-4 shrink-0 text-[#0a84ff]" /> 1. Udostępnij (lub ⋯)
-        </span>
-        <span className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-3 py-2.5">
-          <SquarePlus className="size-4 shrink-0" /> 2. Do ekranu początk.
-        </span>
-      </div>
+      <p className="mt-0.5 text-[12.5px] text-white/55">Za darmo, kilka stuknięć. Pełny ekran, ikona i powiadomienia.</p>
+      <ol className="mt-3 grid grid-cols-2 gap-1.5 text-[12.5px]">
+        {[
+          [<MoreHorizontal key="i" className="size-4 shrink-0" />, "Trzy kropki ⋯"],
+          [<Share key="i" className="size-4 shrink-0 text-[#0a84ff]" />, "Udostępnij"],
+          [<ChevronsDown key="i" className="size-4 shrink-0" />, "Pokaż więcej"],
+          [<SquarePlus key="i" className="size-4 shrink-0" />, "Dodaj do ekranu głównego"],
+        ].map(([icon, label], i) => (
+          <li key={i} className="flex items-center gap-2 rounded-xl bg-white/[0.07] px-3 py-2.5">
+            <span className="text-white/40">{i + 1}.</span> {icon} <span className="leading-tight">{label}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

@@ -63,9 +63,9 @@ export default async function DownloadPage() {
                 ),
               },
               {
-                q: t("Nie widzę „Do ekranu początkowego” na iPhonie.", "I can’t see “Add to Home Screen” on my iPhone."),
+                q: t("Nie widzę „Dodaj do ekranu głównego” na iPhonie.", "I can’t see “Add to Home Screen” on my iPhone."),
                 a: t(
-                  "Upewnij się, że jesteś w Safari, a nie w przeglądarce Instagrama albo Messengera. W menu Udostępnij przewiń listę na sam dół. Czasem opcja kryje się pod „Edytuj czynności”.",
+                  "Upewnij się, że jesteś w Safari, a nie w przeglądarce Instagrama albo Messengera. Stuknij ⋯ (trzy kropki), potem „Udostępnij”, na dole listy „Pokaż więcej” i tam „Dodaj do ekranu głównego”.",
                   "Make sure you’re in Safari, not inside Instagram or Messenger. In the Share menu scroll the list to the very bottom; sometimes the option is under “Edit Actions”.",
                 ),
               },

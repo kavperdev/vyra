@@ -17,8 +17,8 @@ export function InstallRow() {
   if (!show) return null;
   const steps = ios
     ? [
-        [Share, "Stuknij Udostępnij", "Ikona kwadratu ze strzałką na dole Safari."],
-        [SquarePlus, "Do ekranu początkowego", "Przewiń listę w dół i wybierz tę opcję."],
+        [Share, "Trzy kropki ⋯, potem Udostępnij", "Trzy kropki są obok paska adresu w Safari."],
+        [SquarePlus, "Pokaż więcej → Dodaj do ekranu głównego", "„Pokaż więcej” jest na dole listy udostępniania."],
         [Download, "Dodaj", "VYRA pojawi się na ekranie jak zwykła aplikacja."],
       ]
     : [
