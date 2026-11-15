@@ -6,6 +6,9 @@ import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { stripeConfigured } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
+import { premiumStatus } from "@/lib/app/premium";
+import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata = { title: "Sklep" };
 
@@ -18,12 +21,27 @@ export default async function AppShop() {
     listCamps(supabase, { publicOnly: true }).catch(() => []),
   ]);
   const pay = stripeConfigured();
+  const [{ premium: pro }, me] = await Promise.all([premiumStatus().catch(() => ({ premium: false })), getCurrentUser().catch(() => null)]);
+  // Bought (or trial) VYRA Method: show it as owned, never offer it again.
+  const premium = pro && me?.profile.role === "athlete";
   const m = method.filter((p) => p.visible);
   const c = coaching.filter((p) => p.visible).sort((a, b) => a.sort - b.sort);
   return (
     <div className="app-rise grid grid-cols-1">
       <PageHead title={t("Sklep", "Shop")} sub={t("Bez zakładania konta. Dostęp przychodzi na e-mail.", "No account needed. Access arrives by e-mail.")} />
 
+      {premium ? (
+        <Link href="/athlete/metoda" className="flex items-center gap-3.5 rounded-[22px] bg-white p-5 text-black active:scale-[0.985]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-black text-white">
+            <Check className="size-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[17px] font-semibold">{t("Masz VYRA Method", "You have VYRA Method")}</span>
+            <span className="mt-0.5 block text-[13px] text-black/55">{t("Twój plan dopasowuje się co tydzień. Otwórz go tutaj.", "Your plan adapts every week. Open it here.")}</span>
+          </span>
+        </Link>
+      ) : (
+        <>
       {/* Free trial: the main door */}
       <div className="relative isolate overflow-hidden rounded-[24px] border border-white/[0.08]">
         <div aria-hidden className="app-kenburns absolute inset-0 -z-10 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
@@ -48,6 +66,9 @@ export default async function AppShop() {
           <MethodPicker plans={m} pay={pay} />
         </>
       ) : null}
+
+        </>
+      )}
 
       {c.length ? (
         <>

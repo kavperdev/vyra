@@ -6,6 +6,7 @@ import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2 } from
 import { fmtPace, fmtTime, timeFor, vdotOf } from "@/lib/method/engine";
 import { GOAL_DISTS, GOAL_KEY, addDays, buildPlan, daysBetween, todayLocal, writeGoal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { useStore } from "@/lib/app/store";
+import { useAccess } from "@/components/app/access";
 import { addRun, useLog } from "@/lib/app/log";
 import { completeRef, goalDoneSet } from "@/lib/app/plans";
 import { Seg, TimeInput, parseTime, useResult } from "@/components/app/tools";
@@ -97,6 +98,7 @@ function Setup({ initial, onDone, onCancel }: { initial: GoalStore | null; onDon
 
 export function GoalPlanView() {
   const [raw, , ready] = useStore<GoalStore | null>(GOAL_KEY, null);
+  const { premium } = useAccess();
   const g = raw && raw.race && raw.p5k ? { ...raw, done: raw.done ?? [] } : null;
   const log = useLog();
   const { p5k: formNow, save: saveRes } = useResult();
@@ -275,10 +277,10 @@ export function GoalPlanView() {
         );
       })}
 
-      <Link href="/app/sklep" className="mt-2 block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
+      {premium ? null : <Link href="/app/sklep" className="mt-2 block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
         <p className="text-[15px] font-medium">Plan, który reaguje na Ciebie</p>
         <p className="mt-1 text-[13px] leading-relaxed text-white/50">Ten plan jest stały. VYRA Method co tydzień przelicza tempa i obciążenie po Twoich treningach, samopoczuciu i tętnie. 14 dni za darmo.</p>
-      </Link>
+      </Link>}
 
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.title ?? ""} sub={open ? `${day(open.date)} · ok. ${open.km} km` : undefined}>
         {open ? (

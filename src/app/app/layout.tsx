@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Onboarding } from "@/components/app/onboarding";
 import { AccountSync } from "@/components/app/account-sync";
+import { AccessProvider } from "@/components/app/access";
+import { premiumStatus } from "@/lib/app/premium";
 import { IosInstallNudge } from "@/components/app/ios-install-nudge";
 import { StayInApp } from "@/components/app/stay-in-app";
 import { AppTabBar } from "@/components/app/tab-bar";
@@ -21,6 +23,7 @@ export const metadata: Metadata = {
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   const { t } = await getT();
+  const access = user ? await premiumStatus().catch(() => ({ signedIn: true, premium: false })) : { signedIn: false, premium: false };
   return (
     <div className="app-native app-ui dark min-h-dvh overflow-x-clip bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
       <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
@@ -43,7 +46,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           )}
         </div>
       </header>
-      <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">{children}</main>
+      <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">
+        <AccessProvider value={access}>{children}</AccessProvider>
+      </main>
       <AppTabBar />
       <Onboarding signedIn={!!user} />
       <AccountSync signedIn={!!user} />
