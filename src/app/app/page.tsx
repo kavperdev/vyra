@@ -30,13 +30,19 @@ export default async function AppHome() {
       .limit(3);
     todays = (data ?? []) as typeof todays;
   }
+  const athlete = user?.profile.role === "athlete";
+  let synced: { sleep: number; energy: number; soreness: number; pain: boolean } | null = null;
+  if (athlete && user) {
+    const { data, error } = await supabase.from("readiness").select("sleep, energy, soreness, pain").eq("athlete_id", user.id).eq("day", todayISO(user.profile.timezone)).maybeSingle();
+    if (!error && data) synced = data as typeof synced;
+  }
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
   const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
   return (
     <div className="app-rise grid grid-cols-1">
       <p className="pt-1 text-center text-[12px] capitalize text-white/40">{today}</p>
-      <Today />
+      <Today synced={synced} athlete={athlete} />
 
       {user ? (
         todays.length ? (

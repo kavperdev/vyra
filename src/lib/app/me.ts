@@ -25,7 +25,7 @@ export function recommend(me: Me): { href: string; title: string; sub: string }[
   const method = { href: "/app/sklep", title: "VYRA Method", sub: "Plan dopasowany do Ciebie · 14 dni za darmo" };
   if (me.goal === "start" || me.level === "none")
     return [
-      { href: "/zacznij-biegac", title: "Zacznij biegać", sub: "Darmowy plan: od zera do 25 minut w 6 tygodni" },
+      { href: "/app/plan", title: "Zacznij biegać", sub: "Darmowy plan: od zera do 25 minut w 6 tygodni" },
       course,
       { href: "/app/biblioteka/bieg-z-marszem", title: "Bieg z marszem", sub: "Jak zacząć bez kontuzji" },
     ];

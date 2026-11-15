@@ -1,5 +1,7 @@
 "use client";
 
+import { saveReadiness } from "@/lib/actions/readiness";
+
 import { useEffect, useMemo, useState } from "react";
 import { LocateFixed, MapPin } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
@@ -117,7 +119,7 @@ function Scale({ label, value, onChange, low, high }: { label: string; value: nu
   );
 }
 
-export function Today() {
+export function Today({ synced = null, athlete = false }: { synced?: Check | null; athlete?: boolean }) {
   const [place, setPlace] = useState<Place | null>(null);
   const [cond, setCond] = useState<Conditions | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -128,9 +130,12 @@ export function Today() {
 
   useEffect(() => {
     setPlace(store.get<Place>("vyra-place"));
-    setCheck(store.get<Check>(dayKey()));
+    // Signed-in athletes share one morning check-in with the training platform.
+    const local = store.get<Check>(dayKey());
+    if (!local && synced) store.set(dayKey(), synced);
+    setCheck(local ?? synced);
     setReady(true);
-  }, []);
+  }, [synced]);
 
   useEffect(() => {
     if (!place) return;
@@ -158,6 +163,7 @@ export function Today() {
     store.set(dayKey(), draft);
     setCheck(draft);
     setSheet(null);
+    if (athlete) saveReadiness(draft).catch(() => undefined);
     try {
       navigator.vibrate?.([10, 40, 10]);
     } catch {

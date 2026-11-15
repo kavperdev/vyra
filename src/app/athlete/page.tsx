@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, MessageSquare, Play, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState, HelloCard, ProgressBar, SectionTitle, Stat } from "@/components/ui/misc";
-import { describeSegment, KindIcon, plannedVolume, SessionList, StatusBadge } from "@/components/training/session-bits";
+import { ArrowRight, Check, ChevronRight, MessageSquare, Play, Trophy } from "lucide-react";
+import { describeSegment, KindIcon, plannedVolume, StatusBadge } from "@/components/training/session-bits";
 import { ReadinessCard } from "@/components/athlete/readiness-card";
 import { RaceCountdownCard } from "@/components/athlete/race-countdown";
 import { FormWeekCard } from "@/components/athlete/form-week-card";
@@ -119,295 +116,253 @@ export default async function AthleteDashboard() {
   const split = intensitySplit(sessions, weekStart, today);
   const firstName = user.profile.full_name.split(" ")[0];
 
+  const card = "rounded-[20px] border border-border bg-surface";
+  const primary = "flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-[15px] font-semibold text-background transition active:scale-[0.98]";
+  const secondary = "flex h-12 items-center justify-center gap-2 rounded-full bg-surface-2 px-5 text-[15px] font-medium transition active:scale-[0.98]";
+  const Head = ({ title, href, more }: { title: string; href?: string; more?: string }) => (
+    <div className="flex items-baseline justify-between px-1 pb-2 pt-6">
+      <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>
+      {href ? (
+        <Link href={href} className="text-[13px] text-muted active:opacity-60">
+          {more}
+        </Link>
+      ) : null}
+    </div>
+  );
+  const Notice = ({ title, text, href, cta }: { title: string; text: string; href: string; cta: string }) => (
+    <div className={cn(card, "grid gap-3 p-4")}>
+      <div>
+        <p className="text-[15px] font-semibold">{title}</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">{text}</p>
+      </div>
+      <Link href={href} className={primary}>
+        {cta} <ArrowRight className="size-4" />
+      </Link>
+    </div>
+  );
+
   return (
-    <div className="app-rise grid grid-cols-1 gap-8">
-      <HelloCard
-        eyebrow={formatDate(today, "EEEE, d MMMM")}
-        title={tl(`Cześć, ${firstName}`, `Hi, ${firstName}`)}
-        tone={featured && featured.status === "planned" ? "warm" : "sky"}
-        line={
-          featured
+    <div className="app-rise grid grid-cols-1 gap-3 lg:max-w-3xl">
+      <div className="pb-2 pt-1">
+        <p className="text-[13px] capitalize text-muted">{formatDate(today, "EEEE, d MMMM")}</p>
+        <h1 className="mt-1 text-[30px] font-semibold leading-tight tracking-[-0.02em]">{tl(`Cześć, ${firstName}`, `Hi, ${firstName}`)}</h1>
+        <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+          {featured
             ? featured.status === "planned" || featured.status === "in_progress"
-              ? tl(`Dziś: ${featured.title}. ${weekDone}/${weekSessions.length} treningów w tym tygodniu za Tobą.`, `Today: ${featured.title}. ${weekDone}/${weekSessions.length} sessions done this week.`)
-              : tl(`Dzisiejszy trening zapisany. ${weekDone}/${weekSessions.length} w tym tygodniu.`, `Today’s session is logged. ${weekDone}/${weekSessions.length} this week.`)
-            : weekSessions.length
-              ? tl(`Dziś wolne. ${weekDone}/${weekSessions.length} treningów w tym tygodniu za Tobą.`, `Rest day. ${weekDone}/${weekSessions.length} sessions done this week.`)
-              : tl("Dziś wolne.", "Rest day today.")
-        }
-      />
+              ? tl(`Dziś: ${featured.title}.`, `Today: ${featured.title}.`)
+              : tl("Dzisiejszy trening zapisany.", "Today’s session is logged.")
+            : tl("Dziś wolne.", "Rest day today.")}{" "}
+          {weekSessions.length ? tl(`${weekDone} z ${weekSessions.length} w tym tygodniu.`, `${weekDone} of ${weekSessions.length} this week.`) : ""}
+        </p>
+      </div>
 
       {membershipEnded ? (
-        <Card className="border-accent/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid grid-cols-1 gap-1">
-              <p className="font-semibold">{tl("Twój pakiet się zakończył", "Your package has ended")}</p>
-              <p className="text-[13px] text-muted">
-                {tl("Historia treningów i rekordy zostają. Wybierz pakiet, żeby wrócić do planu z trenerem.", "Your training history and records stay. Choose a package to get back to coaching.")}
-              </p>
-            </div>
-            <Button asChild variant="accent">
-              <a href="/prowadzenie#pakiety">
-                {tl("Wróć do prowadzenia", "Resume coaching")} <ArrowRight className="size-4" />
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
+        <Notice title={tl("Twój pakiet się zakończył", "Your package has ended")} text={tl("Historia treningów i rekordy zostają. Wybierz pakiet, żeby wrócić do planu.", "Your history and records stay. Choose a package to get back to your plan.")} href="/app/sklep" cta={tl("Wróć do planu", "Resume")} />
       ) : null}
-
-      {methodSetup ? (
-        <Card className="border-accent/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid grid-cols-1 gap-1">
-              <p className="font-semibold">Pierwszy krok: ankieta VYRA Method</p>
-              <p className="text-[13px] text-muted">Około 4 minut. Wiek, waga, forma, czas i zdrowie. Na tej podstawie powstanie Twój pierwszy tydzień.</p>
-            </div>
-            <Button asChild variant="accent">
-              <Link href="/athlete/metoda">
-                Ułóż mój plan <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
+      {methodSetup ? <Notice title="Pierwszy krok: ankieta VYRA Method" text="Około 4 minut. Na tej podstawie powstanie Twój pierwszy tydzień." href="/athlete/metoda" cta="Ułóż mój plan" /> : null}
       {intakeMissing && !method?.access ? (
-        <Card className="border-accent/50">
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid grid-cols-1 gap-1">
-              <p className="font-semibold">{tl("Pierwszy krok: ankieta startowa", "First step: your starting questionnaire")}</p>
-              <p className="text-[13px] text-muted">
-                {tl("5 minut. Cel, doświadczenie, kalendarz i zdrowie. Na tej podstawie trener ułoży Twój plan.", "5 minutes. Goal, experience, schedule and health. Your coach builds your plan from it.")}
+        <Notice title={tl("Pierwszy krok: ankieta startowa", "First step: questionnaire")} text={tl("5 minut. Cel, doświadczenie, kalendarz i zdrowie. Na tej podstawie trener ułoży Twój plan.", "5 minutes. Your coach builds your plan from it.")} href="/athlete/ankieta" cta={tl("Wypełnij ankietę", "Fill it in")} />
+      ) : null}
+      {feedbackDue ? <Notice title={tl("Minął pierwszy miesiąc. Jak Ci się trenuje?", "Your first month is done. How is it going?")} text={tl("2 minuty, szczerze. Pomaga nam prowadzić Cię lepiej.", "2 minutes, honestly.")} href="/athlete/opinia" cta={tl("Daj znać", "Tell us")} /> : null}
+
+      {/* Today's session first: it is why the athlete opens the app. */}
+      {featured && featuredDetail ? (
+        <div className={cn(card, "grid gap-4 p-4")}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-muted">
+                <KindIcon kind={featured.kind} /> {tl("Dziś", "Today")} · {categoryLabel(featured.category)}
+                {featured.scheduled_time ? ` · ${featured.scheduled_time.slice(0, 5)}` : ""}
               </p>
+              <p className="mt-1 text-[22px] font-semibold leading-tight tracking-tight">{featured.title}</p>
+              {featuredDetail.goal ? <p className="mt-1 text-[13.5px] text-muted">{featuredDetail.goal}</p> : null}
             </div>
-            <Button asChild variant="accent">
-              <Link href="/athlete/ankieta">
-                {tl("Wypełnij ankietę", "Fill it in")} <ArrowRight className="size-4" />
+            <StatusBadge status={featured.status} date={featured.scheduled_date} today={today} />
+          </div>
+          {featuredDetail.segments.length ? <WorkoutChart segments={featuredDetail.segments} compact /> : null}
+          {featuredDetail.segments.length ? (
+            <ul className="grid gap-1.5">
+              {featuredDetail.segments.slice(0, 5).map((s) => (
+                <li key={s.id} className="num rounded-[12px] bg-surface-2 px-3 py-2 text-[13.5px]">
+                  {describeSegment(s)}
+                </li>
+              ))}
+            </ul>
+          ) : featuredDetail.exercises.length ? (
+            <p className="text-[13.5px] text-muted">{featuredDetail.exercises.map((e) => `${e.name} (${e.sets.length})`).join(" · ")}</p>
+          ) : plannedVolume(featured) ? (
+            <p className="num text-[13.5px] text-muted">{plannedVolume(featured)}</p>
+          ) : null}
+          <div className="grid gap-2">
+            {featured.status === "planned" && (featuredDetail.segments.length || featuredDetail.exercises.length) ? (
+              <Link href={`/athlete/sessions/${featured.id}?start=1`} className={primary}>
+                <Play className="size-4" /> {tl("Zacznij trening", "Start workout")}
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {feedbackDue ? (
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-5">
-            <div className="grid grid-cols-1 gap-1">
-              <p className="font-semibold">{tl("Minął pierwszy miesiąc. Jak Ci się trenuje?", "Your first month is done. How is it going?")}</p>
-              <p className="text-[13px] text-muted">{tl("2 minuty, szczerze. Twoja odpowiedź pomaga nam prowadzić Cię lepiej.", "2 minutes, honestly. Your answer helps us coach you better.")}</p>
-            </div>
-            <Button asChild variant="outline">
-              <Link href="/athlete/opinia">
-                {tl("Daj znać", "Tell us")} <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {intakeMissing && !method?.access ? null : <RaceCountdownCard race={race} goalsHref="/athlete/records" />}
+            ) : null}
+            <Link
+              href={`/athlete/sessions/${featured.id}`}
+              className={(featured.status === "planned" && !(featuredDetail.segments.length || featuredDetail.exercises.length)) || featured.status === "in_progress" ? primary : secondary}
+            >
+              {featured.status === "planned" ? tl("Zapisz wykonanie", "Log result") : featured.status === "in_progress" ? tl("Dokończ zapis", "Finish logging") : tl("Zobacz podsumowanie", "View summary")}
+            </Link>
+          </div>
+          {todays.length > 1 ? <p className="text-[12px] text-muted">{tl(`Dziś masz ${todays.length} treningi. Reszta w planie tygodnia.`, `${todays.length} sessions today. The rest is in the week below.`)}</p> : null}
+        </div>
+      ) : (
+        <div className={cn(card, "p-4")}>
+          <p className="text-[12.5px] text-muted">{tl("Dziś", "Today")}</p>
+          <p className="mt-1 text-[22px] font-semibold tracking-tight">{tl("Wolne", "Rest day")}</p>
+          <p className="mt-1 text-[13.5px] text-muted">
+            {upcoming[0] ? tl(`Następny: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} · ${upcoming[0].title}`, `Next: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} · ${upcoming[0].title}`) : tl("Kolejne treningi pojawią się tutaj.", "Next sessions will appear here.")}
+          </p>
+        </div>
+      )}
 
       {readiness !== undefined ? <ReadinessCard today={readiness} /> : null}
+      {intakeMissing && !method?.access ? null : <RaceCountdownCard race={race} goalsHref="/athlete/records" />}
 
-      <section aria-labelledby="today-title" className="grid grid-cols-1 gap-3">
-        <h2 id="today-title" className="eyebrow">{tl("Dzisiejszy trening", "Today’s session")}</h2>
-        {featured && featuredDetail ? (
-          <Card className="overflow-hidden">
-            <CardContent className="grid grid-cols-1 gap-4 pt-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="grid grid-cols-1 gap-1">
-                  <p className="flex items-center gap-2 text-[13px] text-muted">
-                    <KindIcon kind={featured.kind} /> {categoryLabel(featured.category)}
-                    {featured.scheduled_time ? ` · ${featured.scheduled_time.slice(0, 5)}` : ""}
-                  </p>
-                  <p className="display text-xl">{featured.title}</p>
-                  {featuredDetail.goal ? <p className="text-sm text-muted">{featuredDetail.goal}</p> : null}
-                </div>
-                <StatusBadge status={featured.status} date={featured.scheduled_date} today={today} />
-              </div>
-              {featuredDetail.segments.length ? <WorkoutChart segments={featuredDetail.segments} compact /> : null}
-              {featuredDetail.segments.length ? (
-                <ul className="grid grid-cols-1 gap-1 text-sm">
-                  {featuredDetail.segments.slice(0, 5).map((s) => (
-                    <li key={s.id} className="num text-muted">
-                      — {describeSegment(s)}
-                    </li>
-                  ))}
-                </ul>
-              ) : featuredDetail.exercises.length ? (
-                <p className="text-sm text-muted">{featuredDetail.exercises.map((e) => `${e.name} (${e.sets.length})`).join(" · ")}</p>
-              ) : plannedVolume(featured) ? (
-                <p className="num text-sm text-muted">{plannedVolume(featured)}</p>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-              {featured.status === "planned" && (featuredDetail.segments.length || featuredDetail.exercises.length) ? (
-                <Button asChild size="lg" variant="accent" className="w-full sm:w-fit">
-                  <Link href={`/athlete/sessions/${featured.id}?start=1`}>
-                    <Play className="size-4" /> {tl("Zacznij trening", "Start workout")}
-                  </Link>
-                </Button>
-              ) : null}
-              <Button asChild size="lg" variant={(featured.status === "planned" && !(featuredDetail.segments.length || featuredDetail.exercises.length)) || featured.status === "in_progress" ? "accent" : "outline"} className="w-full sm:w-fit">
-                <Link href={`/athlete/sessions/${featured.id}`}>
-                  {featured.status === "planned" ? tl("Otwórz i zapisz wykonanie", "Open and log result") : featured.status === "in_progress" ? tl("Dokończ zapis", "Finish logging") : tl("Zobacz podsumowanie", "View summary")}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              </div>
-              {todays.length > 1 ? <p className="text-[12px] text-muted">{tl(`Dziś masz ${todays.length} treningi. Pozostałe są w planie tygodnia poniżej.`, `You have ${todays.length} sessions today. The others are in the weekly plan below.`)}</p> : null}
-            </CardContent>
-          </Card>
-        ) : (
-          <EmptyState title={tl("Dziś wolne", "Rest day")} description={upcoming[0] ? tl(`Następny trening: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} — ${upcoming[0].title}.`, `Next session: ${formatDate(upcoming[0].scheduled_date, "EEEE, d MMM")} — ${upcoming[0].title}.`) : tl("Trener nie zaplanował jeszcze kolejnych treningów.", "Your coach hasn’t planned the next sessions yet.")} />
-        )}
-      </section>
+      <Head title={tl("Ten tydzień", "This week")} href="/athlete/calendar" more={tl("Kalendarz", "Calendar")} />
+      <div className={cn(card, "overflow-hidden")}>
+        <div className="flex items-center gap-3 px-4 pt-4">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${weekSessions.length ? (weekDone / weekSessions.length) * 100 : 0}%` }} />
+          </div>
+          <span className="num text-[12.5px] text-muted">
+            {weekDone}/{weekSessions.length}
+          </span>
+        </div>
+        <ol className="mt-2 divide-y divide-border">
+          {weekDays.map((d) => {
+            const items = weekSessions.filter((x) => x.scheduled_date === d);
+            return (
+              <li key={d} className="flex items-start gap-3 px-4 py-3">
+                <span className={cn("w-12 shrink-0 pt-0.5 text-[12.5px] capitalize", d === today ? "font-semibold text-accent" : "text-muted")}>{formatDate(d, "EEE d")}</span>
+                {items.length ? (
+                  <div className="grid min-w-0 flex-1 gap-2">
+                    {items.map((x) => (
+                      <Link key={x.id} href={`/athlete/sessions/${x.id}`} className="flex min-w-0 items-center gap-2 active:opacity-60">
+                        <span className={cn("min-w-0 flex-1 truncate text-[14.5px]", isDone(x.status) && "text-muted line-through")}>{x.title}</span>
+                        {isDone(x.status) ? <Check className="size-4 shrink-0 text-done" /> : <ChevronRight className="size-4 shrink-0 text-subtle" />}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-[13.5px] text-subtle">{tl("wolne", "rest")}</span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        {[
+          [tl("Kilometry", "Distance"), `${formatNumber(week?.actualKm ?? 0)} km`, week?.plannedKm ? `plan ${formatNumber(week.plannedKm)} km` : tl("w tym tygodniu", "this week"), "/athlete/progress"],
+          [tl("Realizacja 4 tyg.", "4-week completion"), comp.rate == null ? "–" : `${comp.rate}%`, tl(`${comp.done} z ${comp.due} treningów`, `${comp.done} of ${comp.due}`), "/athlete/progress"],
+        ].map(([k, v, h, href]) => (
+          <Link key={k} href={href} className={cn(card, "p-4 active:scale-[0.985]")}>
+            <p className="text-[12px] text-muted">{k}</p>
+            <p className="num mt-1 text-[26px] font-light leading-none tracking-tight">{v}</p>
+            <p className="mt-1.5 truncate text-[12px] text-subtle">{h}</p>
+          </Link>
+        ))}
+      </div>
 
       <FormWeekCard form={form} split={split} week={week} buckets={buckets} />
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label={tl("Statystyki", "Statistics")}>
-        <Stat label={tl("Ten tydzień", "This week")} value={`${weekDone}/${weekSessions.length}`} hint={tl("treningi wykonane / zaplanowane", "sessions done / planned")} />
-        <Stat label={tl("Kilometry w tym tyg.", "Km this week")} value={formatNumber(week?.actualKm ?? 0)} unit="km" hint={week?.plannedKm ? `plan ${formatNumber(week.plannedKm)} km` : undefined} />
-        <Stat label={tl("Realizacja 4 tyg.", "4-week completion")} value={comp.rate == null ? "–" : `${comp.rate}%`} hint={tl(`${comp.done} z ${comp.due} treningów`, `${comp.done} of ${comp.due} sessions`)} href="/athlete/progress" />
-        <Stat label={tl("Ostatni trening", "Last session")} value={lastDone ? formatDate(lastDone.execution!.performed_on, "d MMM") : "–"} hint={lastDone?.title} href={lastDone ? `/athlete/sessions/${lastDone.id}` : undefined} />
-      </section>
-
       {last && last.plannedSessions > 0 ? (
-        <Card>
-          <CardContent className="grid grid-cols-1 gap-4 pt-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="font-semibold">
-                {tl("Podsumowanie poprzedniego tygodnia", "Last week in review")}
-                <span className="ml-2 text-[13px] font-normal text-muted">
-                  {formatDate(last.weekStart, "d MMM")} – {formatDate(addDaysISO(last.weekStart, 6), "d MMM")}
-                </span>
-              </p>
-              {streak >= 2 ? (
-                <span className="rounded-full bg-accent/15 px-3 py-1 text-[12px] font-semibold text-accent">
-                  🔥 {tl(`${streak} tygodnie z rzędu na planie`, `${streak} weeks in a row on plan`)}
-                </span>
-              ) : null}
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="grid grid-cols-1 gap-0.5">
-                <span className="text-[12px] text-muted">{tl("Treningi", "Sessions")}</span>
-                <span className="num text-xl font-semibold">
+        <>
+          <Head title={tl("Poprzedni tydzień", "Last week")} />
+          <div className={cn(card, "grid gap-4 p-4")}>
+            {streak >= 2 ? <span className="w-fit rounded-full bg-accent/15 px-3 py-1 text-[12px] font-semibold text-accent">🔥 {tl(`${streak} tygodnie z rzędu na planie`, `${streak} weeks in a row on plan`)}</span> : null}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[12px] text-muted">{tl("Treningi", "Sessions")}</p>
+                <p className="num mt-0.5 text-[22px] font-light">
                   {last.doneSessions}/{last.plannedSessions}
-                </span>
+                </p>
               </div>
-              <div className="grid grid-cols-1 gap-0.5">
-                <span className="text-[12px] text-muted">{tl("Kilometry", "Distance")}</span>
-                <span className="num text-xl font-semibold">
-                  {formatNumber(last.actualKm)} <span className="text-sm font-normal text-muted">km</span>
-                </span>
+              <div>
+                <p className="text-[12px] text-muted">{tl("Kilometry", "Distance")}</p>
+                <p className="num mt-0.5 text-[22px] font-light">{formatNumber(last.actualKm)} km</p>
                 {kmTrend != null ? (
-                  <span className={cn("num text-[12px]", kmTrend >= 0 ? "text-done" : "text-muted")}>
+                  <p className={cn("num text-[12px]", kmTrend >= 0 ? "text-done" : "text-muted")}>
                     {kmTrend >= 0 ? "+" : ""}
-                    {kmTrend}% {tl("vs tydzień wcześniej", "vs the week before")}
-                  </span>
-                ) : last.plannedKm ? (
-                  <span className="num text-[12px] text-muted">plan {formatNumber(last.plannedKm)} km</span>
+                    {kmTrend}%
+                  </p>
                 ) : null}
               </div>
-              <div className="grid grid-cols-1 gap-0.5">
-                <span className="text-[12px] text-muted">{tl("Czas biegu", "Running time")}</span>
-                <span className="num text-xl font-semibold">
-                  {Math.floor(last.runningSeconds / 3600)}:{String(Math.round((last.runningSeconds % 3600) / 60)).padStart(2, "0")} <span className="text-sm font-normal text-muted">h</span>
-                </span>
+              <div>
+                <p className="text-[12px] text-muted">{tl("Czas biegu", "Running time")}</p>
+                <p className="num mt-0.5 text-[22px] font-light">
+                  {Math.floor(last.runningSeconds / 3600)}:{String(Math.round((last.runningSeconds % 3600) / 60)).padStart(2, "0")} h
+                </p>
               </div>
-              <div className="grid grid-cols-1 gap-0.5">
-                <span className="text-[12px] text-muted">{tl("Średnia gotowość", "Average readiness")}</span>
-                <span className="num text-xl font-semibold">{lastReady != null ? `${lastReady}%` : "–"}</span>
-                {lastWeekReadiness.length ? (
-                  <span className="text-[12px] text-muted">{tl(`${lastWeekReadiness.length} poranne wpisy`, `${lastWeekReadiness.length} check-ins`)}</span>
-                ) : null}
+              <div>
+                <p className="text-[12px] text-muted">{tl("Gotowość", "Readiness")}</p>
+                <p className="num mt-0.5 text-[22px] font-light">{lastReady != null ? `${lastReady}%` : "–"}</p>
               </div>
             </div>
-            <p className="text-sm text-muted">
+            <p className="text-[13.5px] leading-relaxed text-muted">
               {last.doneSessions >= last.plannedSessions
-                ? tl("Cały plan wykonany. Tak buduje się formę: tydzień po tygodniu.", "The whole plan done. This is how form is built: week after week.")
+                ? tl("Cały plan wykonany. Tak buduje się formę: tydzień po tygodniu.", "The whole plan done. This is how form is built.")
                 : last.doneSessions / last.plannedSessions >= 0.8
-                  ? tl("Bardzo dobry tydzień. Regularność to Twoja największa przewaga.", "A very good week. Consistency is your biggest advantage.")
-                  : tl("Nie wszystko wyszło? Napisz trenerowi, co przeszkodziło. Plan dopasujemy do życia, nie odwrotnie.", "Didn’t go to plan? Tell your coach what got in the way. We fit the plan to your life, not the other way round.")}
+                  ? tl("Bardzo dobry tydzień. Regularność to Twoja największa przewaga.", "A very good week. Consistency is your advantage.")
+                  : tl("Nie wszystko wyszło? Napisz trenerowi, co przeszkodziło. Plan dopasujemy do życia.", "Didn’t go to plan? Tell your coach what got in the way.")}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="grid grid-cols-1 content-start gap-3">
-          <SectionTitle action={<Link href="/athlete/calendar" className="text-[13px] text-muted hover:text-foreground">{tl("Kalendarz", "Calendar")}</Link>}>{tl("Plan tygodnia", "This week’s plan")}</SectionTitle>
-          <ol className="grid grid-cols-1 gap-1.5">
-            {weekDays.map((d) => {
-              const items = weekSessions.filter((s) => s.scheduled_date === d);
-              return (
-                <li key={d} className={cn("grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-3 rounded-md border border-border bg-surface px-3 py-2.5", d === today && "border-accent/60")}>
-                  <span className={cn("text-[13px] capitalize", d === today ? "font-semibold text-accent" : "text-muted")}>{formatDate(d, "EEE d")}</span>
-                  {items.length ? (
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {items.map((s) => (
-                        <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="flex min-w-0 items-center justify-between gap-2 hover:underline">
-                          <span className="truncate text-sm">{s.title}</span>
-                          <StatusBadge status={s.status} date={s.scheduled_date} today={today} />
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[13px] text-subtle">{tl("wolne", "rest")}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-          <div className="grid grid-cols-1 gap-1.5 pt-1">
-            <ProgressBar value={weekSessions.length ? (weekDone / weekSessions.length) * 100 : 0} tone="accent" />
+      {upcoming.length ? (
+        <>
+          <Head title={tl("Najbliższe treningi", "Upcoming")} />
+          <div className={cn(card, "divide-y divide-border overflow-hidden")}>
+            {upcoming.slice(0, 5).map((x) => (
+              <Link key={x.id} href={`/athlete/sessions/${x.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-surface-2">
+                <span className="w-12 shrink-0 text-[12.5px] capitalize text-muted">{formatDate(x.scheduled_date, "EEE d")}</span>
+                <span className="min-w-0 flex-1 truncate text-[14.5px]">{x.title}</span>
+                <ChevronRight className="size-4 shrink-0 text-subtle" />
+              </Link>
+            ))}
           </div>
-        </section>
+        </>
+      ) : null}
 
-        <div className="grid grid-cols-1 content-start gap-8">
-          <section className="grid grid-cols-1 gap-3">
-            <SectionTitle>{tl("Najbliższe treningi", "Upcoming sessions")}</SectionTitle>
-            <SessionList sessions={upcoming.slice(0, 5)} hrefFor={(s) => `/athlete/sessions/${s.id}`} today={today} empty={<p className="text-sm text-muted">{tl("Brak treningów w najbliższych 7 dniach.", "No sessions in the next 7 days.")}</p>} />
-          </section>
+      {coachComments.length ? (
+        <>
+          <Head title={tl("Od trenera", "From your coach")} />
+          <div className="grid gap-2">
+            {coachComments.map((c) => (
+              <Link key={c.id} href={`/athlete/sessions/${c.session_id}`} className={cn(card, "grid gap-1 p-4 active:scale-[0.985]")}>
+                <p className="flex items-center gap-1.5 text-[12px] text-muted">
+                  <MessageSquare className="size-3.5" /> {c.session_title}
+                </p>
+                <p className="line-clamp-3 text-[14px] leading-relaxed">{c.body}</p>
+                <p className="text-[11.5px] text-subtle">{formatDateTime(c.created_at)}</p>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : null}
 
-          <section className="grid grid-cols-1 gap-3">
-            <SectionTitle>{tl("Od trenera", "From your coach")}</SectionTitle>
-            {coachComments.length ? (
-              <ul className="grid grid-cols-1 gap-2">
-                {coachComments.map((c) => (
-                  <li key={c.id}>
-                    <Link href={`/athlete/sessions/${c.session_id}`} className="grid grid-cols-1 gap-1 rounded-md border border-border border-l-2 border-l-accent bg-surface p-3 hover:border-border-strong">
-                      <p className="flex items-center gap-1.5 text-[12px] text-muted">
-                        <MessageSquare className="size-3.5" /> {c.session_title}
-                      </p>
-                      <p className="line-clamp-3 text-sm">{c.body}</p>
-                      <p className="text-[12px] text-subtle">{formatDateTime(c.created_at)}</p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted">{tl("Brak nowych komentarzy trenera.", "No new comments from your coach.")}</p>
-            )}
-          </section>
-
-          <section className="grid grid-cols-1 gap-3">
-            <SectionTitle action={<Link href="/athlete/records" className="text-[13px] text-muted hover:text-foreground">{tl("Wszystkie", "All")}</Link>}>{tl("Rekordy", "Records")}</SectionTitle>
-            {prs.length ? (
-              <ul className="grid grid-cols-1 gap-2">
-                {prs.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2.5">
-                    <span className="flex items-center gap-2 text-sm">
-                      <Trophy className="size-3.5 text-accent" /> {r.label}
-                    </span>
-                    <span className="num text-sm font-semibold">{formatRecordValue(r)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted">{tl("Dodaj swoje rekordy, by śledzić postęp.", "Add your records to track progress.")}</p>
-            )}
-          </section>
+      <Head title={tl("Rekordy", "Records")} href="/athlete/records" more={tl("Wszystkie", "All")} />
+      {prs.length ? (
+        <div className={cn(card, "divide-y divide-border overflow-hidden")}>
+          {prs.map((r) => (
+            <div key={r.id} className="flex items-center justify-between px-4 py-3">
+              <span className="flex items-center gap-2 text-[14.5px]">
+                <Trophy className="size-4 text-accent" /> {r.label}
+              </span>
+              <span className="num text-[15px] font-semibold">{formatRecordValue(r)}</span>
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <Link href="/athlete/records" className={cn(card, "block p-4 text-[13.5px] text-muted")}>
+          {tl("Dodaj swoje rekordy, żeby śledzić postęp.", "Add your records to track progress.")}
+        </Link>
+      )}
     </div>
   );
 }
