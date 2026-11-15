@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2 } from "lucide-react";
 import { fmtPace, fmtTime, timeFor, vdotOf } from "@/lib/method/engine";
-import { GOAL_DISTS, addDays, buildPlan, daysBetween, readGoal, todayLocal, writeGoal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { GOAL_DISTS, GOAL_KEY, addDays, buildPlan, daysBetween, todayLocal, writeGoal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { useStore } from "@/lib/app/store";
+import { addRun, useLog } from "@/lib/app/log";
+import { completeRef, goalDoneSet } from "@/lib/app/plans";
 import { Seg, TimeInput, parseTime, useResult } from "@/components/app/tools";
 import { Sheet } from "@/components/app/sheet";
 import { Card, Chip, Tile } from "@/components/app/ui";
@@ -93,25 +96,22 @@ function Setup({ initial, onDone, onCancel }: { initial: GoalStore | null; onDon
 }
 
 export function GoalPlanView() {
-  const [g, setG] = useState<GoalStore | null>(null);
-  const [ready, setReady] = useState(false);
+  const [raw, , ready] = useStore<GoalStore | null>(GOAL_KEY, null);
+  const g = raw && raw.race && raw.p5k ? { ...raw, done: raw.done ?? [] } : null;
+  const log = useLog();
+  const { p5k: formNow, save: saveRes } = useResult();
   const [edit, setEdit] = useState(false);
   const [open, setOpen] = useState<GoalSession | null>(null);
   const [openWeek, setOpenWeek] = useState<number | null>(null);
-  useEffect(() => {
-    setG(readGoal());
-    setReady(true);
-  }, []);
+  const [result, setResult] = useState<number | null>(null);
   const today = todayLocal();
   const plan = useMemo(() => (g ? buildPlan(g, today) : null), [g, today]);
+  const doneSet = useMemo(() => (g && plan ? goalDoneSet(g, plan.weeks.flatMap((w) => w.sessions), log) : new Set<string>()), [g, plan, log]);
 
-  const update = (v: GoalStore | null) => {
-    setG(v);
-    writeGoal(v);
-  };
+  const update = (v: GoalStore | null) => writeGoal(v);
   const toggle = (id: string) => {
     if (!g) return;
-    update({ ...g, done: g.done.includes(id) ? g.done.filter((x) => x !== id) : [...g.done, id] });
+    update({ ...g, done: doneSet.has(id) ? g.done.filter((x) => x !== id) : [...g.done, id] });
     try {
       navigator.vibrate?.(10);
     } catch {
@@ -125,20 +125,51 @@ export function GoalPlanView() {
   const label = GOAL_DISTS.find((d) => d.k === g.dist)!.label;
   const left = daysBetween(today, g.race);
   const all = plan.weeks.flatMap((w) => w.sessions);
-  const done = all.filter((s) => g.done.includes(s.id)).length;
+  const done = all.filter((s) => doneSet.has(s.id)).length;
+  const race = all.find((s) => s.kind === "race");
+  const raceDist = GOAL_DISTS.find((d) => d.k === g.dist)!;
+  const raceRun = log.find((r) => r.day === g.race && r.km >= raceDist.m / 1000 * 0.9);
+  const saveResult = () => {
+    if (!result) return;
+    // The race result becomes the current form: paces everywhere in the app follow it.
+    saveRes({ dist: g.dist, time: fmtTime(result) });
+    if (!raceRun) addRun({ day: g.race, km: raceDist.m / 1000, sec: result, rpe: 9, note: `Start: ${g.name || raceDist.label}`, ref: race ? `goal:${race.id}` : undefined });
+    if (race) completeRef(`goal:${race.id}`);
+  };
+  const newForm = formNow && Math.abs(formNow - g.p5k) / g.p5k > 0.015 ? Math.round(formNow) : null;
   const curIdx = Math.max(0, plan.weeks.findIndex((w) => addDays(w.monday, 6) >= today));
   const shown = openWeek ?? plan.weeks[curIdx]?.n;
 
+  const resultCard = (
+    <Card className="p-5">
+      <Flag className="size-6 text-amber-300" />
+      <p className="mt-3 text-[18px] font-semibold">{raceRun ? `Ukończone: ${fmtTime(raceRun.sec)}` : "Jaki masz wynik?"}</p>
+      <p className="mt-1 text-[13.5px] leading-relaxed text-white/50">
+        {raceRun ? "Wynik jest w dzienniku i liczy się jako Twoja aktualna forma. Prognozy, tempa w bibliotece i kolejny plan liczą się od niego." : `${g.name || label}, ${long(g.race)}. Wpisz czas, a przeliczymy Twoją formę i tempa w całej aplikacji.`}
+      </p>
+      {raceRun ? null : (
+        <div className="mt-3 grid gap-2">
+          <TimeInput value={result} onChange={setResult} hours={g.dist === "half" || g.dist === "marathon"} />
+          <button type="button" disabled={!result} onClick={saveResult} className="rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98] disabled:opacity-30">
+            Zapisz wynik
+          </button>
+        </div>
+      )}
+    </Card>
+  );
+
   if (left < 0) {
     return (
-      <Card className="p-5 text-center">
-        <Flag className="mx-auto size-7 text-amber-300" />
-        <p className="mt-3 text-[18px] font-semibold">Start za Tobą</p>
-        <p className="mt-1 text-[13.5px] text-white/50">{g.name || label}, {long(g.race)}. Zrobione {done} z {all.length} treningów. Wpisz wynik w Prognozie i ułóż plan na kolejny start.</p>
-        <button type="button" onClick={() => update(null)} className="mt-4 rounded-full bg-white px-5 py-3 text-[14px] font-semibold text-black active:scale-[0.98]">
-          Nowy cel
-        </button>
-      </Card>
+      <div className="grid gap-3">
+        {resultCard}
+        <Card className="p-5">
+          <p className="text-[16px] font-semibold">Start za Tobą</p>
+          <p className="mt-1 text-[13.5px] text-white/50">Zrobione {done} z {all.length} treningów. Odpocznij kilka dni i ustaw kolejny cel: plan policzy się z nowej formy.</p>
+          <button type="button" onClick={() => update(null)} className="mt-4 rounded-full bg-white px-5 py-3 text-[14px] font-semibold text-black active:scale-[0.98]">
+            Nowy cel
+          </button>
+        </Card>
+      </div>
     );
   }
 
@@ -176,6 +207,19 @@ export function GoalPlanView() {
         <Tile k="Tempo startowe" v={`${fmtPace(plan.racePace)}`} s="min/km" />
       </div>
 
+      {newForm ? (
+        <Card className="flex items-center gap-3 p-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14.5px] font-medium">{newForm < g.p5k ? "Twoja forma poszła w górę" : "Twoja forma się zmieniła"}</p>
+            <p className="mt-0.5 text-[12.5px] text-white/50">Nowy wynik to ok. {fmtTime(newForm)} na 5 km. Przelicz tempa w planie.</p>
+          </div>
+          <button type="button" onClick={() => update({ ...g, p5k: newForm })} className="shrink-0 rounded-full bg-white px-4 py-2.5 text-[13.5px] font-semibold text-black active:scale-95">
+            Przelicz
+          </button>
+        </Card>
+      ) : null}
+      {left === 0 || raceRun ? resultCard : null}
+
       {plan.skipped > 0 ? (
         <Card className="p-4">
           <p className="text-[14px] font-medium">Plan rusza {long(plan.start)}</p>
@@ -185,7 +229,7 @@ export function GoalPlanView() {
 
       {plan.weeks.map((w) => {
         const isOpen = w.n === shown;
-        const wDone = w.sessions.filter((s) => g.done.includes(s.id)).length;
+        const wDone = w.sessions.filter((s) => doneSet.has(s.id)).length;
         const past = addDays(w.monday, 6) < today;
         return (
           <div key={w.n} className={cn("rounded-[20px] border bg-[#111113] transition", isOpen ? "border-white/20" : "border-white/[0.06]", past && !isOpen && "opacity-60")}>
@@ -203,7 +247,7 @@ export function GoalPlanView() {
             {isOpen ? (
               <div className="grid gap-2 px-4 pb-4">
                 {w.sessions.map((s) => {
-                  const on = g.done.includes(s.id);
+                  const on = doneSet.has(s.id);
                   const isToday = s.date === today;
                   return (
                     <div key={s.id} className={cn("flex items-center gap-3 rounded-[14px] bg-white/[0.04] p-2.5", isToday && "ring-1 ring-white/30")}>
@@ -249,11 +293,11 @@ export function GoalPlanView() {
             ) : null}
             <div className="mt-1 grid gap-2">
               {open.timer ? (
-                <Link href={open.timer} className="flex items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
+                <Link href={`${open.timer}&ref=${encodeURIComponent(`goal:${open.id}`)}`} className="flex items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
                   <TimerReset className="size-4" /> Timer interwałów
                 </Link>
               ) : null}
-              <Link href="/app/bieg" className={cn("flex items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-semibold active:scale-[0.98]", open.timer ? "bg-white/[0.08] text-white" : "bg-white text-black")}>
+              <Link href={`/app/bieg?ref=${encodeURIComponent(`goal:${open.id}`)}&t=${encodeURIComponent(open.title)}${open.pace ? `&p=${open.pace[0]}-${open.pace[1]}` : ""}`} className={cn("flex items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-semibold active:scale-[0.98]", open.timer ? "bg-white/[0.08] text-white" : "bg-white text-black")}>
                 <Footprints className="size-4" /> Biegnij z GPS
               </Link>
               <button
@@ -264,60 +308,12 @@ export function GoalPlanView() {
                 }}
                 className="py-2.5 text-[14px] text-white/60"
               >
-                {g.done.includes(open.id) ? "Odznacz" : "Oznacz jako zrobione"}
+                {doneSet.has(open.id) ? "Odznacz" : "Oznacz jako zrobione"}
               </button>
             </div>
           </div>
         ) : null}
       </Sheet>
     </div>
-  );
-}
-
-/** Home card: countdown and the next session, or an invitation to set a race. */
-export function GoalCountdown() {
-  const [g, setG] = useState<GoalStore | null | undefined>(undefined);
-  useEffect(() => setG(readGoal()), []);
-  const today = todayLocal();
-  const next = useMemo(() => {
-    if (!g) return null;
-    const all = buildPlan(g, today).weeks.flatMap((w) => w.sessions);
-    return all.find((s) => s.date >= today && !g.done.includes(s.id)) ?? null;
-  }, [g, today]);
-  if (g === undefined) return null;
-  if (!g || daysBetween(today, g.race) < 0) {
-    return (
-      <Card href="/app/cel" className="mt-3 flex items-center gap-3.5 p-4">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]">
-          <Flag className="size-5 text-white/80" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[15px] font-medium">Masz start na horyzoncie?</span>
-          <span className="mt-0.5 block text-[12.5px] text-white/45">Darmowy plan pod 5 km, 10 km, półmaraton lub maraton</span>
-        </span>
-      </Card>
-    );
-  }
-  const left = daysBetween(today, g.race);
-  const label = GOAL_DISTS.find((d) => d.k === g.dist)!.label;
-  return (
-    <Card href="/app/cel" className="mt-3 p-4">
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[12px] text-white/45">{g.name || label}</p>
-          <p className="mt-1 text-[32px] font-light leading-none tabular-nums tracking-tight">
-            {left}
-            <span className="ml-1 text-[14px] text-white/45">{left === 1 ? "dzień" : "dni"} do startu</span>
-          </p>
-        </div>
-        <Flag className="mb-1 size-5 shrink-0 text-amber-300" />
-      </div>
-      {next ? (
-        <div className="mt-3 rounded-[14px] bg-white/[0.04] px-3 py-2.5">
-          <p className="text-[11.5px] text-white/45">{next.date === today ? "Dziś" : `Następny: ${day(next.date)}`}</p>
-          <p className="mt-0.5 truncate text-[14.5px] font-medium">{next.title}</p>
-        </div>
-      ) : null}
-    </Card>
   );
 }

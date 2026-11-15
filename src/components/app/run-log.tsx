@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { StravaSync } from "@/components/app/strava-sync";
@@ -9,24 +9,8 @@ import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
 
-export type Run = { id: string; day: string; km: number; sec: number; rpe: number; note: string };
-const KEY = "vyra-log";
-
-export function readLog(): Run[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-function writeLog(r: Run[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(r));
-  } catch {
-    /* private mode */
-  }
-}
+import { addRun, readLog, removeRun, useLog, writeLog, type Run } from "@/lib/app/log";
+export { readLog, type Run };
 
 const day = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(d);
 const monday = (iso: string) => {
@@ -43,8 +27,7 @@ const DOW = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
 
 /** Week totals for the home screen. */
 export function useWeek() {
-  const [log, setLog] = useState<Run[]>([]);
-  useEffect(() => setLog(readLog()), []);
+  const log = useLog();
   return useMemo(() => {
     const start = monday(day());
     const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -80,21 +63,15 @@ export function WeekBars({ per, days }: { per: number[]; days: string[] }) {
 }
 
 export function RunLog() {
-  const [log, setLog] = useState<Run[]>([]);
+  const log = useLog();
   const [sheet, setSheet] = useState(false);
   const [d, setD] = useState({ day: day(), km: "", sec: null as number | null, rpe: 4, note: "" });
-  useEffect(() => setLog(readLog()), []);
   const getLog = useCallback(() => readLog(), []);
-  const onImport = useCallback((next: Run[]) => {
-    writeLog(next);
-    setLog(next);
-  }, []);
+  const onImport = useCallback((next: Run[]) => writeLog(next), []);
   const save = () => {
     const km = Number(d.km.replace(",", "."));
     if (!(km > 0 && km < 400) || !d.sec) return;
-    const next = [{ id: crypto.randomUUID(), day: d.day, km: Math.round(km * 100) / 100, sec: d.sec, rpe: d.rpe, note: d.note.slice(0, 200) }, ...log].sort((a, b) => (a.day < b.day ? 1 : -1));
-    writeLog(next);
-    setLog(next);
+    addRun({ day: d.day, km, sec: d.sec, rpe: d.rpe, note: d.note });
     setSheet(false);
     setD({ day: day(), km: "", sec: null, rpe: 4, note: "" });
     try {
@@ -103,11 +80,7 @@ export function RunLog() {
       /* none */
     }
   };
-  const remove = (id: string) => {
-    const next = log.filter((r) => r.id !== id);
-    writeLog(next);
-    setLog(next);
-  };
+  const remove = (id: string) => removeRun(id);
 
   const start = monday(day());
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -153,7 +126,7 @@ export function RunLog() {
             <div key={r.id} className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-medium tabular-nums">
-                  {r.km.toString().replace(".", ",")} km · {fmtTime(r.sec)} · {fmtPace(r.sec / r.km)}/km
+                  {r.km > 0 ? `${r.km.toString().replace(".", ",")} km · ${fmtTime(r.sec)} · ${fmtPace(r.sec / r.km)}/km` : `Trening · ${fmtTime(r.sec)}`}
                 </p>
                 <p className="mt-0.5 truncate text-[12px] capitalize text-white/45">
                   {fmtDay(r.day)}{r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}{r.note ? ` · ${r.note}` : ""}

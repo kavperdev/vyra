@@ -8,6 +8,7 @@ import { siteProps } from "@/components/app/ui";
 import { TimeInput } from "@/components/app/tools";
 import { GOALS, LEVELS, ME_KEY, ONBOARD_KEY, recommend, type Goal, type Level, type Me } from "@/lib/app/me";
 import { cn } from "@/lib/utils";
+import { save } from "@/lib/app/store";
 
 const get = <T,>(k: string): T | null => {
   try {
@@ -17,13 +18,7 @@ const get = <T,>(k: string): T | null => {
     return null;
   }
 };
-const set = (k: string, v: unknown) => {
-  try {
-    localStorage.setItem(k, JSON.stringify(v));
-  } catch {
-    /* private mode */
-  }
-};
+const set = (k: string, v: unknown) => save(k, v);
 
 export const OPEN_ONBOARDING = "vyra:onboarding";
 
@@ -216,9 +211,28 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
           </>
         ) : (
           <>
-            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Gotowe. Od tego zacznij:</h2>
-            <p className="mb-2 text-[14px] text-white/50">Codziennie rano sprawdź ekran Dziś: 20 sekund, a powiemy Ci, jak trenować.</p>
-            {(recs.length ? recs : [{ href: "/app/kurs", title: "Kurs: Biegaj mądrze", sub: "9 krótkich lekcji" }]).map((r, i) => (
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Gotowe. Twój plan:</h2>
+            <p className="mb-2 text-[14px] text-white/50">Codziennie na ekranie Dziś zobaczysz trening na ten dzień. Timer albo GPS poprowadzi Cię przez niego, a po biegu wszystko odhaczy się samo.</p>
+            {goal === "start" || level === "none" ? (
+              <Link
+                href="/app/plan"
+                onClick={() => {
+                  set("vyra-start-on", true);
+                  finish(false);
+                }}
+                className="rounded-[20px] bg-white p-4 text-black active:scale-[0.985]"
+              >
+                <span className="block text-[17px] font-semibold">Zacznij biegać</span>
+                <span className="mt-0.5 block text-[13px] text-black/55">Od zera do 25 minut biegu w 6 tygodni, 3 treningi w tygodniu. Za darmo.</span>
+              </Link>
+            ) : (
+              <Link href="/app/cel" onClick={() => finish(false)} className="rounded-[20px] bg-white p-4 text-black active:scale-[0.985]">
+                <span className="block text-[17px] font-semibold">{goal === "race" ? "Ułóż plan pod swój start" : "Wybierz cel i ułóż plan"}</span>
+                <span className="mt-0.5 block text-[13px] text-black/55">5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, tydzień po tygodniu. Za darmo.</span>
+              </Link>
+            )}
+            <p className="mt-3 text-[12.5px] text-white/40">Przyda się też:</p>
+            {(recs.length ? recs : [{ href: "/app/kurs", title: "Kurs: Biegaj mądrze", sub: "9 krótkich lekcji" }]).filter((r) => r.href !== "/app/plan").map((r, i) => (
               <Link
                 key={r.href}
                 href={r.href}

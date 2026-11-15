@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Calculator, Dumbbell, Footprints, Timer, TimerReset, Trophy } from "lucide-react";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
-import { GoalCountdown } from "@/components/app/goal-plan";
+import { TodayPlan } from "@/components/app/today-plan";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
@@ -47,16 +47,9 @@ export default async function AppHome() {
     <div className="app-rise grid grid-cols-1">
       <p className="pt-1 text-center text-[12px] capitalize text-white/40">{today}</p>
       <Today synced={synced} athlete={athlete} />
-      <GoalCountdown />
 
-      {user && !paid ? (
-        <Link href="/app/plan" className="mt-6 flex items-center justify-between rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-4 transition active:scale-[0.985]">
-          <span>
-            <span className="block text-[12px] text-white/45">{t("Twój darmowy plan", "Your free plan")}</span>
-            <span className="block text-[15px] font-medium">{t("Zacznij biegać: od zera do 25 minut", "Start running: zero to 25 minutes")}</span>
-          </span>
-          <ArrowUpRight className="size-5 text-white/50" />
-        </Link>
+      {!paid ? (
+        <TodayPlan />
       ) : user ? (
         todays.length ? (
           <>

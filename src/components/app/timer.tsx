@@ -5,6 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { Minus, Pause, Play, Plus, RotateCcw, X } from "lucide-react";
 import { Portal } from "@/components/app/sheet";
 import { cn } from "@/lib/utils";
+import { addRun } from "@/lib/app/log";
+import { completeRef } from "@/lib/app/plans";
+import { todayWaw } from "@/lib/app/store";
 
 type Cfg = { warm: number; work: number; rest: number; reps: number };
 const PRESETS: { name: string; cfg: Cfg }[] = [
@@ -106,6 +109,11 @@ export function IntervalTimer() {
     return w > 0 && n > 0 ? { warm: 300, work: w, rest: Math.max(0, r), reps: Math.min(40, n) } : null;
   }, [q]);
   const label = q.get("label");
+  const ref = q.get("ref");
+  const walk = q.get("walk") === "1" || (!!label && /marsz/i.test(label));
+  const [km, setKm] = useState("");
+  const [rpe, setRpe] = useState(5);
+  const [logged, setLogged] = useState(false);
   const [cfg, setCfg] = useState<Cfg>(fromQuery ?? PRESETS[0].cfg);
   const [started, setStarted] = useState(false);
   const [running, setRunning] = useState(false);
@@ -208,7 +216,7 @@ export function IntervalTimer() {
     setT(0);
   };
 
-  const LABEL = label ? ({ warm: "Szybki marsz", work: "Trucht", rest: "Marsz", done: "Koniec" } as const) : ({ warm: "Przygotuj się", work: "Szybko", rest: "Spokojnie", done: "Koniec" } as const);
+  const LABEL = walk ? ({ warm: "Szybki marsz", work: "Trucht", rest: "Marsz", done: "Koniec" } as const) : ({ warm: "Przygotuj się", work: "Szybko", rest: "Spokojnie", done: "Koniec" } as const);
   const tone = phase === "work" ? "bg-[var(--accent)]" : phase === "rest" ? "bg-emerald-600" : "bg-[#18181b]";
   const set = (k: keyof Cfg) => (v: number) => setCfg({ ...cfg, [k]: v });
 
@@ -271,10 +279,41 @@ export function IntervalTimer() {
                 <button type="button" aria-label={running ? "Pauza" : "Wznów"} onClick={toggle} className="grid size-20 place-items-center rounded-full bg-white text-black active:scale-90">
                   {running ? <Pause className="size-8" /> : <Play className="size-8" />}
                 </button>
+              ) : logged ? (
+                <a href={ref ? "/app" : "/app/dziennik"} className="flex h-16 items-center rounded-full bg-white px-8 text-[16px] font-semibold text-black active:scale-95">
+                  {ref ? "Odhaczone w planie" : "Zapisane w dzienniku"}
+                </a>
               ) : (
-                <button type="button" onClick={stop} className="h-16 rounded-full bg-white px-8 text-[16px] font-semibold text-black active:scale-95">
-                  Gotowe
-                </button>
+                <div className="grid w-[min(22rem,88vw)] gap-2 rounded-[24px] bg-black/30 p-4">
+                  <p className="text-center text-[13px] text-white/80">{ref ? "Zapisz trening, a odhaczy się w planie" : "Zapisać trening w dzienniku?"}</p>
+                  <input inputMode="decimal" placeholder="Dystans w km (opcjonalnie)" value={km} onChange={(e) => setKm(e.target.value.replace(/[^0-9.,]/g, "").slice(0, 5))} className="h-11 rounded-xl bg-white/15 px-3 text-center text-[15px] text-white outline-none placeholder:text-white/55" />
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      [3, "Lekko"],
+                      [5, "Średnio"],
+                      [8, "Ciężko"],
+                    ].map(([n, l]) => (
+                      <button key={n} type="button" onClick={() => setRpe(n as number)} className={cn("h-10 rounded-xl text-[13px]", rpe === n ? "bg-white text-black" : "bg-white/15 text-white")}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const k = Number(km.replace(",", ".")) || 0;
+                      addRun({ day: todayWaw(), km: k > 0 && k < 100 ? k : 0, sec: Math.round(total), rpe, note: label || `${cfg.reps} × ${mmss(cfg.work)}`, ref: ref ?? undefined });
+                      completeRef(ref);
+                      setLogged(true);
+                    }}
+                    className="h-12 rounded-full bg-white text-[15px] font-semibold text-black active:scale-95"
+                  >
+                    Zapisz trening
+                  </button>
+                  <button type="button" onClick={stop} className="text-[12.5px] text-white/60">
+                    Nie zapisuj
+                  </button>
+                </div>
               )}
             </div>
           </div>

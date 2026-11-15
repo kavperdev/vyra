@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, MapPin, Pause, Play, Square, Volume2, VolumeX, X } from "lucide-react";
 import { Portal } from "@/components/app/sheet";
-import { readLog, type Run } from "@/components/app/run-log";
+import { addRun } from "@/lib/app/log";
+import { completeRef } from "@/lib/app/plans";
 import { useGps } from "@/lib/app/gps";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,15 @@ export function RunRecorder() {
   const [voice, setVoice] = useState(true);
   const [rpe, setRpe] = useState(4);
   const [saved, setSaved] = useState(false);
+  // A session from a plan: /app/bieg?ref=goal:…&t=title&p=fast-slow (s/km)
+  const [target, setTarget] = useState<{ ref: string; title: string; pace: [number, number] | null } | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const ref = q.get("ref");
+    if (!ref) return;
+    const p = (q.get("p") ?? "").split("-").map(Number);
+    setTarget({ ref, title: q.get("t") ?? "Trening z planu", pace: p.length === 2 && p.every((x) => x > 0) ? [p[0], p[1]] : null });
+  }, []);
   const gps = useGps(phase === "go", !running);
   const splits = useRef<number[]>([]);
   const lastKmAt = useRef(0);
@@ -71,9 +81,11 @@ export function RunRecorder() {
       splits.current.push(split);
       lastKmAt.current = elapsed;
       navigator.vibrate?.([150, 80, 150]);
-      if (voice) speak(`Kilometr ${k}. Czas ${sayTime(elapsed)}. Ostatni kilometr ${sayTime(split)}.`);
+      const tp = target?.pace;
+      const cue = tp ? (split < tp[0] - 3 ? " Zwolnij." : split > tp[1] + 3 ? " Przyspiesz." : " Dobre tempo.") : "";
+      if (voice) speak(`Kilometr ${k}. Czas ${sayTime(elapsed)}. Ostatni kilometr ${sayTime(split)}.${cue}`);
     }
-  }, [km, phase, elapsed, voice]);
+  }, [km, phase, elapsed, voice, target]);
 
   const start = () => {
     setPhase("go");
@@ -102,14 +114,9 @@ export function RunRecorder() {
   };
   const save = () => {
     if (km < 0.2) return;
-    try {
-      const log = readLog();
-      const run: Run = { id: crypto.randomUUID(), day: today(), km: Math.round(km * 100) / 100, sec: Math.round(elapsed), rpe, note: "GPS" };
-      localStorage.setItem("vyra-log", JSON.stringify([run, ...log]));
-      setSaved(true);
-    } catch {
-      /* storage */
-    }
+    addRun({ day: today(), km, sec: Math.round(elapsed), rpe, note: target ? `GPS · ${target.title}` : "GPS", ref: target?.ref });
+    completeRef(target?.ref);
+    setSaved(true);
   };
   const reset = () => location.reload();
 
@@ -118,8 +125,16 @@ export function RunRecorder() {
   if (phase === "ready")
     return (
       <div className="grid gap-3">
+        {target ? (
+          <div className="rounded-[20px] bg-white p-5 text-black">
+            <p className="text-[12px] text-black/50">Trening z Twojego planu</p>
+            <p className="mt-1 text-[18px] font-semibold leading-snug">{target.title}</p>
+            {target.pace ? <p className="mt-1 text-[13.5px] text-black/60">Tempo {fmtPace(target.pace[0])}–{fmtPace(target.pace[1])}/km. Głos powie, czy trzymasz tempo.</p> : null}
+            <p className="mt-2 text-[12.5px] text-black/50">Po zapisaniu trening odhaczy się w planie.</p>
+          </div>
+        ) : null}
         <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-5 text-center">
-          <p className="text-[13px] text-white/50">Zwykły bieg z GPS</p>
+          <p className="text-[13px] text-white/50">{target ? "Jak to działa" : "Zwykły bieg z GPS"}</p>
           <p className="mt-2 text-[15px] leading-relaxed text-white/75">Czas, dystans i tempo na żywo. Co kilometr głos podaje czas i tempo ostatniego kilometra. Bieg zapisze się w dzienniku.</p>
         </div>
         <button type="button" onClick={start} className="flex h-16 items-center justify-center gap-2 rounded-full bg-white text-[17px] font-semibold text-black active:scale-[0.98]">
@@ -196,10 +211,10 @@ export function RunRecorder() {
         ) : saved ? (
           <div className="grid gap-2">
             <p className="flex items-center justify-center gap-2 text-[15px] text-emerald-300">
-              <Check className="size-5" /> Zapisane w dzienniku
+              <Check className="size-5" /> {target ? "Zapisane i odhaczone w planie" : "Zapisane w dzienniku"}
             </p>
-            <Link href="/app/dziennik" className="flex h-14 items-center justify-center rounded-full bg-white text-[16px] font-semibold text-black">
-              Zobacz dziennik
+            <Link href={target ? "/app" : "/app/dziennik"} className="flex h-14 items-center justify-center rounded-full bg-white text-[16px] font-semibold text-black">
+              {target ? "Wróć do planu" : "Zobacz dziennik"}
             </Link>
           </div>
         ) : (

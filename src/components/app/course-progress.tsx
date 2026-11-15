@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Check, ChevronRight } from "lucide-react";
 import { Group, Row } from "@/components/app/ui";
 import { LESSONS } from "@/lib/app/course";
+import { save, useStore } from "@/lib/app/store";
 
 const KEY = "vyra-course-done";
 
@@ -18,18 +19,13 @@ function read(): string[] {
 }
 
 function write(done: string[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(done));
-  } catch {
-    /* private mode: progress just isn't remembered */
-  }
+  save(KEY, done);
 }
 
-/** Which lessons this device has finished. No account: progress lives on the phone. */
+/** Which lessons are finished (on this phone, and on the account when signed in). */
 export function useCourseDone() {
-  const [done, setDone] = useState<string[]>([]);
-  useEffect(() => setDone(read()), []);
-  return done;
+  const [v] = useStore<unknown>(KEY, []);
+  return Array.isArray(v) ? (v as unknown[]).filter((x): x is string => typeof x === "string") : [];
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");

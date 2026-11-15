@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fmtPace, fmtTime, timeFor, vdotOf, zonesFor } from "@/lib/method/engine";
 import { Card, Tile } from "@/components/app/ui";
 import { cn } from "@/lib/utils";
+import { useStore } from "@/lib/app/store";
 
 const DIST = [
   { k: "5k", label: "5 km", m: 5000 },
@@ -24,23 +25,7 @@ type Result = { dist: string; time: string };
 
 /** Last result entered in the tools, shared with the workout library (personal paces). */
 export function useResult() {
-  const [r, setR] = useState<Result | null>(null);
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem(KEY);
-      if (v) setR(JSON.parse(v));
-    } catch {
-      /* none */
-    }
-  }, []);
-  const save = (x: Result) => {
-    setR(x);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(x));
-    } catch {
-      /* private mode */
-    }
-  };
+  const [r, save] = useStore<Result | null>(KEY, null);
   const p5k = useMemo(() => {
     if (!r) return null;
     const d = DIST.find((d) => d.k === r.dist);

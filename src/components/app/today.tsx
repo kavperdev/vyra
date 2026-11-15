@@ -9,6 +9,7 @@ import { CountUp, ParticleRing } from "@/components/charts/particle-ring";
 import { Card, Chip, Tile } from "@/components/app/ui";
 import { readinessLevel } from "@/lib/readiness";
 import { cn } from "@/lib/utils";
+import { save } from "@/lib/app/store";
 
 type Hour = { time: string; temp: number | null; wind: number | null; humidity: number | null; rain: number | null; symbol: string | null };
 type Conditions = {
@@ -44,11 +45,7 @@ const store = {
     }
   },
   set(k: string, v: unknown) {
-    try {
-      localStorage.setItem(k, JSON.stringify(v));
-    } catch {
-      /* private mode */
-    }
+    save(k, v);
   },
 };
 

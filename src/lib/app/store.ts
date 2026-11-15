@@ -1,0 +1,73 @@
+import { useEffect, useState } from "react";
+
+/**
+ * One store for everything the app keeps: the run log, plans, results, goals and course progress.
+ * Every write goes through save(), which tells all open screens (they update at once) and marks the key
+ * for the account sync, so a signed-in runner sees the same data on every phone.
+ */
+
+export const SYNCED = ["vyra-log", "vyra-log-del", "vyra-result", "vyra-start-plan", "vyra-start-on", "vyra-goal-plan", "vyra-me", "vyra-onboarded", "vyra-course-done", "vyra-swaps"] as const;
+export type SyncedKey = (typeof SYNCED)[number];
+const TS = "vyra-ts"; // when each key last changed on this phone
+export const STORE_EVENT = "vyra:store";
+
+export function load<T>(key: string, fallback: T): T {
+  try {
+    const v = localStorage.getItem(key);
+    return v == null ? fallback : (JSON.parse(v) as T);
+  } catch {
+    return fallback;
+  }
+}
+
+export function stamps(): Record<string, number> {
+  return load<Record<string, number>>(TS, {});
+}
+
+/** Write a value (null removes it). `ts` is set by the sync when it takes a newer copy from the account. */
+export function save(key: string, value: unknown, opts: { ts?: number; silent?: boolean } = {}) {
+  try {
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
+    if ((SYNCED as readonly string[]).includes(key)) {
+      const s = stamps();
+      s[key] = opts.ts ?? Date.now();
+      localStorage.setItem(TS, JSON.stringify(s));
+    }
+  } catch {
+    /* private mode: the value lives until the tab closes */
+  }
+  if (!opts.silent) window.dispatchEvent(new CustomEvent(STORE_EVENT, { detail: { key, local: opts.ts == null } }));
+}
+
+/** React state bound to a key: re-renders when any screen (or the sync) changes it. */
+export function useStore<T>(key: string, fallback: T): [T, (v: T) => void, boolean] {
+  const [v, setV] = useState<T>(fallback);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setV(load(key, fallback));
+    setReady(true);
+    const on = (e: Event) => {
+      const k = (e as CustomEvent<{ key: string }>).detail?.key;
+      if (k === key || k === "*") setV(load(key, fallback));
+    };
+    window.addEventListener(STORE_EVENT, on);
+    return () => window.removeEventListener(STORE_EVENT, on);
+    // fallback is a constant per call site
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return [v, (nv: T) => save(key, nv), ready];
+}
+
+/** Re-render on any store change (for views that combine several keys). */
+export function useStoreTick(): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const on = () => setN((x) => x + 1);
+    window.addEventListener(STORE_EVENT, on);
+    return () => window.removeEventListener(STORE_EVENT, on);
+  }, []);
+  return n;
+}
+
+export const todayWaw = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());

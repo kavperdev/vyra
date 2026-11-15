@@ -1,65 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Check, Play, UserRound } from "lucide-react";
 import { syncStartPlan } from "@/lib/actions/free-account";
 import { FREE_PLAN, FREE_PLAN_RULES } from "@/lib/free-plan";
+import { START_KEY, startDone, timerFor } from "@/lib/app/plans";
+import { useStore } from "@/lib/app/store";
 import { cn } from "@/lib/utils";
-
-const KEY = "vyra-start-plan";
-
-/** "8 × (1 min truchtu + 2 min marszu)" → timer settings. */
-export function timerFor(s: string): string | null {
-  const m = s.match(/^(\d+)\s*×\s*\((\d+(?:,\d+)?)\s*min[^+]*\+\s*(\d+(?:,\d+)?)\s*min/);
-  if (!m) return null;
-  const sec = (x: string) => Math.round(Number(x.replace(",", ".")) * 60);
-  return `/app/timer?n=${m[1]}&w=${sec(m[2])}&r=${sec(m[3])}&label=${encodeURIComponent(s)}`;
-}
-
-function read(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-
-function keep(v: string[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(v));
-  } catch {
-    /* private mode */
-  }
-}
 
 /** Signed in: progress is saved with the account, so it is the same on every phone. */
 export function FreePlan({ signedIn = false }: { signedIn?: boolean }) {
-  const [done, setDone] = useState<string[]>([]);
+  const [raw, setDoneStore] = useStore<unknown>(START_KEY, []);
+  const done = Array.isArray(raw) ? (raw as string[]) : [];
+  const [active, setActive] = useStore<boolean>("vyra-start-on", false);
   useEffect(() => {
-    const local = read();
-    setDone(local);
     if (!signedIn) return;
-    syncStartPlan(local)
+    syncStartPlan(startDone())
       .then((v) => {
-        if (!v) return;
-        setDone(v);
-        keep(v);
+        if (v && v.length !== startDone().length) setDoneStore(v);
       })
       .catch(() => undefined);
+    // once per screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn]);
   const toggle = (id: string) => {
-    const on = !done.includes(id);
-    const next = on ? [...done, id] : done.filter((x) => x !== id);
-    setDone(next);
-    keep(next);
+    const tick = !done.includes(id);
+    const next = tick ? [...done, id] : done.filter((x) => x !== id);
+    setDoneStore(next);
+    if (!active) setActive(true);
     try {
       navigator.vibrate?.(10);
     } catch {
       /* no vibration */
     }
-    if (signedIn) syncStartPlan(next, { id, on }).catch(() => undefined);
+    if (signedIn) syncStartPlan(next, { id, on: tick }).catch(() => undefined);
   };
   const total = FREE_PLAN.length * 3;
   const pct = Math.round((done.length / total) * 100);
@@ -78,6 +53,11 @@ export function FreePlan({ signedIn = false }: { signedIn?: boolean }) {
           </span>
         </Link>
       )}
+      {!active && !done.length ? (
+        <button type="button" onClick={() => setActive(true)} className="rounded-full bg-[var(--accent)] py-3.5 text-[15px] font-semibold text-white active:scale-[0.98]">
+          Zaczynam ten plan
+        </button>
+      ) : null}
       <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
         <div className="flex items-end justify-between">
           <div>
@@ -107,7 +87,7 @@ export function FreePlan({ signedIn = false }: { signedIn?: boolean }) {
               {w.sessions.map((s, i) => {
                 const id = `${w.week}-${i}`;
                 const on = done.includes(id);
-                const timer = timerFor(s.pl);
+                const timer = timerFor(s.pl, `start:${id}`);
                 return (
                   <div key={id} className="flex items-center gap-3 rounded-[14px] bg-white/[0.04] p-2.5">
                     <button

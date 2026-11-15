@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Onboarding } from "@/components/app/onboarding";
+import { AccountSync } from "@/components/app/account-sync";
 import { StayInApp } from "@/components/app/stay-in-app";
 import { AppTabBar } from "@/components/app/tab-bar";
 import { RevealObserver } from "@/components/site/reveal";
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">{children}</main>
       <AppTabBar />
       <Onboarding signedIn={!!user} />
+      <AccountSync signedIn={!!user} />
       <StayInApp />
       <RevealObserver />
       <SourceTracker />
