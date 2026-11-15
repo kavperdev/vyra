@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Eyebrow, Faq, PageHero, Reveal, SectionHead, Steps, wrap } from "@/components/site/blocks";
 import { ClubDemoForm } from "@/components/site/club-forms";
+import { cn } from "@/lib/utils";
 import { ClubPricing, type ClubLine } from "@/components/site/club-pricing";
 import { SPORTS } from "@/lib/clubs/fitness";
 import { getT } from "@/lib/i18n/server";
