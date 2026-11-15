@@ -21,7 +21,10 @@ export async function signUpFree(input: { full_name: string; email: string; pass
   const supabase = await createClient();
   // Without the free-account migration a sign-up with no invitation would become a coach: refuse instead.
   const ready = await supabase.rpc("free_signup_ready");
-  if (ready.error || ready.data !== true) return { ok: false, error: "Zakładanie kont chwilowo nie działa. Spróbuj za chwilę." };
+  if (ready.error || ready.data !== true) {
+    console.error("[free-signup] not ready", ready.error?.message);
+    return { ok: false, error: "Zakładanie kont jeszcze nie działa (brak SQL free_accounts.sql w bazie). Kod: FS1" };
+  }
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
@@ -36,7 +39,12 @@ export async function signUpFree(input: { full_name: string; email: string; pass
     const m = error.message.toLowerCase();
     if (m.includes("already registered")) return { ok: false, error: "Konto z tym adresem już istnieje. Zaloguj się.", fieldErrors: { email: ["Konto już istnieje"] } };
     if (m.includes("password")) return { ok: false, error: "Hasło nie spełnia wymagań bezpieczeństwa.", fieldErrors: { password: ["Za słabe hasło"] } };
-    return { ok: false, error: "Nie udało się założyć konta. Spróbuj ponownie." };
+    console.error("[free-signup]", error.status, error.message);
+    if (m.includes("rate limit")) return { ok: false, error: "Za dużo prób zakładania kont w krótkim czasie. Spróbuj za godzinę. Kod: FS2" };
+    if (m.includes("sending") || m.includes("smtp") || m.includes("not authorized")) return { ok: false, error: "Nie udało się wysłać maila z potwierdzeniem. Kod: FS3" };
+    if (m.includes("database error")) return { ok: false, error: "Błąd bazy przy tworzeniu konta. Kod: FS4" };
+    if (m.includes("signups not allowed") || m.includes("disabled")) return { ok: false, error: "Rejestracja jest wyłączona w ustawieniach Supabase. Kod: FS5" };
+    return { ok: false, error: `Nie udało się założyć konta (${error.message}). Kod: FS6` };
   }
   // The free plan's saved progress is tied to the e-mail, so it is the same on every device.
   await startPlan(parsed.data.email, parsed.data.full_name).catch(() => null);
