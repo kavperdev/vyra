@@ -9,6 +9,7 @@ import { INTENSITY_LABEL, RECOVERY_LABEL, SEGMENT_TYPE_LABEL } from "@/lib/train
 import { formatDistance, formatDuration, formatKg, formatPace } from "@/lib/format";
 import type { RunningSegment, StrengthExercise } from "@/lib/types";
 import { tl } from "@/lib/i18n/runtime";
+import { useGps } from "@/lib/app/gps";
 import { cn } from "@/lib/utils";
 
 /** What the player hands to the result form when the athlete finishes (event "vyra:workout-finished"). */
@@ -33,6 +34,9 @@ interface Step {
   /** Countdown length; null = an open step the athlete ends with "Done". */
   seconds: number | null;
   distanceM: number | null;
+  /** Target pace range in s/km, for the voice pace check. */
+  paceMin?: number | null;
+  paceMax?: number | null;
   lap?: { segment_id: string; rep_index: number };
   set?: { exercise_id: string; set_id: string; reps: number | null; load_kg: number | null };
 }
@@ -54,6 +58,8 @@ function runningSteps(segments: RunningSegment[]): Step[] {
         how,
         seconds: s.distance_m ? null : s.duration_s,
         distanceM: s.distance_m,
+        paceMin: s.target_pace_min_s,
+        paceMax: s.target_pace_max_s,
         lap: s.segment_type === "work" ? { segment_id: s.id, rep_index: i + 1 } : undefined,
       });
       if (i < reps - 1 && (s.recovery_duration_s || s.recovery_distance_m)) {
@@ -217,6 +223,12 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
   const lock = useRef<{ release: () => Promise<void> } | null>(null);
   const lastBeep = useRef<number | null>(null);
 
+  // GPS: measures distance on the run, ends distance steps by itself and checks the pace.
+  const gps = useGps(open && isRun && phase === "go", !running);
+  const gpsRef = useRef(gps);
+  gpsRef.current = gps;
+  const stepStart = useRef(0);
+  const lastCue = useRef(0);
   const live = since != null ? (now - since) / 1000 : 0;
   const elapsed = Math.floor(totalBase + live);
   const stepElapsed = Math.floor(stepBase + live);
@@ -269,6 +281,8 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
 
   const begin = () => {
     unlockAudio();
+    stepStart.current = 0;
+    lastCue.current = Date.now();
     beep(audio.current, 880, 0.12);
     setSince(Date.now());
     setPhase("go");
@@ -356,6 +370,8 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
       }
       setTotalBase((b) => b + liveNow);
       setStepBase(0);
+      stepStart.current = gpsRef.current.dist;
+      lastCue.current = t;
       setSince(running ? t : null);
       setNow(t);
       lastBeep.current = null;
@@ -403,12 +419,38 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
     }
   }, [left, running, phase, go, idx]);
 
+  const gpsOn = isRun && gps.state === "ok";
+  const stepDist = Math.max(0, gps.dist - stepStart.current);
+
+  // Distance steps end on their own when the GPS has covered the distance.
+  useEffect(() => {
+    if (phase !== "go" || !running || !gpsOn || !step?.distanceM || step.seconds != null) return;
+    if (stepDist >= step.distanceM) {
+      beep(audio.current, 990, 0.25);
+      navigator.vibrate?.([120, 60, 120]);
+      go(idx + 1);
+    }
+  }, [stepDist, gpsOn, phase, running, step, go, idx]);
+
+  // Pace check by voice, once a minute during work steps that have a target pace.
+  useEffect(() => {
+    if (phase !== "go" || !running || !gpsOn || !voice || step?.kind !== "work" || !gps.pace) return;
+    if (!step.paceMin && !step.paceMax) return;
+    if (Date.now() - lastCue.current < 60000) return;
+    lastCue.current = Date.now();
+    const lo = step.paceMin ?? step.paceMax!;
+    const hi = step.paceMax ?? step.paceMin!;
+    const p = Math.round(gps.pace);
+    const pace = `${Math.floor(p / 60)} ${String(p % 60).padStart(2, "0")}`;
+    say(p > hi + 3 ? `${tl("Tempo", "Pace")} ${pace}. ${tl("Przyspiesz", "Speed up")}.` : p < lo - 3 ? `${tl("Tempo", "Pace")} ${pace}. ${tl("Zwolnij", "Ease off")}.` : `${tl("Tempo", "Pace")} ${pace}. ${tl("Dobrze", "Good")}.`);
+  }, [gps.pace, gpsOn, phase, running, voice, step]);
+
   // ---------------------------------------------------------------- result
   const result = (): WorkoutResult => {
     const covered = steps.reduce((m, s, i) => (doneSteps.includes(i) && s.distanceM ? m + s.distanceM : m), 0);
     return {
       seconds: elapsed,
-      distanceM: covered,
+      distanceM: gps.dist > 200 ? Math.round(gps.dist) : covered,
       laps: Object.entries(laps).map(([k, sec]) => {
         const [segment_id, rep] = k.split(":");
         return { segment_id, rep_index: Number(rep), seconds: Number(sec) };
@@ -494,6 +536,11 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
           <span className="truncate text-sm font-medium">{title}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {phase === "go" && isRun ? (
+            <span className={cn("num mr-1 rounded-full px-2 py-0.5 text-[12px] tabular-nums", gpsOn ? "bg-white/10 text-white/80" : "text-white/40")}>
+              {gpsOn ? `${(gps.dist / 1000).toFixed(2).replace(".", ",")} km` : gps.state === "denied" ? tl("brak GPS", "no GPS") : "GPS…"}
+            </span>
+          ) : null}
           {phase === "go" ? (
             <span className={cn("num mr-1 text-sm tabular-nums", running ? "text-white/70" : "text-accent")}>
               {formatDuration(elapsed)}
@@ -571,7 +618,7 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
             </ol>
             <p className="mt-4 text-[12px] leading-relaxed text-white/45">
               {isRun
-                ? tl("Odcinki na czas odliczają się same. Odcinki na dystans kończysz przyciskiem „Gotowe”: czas zapisze się jako okrążenie. Ekran nie zgaśnie, a jeśli zamkniesz kartę, trening wznowisz od tego samego miejsca.", "Timed steps count down on their own. End distance steps with “Done”: the time is saved as a lap. The screen stays on, and if you close the tab you can resume where you stopped.")
+                ? tl("Odcinki na czas odliczają się same. Odcinki na dystans mierzy GPS i kończy sam, a głos co minutę mówi, czy trzymasz tempo. Bez GPS kończysz je przyciskiem „Gotowe”. Ekran nie zgaśnie, a jeśli zamkniesz kartę, trening wznowisz od tego samego miejsca.", "Timed steps count down on their own. Distance steps are measured by GPS and end by themselves, and a voice tells you every minute whether you hold the pace. Without GPS, end them with “Done”. The screen stays on, and if you close the tab you can resume where you stopped.")
                 : tl("Po każdej serii zapisz powtórzenia i ciężar, potem „Seria zrobiona”. Przerwy odliczają się same.", "After each set log reps and load, then “Set done”. Rest counts down on its own.")}
             </p>
           </div>
@@ -663,13 +710,21 @@ export function WorkoutPlayer({ sessionId, title, segments, exercises, autoStart
               ) : (
                 <span className="grid gap-1">
                   <span className="text-[11px] uppercase tracking-[0.16em] text-white/50">{tl("Cel", "Target")}</span>
-                  <span className="num text-[clamp(1.75rem,9vw,3rem)] font-semibold leading-none">{step.goal}</span>
+                  <span className="num text-[clamp(1.75rem,9vw,3rem)] font-semibold leading-none">
+                    {gpsOn && step.distanceM ? `${Math.max(0, Math.round(step.distanceM - stepDist))} m` : step.goal}
+                  </span>
+                  {gpsOn && step.distanceM ? <span className="text-[12px] text-white/50">{tl("do końca", "to go")}</span> : null}
                   <span className="num mt-1 text-lg tabular-nums text-white/70">{formatDuration(stepElapsed)}</span>
                 </span>
               )}
             </div>
 
             {step.how ? <p className="max-w-sm text-[15px] leading-snug text-white/75">{step.how}</p> : null}
+            {gpsOn && gps.pace ? (
+              <p className="num text-sm tabular-nums text-white/60">
+                {tl("Tempo teraz", "Pace now")} <span className="text-lg font-semibold text-white">{formatPace(gps.pace)}</span> /km
+              </p>
+            ) : null}
 
             {step.set ? (
               <div className="flex flex-wrap justify-center gap-6">
