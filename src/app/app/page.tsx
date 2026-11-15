@@ -31,10 +31,11 @@ export default async function AppHome() {
     todays = (data ?? []) as typeof todays;
   }
   const athlete = user?.profile.role === "athlete";
-  let synced: { sleep: number; energy: number; soreness: number; pain: boolean } | null = null;
+  type Synced = { sleep: number; energy: number; soreness: number; pain: boolean };
+  let synced: Synced | null = null;
   if (athlete && user) {
     const { data, error } = await supabase.from("readiness").select("sleep, energy, soreness, pain").eq("athlete_id", user.id).eq("day", todayISO(user.profile.timezone)).maybeSingle();
-    if (!error && data) synced = data as typeof synced;
+    if (!error && data) synced = data as Synced;
   }
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
   const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
