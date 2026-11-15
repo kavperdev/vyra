@@ -131,6 +131,15 @@ export function RunLog() {
                 <p className="mt-0.5 truncate text-[12px] capitalize text-white/45">
                   {fmtDay(r.day)}{r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}{r.note ? ` · ${r.note}` : ""}
                 </p>
+                {r.splits?.length ? (
+                  <p className="app-scroll mt-1.5 flex gap-1 overflow-x-auto text-[11px] tabular-nums text-white/55">
+                    {r.splits.map((s, i) => (
+                      <span key={i} className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5">
+                        {i + 1}: {fmtPace(s)}
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
               </div>
               <button type="button" aria-label="Usuń" onClick={() => remove(r.id)} className="grid size-8 place-items-center rounded-full text-white/30 active:bg-white/10">
                 <Trash2 className="size-4" />
@@ -178,7 +187,7 @@ export function RunLog() {
 export function HomeWeek() {
   const w = useWeek();
   return (
-    <a href="/app/dziennik" className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
+    <a href="/app/postepy" className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-[12px] text-white/45">Ten tydzień</p>

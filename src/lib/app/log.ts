@@ -1,7 +1,7 @@
 import { load, save, useStore } from "@/lib/app/store";
 
 /** The run log: every run from the GPS, the timer, a manual entry or Strava. Ticks plan sessions by date. */
-export type Run = { id: string; day: string; km: number; sec: number; rpe: number; note: string; ref?: string };
+export type Run = { id: string; day: string; km: number; sec: number; rpe: number; note: string; ref?: string; splits?: number[] };
 export const LOG = "vyra-log";
 const DEL = "vyra-log-del"; // removed ids, so the account sync does not bring them back
 

@@ -11,7 +11,7 @@ export const GOAL_DISTS: { k: GoalDist; label: string; m: number }[] = [
   { k: "marathon", label: "Maraton", m: 42195 },
 ];
 
-export type GoalInput = { dist: GoalDist; race: string; p5k: number; days: 3 | 4 | 5; name?: string };
+export type GoalInput = { dist: GoalDist; race: string; p5k: number; days: 3 | 4 | 5; name?: string; moves?: Record<string, string> };
 export type Kind = "easy" | "long" | "quality" | "race" | "shake";
 export type GoalSession = {
   id: string;
@@ -186,6 +186,15 @@ export function buildPlan(inp: GoalInput, today = todayLocal()): GoalPlan {
       } else add({ date, kind: "easy", title: `Spokojnie ${easyKm} km`, desc: `Luźno ${pr(z.easy)}.${l.t === "Q2" || phase === "Baza" ? " Na koniec 6 × 20 s przebieżki." : ""}`, km: easyKm, pace: z.easy, timer: null });
     }
     weeks.push({ n, monday: mon, phase: recovery ? "Odpoczynek" : phase, km: r1(sessions.reduce((a, s) => a + s.km, 0)), sessions });
+  }
+  // Sessions the runner moved to another day of the same week keep their id and take the new date.
+  const moves = inp.moves ?? {};
+  for (const w of weeks) {
+    for (const s of w.sessions) {
+      const to = moves[s.id];
+      if (to && s.kind !== "race" && to >= w.monday && to <= addDays(w.monday, 6) && to < inp.race) s.date = to;
+    }
+    w.sessions.sort((a, b) => a.date.localeCompare(b.date));
   }
   return { weeks, start, predicted, racePace, skipped };
 }

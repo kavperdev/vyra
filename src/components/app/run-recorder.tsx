@@ -114,7 +114,7 @@ export function RunRecorder() {
   };
   const save = () => {
     if (km < 0.2) return;
-    addRun({ day: today(), km, sec: Math.round(elapsed), rpe, note: target ? `GPS · ${target.title}` : "GPS", ref: target?.ref });
+    addRun({ day: today(), km, sec: Math.round(elapsed), rpe, note: target ? `GPS · ${target.title}` : "GPS", ref: target?.ref, splits: splits.current.length ? splits.current.map((x) => Math.round(x)) : undefined });
     completeRef(target?.ref);
     setSaved(true);
   };

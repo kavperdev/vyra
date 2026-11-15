@@ -8,7 +8,7 @@ import { siteProps } from "@/components/app/ui";
 import { TimeInput } from "@/components/app/tools";
 import { GOALS, LEVELS, ME_KEY, ONBOARD_KEY, recommend, type Goal, type Level, type Me } from "@/lib/app/me";
 import { cn } from "@/lib/utils";
-import { save } from "@/lib/app/store";
+import { STORE_EVENT, save } from "@/lib/app/store";
 
 const get = <T,>(k: string): T | null => {
   try {
@@ -71,8 +71,16 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
       setStep(0);
       setOpen(true);
     };
+    // A new phone, signed in: the account already knows this runner, so the welcome closes itself.
+    const synced = (e: Event) => {
+      if ((e as CustomEvent<{ key: string }>).detail?.key === "*" && get(ONBOARD_KEY)) setOpen(false);
+    };
     window.addEventListener(OPEN_ONBOARDING, reopen);
-    return () => window.removeEventListener(OPEN_ONBOARDING, reopen);
+    window.addEventListener(STORE_EVENT, synced);
+    return () => {
+      window.removeEventListener(OPEN_ONBOARDING, reopen);
+      window.removeEventListener(STORE_EVENT, synced);
+    };
   }, []);
 
   useEffect(() => {

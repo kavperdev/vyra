@@ -5,6 +5,7 @@ import { AccountSync } from "@/components/app/account-sync";
 import { AccessProvider } from "@/components/app/access";
 import { premiumStatus } from "@/lib/app/premium";
 import { IosInstallNudge } from "@/components/app/ios-install-nudge";
+import { BadgeWatcher } from "@/components/app/progress";
 import { StayInApp } from "@/components/app/stay-in-app";
 import { AppTabBar } from "@/components/app/tab-bar";
 import { RevealObserver } from "@/components/site/reveal";
@@ -53,6 +54,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Onboarding signedIn={!!user} />
       <AccountSync signedIn={!!user} />
       <IosInstallNudge />
+      <BadgeWatcher />
       <StayInApp />
       <RevealObserver />
       <SourceTracker />

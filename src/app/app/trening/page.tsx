@@ -88,6 +88,7 @@ export default async function AppTraining() {
 
       <SectionHead title={t("Treningi", "Workouts")} />
       <Group>
+        <Row href="/app/postepy" icon={<TrendingUp className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} sub={t("Kilometry, rekordy, forma, serie", "Kilometres, records, form, streaks")} />
         <Row href="/app/dziennik" icon={<NotebookPen className="size-4" />} title={t("Dziennik biegów", "Run log")} sub={t("Kilometry z tygodnia i miesiąca", "Weekly and monthly kilometres")} />
         <Row href="/app/bieg" icon={<Footprints className="size-4" />} title={t("Biegnij z GPS", "Run with GPS")} sub={t("Dystans, tempo i głos co kilometr", "Distance, pace and a voice split every km")} />
         <Row href="/app/timer" icon={<TimerReset className="size-4" />} title={t("Timer interwałów", "Interval timer")} sub={t("Dźwięk i wibracja przy każdej zmianie", "Sound and vibration at every change")} />

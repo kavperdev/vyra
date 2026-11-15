@@ -293,6 +293,35 @@ export function GoalPlanView() {
                 </Chip>
               </div>
             ) : null}
+            {open.kind !== "race" ? (
+              <div>
+                <p className="mb-1.5 text-[12px] text-white/45">Nie pasuje Ci ten dzień? Przenieś w tym tygodniu:</p>
+                <div className="grid grid-cols-7 gap-1">
+                  {(() => {
+                    const wk = plan.weeks.find((w) => w.sessions.some((s) => s.id === open.id));
+                    if (!wk) return null;
+                    return Array.from({ length: 7 }, (_, i) => addDays(wk.monday, i)).map((d, i) => {
+                      const taken = wk.sessions.some((s) => s.id !== open.id && s.date === d);
+                      const on = d === open.date;
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          disabled={taken || d >= g.race}
+                          onClick={() => {
+                            update({ ...g, moves: { ...(g.moves ?? {}), [open.id]: d } });
+                            setOpen({ ...open, date: d });
+                          }}
+                          className={cn("h-10 rounded-lg text-[12px] transition", on ? "bg-white text-black" : "bg-white/[0.06] text-white/70", (taken || d >= g.race) && !on && "opacity-25")}
+                        >
+                          {["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"][i]}
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            ) : null}
             <div className="mt-1 grid gap-2">
               {open.timer ? (
                 <Link href={`${open.timer}&ref=${encodeURIComponent(`goal:${open.id}`)}`} className="flex items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">

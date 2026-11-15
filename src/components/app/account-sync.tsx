@@ -5,7 +5,7 @@ import { pullAppState, pushAppState, type StateRow } from "@/lib/actions/app-sta
 import { mergeLogs } from "@/lib/app/log";
 import { STORE_EVENT, SYNCED, load, save, stamps } from "@/lib/app/store";
 
-const UNION = ["vyra-start-plan", "vyra-course-done", "vyra-log-del"];
+const UNION = ["vyra-start-plan", "vyra-course-done", "vyra-log-del", "vyra-badges-seen"];
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const has = (k: string) => {
   try {
