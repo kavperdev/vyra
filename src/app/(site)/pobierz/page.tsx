@@ -31,8 +31,8 @@ export default async function DownloadPage() {
         eyebrow={t("Aplikacja VYRA", "The VYRA app")}
         title={t("VYRA na Twoim telefonie w 30 sekund", "VYRA on your phone in 30 seconds")}
         lead={t(
-          "Bez sklepu z aplikacjami i bez zakładania czegokolwiek. Pokażemy Ci dokładnie, co stuknąć na Twoim telefonie.",
-          "No app store, nothing to set up. We’ll show you exactly what to tap on your phone.",
+          "Na Androida pobierasz aplikację prosto stąd, na iPhonie dodajesz ją do ekranu w 3 stuknięcia. Pokażemy Ci dokładnie, co zrobić na Twoim telefonie.",
+          "On Android download the app right here; on iPhone add it to your home screen in 3 taps. We’ll show you exactly what to do on your phone.",
         )}
       />
       <section className={`${wrap} pb-20`}>

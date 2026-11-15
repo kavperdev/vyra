@@ -32,10 +32,18 @@ export function InstallRow() {
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-white/80">
           <Download className="size-4" />
         </span>
-        <span className="min-w-0 flex-1 truncate text-[15px] font-medium">Dodaj VYRA do ekranu głównego</span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{ios ? "Dodaj VYRA do ekranu głównego" : "Pobierz aplikację VYRA"}</span>
         <ChevronRight className="size-4 shrink-0 text-white/25" />
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Zainstaluj VYRA" sub="Działa jak aplikacja: pełny ekran, bez paska przeglądarki.">
+        {ios ? null : (
+          <div className="mb-3 grid gap-2">
+            <a href="/download/vyra.apk" download="VYRA.apk" className="flex h-13 items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
+              <Download className="size-4" /> Pobierz VYRA na Androida
+            </a>
+            <p className="px-1 text-[12.5px] leading-relaxed text-white/50">Otwórz pobrany plik i stuknij „Zainstaluj”. Telefon może zapytać o zgodę na instalowanie z przeglądarki: zezwól raz. Albo zainstaluj bez pliku:</p>
+          </div>
+        )}
         <ol className="grid gap-2">
           {steps.map(([Icon, title, sub], i) => {
             const I = Icon as typeof Share;

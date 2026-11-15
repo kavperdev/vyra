@@ -230,9 +230,21 @@ export function InstallGuide({ qr }: { qr: React.ReactNode }) {
 
   const androidSteps = (
     <div className="grid gap-5">
+      <div className="grid gap-3 rounded-2xl border border-white/15 bg-white/5 p-5">
+        <a href="/download/vyra.apk" download="VYRA.apk" className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white text-base font-semibold text-black sm:w-fit sm:px-10">
+          <Download className="size-5" /> {t("Pobierz aplikację VYRA (Android, 1 MB)", "Download the VYRA app (Android, 1 MB)")}
+        </a>
+        <p className="text-sm leading-relaxed text-white/60">
+          {t(
+            "Otwórz pobrany plik VYRA.apk i stuknij „Zainstaluj”. Telefon może zapytać o zgodę na instalowanie z przeglądarki: zezwól raz. Aplikacja aktualizuje się sama.",
+            "Open the downloaded VYRA.apk and tap “Install”. Your phone may ask to allow installs from the browser: allow it once. The app updates itself.",
+          )}
+        </p>
+      </div>
+      <p className="text-sm text-white/45">{t("Wolisz bez pobierania pliku? Zainstaluj prosto z przeglądarki:", "Rather not download a file? Install straight from the browser:")}</p>
       {prompt ? (
-        <button type="button" onClick={install} className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-white text-base font-semibold text-black sm:w-fit sm:px-10">
-          <Download className="size-5" /> {t("Zainstaluj VYRA", "Install VYRA")}
+        <button type="button" onClick={install} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/25 text-sm font-semibold text-white sm:w-fit sm:px-8">
+          <Download className="size-4" /> {t("Zainstaluj z przeglądarki", "Install from the browser")}
         </button>
       ) : null}
       <ol className="grid gap-4">
