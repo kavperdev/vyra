@@ -25,12 +25,12 @@ export default async function FreePlanPage() {
         eyebrow={t("Darmowy plan", "Free plan")}
         title={t("Od zera do 25 minut biegu w 6 tygodni", "From zero to 25 minutes of running in 6 weeks")}
         lead={t(
-          "3 treningi w tygodniu po około 35 minut. Bez sprzętu, bez zgadywania. Zostaw imię i e-mail, a plan otworzy się od razu.",
-          "3 sessions a week, about 35 minutes each. No equipment, no guesswork. Leave your name and e-mail and the plan opens instantly.",
+          "3 treningi w tygodniu po około 35 minut. Bez sprzętu, bez zgadywania. Odbierasz go za darmo w aplikacji VYRA, z timerem do każdego treningu.",
+          "3 sessions a week, about 35 minutes each. No equipment, no guesswork. Get it free in the VYRA app, with a timer for every session.",
         )}
       >
         <a
-          href="#plan"
+          href="/app/konto?next=/app/plan"
           className="inline-flex h-12 items-center rounded-full bg-white px-7 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent)] hover:text-white"
         >
           {t("Odbierz plan", "Get the plan")}
@@ -74,8 +74,8 @@ export default async function FreePlanPage() {
               {
                 q: t("Czy naprawdę jest za darmo?", "Is it really free?"),
                 a: t(
-                  "Tak. Podajesz imię i e-mail, plan otwiera się od razu. Nie podajesz karty i nic nie kupujesz.",
-                  "Yes. You enter your name and e-mail and the plan opens instantly. No card, nothing to buy.",
+                  "Tak. Zakładasz darmowe konto w aplikacji VYRA i plan otwiera się od razu. Nie podajesz karty i nic nie kupujesz.",
+                  "Yes. Create a free account in the VYRA app and the plan opens instantly. No card, nothing to buy.",
                 ),
               },
               {

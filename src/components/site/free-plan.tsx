@@ -511,15 +511,11 @@ function SaveBadge({ state }: { state: SaveState | null }) {
 type Opened = { token: string | null; done: Done; name: string };
 
 /**
- * E-mail gate for the free plan. Week 1 is visible up front; the rest opens after the form.
- * Once given, access and progress live on the server (cookie + personal link), not only in the browser.
+ * Free plan on the website: week 1 visible, the full plan is claimed in the VYRA app (free account).
+ * Runners who opened it here earlier (cookie + personal link) still see their saved plan.
  */
 export function FreePlan() {
   const [opened, setOpened] = useState<Opened | null>(null);
-  const [notice, setNotice] = useState(false);
-  const [v, setV] = useState(EMPTY);
-  const [errors, setErrors] = useState<Errors>({});
-  const [pending, start] = useTransition();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -558,29 +554,19 @@ export function FreePlan() {
   if (opened) {
     return (
       <div className="grid gap-6">
-        {notice ? (
-          <p role="status" className="flex items-start gap-2 rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/75">
-            <Mail className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" />
-            {tl(
-              "Ten e-mail ma już zapisany plan. Wysłaliśmy na niego link: otwórz go, a wróci cały Twój postęp.",
-              "This e-mail already has a saved plan. We sent you a link: open it and all your progress comes back.",
-            )}
-          </p>
-        ) : null}
+        <Link href="/app/konto?next=/app/plan" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 p-5 transition hover:border-white/30">
+          <span>
+            <span className="block font-semibold text-white">{tl("Twój plan jest teraz w aplikacji VYRA", "Your plan now lives in the VYRA app")}</span>
+            <span className="mt-1 block text-sm text-white/60">{tl("Załóż darmowe konto na ten sam e-mail, a postęp przejdzie razem z Tobą.", "Create a free account with the same e-mail and your progress comes with you.")}</span>
+          </span>
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-white">
+            {tl("Otwórz w aplikacji", "Open in the app")} <ArrowRight className="size-4" />
+          </span>
+        </Link>
         <Plan key={opened.token ?? "local"} token={opened.token} initialDone={opened.done} name={opened.name} />
       </div>
     );
   }
-
-  const open = (token: string | null, name: string) => {
-    store(KEY, "1");
-    if (token) {
-      store(TOKEN_KEY, token);
-      window.history.replaceState(null, "", `/zacznij-biegac?t=${token}#plan`);
-    }
-    setOpened({ token, done: readLocalDone(), name });
-    document.getElementById("plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:items-start">
@@ -593,45 +579,41 @@ export function FreePlan() {
         </ol>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 grid h-2/3 place-items-center bg-gradient-to-b from-transparent via-black/70 to-black">
           <p className="mt-24 flex items-center gap-2 rounded-full border border-white/20 bg-black px-4 py-2 text-sm text-white/80">
-            <Lock className="size-4 text-[var(--accent)]" /> {tl("Tygodnie 2–6 po podaniu e-maila", "Weeks 2–6 after you enter your e-mail")}
+            <Lock className="size-4 text-[var(--accent)]" /> {tl("Cały plan w aplikacji VYRA", "The full plan in the VYRA app")}
           </p>
         </div>
       </div>
 
-      <form
-        noValidate
-        className="relative grid gap-4 rounded-2xl border border-white/15 bg-[#070708] p-6 sm:p-8 lg:sticky lg:top-28"
-        onSubmit={(e) => {
-          e.preventDefault();
-          start(async () => {
-            const res = await requestFreePlan(v);
-            if (!res.ok) return setErrors(res.fieldErrors ?? { form: [res.error] });
-            if (res.data?.existing) setNotice(true);
-            open(res.data?.token ?? null, v.full_name);
-          });
-        }}
-      >
-        <p className="display text-2xl text-white">{tl("Odbierz cały plan", "Get the full plan")}</p>
-        <ul className="grid gap-2 text-sm text-white/70">
+      <div className="relative grid gap-5 rounded-2xl border border-white/15 bg-[#070708] p-6 sm:p-8 lg:sticky lg:top-28">
+        <p className="display text-2xl text-white">{tl("Odbierz cały plan za darmo", "Get the full plan for free")}</p>
+        <p className="text-sm leading-relaxed text-white/60">
+          {tl("Plan działa w aplikacji VYRA: odhaczasz treningi, timer sam odlicza marsz i trucht, a postęp zapisuje się na Twoim koncie.", "The plan lives in the VYRA app: tick off sessions, the timer counts walk and jog for you and your progress is saved to your account.")}
+        </p>
+        <ol className="grid gap-3 text-sm text-white/75">
           {[
-            tl("18 treningów krok po kroku", "18 step-by-step sessions"),
-            tl("Postęp zapisany na stałe, na każdym urządzeniu", "Progress saved for good, on every device"),
-            tl("Wpisanie do kalendarza z przypomnieniami", "Add to your calendar with reminders"),
-          ].map((x) => (
-            <li key={x} className="flex gap-2.5">
-              <Check className="mt-0.5 size-4 shrink-0 text-[var(--accent)]" /> {x}
+            tl("Załóż darmowe konto (30 sekund)", "Create a free account (30 seconds)"),
+            tl("Dodaj aplikację VYRA do ekranu telefonu", "Add the VYRA app to your phone's home screen"),
+            tl("Zaczynasz pierwszy trening z timerem", "Start your first session with the timer"),
+          ].map((x, i) => (
+            <li key={x} className="flex items-center gap-3">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white/10 font-mono text-xs text-white">{i + 1}</span> {x}
             </li>
           ))}
-        </ul>
-        <ContactFields v={v} setV={setV} errors={errors} idPrefix="fp" />
-        {errors.form ? <p role="alert" className="text-sm text-problem">{errors.form[0]}</p> : null}
-        <Button type="submit" variant="accent" size="lg" disabled={pending} className="w-full">
-          {pending ? tl("Chwila…", "One moment…") : tl("Otwórz mój plan", "Open my plan")} <ArrowRight className="size-4" />
-        </Button>
-        <p className="text-center text-[12px] text-white/40">
-          {tl("Za darmo. Bez spamu. Plan otworzy się od razu. Masz już plan? Wpisz ten sam e-mail.", "Free. No spam. The plan opens instantly. Already have one? Use the same e-mail.")}
+        </ol>
+        <Link
+          href="/app/konto?next=/app/plan"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] text-sm font-semibold text-white transition hover:brightness-110"
+        >
+          {tl("Odbierz plan za darmo", "Get the free plan")} <ArrowRight className="size-4" />
+        </Link>
+        <Link href="/login?next=/app/plan" className="text-center text-sm text-white/55 hover:text-white">
+          {tl("Masz już konto? Zaloguj się", "Already have an account? Sign in")}
+        </Link>
+        <p className="hidden text-center text-[12px] text-white/40 lg:block">
+          {tl("Jesteś na komputerze? Otwórz vyraathl.pl/app na telefonie.", "On a computer? Open vyraathl.pl/app on your phone.")}
         </p>
-      </form>
+        <p className="text-center text-[12px] text-white/40">{tl("Za darmo. Bez karty. Bez spamu.", "Free. No card. No spam.")}</p>
+      </div>
     </div>
   );
 }

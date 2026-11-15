@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Play } from "lucide-react";
+import { Check, Play, UserRound } from "lucide-react";
+import { syncStartPlan } from "@/lib/actions/free-account";
 import { FREE_PLAN, FREE_PLAN_RULES } from "@/lib/free-plan";
 import { cn } from "@/lib/utils";
 
@@ -25,18 +26,40 @@ function read(): string[] {
   }
 }
 
-export function FreePlan() {
+function keep(v: string[]) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(v));
+  } catch {
+    /* private mode */
+  }
+}
+
+/** Signed in: progress is saved with the account, so it is the same on every phone. */
+export function FreePlan({ signedIn = false }: { signedIn?: boolean }) {
   const [done, setDone] = useState<string[]>([]);
-  useEffect(() => setDone(read()), []);
+  useEffect(() => {
+    const local = read();
+    setDone(local);
+    if (!signedIn) return;
+    syncStartPlan(local)
+      .then((v) => {
+        if (!v) return;
+        setDone(v);
+        keep(v);
+      })
+      .catch(() => undefined);
+  }, [signedIn]);
   const toggle = (id: string) => {
-    const next = done.includes(id) ? done.filter((x) => x !== id) : [...done, id];
+    const on = !done.includes(id);
+    const next = on ? [...done, id] : done.filter((x) => x !== id);
     setDone(next);
+    keep(next);
     try {
-      localStorage.setItem(KEY, JSON.stringify(next));
       navigator.vibrate?.(10);
     } catch {
-      /* private mode */
+      /* no vibration */
     }
+    if (signedIn) syncStartPlan(next, { id, on }).catch(() => undefined);
   };
   const total = FREE_PLAN.length * 3;
   const pct = Math.round((done.length / total) * 100);
@@ -44,6 +67,17 @@ export function FreePlan() {
 
   return (
     <div className="grid grid-cols-1 gap-3">
+      {signedIn ? null : (
+        <Link href="/app/konto?next=/app/plan" className="flex items-center gap-3.5 rounded-[20px] bg-white p-4 text-black active:scale-[0.985]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-black/[0.07]">
+            <UserRound className="size-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[15px] font-semibold">Załóż darmowe konto</span>
+            <span className="mt-0.5 block text-[12.5px] text-black/55">Postęp zapisze się na stałe, na każdym telefonie</span>
+          </span>
+        </Link>
+      )}
       <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
         <div className="flex items-end justify-between">
           <div>

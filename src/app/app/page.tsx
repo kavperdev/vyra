@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/dates";
+import { athleteHasAccess } from "@/lib/data/access";
 
 export const metadata = { title: "Dziś" };
 
@@ -32,6 +33,7 @@ export default async function AppHome() {
     todays = (data ?? []) as typeof todays;
   }
   const athlete = user?.profile.role === "athlete";
+  const paid = athlete && user ? await athleteHasAccess(supabase, user.id).catch(() => false) : !!user;
   type Synced = { sleep: number; energy: number; soreness: number; pain: boolean };
   let synced: Synced | null = null;
   if (athlete && user) {
@@ -47,7 +49,15 @@ export default async function AppHome() {
       <Today synced={synced} athlete={athlete} />
       <GoalCountdown />
 
-      {user ? (
+      {user && !paid ? (
+        <Link href="/app/plan" className="mt-6 flex items-center justify-between rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-4 transition active:scale-[0.985]">
+          <span>
+            <span className="block text-[12px] text-white/45">{t("Twój darmowy plan", "Your free plan")}</span>
+            <span className="block text-[15px] font-medium">{t("Zacznij biegać: od zera do 25 minut", "Start running: zero to 25 minutes")}</span>
+          </span>
+          <ArrowUpRight className="size-5 text-white/50" />
+        </Link>
+      ) : user ? (
         todays.length ? (
           <>
             <SectionHead title={t("Twój trening na dziś", "Today's session")} href="/panel" more={t("Plan", "Plan")} />
@@ -115,7 +125,7 @@ export default async function AppHome() {
         </>
       ) : null}
 
-      {!user ? (
+      {!paid ? (
         <Card href="/app/sklep" className="mt-7 overflow-hidden p-0">
           <div className="h-32 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
           <div className="p-4">
