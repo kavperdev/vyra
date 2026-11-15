@@ -12,14 +12,14 @@ declare
   e       jsonb;
 begin
   select count(*) into v_cnt from public.profiles
-   where role = 'athlete' and (full_name ilike '%amanowicz%' or full_name ilike '%amaniwicz%');
+   where role = 'athlete' and (lower(trim(full_name)) = 'piotrek' or full_name ilike '%amanowicz%');
   if v_cnt = 0 then
-    raise exception 'Nie znaleziono konta ZAWODNIKA z nazwiskiem Amanowicz. Sprawdź, jak Piotrek ma wpisane imię i nazwisko w profilu.';
+    raise exception 'Nie znaleziono konta ZAWODNIKA o nazwie „Piotrek”. Sprawdź nazwę konta w panelu trenera.';
   elsif v_cnt > 1 then
-    raise exception 'Jest kilka kont z nazwiskiem Amanowicz. Napisz, które jest właściwe.';
+    raise exception 'Jest kilka kont zawodników o nazwie „Piotrek”. Napisz, które jest właściwe (np. e-mail).';
   end if;
   select id into v_ath from public.profiles
-   where role = 'athlete' and (full_name ilike '%amanowicz%' or full_name ilike '%amaniwicz%');
+   where role = 'athlete' and (lower(trim(full_name)) = 'piotrek' or full_name ilike '%amanowicz%');
 
   select ca.coach_id into v_coach
     from public.coach_athletes ca join public.profiles p on p.id = ca.coach_id
