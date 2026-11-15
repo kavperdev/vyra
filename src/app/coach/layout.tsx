@@ -37,6 +37,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
       ? [
           { href: "/coach/growth", label: t("Rozwój", "Growth"), icon: "progress" } as NavItem,
           { href: "/coach/team", label: t("Zespół VYRA", "VYRA team"), icon: "team" } as NavItem,
+          { href: "/coach/konta", label: t("Konta w aplikacji", "App accounts"), icon: "gift" } as NavItem,
           { href: "/coach/applications", label: t("Zgłoszenia", "Requests"), icon: "inbox", badge: newApplications } as NavItem,
           { href: "/coach/site", label: t("Strona VYRA", "VYRA website"), icon: "site" } as NavItem,
         ]

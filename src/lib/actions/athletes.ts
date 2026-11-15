@@ -137,3 +137,14 @@ export async function deleteCoachNote(id: string, athleteId: string): Promise<Ac
     return { ok: true };
   });
 }
+
+/** Founders: VYRA Method for free on any runner account. days: null = no end, 0 = take away, n = n days. */
+export async function grantMethod(userId: string, days: number | null): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase }) => {
+    const d = days == null ? null : Math.max(0, Math.min(3650, Math.round(days)));
+    const { error } = await supabase.rpc("grant_method", { p_user: userId, p_days: d });
+    if (error) return error.code === "42501" ? { ok: false, error: "Dostęp do VYRA Method mogą dawać tylko założyciele." } : dbError(error);
+    revalidatePath("/coach/konta");
+    return { ok: true, message: d === 0 ? "Odebrano darmowy dostęp do VYRA Method." : d == null ? "Dostęp do VYRA Method bez końca. Zobaczy go po odświeżeniu aplikacji." : `Dostęp do VYRA Method na ${d} dni.` };
+  });
+}
