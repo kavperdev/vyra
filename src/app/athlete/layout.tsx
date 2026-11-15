@@ -5,12 +5,13 @@ import { unreadCount } from "@/lib/data/people";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClub } from "@/lib/data/clubs";
+import { AccessGate } from "@/components/shell/access-gate";
 
 export default async function AthleteLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("athlete");
   const { t } = await getT();
   const supabase = await createClient();
-  const [unread, campCount, club, method] = await Promise.all([
+  const [unread, campCount, club, method, linked] = await Promise.all([
     unreadCount(supabase),
     supabase
       .from("camp_participants")
@@ -21,7 +22,15 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     getMyClub(supabase, user.id),
     // VYRA Method in the menu for runners who have it (null before the migration: hidden).
     supabase.rpc("has_method_access", { p_user: user.id }).then((r) => (r.error ? false : !!r.data)),
+    // Active link to a coach = paid package, active trial or invited by the coach.
+    supabase
+      .from("coach_athletes")
+      .select("athlete_id", { count: "exact", head: true })
+      .eq("athlete_id", user.id)
+      .eq("status", "active")
+      .then((r) => (r.count ?? 0) > 0),
   ]);
+  const access = linked || method;
   const hasCamp = campCount > 0;
   const items: NavItem[] = [
     { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
@@ -39,7 +48,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
   ];
   return (
     <AppShell role="athlete" roleLabel={club ? `${t("Zawodnik", "Athlete")} · ${club.name}` : undefined} name={user.profile.full_name} items={items} unread={unread}>
-      {children}
+      <AccessGate access={access}>{children}</AccessGate>
     </AppShell>
   );
 }

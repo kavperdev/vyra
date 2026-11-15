@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bell, CalendarDays, FileText, Gift, LayoutDashboard, Mail, Medal, Settings, Shield, Trophy, Users } from "lucide-react";
 import { InstallRow } from "@/components/app/install-row";
+import { SignOutButton } from "@/components/app/sign-out";
 import { ReopenOnboarding } from "@/components/app/onboarding";
 import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
@@ -59,6 +60,7 @@ export default async function AppYou() {
         <Row href="/app/dokument/regulamin" icon={<FileText className="size-4" />} title={t("Regulamin", "Terms")} />
         <Row href="/app/dokument/polityka-prywatnosci" icon={<Shield className="size-4" />} title={t("Prywatność", "Privacy")} />
       </Group>
+      {user ? <SignOutButton label={t("Wyloguj się", "Sign out")} /> : null}
     </div>
   );
 }
