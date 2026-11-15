@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">{children}</main>
       <AppTabBar />
-      <Onboarding />
+      <Onboarding signedIn={!!user} />
       <StayInApp />
       <RevealObserver />
       <SourceTracker />

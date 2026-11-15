@@ -55,7 +55,7 @@ function Choice({ on, title, sub, onClick }: { on: boolean; title: string; sub?:
 }
 
 /** First launch: a short welcome, three questions and a tailored start. Everything stays on the phone. */
-export function Onboarding() {
+export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [goal, setGoal] = useState<Goal | null>(null);
@@ -101,7 +101,8 @@ export function Onboarding() {
       { timeout: 10000 },
     );
 
-  const steps = 6;
+  const acct = !signedIn; // free account step for guests
+  const steps = acct ? 7 : 6;
   const canNext = step === 1 ? !!goal : step === 2 ? !!level : true;
   const next = () => (step < steps - 1 ? setStep(step + 1) : finish());
   const recs = goal && level ? recommend({ goal, level }) : [];
@@ -114,7 +115,7 @@ export function Onboarding() {
             <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors duration-300", i <= step ? "bg-white" : "bg-white/12")} />
           ))}
         </div>
-        {step > 0 && step < steps - 1 ? (
+        {step > 0 && step < steps - 1 && !(step === 5 && acct) ? (
           <button type="button" onClick={() => setStep(step + 1)} className="text-[13px] text-white/45">
             Pomiń
           </button>
@@ -127,7 +128,7 @@ export function Onboarding() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/branding/vyra-logo-white.svg" alt="VYRA" className="h-5 w-auto justify-self-start" />
             <h1 className="mt-6 text-[32px] font-semibold leading-tight tracking-[-0.02em]">Trenuj mądrze. Codziennie.</h1>
-            <p className="text-[15px] leading-relaxed text-white/55">VYRA to Twoje centrum biegania. Za darmo, bez zakładania konta.</p>
+            <p className="text-[15px] leading-relaxed text-white/55">VYRA to Twoje centrum biegania. Wszystko za darmo.</p>
             <div className="mt-4 grid gap-2">
               {[
                 { icon: Home, t: "Dziś", d: "Gotowość, pogoda, smog i najlepsza pora na bieg" },
@@ -193,6 +194,26 @@ export function Onboarding() {
               ))}
             </div>
           </>
+        ) : step === 5 && acct ? (
+          <>
+            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Załóż darmowe konto</h2>
+            <p className="mb-2 text-[14px] leading-relaxed text-white/50">Twój plan, dziennik biegów i postępy zapiszą się na stałe. Zmienisz telefon albo wyczyścisz pamięć i nic nie zginie.</p>
+            {[
+              "Darmowy plan „Zacznij biegać” z timerem",
+              "Dziennik i import biegów ze Stravy",
+              "Wyzwania i odznaki z innymi biegaczami",
+            ].map((x) => (
+              <div key={x} className="flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-[14.5px]">
+                <span className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]" /> {x}
+              </div>
+            ))}
+            <Link href="/app/konto?next=/app" onClick={() => finish(false)} className="mt-3 flex h-14 items-center justify-center rounded-full bg-[var(--accent)] text-[16px] font-semibold text-white active:scale-[0.98]">
+              Załóż konto za darmo
+            </Link>
+            <Link href="/login?next=/app" onClick={() => finish(false)} className="flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-medium active:scale-[0.98]">
+              Mam konto, zaloguj się
+            </Link>
+          </>
         ) : (
           <>
             <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Gotowe. Od tego zacznij:</h2>
@@ -224,7 +245,7 @@ export function Onboarding() {
           onClick={next}
           className="h-14 w-full rounded-full bg-white text-[16px] font-semibold text-black transition active:scale-[0.98] disabled:opacity-30"
         >
-          {step === 0 ? "Zaczynamy" : step === steps - 1 ? "Przejdź do aplikacji" : step === 3 && !sec ? "Pomiń" : "Dalej"}
+          {step === 0 ? "Zaczynamy" : step === steps - 1 ? "Przejdź do aplikacji" : (step === 3 && !sec) || (step === 5 && acct) ? "Później" : "Dalej"}
         </button>
       </div>
     </div>

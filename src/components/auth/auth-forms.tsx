@@ -87,6 +87,15 @@ export function LoginForm() {
           {t("Konto trenera", "Coach account")}
         </Link>
       </div>
+      <div className="mt-2 grid gap-2 border-t border-border pt-5 text-center">
+        <p className="text-sm text-muted">{t("Nie masz jeszcze konta?", "No account yet?")}</p>
+        <Link
+          href={`/app/konto?next=${encodeURIComponent((params.get("next") ?? "").startsWith("/app") ? params.get("next")! : "/app")}`}
+          className="flex h-12 items-center justify-center rounded-full border border-border text-[15px] font-semibold transition active:scale-[0.98]"
+        >
+          {t("Załóż darmowe konto", "Create a free account")}
+        </Link>
+      </div>
     </form>
   );
 }
