@@ -105,7 +105,8 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
     );
 
   const acct = !signedIn; // free account step for guests
-  const steps = acct ? 7 : 6;
+  // Guests end on the account step: the app runs on a (free) account, so there is no "later".
+  const steps = 6;
   const canNext = step === 1 ? !!goal : step === 2 ? !!level : true;
   const next = () => (step < steps - 1 ? setStep(step + 1) : finish());
   const recs = goal && level ? recommend({ goal, level }) : [];
@@ -210,7 +211,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
                 <span className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]" /> {x}
               </div>
             ))}
-            <Link href="/app/konto?next=/app" onClick={() => finish(false)} className="mt-3 flex h-14 items-center justify-center rounded-full bg-[var(--accent)] text-[16px] font-semibold text-white active:scale-[0.98]">
+            <Link href="/app/konto?next=/app/wybierz" onClick={() => finish(false)} className="mt-3 flex h-14 items-center justify-center rounded-full bg-[var(--accent)] text-[16px] font-semibold text-white active:scale-[0.98]">
               Załóż konto za darmo
             </Link>
             <Link href="/app/zaloguj?next=/app" onClick={() => finish(false)} className="flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-medium active:scale-[0.98]">
@@ -260,14 +261,14 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
         )}
       </div>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-3">
+      <div className={cn("mx-auto w-full max-w-md px-5 pt-3", step === 5 && acct && "hidden")}>
         <button
           type="button"
           disabled={!canNext}
           onClick={next}
           className="h-14 w-full rounded-full bg-white text-[16px] font-semibold text-black transition active:scale-[0.98] disabled:opacity-30"
         >
-          {step === 0 ? "Zaczynamy" : step === steps - 1 ? "Przejdź do aplikacji" : (step === 3 && !sec) || (step === 5 && acct) ? "Później" : "Dalej"}
+          {step === 0 ? "Zaczynamy" : step === steps - 1 ? "Przejdź do aplikacji" : step === 3 && !sec ? "Pomiń" : "Dalej"}
         </button>
       </div>
     </div>

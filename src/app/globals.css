@@ -432,3 +432,6 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
   .app-aurora i, .app-grow-x, .app-sheen::after, .app-flame, .chat-in, .app-badge-in, .app-pulse-ring::before, .app-float { animation: none !important; }
   .app-tab-pill { transition: none; }
 }
+@keyframes vyra-li-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@layer components { .app-rise-li { animation: vyra-li-in 0.5s cubic-bezier(0.2, 0.7, 0.1, 1) both; } }
+@media (prefers-reduced-motion: reduce) { .app-rise-li { animation: none !important; } }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, CreditCard, Lock, ShieldCheck, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/form-controls";
-import { startCheckout } from "@/lib/actions/checkout";
+import { checkoutBuyer, startCheckout } from "@/lib/actions/checkout";
 import { tl } from "@/lib/i18n/runtime";
 import { cn } from "@/lib/utils";
 
@@ -90,15 +90,22 @@ export function BuyButton({ planId, primary = false, className }: { planId: stri
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
   const [accepted, setAccepted] = useState(false);
-  const [buyer, setBuyer] = useState({ full_name: "", email: "" });
-  const [error, setError] = useState<{ text: string; field?: string } | null>(null);
+  const [me, setMe] = useState<{ signedIn: boolean; name: string; email: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ clientSecret: string; publishableKey: string } | null>(null);
 
+  const openBox = () => {
+    setOpen(true);
+    checkoutBuyer().then(setMe).catch(() => setMe({ signedIn: false, name: "", email: "" }));
+  };
   const pay = () =>
     start(async () => {
       setError(null);
-      const res = await startCheckout(planId, accepted, buyer, location.pathname.startsWith("/app"));
-      if (!res.ok) return setError({ text: res.error, field: res.field });
+      const res = await startCheckout(planId, accepted, {}, location.pathname.startsWith("/app"));
+      if (!res.ok) {
+        if (res.needAccount) setMe({ signedIn: false, name: "", email: "" });
+        return setError(res.error);
+      }
       if ("clientSecret" in res) setSheet({ clientSecret: res.clientSecret, publishableKey: res.publishableKey });
       else window.location.assign(res.url);
     });
@@ -107,42 +114,39 @@ export function BuyButton({ planId, primary = false, className }: { planId: stri
     "inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-full text-sm font-semibold transition-colors disabled:opacity-50",
     primary ? "bg-[var(--accent)] text-white hover:opacity-90" : "border border-white/25 text-white hover:border-white/70",
   );
-  const input =
-    "h-11 w-full rounded-lg border border-white/20 bg-black/40 px-3 text-[15px] text-white placeholder:text-white/35 focus:border-white/60 focus:outline-none aria-[invalid=true]:border-red-400";
 
   if (!open)
     return (
       <div className={cn("grid gap-1.5", className)}>
-        <button type="button" onClick={() => setOpen(true)} className={btn}>
+        <button type="button" onClick={openBox} className={btn}>
           <CreditCard className="size-4" />
           {tl("Kup teraz", "Buy now")}
         </button>
       </div>
     );
 
+  if (!me) return <div className={cn("h-24 animate-pulse rounded-xl bg-white/[0.06]", className)} />;
+
+  if (!me.signedIn) {
+    const back = typeof window !== "undefined" ? `${location.pathname}${location.hash}` : "/app/sklep";
+    return (
+      <div className={cn("site-fade grid gap-3 rounded-xl border border-white/15 bg-black/60 p-4 text-left", className)}>
+        <p className="text-[14px] leading-relaxed text-white/75">{tl("Pakiet przypisujemy do Twojego konta VYRA: tam masz plan, trenera i postępy. Załóż konto w 30 sekund albo zaloguj się, potem płatność.", "Packages go onto your VYRA account, where your plan, coach and progress live. Create one in 30 seconds or sign in, then pay.")}</p>
+        <Link href={`/app/konto?next=${encodeURIComponent(back)}`} className={btn}>
+          {tl("Załóż konto i kup", "Create account and buy")} <ArrowRight className="size-4" />
+        </Link>
+        <Link href={`/app/zaloguj?next=${encodeURIComponent(back)}`} className="text-center text-[13px] text-white/60 underline-offset-4 hover:underline">
+          {tl("Mam konto, zaloguj się", "I have an account, sign in")}
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("site-fade grid gap-3 rounded-xl border border-white/15 bg-black/60 p-4 text-left", className)}>
-      <p className="text-[13px] text-white/60">{tl("Na ten adres założymy Twoje konto w aplikacji VYRA.", "We’ll create your VYRA app account with this e-mail.")}</p>
-      <input
-        className={input}
-        placeholder={tl("Imię i nazwisko", "Full name")}
-        autoComplete="name"
-        aria-label={tl("Imię i nazwisko", "Full name")}
-        aria-invalid={error?.field === "full_name"}
-        value={buyer.full_name}
-        onChange={(e) => setBuyer({ ...buyer, full_name: e.target.value })}
-      />
-      <input
-        className={input}
-        type="email"
-        inputMode="email"
-        placeholder="E-mail"
-        autoComplete="email"
-        aria-label="E-mail"
-        aria-invalid={error?.field === "email"}
-        value={buyer.email}
-        onChange={(e) => setBuyer({ ...buyer, email: e.target.value })}
-      />
+      <p className="text-[13px] text-white/60">
+        {tl("Kupujesz na konto:", "Buying on account:")} <span className="text-white">{me.email}</span>
+      </p>
       <label className="flex items-start gap-3 text-[13px] leading-snug text-white/70">
         <Checkbox checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5" />
         <span>
@@ -158,9 +162,9 @@ export function BuyButton({ planId, primary = false, className }: { planId: stri
         {pending ? null : <ArrowRight className="size-4" />}
       </button>
       <p className="flex items-center justify-center gap-1.5 text-[11px] text-white/45">
-        <ShieldCheck className="size-3.5" /> {tl("BLIK, karta, Przelewy24 · dostęp do aplikacji od razu po płatności", "BLIK, card, Przelewy24 · app access right after paying")}
+        <ShieldCheck className="size-3.5" /> {tl("BLIK, karta, Przelewy24 · dostęp na koncie od razu po płatności", "BLIK, card, Przelewy24 · access on your account right after paying")}
       </p>
-      {error ? <p role="alert" className="text-[13px] text-problem">{error.text}</p> : null}
+      {error ? <p role="alert" className="text-[13px] text-problem">{error}</p> : null}
       {sheet ? <PaymentSheet {...sheet} onClose={() => setSheet(null)} /> : null}
     </div>
   );

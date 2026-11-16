@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Flag, Footprints, Rocket, Sprout, TimerReset } from "lucide-react";
+import { Check, Flag, Footprints, Rocket, Sprout, TimerReset, Watch } from "lucide-react";
 import { completeRef, readinessToday, setSwap, todayItem, type TodayItem } from "@/lib/app/plans";
 import { useStoreTick } from "@/lib/app/store";
 import { SectionHead } from "@/components/app/ui";
@@ -48,6 +48,20 @@ export function TodayPlan() {
       </>
     );
 
+  if (item.source === "goal" && !premium && (item.week ?? 1) > 1)
+    return (
+      <>
+        <SectionHead title="Twój plan pod start" href="/app/cel" more="Plan" />
+        <div className="rounded-[22px] border border-white/10 bg-[#111113] p-4">
+          {item.countdown ? <p className="text-[12px] text-white/45">{item.countdown.label} · za {item.countdown.days} dni</p> : null}
+          <p className="mt-1 text-[17px] font-semibold leading-snug">Tydzień {item.week} czeka w VYRA Method</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-white/55">Pierwszy tydzień był za darmo. Dalej plan liczy się co tydzień z Twoich treningów, aż do startu.</p>
+          <Link href="/app/wybierz?trial=1" className="mt-3 flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
+            Odbierz 14 dni za darmo
+          </Link>
+        </div>
+      </>
+    );
   const low = ready != null && ready < 50;
   const id = item.ref.slice(item.ref.indexOf(":") + 1);
   return (
@@ -93,19 +107,22 @@ export function TodayPlan() {
                 Jednak robię akcent
               </button>
             ) : null}
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <p className="mt-3 flex items-center gap-2 rounded-[14px] bg-black/[0.05] px-3 py-2.5 text-[12.5px] leading-snug text-black/65">
+              <Watch className="size-4 shrink-0" /> Biegnij z zegarkiem. Po synchronizacji ze Stravą trening odhaczy się sam.
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
               {item.timer ? (
                 <Link href={item.timer} className="flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white active:scale-[0.97]">
                   <TimerReset className="size-4" /> Timer
                 </Link>
               ) : null}
-              <Link href={item.run} className={cn("flex items-center justify-center gap-2 rounded-full py-3 text-[14px] font-semibold active:scale-[0.97]", item.timer ? "bg-black/[0.07]" : "col-span-2 bg-black text-white")}>
-                <Footprints className="size-4" /> Biegnij z GPS
-              </Link>
+              <button type="button" onClick={() => completeRef(item.ref)} className={cn("flex items-center justify-center gap-2 rounded-full py-3 text-[14px] font-semibold active:scale-[0.97]", item.timer ? "bg-black/[0.07]" : "col-span-2 bg-black text-white")}>
+                <Check className="size-4" /> Zrobione
+              </button>
             </div>
-            <button type="button" onClick={() => completeRef(item.ref)} className="mt-2 w-full py-1.5 text-[12.5px] text-black/50">
-              Zrobione bez telefonu? Odhacz
-            </button>
+            <Link href={item.run} className="mt-2 flex items-center justify-center gap-1.5 py-1.5 text-[12.5px] text-black/50">
+              <Footprints className="size-3.5" /> Bez zegarka? Biegnij z telefonem
+            </Link>
           </>
         )}
       </div>

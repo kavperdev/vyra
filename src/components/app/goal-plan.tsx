@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2, Lock } from "lucide-react";
 import { fmtPace, fmtTime, timeFor, vdotOf } from "@/lib/method/engine";
 import { GOAL_DISTS, GOAL_KEY, addDays, buildPlan, daysBetween, todayLocal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { writeGoal } from "@/lib/app/goal-store";
 import { useStore } from "@/lib/app/store";
+import { Building } from "@/components/app/building";
+import { TrialForm } from "@/components/app/trial-form";
 import { useAccess } from "@/components/app/access";
 import { addRun, useLog } from "@/lib/app/log";
 import { completeRef, goalDoneSet } from "@/lib/app/plans";
@@ -104,6 +106,7 @@ export function GoalPlanView() {
   const log = useLog();
   const { p5k: formNow, save: saveRes } = useResult();
   const [edit, setEdit] = useState(false);
+  const [built, setBuilt] = useState<GoalStore | null>(null);
   const [open, setOpen] = useState<GoalSession | null>(null);
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
@@ -123,7 +126,22 @@ export function GoalPlanView() {
   };
 
   if (!ready) return <div className="h-60" />;
-  if (!g || edit || !plan) return <Setup initial={edit ? g : null} onCancel={edit ? () => setEdit(false) : undefined} onDone={(v) => { update(v); setEdit(false); }} />;
+  if (!g || edit || !plan)
+    return (
+      <>
+        <Setup initial={edit ? g : null} onCancel={edit ? () => setEdit(false) : undefined} onDone={(v) => setBuilt(v)} />
+        <Building
+          open={!!built}
+          title="Układam Twój plan"
+          steps={["Liczę Twoją formę z wyniku", "Ustalam tempa na każdy rodzaj biegu", "Rozkładam tygodnie do startu", "Dodaję tygodnie lżejsze i taper"]}
+          onDone={() => {
+            if (built) update(built);
+            setBuilt(null);
+            setEdit(false);
+          }}
+        />
+      </>
+    );
 
   const label = GOAL_DISTS.find((d) => d.k === g.dist)!.label;
   const left = daysBetween(today, g.race);
@@ -139,7 +157,6 @@ export function GoalPlanView() {
     if (!raceRun) addRun({ day: g.race, km: raceDist.m / 1000, sec: result, rpe: 9, note: `Start: ${g.name || raceDist.label}`, ref: race ? `goal:${race.id}` : undefined });
     if (race) completeRef(`goal:${race.id}`);
   };
-  const missed = all.filter((s) => s.date < today && s.kind !== "race" && !doneSet.has(s.id)).length;
   const newForm = formNow && Math.abs(formNow - g.p5k) / g.p5k > 0.015 ? Math.round(formNow) : null;
   const curIdx = Math.max(0, plan.weeks.findIndex((w) => addDays(w.monday, 6) >= today));
   const shown = openWeek ?? plan.weeks[curIdx]?.n;
@@ -231,7 +248,20 @@ export function GoalPlanView() {
         </Card>
       ) : null}
 
-      {plan.weeks.map((w) => {
+      {plan.weeks.map((w, wi) => {
+        // Without VYRA Method: the first week is open, the rest of the plan is part of Method.
+        if (!premium && wi > 0)
+          return (
+            <div key={w.n} className="flex items-center justify-between gap-3 rounded-[20px] border border-white/[0.04] bg-[#0d0d0f] p-4">
+              <span className="min-w-0">
+                <span className="block text-[15px] font-semibold text-white/55">
+                  Tydzień {w.n} <span className="ml-1 text-[12px] font-normal text-white/30">{day(w.monday)}</span>
+                </span>
+                <span className="mt-0.5 block select-none text-[12.5px] text-white/30 blur-[3px]">{w.phase} · ok. {w.km} km · {w.sessions.length} treningi</span>
+              </span>
+              <Lock className="size-4 shrink-0 text-white/30" />
+            </div>
+          );
         const isOpen = w.n === shown;
         const wDone = w.sessions.filter((s) => doneSet.has(s.id)).length;
         const past = addDays(w.monday, 6) < today;
@@ -279,15 +309,13 @@ export function GoalPlanView() {
         );
       })}
 
-      {premium ? null : <Link href="/app/sklep" className="mt-2 block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
-        <p className="text-[15px] font-medium">{missed >= 2 ? `Opuszczone treningi: ${missed}. Ten plan tego nie widzi.` : "Ten plan jest stały. Twoja forma nie."}</p>
-        <p className="mt-1 text-[13px] leading-relaxed text-white/50">
-          {missed >= 2
-            ? "VYRA Method liczy każdy tydzień od nowa z tego, co faktycznie zrobiłeś, i odpuszcza, gdy coś boli. 14 dni za darmo, bez karty."
-            : "VYRA Method co tydzień przelicza plan z Twoich treningów, snu i samopoczucia, a tempa po każdym teście formy. 14 dni za darmo, bez karty."}
-        </p>
-      </Link>}
-
+      {premium ? null : (
+        <div className="sticky bottom-24 z-20 rounded-[22px] border border-white/10 bg-[#18181b]/95 p-4 shadow-2xl backdrop-blur">
+          <p className="text-[16px] font-semibold">Cały plan do startu: w VYRA Method</p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-white/55">Tydzień 1 masz za darmo. Pozostałe {plan.weeks.length - 1} tygodnie, przeliczane co tydzień z Twoich treningów, odblokujesz w VYRA Method.</p>
+          <TrialForm className="mt-3" />
+        </div>
+      )}
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.title ?? ""} sub={open ? `${day(open.date)} · ok. ${open.km} km` : undefined}>
         {open ? (
           <div className="grid gap-3">

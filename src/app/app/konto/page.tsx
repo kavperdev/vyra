@@ -8,12 +8,12 @@ export const metadata = { title: "Darmowe konto" };
 
 export default async function AppAccount({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const q = await searchParams;
-  const next = typeof q.next === "string" && q.next.startsWith("/app") && !q.next.startsWith("//") ? q.next : "/app/plan";
+  const next = typeof q.next === "string" && q.next.startsWith("/") && !q.next.startsWith("//") ? q.next : "/app/wybierz";
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   if (user) redirect(next);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Darmowe konto VYRA" sub="Plan „Zacznij biegać”, dziennik i narzędzia zapisane na stałe. Zaloguj się na dowolnym telefonie i wszystko jest na miejscu." />
+      <PageHead title="Darmowe konto VYRA" sub="Konto VYRA jest za darmo: dziennik, import ze Stravy, Twoja forma i postępy. Na nim odbierasz też 14 dni VYRA Method i kupujesz prowadzenie." />
       <FreeSignup next={next} />
     </div>
   );

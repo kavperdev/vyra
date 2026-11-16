@@ -19,7 +19,7 @@ export function TrialButton({ className, label = "Odbierz 14 dni za darmo" }: { 
       <button type="button" onClick={() => setOpen(true)} className={cn("h-12 w-full rounded-full bg-white text-[15px] font-semibold text-black transition active:scale-[0.98]", className)}>
         {label}
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="14 dni VYRA Method za darmo" sub="Bez karty. Link do konta przyjdzie na e-mail.">
+      <Sheet open={open} onClose={() => setOpen(false)} title="14 dni VYRA Method za darmo" sub="Bez karty. Przypisujemy je do Twojego konta VYRA.">
         <TrialForm />
       </Sheet>
     </>

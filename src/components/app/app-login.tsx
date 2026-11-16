@@ -52,7 +52,7 @@ export function AppLogin({ next }: { next?: string }) {
       </button>
       <div className="mt-3 grid gap-2 border-t border-white/[0.06] pt-5 text-center">
         <p className="text-[13px] text-white/45">Nie masz jeszcze konta?</p>
-        <Link href={`/app/konto${next?.startsWith("/app") ? `?next=${encodeURIComponent(next)}` : ""}`} className="rounded-full bg-[var(--accent)] py-3.5 text-[15px] font-semibold text-white active:scale-[0.98]">
+        <Link href={`/app/konto${next ? `?next=${encodeURIComponent(next)}` : ""}`} className="rounded-full bg-[var(--accent)] py-3.5 text-[15px] font-semibold text-white active:scale-[0.98]">
           Załóż darmowe konto
         </Link>
       </div>

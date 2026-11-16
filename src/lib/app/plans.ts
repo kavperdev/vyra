@@ -106,6 +106,7 @@ export type TodayItem = {
   run: string; // GPS run with this session
   doneToday: boolean;
   countdown?: { days: number; label: string };
+  week?: number; // race plan: week number, from 1
   plan: string; // where the whole plan lives
 };
 
@@ -141,6 +142,7 @@ export function todayItem(): TodayItem | null {
       run: runUrl(ref, title, easy ? null : s.pace),
       doneToday: !!t && done.has(t.id),
       countdown,
+      week: plan.weeks.findIndex((w) => w.sessions.some((x) => x.id === s.id)) + 1,
       plan: "/app/cel",
     };
   }

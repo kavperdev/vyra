@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { getCurrentUser } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
 import { stripe, stripeConfigured, stripePublishableKey, type CheckoutSession } from "@/lib/stripe";
@@ -15,7 +16,13 @@ import { creditReferrer, referralCoupon, referralFromSource } from "@/lib/referr
 export type CheckoutStart =
   | { ok: true; url: string }
   | { ok: true; clientSecret: string; publishableKey: string }
-  | { ok: false; error: string; field?: "full_name" | "email" };
+  | { ok: false; error: string; field?: "full_name" | "email"; needAccount?: boolean };
+
+/** Who is buying: packages are always bought on a VYRA account, so the purchase lands on it. */
+export async function checkoutBuyer(): Promise<{ signedIn: boolean; name: string; email: string }> {
+  const user = await getCurrentUser().catch(() => null);
+  return user?.email ? { signedIn: true, name: user.profile.full_name ?? "", email: user.email } : { signedIn: false, name: "", email: "" };
+}
 
 export async function startCheckout(
   planId: string,
@@ -24,6 +31,10 @@ export async function startCheckout(
   app = false,
 ): Promise<CheckoutStart> {
   const { lang, t } = await getT();
+  // Buy on your account: name and e-mail come from it, never from a form.
+  const me = await getCurrentUser().catch(() => null);
+  if (!me?.email) return { ok: false, needAccount: true, error: t("Załóż darmowe konto albo zaloguj się, żeby kupić pakiet.", "Create a free account or sign in to buy a package.") };
+  buyer = { full_name: me.profile.full_name || me.email.split("@")[0], email: me.email };
   if (!accepted) return { ok: false, error: t("Zaakceptuj regulamin, żeby przejść do płatności.", "Please accept the terms to continue to payment.") };
   const fullName = (buyer.full_name ?? "").trim().slice(0, 120);
   const email = (buyer.email ?? "").trim().toLowerCase().slice(0, 254);

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Play, Plus, Timer, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
+import { Activity, ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Play, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FormCard } from "@/components/app/form-hub";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
 import { TodayPlan } from "@/components/app/today-plan";
@@ -48,10 +49,10 @@ export default async function AppHome() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
   const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
   const quick = [
-    { href: "/app/bieg", icon: Footprints, label: t("Biegnij", "Run"), main: true },
-    { href: "/app/timer", icon: TimerReset, label: t("Timer", "Timer") },
-    { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj bieg", "Log run") },
-    { href: paid ? "/panel" : "/app/trening", icon: CalendarDays, label: t("Mój plan", "My plan") },
+    { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj trening", "Log run"), main: true },
+    { href: "/app/forma", icon: Activity, label: t("Forma", "Form") },
+    { href: "/app/postepy", icon: TrendingUp, label: t("Postępy", "Progress") },
+    { href: paid ? "/panel" : "/app/trening", icon: CalendarDays, label: t("Plan", "Plan") },
   ];
 
   return (
@@ -64,8 +65,13 @@ export default async function AppHome() {
         </h1>
       </div>
 
+      {/* The heart of the app: what the runs mean, today. */}
+      <div className="mt-4">
+        <FormCard />
+      </div>
+
       {/* The four things people open the app for, always one tap away. */}
-      <div className="mt-4 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2">
         {quick.map((q) => (
           <Link key={q.href} href={q.href} className={cn("flex flex-col items-center gap-1.5 rounded-[18px] py-3 text-[11.5px] font-medium transition active:scale-95", q.main ? "bg-[var(--accent)] text-white shadow-[0_10px_30px_-10px_rgba(229,52,59,0.8)]" : "bg-white/[0.06] text-white/85")}>
             <q.icon className="size-[22px]" strokeWidth={1.9} />
@@ -125,10 +131,10 @@ export default async function AppHome() {
       <div className="grid grid-cols-2 gap-2">
         {[
           { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
-          { href: "/app/narzedzia?t=prognoza", icon: Timer, title: t("Prognoza wyniku", "Race predictor"), sub: t("i Twoje tempa", "and your paces") },
           { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("plan żeli i picia", "gels and drinks plan") },
           { href: "/app/strategia", icon: Trophy, title: t("Strategia na start", "Race strategy"), sub: t("tempo na każdy km", "pace for every km") },
-          { href: "/app/postepy", icon: TrendingUp, title: t("Postępy", "Progress"), sub: t("rekordy i odznaki", "records and badges") },
+          { href: "/app/timer", icon: TimerReset, title: t("Timer interwałów", "Interval timer"), sub: t("sygnał przy każdej zmianie", "a beep at every change") },
+          { href: "/app/bieg", icon: Footprints, title: t("Bieg z telefonem", "Run with phone"), sub: t("GPS, gdy nie masz zegarka", "GPS when you have no watch") },
           { href: "/app/znajomi", icon: Users, title: t("Znajomi", "Friends"), sub: t("ranking kilometrów", "kilometre ranking") },
         ].map((x) => (
           <Card key={x.href} href={x.href} className="p-4">

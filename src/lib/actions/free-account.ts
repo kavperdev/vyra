@@ -10,7 +10,7 @@ import type { ActionResult } from "@/lib/types";
 import { signupSchema } from "@/lib/validation/forms";
 import { validationError } from "./helpers";
 
-const safeNext = (n: unknown) => (typeof n === "string" && n.startsWith("/app") && !n.startsWith("//") ? n : "/app/plan");
+const safeNext = (n: unknown) => (typeof n === "string" && n.startsWith("/") && !n.startsWith("//") && !n.startsWith("/\\") ? n : "/app/wybierz");
 
 /** Free VYRA app account: the free plan and the log follow the runner to every phone. No coach, no paid access. */
 export async function signUpFree(input: { full_name: string; email: string; password: string; consent: boolean; next?: string; website?: string; plan?: "start"; stay?: boolean }): Promise<ActionResult<{ session: boolean }>> {
