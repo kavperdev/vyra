@@ -24,7 +24,7 @@ export default async function AppStart({ searchParams }: { searchParams: Promise
         <h1 className="mt-10 text-center text-[34px] font-semibold leading-[1.05] tracking-[-0.03em]">
           Biegaj mądrze.
           <br />
-          <span className="text-white/45">Widź, że to działa.</span>
+          <span className="text-white/45">Zobacz, że to działa.</span>
         </h1>
         <ul className="mx-auto mt-8 grid max-w-xs gap-3 text-[14.5px] text-white/75">
           {[
