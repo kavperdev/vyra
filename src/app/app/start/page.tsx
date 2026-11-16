@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Witaj w VYRA" };
 
@@ -7,6 +8,9 @@ export default async function AppStart({ searchParams }: { searchParams: Promise
   const q = await searchParams;
   const next = typeof q.next === "string" && q.next.startsWith("/") && !q.next.startsWith("//") ? q.next : null;
   const nx = next ? `?next=${encodeURIComponent(next)}` : "";
+  // Until free accounts are switched on in the database, people can still come in as guests.
+  const supabase = await createClient();
+  const ready = await supabase.rpc("free_signup_ready").then((r) => !r.error && r.data === true, () => false);
   return (
     <div className="flex min-h-[calc(100dvh-9rem)] flex-col justify-between pb-4">
       <div className="pt-[8vh]">
@@ -44,6 +48,11 @@ export default async function AppStart({ searchParams }: { searchParams: Promise
           Mam konto, zaloguj się
         </Link>
         <p className="mt-1 text-center text-[11.5px] text-white/35">Konto jest za darmo. Bez karty.</p>
+        {ready ? null : (
+          <a href="/app/gosc" className="text-center text-[12.5px] text-white/50 underline underline-offset-2">
+            Wejdź bez konta (na razie)
+          </a>
+        )}
       </div>
     </div>
   );

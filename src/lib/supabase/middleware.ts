@@ -48,8 +48,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // The app needs an account (free): without one, every app screen leads to the welcome screen.
-  const OPEN_APP = ["/app/start", "/app/konto", "/app/zaloguj", "/app/haslo", "/app/dokument", "/app/kontakt"];
-  if (!user && (path === "/app" || path.startsWith("/app/")) && !OPEN_APP.some((p) => path === p || path.startsWith(`${p}/`))) {
+  const OPEN_APP = ["/app/start", "/app/gosc", "/app/konto", "/app/zaloguj", "/app/haslo", "/app/dokument", "/app/kontakt"];
+  if (!user && !request.cookies.get("vyra_guest") && (path === "/app" || path.startsWith("/app/")) && !OPEN_APP.some((p) => path === p || path.startsWith(`${p}/`))) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/app/start";
     redirect.search = path === "/app" ? "" : `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
