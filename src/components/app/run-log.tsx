@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { StravaSync } from "@/components/app/strava-sync";
 import { useWeekNumbers } from "@/components/app/week-summary";
+import { CountUp } from "@/components/app/motion";
 import { TimeInput } from "@/components/app/tools";
 import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
@@ -194,7 +195,7 @@ export function HomeWeek() {
         <div>
           <p className="text-[12px] text-white/45">Ten tydzień</p>
           <p className="mt-1 text-[32px] font-light leading-none tabular-nums tracking-tight">
-            {w.km.toFixed(1).replace(".", ",")}
+            <CountUp value={w.km} decimals={1} />
             <span className="ml-1 text-[14px] text-white/45">/ {n.goal} km</span>
           </p>
         </div>
@@ -205,7 +206,7 @@ export function HomeWeek() {
         </div>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
-        <div className={cn("h-full rounded-full transition-all duration-700", n.pct >= 1 ? "bg-emerald-400" : "bg-[var(--accent)]")} style={{ width: `${Math.round(n.pct * 100)}%` }} />
+        <div className={cn("app-grow-x h-full rounded-full transition-all duration-700", n.pct >= 1 ? "bg-emerald-400" : "bg-[var(--accent)]")} style={{ width: `${Math.round(n.pct * 100)}%` }} />
       </div>
       <div className="mt-3">
         <WeekBars per={w.per} days={w.days} />

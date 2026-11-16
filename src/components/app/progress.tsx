@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Award, Flame, Lock, Users } from "lucide-react";
 import { WeekSummary } from "@/components/app/week-summary";
+import { CountUp, celebrate } from "@/components/app/motion";
 import { badges, records, weekStreak, weeklyKm, type Badge } from "@/lib/app/badges";
 import { LESSONS } from "@/lib/app/course";
 import { useLog } from "@/lib/app/log";
@@ -76,13 +77,13 @@ export function ProgressView() {
         <Users className="size-5 text-white/50" />
       </Link>
       <div className="grid grid-cols-3 gap-2">
-        <Tile k="Razem" v={`${rec.totalKm.toFixed(0)} km`} s={`${rec.runs} treningów`} />
+        <Tile k="Razem" v={<><CountUp value={rec.totalKm} /> km</>} s={`${rec.runs} treningów`} />
         <Tile k="Czas" v={`${Math.round(rec.totalSec / 3600)} h`} s="w ruchu" />
         <Tile
           k="Seria"
           v={
             <span className="flex items-center gap-1">
-              {streak} <Flame className={cn("size-4", streak >= 2 ? "text-[var(--accent)]" : "text-white/25")} />
+              {streak} <Flame className={cn("size-4", streak >= 2 ? "app-flame text-[var(--accent)]" : "text-white/25")} />
             </span>
           }
           s={streak === 1 ? "tydzień z rzędu" : "tyg. z rzędu"}
@@ -104,7 +105,7 @@ export function ProgressView() {
             <div key={w.monday} className="flex flex-1 flex-col items-center gap-1">
               <span className="text-[9.5px] tabular-nums text-white/35">{w.km ? Math.round(w.km) : ""}</span>
               <div className="flex w-full flex-1 items-end">
-                <div className={cn("w-full rounded-md", w.km ? (i === weeks.length - 1 ? "bg-[var(--accent)]" : "bg-white/65") : "bg-white/[0.06]")} style={{ height: `${w.km ? Math.max(6, (w.km / max) * 100) : 4}%` }} />
+                <div className={cn("app-bar-grow w-full rounded-md", w.km ? (i === weeks.length - 1 ? "bg-[var(--accent)]" : "bg-white/65") : "bg-white/[0.06]")} style={{ height: `${w.km ? Math.max(6, (w.km / max) * 100) : 4}%`, animationDelay: `${i * 45}ms` }} />
               </div>
             </div>
           ))}
@@ -165,7 +166,10 @@ export function BadgeWatcher() {
       if (!news.length) return;
       save(SEEN, [...new Set([...seen, ...now])]);
       // First time on this phone with older runs: mark them quietly, celebrate only what comes next.
-      if (!first || news.length <= 2) setFresh(all.filter((b) => news.includes(b.id)));
+      if (!first || news.length <= 2) {
+        setFresh(all.filter((b) => news.includes(b.id)));
+        celebrate();
+      }
     }, 1500);
     return () => clearTimeout(t);
     // the id list is the whole dependency
@@ -176,7 +180,7 @@ export function BadgeWatcher() {
       <div className="grid gap-2">
         {fresh.map((b) => (
           <div key={b.id} className="flex items-center gap-3.5 rounded-[16px] bg-white/[0.05] p-3.5">
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--accent)]">
+            <span className="app-badge-in grid size-11 shrink-0 place-items-center rounded-full bg-[var(--accent)]">
               <Award className="size-5" />
             </span>
             <span>

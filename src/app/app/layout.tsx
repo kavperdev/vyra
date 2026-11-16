@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Onboarding } from "@/components/app/onboarding";
 import { AccountSync } from "@/components/app/account-sync";
+import { Confetti } from "@/components/app/motion";
 import { AccessProvider } from "@/components/app/access";
 import { premiumStatus } from "@/lib/app/premium";
 import { IosInstallNudge } from "@/components/app/ios-install-nudge";
@@ -48,7 +49,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           )}
         </div>
       </header>
-      <main className="mx-auto w-full max-w-md px-4 pb-32 pt-2">
+      <div aria-hidden className="app-aurora">
+        <i />
+        <i />
+      </div>
+      <Confetti />
+      <main className="relative z-10 mx-auto w-full max-w-md px-4 pb-32 pt-2">
         <AccessProvider value={access}>{children}</AccessProvider>
       </main>
       <AppTabBar />

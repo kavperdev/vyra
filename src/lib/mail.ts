@@ -307,6 +307,16 @@ export const MAILS = {
     };
   },
 
+  runClubMessage(o: { name: string; event: string; when: string; title: string; body: string }): MailContent {
+    return {
+      subject: `${o.title} (${o.event})`,
+      preview: o.body.slice(0, 110),
+      title: hi(o.name),
+      paragraphs: [o.title, ...o.body.split(/\n+/).filter(Boolean)],
+      after: [`Piszę, bo jesteś na liście: ${o.event}, ${o.when}.`],
+    };
+  },
+
   runClubReminder(o: { name: string; title: string; when: string; place: string; map: string | null; pace: string | null }): MailContent {
     return {
       subject: `Jutro: ${o.title}, ${o.when}`,

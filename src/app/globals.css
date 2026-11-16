@@ -400,3 +400,35 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .app-skin main select[class*="rounded-lg"],
 .app-skin main textarea[class*="rounded-lg"] { border-radius: 14px; font-size: 16px; }
 .app-skin main button[class*="rounded-md"], .app-skin main a[class*="rounded-md"][class*="inline-flex"] { border-radius: 9999px; }
+
+/* ---------------------------------------------------------------- app: living surface
+   Motion that costs almost nothing: only transform and opacity, no blur filters, off when the system asks. */
+@keyframes vyra-aurora-a { 0%, 100% { transform: translate3d(-12%, -6%, 0) scale(1); } 50% { transform: translate3d(10%, 8%, 0) scale(1.25); } }
+@keyframes vyra-aurora-b { 0%, 100% { transform: translate3d(14%, 10%, 0) scale(1.15); } 50% { transform: translate3d(-8%, -10%, 0) scale(0.9); } }
+@keyframes vyra-grow-x { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes vyra-sheen { 0% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(260%) skewX(-18deg); } }
+@keyframes vyra-flame { 0%, 100% { transform: scale(1) rotate(-3deg); } 50% { transform: scale(1.14) rotate(4deg); } }
+@keyframes vyra-chat-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes vyra-badge-in { 0% { opacity: 0; transform: scale(0.4) rotate(-25deg); } 60% { opacity: 1; transform: scale(1.15) rotate(6deg); } 100% { transform: none; } }
+@keyframes vyra-ring-pulse { 0% { transform: scale(0.9); opacity: 0.55; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes vyra-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@layer components {
+  .app-aurora { position: fixed; inset: -20% -30% auto -30%; height: 78vh; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0.9; }
+  .app-aurora i { position: absolute; display: block; width: 70%; aspect-ratio: 1; border-radius: 9999px; will-change: transform; }
+  .app-aurora i:nth-child(1) { left: 0; top: 0; background: radial-gradient(closest-side, rgb(229 52 59 / 0.2), transparent 70%); animation: vyra-aurora-a 24s ease-in-out infinite; }
+  .app-aurora i:nth-child(2) { right: 0; top: 12%; background: radial-gradient(closest-side, rgb(90 110 255 / 0.13), transparent 70%); animation: vyra-aurora-b 30s ease-in-out infinite; }
+  .app-grow-x { transform-origin: left; animation: vyra-grow-x 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-sheen { position: relative; overflow: hidden; }
+  .app-sheen::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 45%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent); mix-blend-mode: soft-light; animation: vyra-sheen 1.5s 0.5s cubic-bezier(0.3, 0.6, 0.2, 1) both; pointer-events: none; }
+  .app-flame { transform-origin: 50% 90%; animation: vyra-flame 1.6s ease-in-out infinite; }
+  .chat-in { animation: vyra-chat-in 0.22s cubic-bezier(0.2, 0.7, 0.1, 1) both; }
+  .app-badge-in { animation: vyra-badge-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1.1) both; }
+  .app-pulse-ring { position: relative; }
+  .app-pulse-ring::before { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid currentColor; animation: vyra-ring-pulse 1.8s ease-out infinite; pointer-events: none; }
+  .app-float { animation: vyra-float 3.2s ease-in-out infinite; }
+  .app-tab-pill { transition: transform 0.42s cubic-bezier(0.3, 1.35, 0.5, 1); will-change: transform; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-aurora i, .app-grow-x, .app-sheen::after, .app-flame, .chat-in, .app-badge-in, .app-pulse-ring::before, .app-float { animation: none !important; }
+  .app-tab-pill { transition: none; }
+}

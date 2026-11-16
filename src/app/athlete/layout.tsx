@@ -11,8 +11,10 @@ export default async function AthleteLayout({ children }: { children: React.Reac
   const user = await requireRole("athlete");
   const { t } = await getT();
   const supabase = await createClient();
-  const [unread, campCount, club, method, linked] = await Promise.all([
+  const [unread, msgUnread, campCount, club, method, linked] = await Promise.all([
     unreadCount(supabase),
+    // Unread coach-athlete messages (0 before the migration).
+    supabase.rpc("messages_unread").then((r) => (r.error ? 0 : ((r.data ?? []) as { unread: number }[]).reduce((s, x) => s + (x.unread ?? 0), 0))),
     supabase
       .from("camp_participants")
       .select("id", { count: "exact", head: true })
@@ -36,6 +38,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
     ...(hasCamp ? [{ href: "/athlete/camp", label: t("Mój obóz", "My camp"), icon: "camps", mobile: true } as NavItem] : []),
     { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+    ...(linked ? [{ href: "/athlete/wiadomosci", label: t("Trener", "Coach"), icon: "inbox", badge: msgUnread, mobile: true } as NavItem] : []),
     ...(method ? [{ href: "/athlete/metoda", label: "VYRA Method", icon: "method" } as NavItem] : []),
     ...(club ? [{ href: "/athlete/klub", label: club.name, icon: "club" } as NavItem] : []),
     { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },

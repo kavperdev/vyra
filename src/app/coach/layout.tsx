@@ -14,8 +14,10 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   const staffRole = user.profile.staff_role;
   const founder = staffRole === "founder";
   const supabase = await createClient();
-  const [unread, newApplications, club] = await Promise.all([
+  const [unread, msgUnread, newApplications, club] = await Promise.all([
     unreadCount(supabase),
+    // Unread coach-athlete messages (0 before the migration).
+    supabase.rpc("messages_unread").then((r) => (r.error ? 0 : ((r.data ?? []) as { unread: number }[]).reduce((s, x) => s + (x.unread ?? 0), 0))),
     founder
       ? supabase
           .from("applications")
@@ -30,6 +32,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     { href: "/coach", label: t("Pulpit", "Dashboard"), icon: "dashboard", mobile: true },
     { href: "/coach/athletes", label: t("Zawodnicy", "Athletes"), icon: "athletes", mobile: true },
     { href: "/coach/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+    { href: "/coach/wiadomosci", label: t("Wiadomości", "Messages"), icon: "inbox", badge: msgUnread, mobile: true },
     ...(club || founder ? [{ href: "/coach/klub", label: club ? club.name : t("Kluby", "Clubs"), icon: "club" } as NavItem] : []),
     ...(clubStaff ? [] : [{ href: "/coach/camps", label: t("Obozy", "Camps"), icon: "camps" } as NavItem]),
     ...(canPlan(staffRole) ? [{ href: "/coach/templates", label: t("Szablony", "Templates"), icon: "templates" } as NavItem] : []),

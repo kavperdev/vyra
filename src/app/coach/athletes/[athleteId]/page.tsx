@@ -85,6 +85,11 @@ export default async function AthleteProfilePage({
 
   return (
     <div className="grid gap-6">
+      {athlete.link_status === "active" ? (
+        <Link href={`/coach/wiadomosci?z=${athlete.id}`} className="-mb-3 w-fit justify-self-end rounded-full border border-border px-3.5 py-1.5 text-sm font-medium transition hover:bg-surface-2">
+          {tl("Napisz wiadomość", "Send a message")}
+        </Link>
+      ) : null}
       <PageHeader
         eyebrow={athlete.link_status === "archived" ? tl("Zawodnik · archiwum", "Athlete · archived") : tl("Zawodnik", "Athlete")}
         title={

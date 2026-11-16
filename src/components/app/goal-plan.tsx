@@ -199,7 +199,7 @@ export function GoalPlanView() {
           </div>
         </div>
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-black/10">
-          <div className="h-full rounded-full bg-black transition-all duration-500" style={{ width: `${Math.round((done / Math.max(1, all.length)) * 100)}%` }} />
+          <div className="app-grow-x h-full rounded-full bg-black transition-all duration-500" style={{ width: `${Math.round((done / Math.max(1, all.length)) * 100)}%` }} />
         </div>
         <p className="mt-1.5 text-[12px] text-black/50">
           {done} z {all.length} treningów

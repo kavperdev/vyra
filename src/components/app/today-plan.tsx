@@ -7,6 +7,7 @@ import { completeRef, readinessToday, setSwap, todayItem, type TodayItem } from 
 import { useStoreTick } from "@/lib/app/store";
 import { SectionHead } from "@/components/app/ui";
 import { useAccess } from "@/components/app/access";
+import { CountUp } from "@/components/app/motion";
 import { cn } from "@/lib/utils";
 
 const dayName = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
@@ -52,7 +53,7 @@ export function TodayPlan() {
   return (
     <>
       <SectionHead title={item.when === "today" ? "Twój trening na dziś" : "Następny trening"} href={item.plan} more="Cały plan" />
-      <div className={cn("rounded-[22px] p-4", item.doneToday ? "border border-white/[0.06] bg-[#111113]" : "bg-white text-black")}>
+      <div className={cn("rounded-[22px] p-4", item.doneToday ? "border border-white/[0.06] bg-[#111113]" : "app-sheen bg-white text-black shadow-[0_18px_50px_-18px_rgba(229,52,59,0.55)]")}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={cn("text-[12px] capitalize", item.doneToday ? "text-white/45" : "text-black/50")}>{item.when === "next" && item.date ? dayName(item.date) : item.source === "start" ? "Zacznij biegać" : "Plan pod start"}</p>
@@ -61,7 +62,7 @@ export function TodayPlan() {
           </div>
           {item.countdown ? (
             <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-center text-[11.5px] font-medium tabular-nums", item.doneToday ? "bg-white/[0.07] text-white/70" : "bg-black/[0.07]")}>
-              {item.countdown.days} {item.countdown.days === 1 ? "dzień" : "dni"}
+              <CountUp value={item.countdown.days} comma={false} /> {item.countdown.days === 1 ? "dzień" : "dni"}
               <span className="block text-[10px] font-normal opacity-60">{item.countdown.label}</span>
             </span>
           ) : null}

@@ -248,6 +248,37 @@ export async function notifyRunClubSubscribers(eventId: string): Promise<ActionR
   });
 }
 
+/** Panel: write to everyone signed up for one date. A notification in the app for people with an account, an e-mail for all. */
+export async function announceRunClub(eventId: string, input: { title: string; body: string; email: boolean }): Promise<ActionResult> {
+  return withUser("coach", async ({ supabase, user }) => {
+    if (user.profile.staff_role !== "founder") return { ok: false, error: "Do zapisanych piszą założyciele." };
+    const title = input.title.trim().slice(0, 100);
+    const body = input.body.trim().slice(0, 600);
+    if (title.length < 3 || body.length < 3) return { ok: false, error: "Wpisz tytuł i treść wiadomości." };
+    const { data: ev } = await supabase.from("run_club_events").select("id, title, starts_at, place").eq("id", eventId).maybeSingle();
+    const e = ev as { id: string; title: string; starts_at: string; place: string } | null;
+    if (!e) return { ok: false, error: "Nie ma takiego terminu." };
+    const { data: list, error } = await supabase.from("run_club_signups").select("email, full_name").eq("event_id", eventId);
+    if (error) return dbError(error);
+    const people = (list ?? []) as { email: string; full_name: string }[];
+    if (!people.length) return { ok: false, error: "Nikt nie jest jeszcze zapisany na ten termin." };
+
+    const push = await supabase.rpc("run_club_push", { p_event: eventId, p_title: title, p_body: body });
+    const inApp = push.error ? 0 : Number(push.data ?? 0);
+    let mails = 0;
+    if (input.email && mailConfigured()) {
+      // One e-mail per person per message text; sending the same text twice does nothing.
+      const sig = Array.from(`${title}|${body}`).reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36);
+      for (const p of people) {
+        const ok = await sendMailOnce(`rcmsg:${e.id}:${sig}:${p.email.toLowerCase()}`, p.email, MAILS.runClubMessage({ name: p.full_name, event: e.title, when: whenPl(e.starts_at), title, body }));
+        if (ok) mails++;
+      }
+    }
+    const parts = [`${inApp} ${inApp === 1 ? "powiadomienie" : "powiadomień"} w aplikacji`, ...(input.email ? [`${mails} ${mails === 1 ? "mail" : "maili"}`] : [])];
+    return { ok: true, message: `Wysłano: ${parts.join(", ")} (zapisanych: ${people.length}).${push.error ? " Powiadomienia w aplikacji ruszą po uruchomieniu SQL." : ""}` };
+  });
+}
+
 const photoSchema = z.object({
   url: z.string().trim().url("Wgraj zdjęcie").max(500),
   caption: z.string().trim().max(160),

@@ -3,6 +3,7 @@ import { GOAL_KEY, buildPlan, todayLocal, type GoalSession, type GoalStore } fro
 import { readGoal } from "@/lib/app/goal-store";
 import { readLog, type Run } from "@/lib/app/log";
 import { load, save } from "@/lib/app/store";
+import { celebrate } from "@/components/app/motion";
 import { fmtPace } from "@/lib/method/engine";
 
 /**
@@ -59,13 +60,19 @@ export function completeRef(ref: string | null | undefined) {
   const [kind, id] = [ref.slice(0, ref.indexOf(":")), ref.slice(ref.indexOf(":") + 1)];
   if (kind === "start" && /^\d{1,2}-\d$/.test(id)) {
     const d = startDone();
-    if (!d.includes(id)) save(START_KEY, [...d, id]);
+    if (!d.includes(id)) {
+      save(START_KEY, [...d, id]);
+      celebrate();
+    }
     save("vyra-start-on", true);
     save("vyra-start-last", todayLocal());
   }
   if (kind === "goal") {
     const g = readGoal();
-    if (g && !g.done.includes(id)) save(GOAL_KEY, { ...g, done: [...g.done, id] });
+    if (g && !g.done.includes(id)) {
+      save(GOAL_KEY, { ...g, done: [...g.done, id] });
+      celebrate();
+    }
   }
 }
 

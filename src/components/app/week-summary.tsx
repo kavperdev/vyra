@@ -6,6 +6,7 @@ import { levelOf, weekStreak, weeklyKm } from "@/lib/app/badges";
 import { useLog } from "@/lib/app/log";
 import { todayWaw, useStore } from "@/lib/app/store";
 import { Card } from "@/components/app/ui";
+import { CountUp } from "@/components/app/motion";
 import { fmtTime } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
 
@@ -126,7 +127,7 @@ export function WeekSummary() {
         <div>
           <p className="text-[12px] text-white/45">Ten tydzień · {range}</p>
           <p className="mt-1 text-[40px] font-light leading-none tabular-nums tracking-tight">
-            {pl(w.cur.km)} <span className="text-[14px] text-white/45">/ {w.goal} km</span>
+            <CountUp value={w.cur.km} decimals={1} /> <span className="text-[14px] text-white/45">/ {w.goal} km</span>
           </p>
         </div>
         <button type="button" disabled={busy || !w.cur.runs} onClick={share} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[13px] font-semibold text-black active:scale-95 disabled:opacity-30">
@@ -134,7 +135,7 @@ export function WeekSummary() {
         </button>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.07]">
-        <div className={cn("h-full rounded-full transition-all duration-700", w.pct >= 1 ? "bg-emerald-400" : "bg-[var(--accent)]")} style={{ width: `${Math.round(w.pct * 100)}%` }} />
+        <div className={cn("app-grow-x h-full rounded-full transition-all duration-700", w.pct >= 1 ? "bg-emerald-400" : "bg-[var(--accent)]")} style={{ width: `${Math.round(w.pct * 100)}%` }} />
       </div>
       <div className="mt-3 flex items-center justify-between text-[12.5px] text-white/55">
         <span>

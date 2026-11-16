@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls";
 import { PhotoUpload } from "@/components/content/photo-upload";
-import { deleteRunClubEvent, deleteRunClubPhoto, deleteTestimonial, notifyRunClubSubscribers, saveRunClubEvent, saveRunClubPhoto, saveTestimonial } from "@/lib/actions/club";
+import { announceRunClub, deleteRunClubEvent, deleteRunClubPhoto, deleteTestimonial, notifyRunClubSubscribers, saveRunClubEvent, saveRunClubPhoto, saveTestimonial } from "@/lib/actions/club";
 import type { RunClubEvent, RunClubPhoto, RunClubSignup, Testimonial } from "@/lib/data/club";
 import { formatDate } from "@/lib/format";
 import { channelLabel } from "@/lib/run-club-channels";
@@ -167,6 +167,70 @@ function NotifyButton({ eventId, subscribers }: { eventId: string; subscribers: 
   );
 }
 
+/** Write to everyone signed up for this date: a notification in the app, optionally an e-mail too. */
+function AnnounceBox({ eventId, count }: { eventId: string; count: number }) {
+  const [openBox, setOpenBox] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [email, setEmail] = useState(true);
+  const [pending, start] = useTransition();
+  const quick = [
+    ["Zmiana miejsca", "Uwaga, zmieniamy miejsce zbiórki: "],
+    ["Zmiana godziny", "Uwaga, zaczynamy o innej godzinie: "],
+    ["Pogoda", "Biegamy mimo pogody. Ubierz się warstwowo i weź coś od deszczu."],
+    ["Odwołane", "Niestety musimy odwołać dzisiejszy trening. Widzimy się w kolejnym terminie."],
+  ];
+  if (!openBox)
+    return (
+      <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setOpenBox(true)}>
+        <Mail className="size-4" /> {tl(`Napisz do zapisanych (${count})`, `Message the sign-ups (${count})`)}
+      </Button>
+    );
+  return (
+    <div className="grid gap-3 rounded-md border border-border p-3">
+      <p className="text-sm font-medium">{tl(`Wiadomość do ${count} zapisanych`, `Message to ${count} sign-ups`)}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {quick.map(([t, b]) => (
+          <button key={t} type="button" onClick={() => { setTitle(t); setBody(b); }} className="rounded-full border border-border px-3 py-1 text-[12.5px] text-muted hover:text-foreground">
+            {t}
+          </button>
+        ))}
+      </div>
+      <Field label={tl("Tytuł", "Title")} htmlFor={`an-t-${eventId}`}>
+        <Input id={`an-t-${eventId}`} value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
+      </Field>
+      <Field label={tl("Treść", "Message")} htmlFor={`an-b-${eventId}`}>
+        <Textarea id={`an-b-${eventId}`} rows={3} value={body} maxLength={600} onChange={(e) => setBody(e.target.value)} />
+      </Field>
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox checked={email} onChange={(e) => setEmail(e.target.checked)} /> {tl("Wyślij też e-mailem (dojdzie do osób bez aplikacji)", "Also send by e-mail (reaches people without the app)")}
+      </label>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={pending || title.trim().length < 3 || body.trim().length < 3}
+          onClick={() =>
+            start(async () => {
+              const r = await announceRunClub(eventId, { title, body, email });
+              if (!r.ok) return void toast.error(r.error);
+              toast.success(r.message);
+              setOpenBox(false);
+              setTitle("");
+              setBody("");
+            })
+          }
+        >
+          {pending ? tl("Wysyłam…", "Sending…") : tl("Wyślij", "Send")}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setOpenBox(false)}>
+          {tl("Anuluj", "Cancel")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function RunClubEditor({ events, signups, subscribers = 0 }: { events: RunClubEvent[]; signups: RunClubSignup[]; subscribers?: number }) {
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -228,6 +292,7 @@ export function RunClubEditor({ events, signups, subscribers = 0 }: { events: Ru
                 ) : (
                   <p className="text-sm text-muted">{tl("Nikt się jeszcze nie zapisał.", "No sign-ups yet.")}</p>
                 )}
+                {list.length ? <AnnounceBox eventId={e.id} count={list.length} /> : null}
                 {e.visible && new Date(e.starts_at) > new Date() ? <NotifyButton eventId={e.id} subscribers={subscribers} /> : null}
                 <EventForm ev={e} onDone={() => setOpen(null)} />
               </>
