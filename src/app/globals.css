@@ -413,7 +413,7 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 @keyframes vyra-ring-pulse { 0% { transform: scale(0.9); opacity: 0.55; } 100% { transform: scale(1.9); opacity: 0; } }
 @keyframes vyra-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @layer components {
-  .app-aurora { position: fixed; inset: -20% -30% auto -30%; height: 78vh; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0.9; }
+  .app-aurora { position: fixed; inset: -28% -30% auto -30%; height: 86vh; z-index: 0; pointer-events: none; overflow: hidden; opacity: 0.9; }
   .app-aurora i { position: absolute; display: block; width: 70%; aspect-ratio: 1; border-radius: 9999px; will-change: transform; }
   .app-aurora i:nth-child(1) { left: 0; top: 0; background: radial-gradient(closest-side, rgb(229 52 59 / 0.2), transparent 70%); animation: vyra-aurora-a 24s ease-in-out infinite; }
   .app-aurora i:nth-child(2) { right: 0; top: 12%; background: radial-gradient(closest-side, rgb(90 110 255 / 0.13), transparent 70%); animation: vyra-aurora-b 30s ease-in-out infinite; }

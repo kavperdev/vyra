@@ -30,9 +30,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="app-native app-ui dark min-h-dvh overflow-x-clip bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
       <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
-      {/* The status bar is translucent in the installed app: keep a solid strip behind it. */}
-      <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-black" />
-      <header className="relative z-30 bg-black pt-[env(safe-area-inset-top)]">
+      {/* The status bar is translucent in the installed app: a frosted strip keeps the clock readable over scrolling content
+          and lets the background glow run up to the top edge, so the bar doesn't stand out as a separate block. */}
+      <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-black/55 backdrop-blur-xl" />
+      <header className="relative z-30 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <Link href="/app" aria-label="VYRA">
             {/* eslint-disable-next-line @next/next/no-img-element */}
