@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LocateFixed, MapPin } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { CountUp, ParticleRing } from "@/components/charts/particle-ring";
-import { Card, Chip, Tile } from "@/components/app/ui";
+import { Card } from "@/components/app/ui";
 import { readinessLevel } from "@/lib/readiness";
 import { cn } from "@/lib/utils";
 import { save } from "@/lib/app/store";
@@ -116,7 +116,12 @@ function Scale({ label, value, onChange, low, high }: { label: string; value: nu
   );
 }
 
-export function Today({ synced = null, athlete = false }: { synced?: Check | null; athlete?: boolean }) {
+/**
+ * Home screen pieces. part="ready": the morning check as one compact card. part="weather": running conditions in one card
+ * with details on tap. Both read the same saved answers and place, so they can sit apart on the screen.
+ */
+export function Today({ synced = null, athlete = false, part = "ready" }: { synced?: Check | null; athlete?: boolean; part?: "ready" | "weather" }) {
+  const [more, setMore] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [cond, setCond] = useState<Conditions | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -137,13 +142,13 @@ export function Today({ synced = null, athlete = false }: { synced?: Check | nul
   }, [synced, athlete]);
 
   useEffect(() => {
-    if (!place) return;
+    if (!place || part !== "weather") return;
     setErr(null);
     fetch(`/api/app/conditions?lat=${place.lat}&lon=${place.lon}`)
       .then((r) => r.json())
       .then((j) => (j.error ? setErr(j.error) : setCond(j)))
       .catch(() => setErr("Brak połączenia. Spróbuj za chwilę."));
-  }, [place]);
+  }, [place, part]);
 
   const choose = (p: Place) => {
     store.set("vyra-place", p);
@@ -199,112 +204,102 @@ export function Today({ synced = null, athlete = false }: { synced?: Check | nul
 
   return (
     <div className="grid grid-cols-1">
-      {/* Readiness ring */}
-      <div className="flex flex-col items-center pb-2 pt-1 text-center">
-        <ParticleRing value={score} size={250}>
-          {score != null ? (
-            <>
-              <span className="text-[11px] text-white/45">Gotowość</span>
-              <CountUp value={score} className="text-[64px] font-light leading-none tracking-tight tabular-nums" />
-            </>
-          ) : (
-            <button type="button" onClick={() => setSheet("check")} className="grid justify-items-center gap-1.5">
-              <span className="text-[11px] text-white/45">Gotowość</span>
-              <span className="text-[44px] font-light leading-none text-white/40">—</span>
-              <span className="mt-1 rounded-full bg-white px-3.5 py-1.5 text-[12.5px] font-semibold text-black">Sprawdź się (20 s)</span>
-            </button>
-          )}
-        </ParticleRing>
-        {advice ? (
-          <>
-            <p className="-mt-1 text-[17px] font-semibold">{advice.title}</p>
-            <p className="mt-1 max-w-[300px] text-[13px] leading-relaxed text-white/50">{advice.body}</p>
-            <button type="button" onClick={() => setSheet("check")} className="mt-2 text-[12px] text-white/40 underline-offset-2 active:underline">
-              Zmień odpowiedzi
-            </button>
-          </>
-        ) : ready ? (
-          <p className="-mt-1 max-w-[300px] text-[13px] leading-relaxed text-white/50">Odpowiedz na 4 pytania, a powiemy Ci, jak dziś trenować.</p>
-        ) : null}
-      </div>
-
-      {/* Conditions */}
-      <div className="mt-6 flex items-center justify-between px-0.5">
-        <h2 className="text-[16px] font-semibold tracking-tight">Warunki do biegu</h2>
-        <button type="button" onClick={() => setSheet("place")} className="flex items-center gap-1 rounded-full bg-[#141416] px-3 py-1 text-[12px] text-white/60">
-          <MapPin className="size-3.5" /> {place?.label ?? "Wybierz miejsce"}
+      {part === "ready" ? (
+        <button
+          type="button"
+          onClick={() => setSheet("check")}
+          className={cn("flex w-full items-center gap-4 rounded-[22px] border p-3 pr-4 text-left transition active:scale-[0.985]", score == null ? "border-white/15 bg-white/[0.04]" : "border-white/[0.06] bg-[#111113]")}
+        >
+          <ParticleRing value={score} size={84}>
+            {score != null ? <CountUp value={score} className="text-[24px] font-light leading-none tabular-nums" /> : <span className="text-[22px] font-light text-white/40">?</span>}
+          </ParticleRing>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11.5px] text-white/45">Gotowość na dziś</span>
+            {advice ? (
+              <>
+                <span className={cn("mt-0.5 block text-[16px] font-semibold leading-snug", advice.tone === "accent" && "text-[#ff6a6f]", advice.tone === "quiet" && "text-amber-200")}>{advice.title}</span>
+                <span className="mt-0.5 line-clamp-2 block text-[12.5px] leading-snug text-white/50">{advice.body}</span>
+              </>
+            ) : ready ? (
+              <>
+                <span className="mt-0.5 block text-[16px] font-semibold leading-snug">Jak się dziś czujesz?</span>
+                <span className="mt-0.5 block text-[12.5px] text-white/50">4 pytania, 20 sekund. Dopasujemy trening.</span>
+              </>
+            ) : null}
+          </span>
+          {score == null && ready ? <span className="app-pulse-ring shrink-0 rounded-full bg-white px-3 py-1.5 text-[12.5px] font-semibold text-black">Start</span> : null}
         </button>
-      </div>
+      ) : null}
 
-      {!place ? (
-        <Card className="mt-2.5 p-5">
-          <p className="text-[15px] font-medium">Pogoda, smog i najlepsza pora na bieg</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-white/50">Powiemy Ci, kiedy dziś biec i co założyć. Lokalizacji nie zapisujemy na serwerze.</p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button type="button" onClick={locate} className="flex items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13px] font-semibold text-black active:scale-[0.97]">
-              <LocateFixed className="size-4" /> Moja okolica
-            </button>
-            <button type="button" onClick={() => setSheet("place")} className="rounded-full bg-white/[0.07] py-2.5 text-[13px] font-medium active:scale-[0.97]">
-              Wybierz miasto
-            </button>
-          </div>
-        </Card>
-      ) : err ? (
-        <Card className="mt-2.5 p-5 text-[13px] text-white/60">{err}</Card>
-      ) : !view ? (
-        <div className="mt-2.5 grid grid-cols-3 gap-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-[88px] animate-pulse rounded-[16px] bg-white/[0.04]" />
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
-            <Tile k="Odczuwalna" v={`${view.f}°`} s={`${view.t}° na termometrze`} />
-            <Tile k="Powietrze" v={cond?.air ? cond.air.label : "—"} s={cond?.air ? `GIOŚ · ${cond.air.station}` : "brak stacji blisko"} className={cond?.air && cond.air.level >= 3 ? "border-[var(--accent)]/40" : ""} />
-            <Tile k="Zachód słońca" v={sunset ? hhmm(sunset) : "—"} s={view.dark ? "już ciemno" : "potem odblask"} />
-          </div>
-
-          <Card className="mt-2 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-[12px] text-white/45">Najlepsza pora w ciągu 12 h</p>
-              <Chip tone="good">{hhmm(view.best.h.time)}</Chip>
+      {part === "weather" ? (
+        !place ? (
+          <Card className="p-4">
+            <p className="text-[15px] font-medium">Kiedy dziś biec i co założyć</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-white/50">Pogoda, smog i najlepsza pora. Lokalizacji nie zapisujemy na serwerze.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" onClick={locate} className="flex items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13px] font-semibold text-black active:scale-[0.97]">
+                <LocateFixed className="size-4" /> Moja okolica
+              </button>
+              <button type="button" onClick={() => setSheet("place")} className="rounded-full bg-white/[0.07] py-2.5 text-[13px] font-medium active:scale-[0.97]">
+                Wybierz miasto
+              </button>
             </div>
-            <div className="mt-3 flex h-14 items-end gap-[3px]">
-              {view.hours.map(({ h, s }) => (
-                <div key={h.time} className="flex flex-1 flex-col items-center gap-1">
-                  <span
-                    className={cn("app-bar-grow w-full rounded-[3px]", h === view.best.h ? "bg-[var(--accent)]" : isDark(h.time, cond!) ? "bg-white/15" : "bg-white/40")}
-                    style={{ height: `${Math.max(8, s * 0.4)}px` }}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-1.5 flex justify-between text-[10.5px] text-white/35">
-              <span>{hhmm(view.hours[0].h.time)}</span>
-              <span>{hhmm(view.hours[view.hours.length - 1].h.time)}</span>
-            </div>
-            <p className="mt-3 text-[13px] leading-relaxed text-white/60">
-              {view.best.h.temp != null ? `${Math.round(view.best.h.temp)}°C` : ""}
-              {(view.best.h.rain ?? 0) > 0.1 ? ", możliwy deszcz" : ", bez deszczu"}
-              {view.best.h.wind != null ? `, wiatr ${Math.round(view.best.h.wind)} m/s` : ""}
-              {cond?.air && cond.air.level >= 4 ? ". Powietrze jest złe: lepiej bieżnia albo spokojny, krótki bieg." : cond?.air && cond.air.level === 3 ? ". Powietrze dostateczne: odpuść mocny trening na zewnątrz." : "."}
-            </p>
           </Card>
-
-          <Card className="mt-2 p-4">
-            <p className="text-[12px] text-white/45">Co założyć</p>
-            <ul className="mt-2 grid gap-2">
+        ) : err ? (
+          <Card className="p-4 text-[13px] text-white/60">{err}</Card>
+        ) : !view ? (
+          <div className="h-[104px] animate-pulse rounded-[20px] bg-white/[0.04]" />
+        ) : (
+          <Card className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[12px] text-white/45">Najlepiej biec o</p>
+                <p className="mt-0.5 text-[30px] font-light leading-none tabular-nums">{hhmm(view.best.h.time)}</p>
+              </div>
+              <div className="text-right text-[12.5px] leading-relaxed text-white/60">
+                <p>
+                  <span className="text-white">{view.f}°</span> odczuwalna
+                </p>
+                <p className={cn(cond?.air && cond.air.level >= 3 && "text-[#ff6a6f]")}>Powietrze: {cond?.air ? cond.air.label.toLowerCase() : "brak danych"}</p>
+                <button type="button" onClick={() => setSheet("place")} className="flex items-center justify-end gap-1 text-white/40">
+                  <MapPin className="size-3" /> {place.label}
+                </button>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {view.wear.map((w) => (
-                <li key={w} className="flex items-center gap-2.5 text-[14px]">
-                  <span className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]" /> {w}
-                </li>
+                <span key={w} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] text-white/75">
+                  {w}
+                </span>
               ))}
-            </ul>
-            <p className="mt-3 text-[11.5px] text-white/35">Ubieraj się tak, jakby było o 10°C cieplej. Pogoda: MET Norway. Powietrze: GIOŚ.</p>
+            </div>
+            {more ? (
+              <>
+                <div className="mt-4 flex h-12 items-end gap-[3px]">
+                  {view.hours.map(({ h, s }) => (
+                    <span key={h.time} className={cn("app-bar-grow flex-1 rounded-[3px]", h === view.best.h ? "bg-[var(--accent)]" : isDark(h.time, cond!) ? "bg-white/15" : "bg-white/40")} style={{ height: `${Math.max(8, s * 0.4)}px` }} />
+                  ))}
+                </div>
+                <div className="mt-1.5 flex justify-between text-[10.5px] text-white/35">
+                  <span>{hhmm(view.hours[0].h.time)}</span>
+                  <span>{sunset ? `zachód ${hhmm(sunset)}` : ""}</span>
+                  <span>{hhmm(view.hours[view.hours.length - 1].h.time)}</span>
+                </div>
+                <p className="mt-3 text-[12.5px] leading-relaxed text-white/55">
+                  {view.best.h.temp != null ? `${Math.round(view.best.h.temp)}°C` : ""}
+                  {(view.best.h.rain ?? 0) > 0.1 ? ", możliwy deszcz" : ", bez deszczu"}
+                  {view.best.h.wind != null ? `, wiatr ${Math.round(view.best.h.wind)} m/s` : ""}
+                  {cond?.air && cond.air.level >= 4 ? ". Powietrze jest złe: lepiej bieżnia albo krótki, spokojny bieg." : cond?.air && cond.air.level === 3 ? ". Powietrze dostateczne: odpuść mocny trening na zewnątrz." : "."} Ubieraj się tak, jakby było o 10°C cieplej.
+                </p>
+                <p className="mt-2 text-[10.5px] text-white/30">Pogoda: MET Norway. Powietrze: GIOŚ.</p>
+              </>
+            ) : null}
+            <button type="button" onClick={() => setMore(!more)} className="mt-3 text-[12px] text-white/45">
+              {more ? "Mniej" : "Pogoda godzina po godzinie"}
+            </button>
           </Card>
-        </>
-      )}
+        )
+      ) : null}
 
       {/* Sheets */}
       <Sheet open={!!sheet} onClose={() => setSheet(null)} title={sheet === "check" ? "Jak się dziś czujesz?" : "Gdzie biegasz?"}>

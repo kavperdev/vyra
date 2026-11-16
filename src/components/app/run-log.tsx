@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { StravaSync } from "@/components/app/strava-sync";
@@ -67,6 +67,13 @@ export function WeekBars({ per, days }: { per: number[]; days: string[] }) {
 export function RunLog() {
   const log = useLog();
   const [sheet, setSheet] = useState(false);
+  // "Dodaj bieg" on the home screen lands here with the form open.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("add") === "1") {
+      setSheet(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
   const [d, setD] = useState({ day: day(), km: "", sec: null as number | null, rpe: 4, note: "" });
   const getLog = useCallback(() => readLog(), []);
   const onImport = useCallback((next: Run[]) => writeLog(next), []);

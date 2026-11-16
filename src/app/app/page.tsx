@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Calculator, Dumbbell, Footprints, Timer, TimerReset, Trophy } from "lucide-react";
+import { ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Play, Plus, Timer, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
 import { TodayPlan } from "@/components/app/today-plan";
@@ -43,10 +44,35 @@ export default async function AppHome() {
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
   const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
+  const first = (user?.profile.full_name ?? "").trim().split(/\s+/)[0];
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
+  const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
+  const quick = [
+    { href: "/app/bieg", icon: Footprints, label: t("Biegnij", "Run"), main: true },
+    { href: "/app/timer", icon: TimerReset, label: t("Timer", "Timer") },
+    { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj bieg", "Log run") },
+    { href: paid ? "/panel" : "/app/trening", icon: CalendarDays, label: t("Mój plan", "My plan") },
+  ];
+
   return (
     <div className="app-rise grid grid-cols-1">
-      <p className="pt-1 text-center text-[12px] capitalize text-white/40">{today}</p>
-      <Today synced={synced} athlete={athlete} />
+      <div className="pt-1">
+        <p className="text-[12px] capitalize text-white/40">{today}</p>
+        <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em]">
+          {hello}
+          {first ? `, ${first}` : ""}
+        </h1>
+      </div>
+
+      {/* The four things people open the app for, always one tap away. */}
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        {quick.map((q) => (
+          <Link key={q.href} href={q.href} className={cn("flex flex-col items-center gap-1.5 rounded-[18px] py-3 text-[11.5px] font-medium transition active:scale-95", q.main ? "bg-[var(--accent)] text-white shadow-[0_10px_30px_-10px_rgba(229,52,59,0.8)]" : "bg-white/[0.06] text-white/85")}>
+            <q.icon className="size-[22px]" strokeWidth={1.9} />
+            {q.label}
+          </Link>
+        ))}
+      </div>
 
       {!paid ? (
         <TodayPlan />
@@ -55,13 +81,16 @@ export default async function AppHome() {
           <>
             <SectionHead title={t("Twój trening na dziś", "Today's session")} href="/panel" more={t("Plan", "Plan")} />
             {todays.map((s) => (
-              <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="mb-2 block rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
+              <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="app-sheen mb-2 block rounded-[22px] bg-white px-4 py-4 text-black shadow-[0_18px_50px_-18px_rgba(229,52,59,0.55)] transition active:scale-[0.985]">
                 <span className="flex items-start justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block text-[16px] font-semibold leading-snug">{s.title}</span>
+                    <span className="block text-[17px] font-semibold leading-snug">{s.title}</span>
                     {s.goal ? <span className="mt-0.5 line-clamp-2 block text-[13px] text-black/55">{s.goal}</span> : null}
                   </span>
                   {s.planned_duration_s ? <span className="shrink-0 rounded-full bg-black/[0.07] px-2.5 py-1 text-[12px] font-medium tabular-nums">{Math.round(s.planned_duration_s / 60)} min</span> : null}
+                </span>
+                <span className="mt-3 flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white">
+                  <Play className="size-4" /> {t("Otwórz trening", "Open session")}
                 </span>
               </Link>
             ))}
@@ -77,8 +106,15 @@ export default async function AppHome() {
         )
       ) : null}
 
+      <div className="mt-3">
+        <Today synced={synced} athlete={athlete} part="ready" />
+      </div>
+
       <SectionHead title={t("Dziennik", "Log")} href="/app/dziennik" more={t("Dodaj bieg", "Add run")} />
       <HomeWeek />
+
+      <SectionHead title={t("Warunki do biegu", "Running conditions")} />
+      <Today part="weather" />
 
       <ForYou />
 
@@ -88,12 +124,12 @@ export default async function AppHome() {
       <SectionHead title={t("Narzędzia", "Tools")} href="/app/narzedzia" more={t("Wszystkie", "All")} />
       <div className="grid grid-cols-2 gap-2">
         {[
-          { href: "/app/bieg", icon: Footprints, title: t("Biegnij", "Run"), sub: t("GPS i głos co km", "GPS and voice splits") },
-          { href: "/app/timer", icon: TimerReset, title: t("Timer interwałów", "Interval timer"), sub: t("sygnał przy każdej zmianie", "a beep at every change") },
           { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
           { href: "/app/narzedzia?t=prognoza", icon: Timer, title: t("Prognoza wyniku", "Race predictor"), sub: t("i Twoje tempa", "and your paces") },
           { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("plan żeli i picia", "gels and drinks plan") },
           { href: "/app/strategia", icon: Trophy, title: t("Strategia na start", "Race strategy"), sub: t("tempo na każdy km", "pace for every km") },
+          { href: "/app/postepy", icon: TrendingUp, title: t("Postępy", "Progress"), sub: t("rekordy i odznaki", "records and badges") },
+          { href: "/app/znajomi", icon: Users, title: t("Znajomi", "Friends"), sub: t("ranking kilometrów", "kilometre ranking") },
         ].map((x) => (
           <Card key={x.href} href={x.href} className="p-4">
             <x.icon className="size-5 text-white/70" />
