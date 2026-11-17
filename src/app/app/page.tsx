@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Play, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
+import { Activity, ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Play, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormCard } from "@/components/app/form-hub";
 import { CourseCard } from "@/components/app/course-progress";
@@ -80,6 +80,19 @@ export default async function AppHome() {
           </Link>
         ))}
       </div>
+
+      {todayISO() <= "2027-05-22" ? (
+        <Link href="/app/nocna" className="mt-3 flex items-center gap-3.5 rounded-[20px] border border-[#ff6a6f]/30 bg-[#111113] p-4 transition active:scale-[0.985]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#ff6a6f]/15">
+            <Moon className="size-5 text-[#ff6a6f]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-medium">Nocna Ekipa VYRA</span>
+            <span className="mt-0.5 block text-[12.5px] leading-snug text-white/45">Plan tygodnia na Nocną Dychę. Wybierz poziom.</span>
+          </span>
+          <ArrowUpRight className="size-5 text-white/50" />
+        </Link>
+      ) : null}
 
       {!paid ? (
         <TodayPlan />
