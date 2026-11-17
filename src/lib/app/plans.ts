@@ -1,7 +1,7 @@
 import { FREE_PLAN } from "@/lib/free-plan";
 import { GOAL_KEY, buildPlan, freeEvent, todayLocal, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { readGoal } from "@/lib/app/goal-store";
-import { readLog, type Run } from "@/lib/app/log";
+import { logPlanned, readLog, type Run } from "@/lib/app/log";
 import { load, save } from "@/lib/app/store";
 import { celebrate } from "@/components/app/motion";
 import { fmtPace } from "@/lib/method/engine";
@@ -55,8 +55,10 @@ export function goalDoneSet(g: GoalStore, sessions: GoalSession[], log: Run[] = 
 
 /* ---------- ticking from anywhere ---------- */
 
-export function completeRef(ref: string | null | undefined) {
+/** Ticks a session. With `est` (planned km and time) it also lands in the log, so progress counts it. */
+export function completeRef(ref: string | null | undefined, est?: { km: number; sec: number; title: string }) {
   if (!ref) return;
+  if (est && est.sec > 0) logPlanned(ref, { day: todayLocal(), ...est });
   const [kind, id] = [ref.slice(0, ref.indexOf(":")), ref.slice(ref.indexOf(":") + 1)];
   if (kind === "start" && /^\d{1,2}-\d$/.test(id)) {
     const d = startDone();

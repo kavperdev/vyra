@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { deleteExecution, saveExecution, saveExecutionFor } from "@/lib/actions/executions";
+import { addRun, removeRun, unlogPlanned } from "@/lib/app/log";
 import { AchievementsDialog } from "@/components/training/achievements-dialog";
 import type { Achievement } from "@/lib/training/achievements";
 import type { WorkoutResult } from "@/components/training/workout-player";
@@ -27,6 +28,21 @@ const feelings = () => [
   { v: "4", label: tl("Dobrze", "Good") },
   { v: "5", label: tl("Świetnie", "Great") },
 ] as const;
+
+/** A finished plan session lands in the app's diary too, so progress counts it. Re-saving overwrites it. */
+function toDiary(v: ExecutionFormValues, status: ExecutionStatus, kind: SessionKind) {
+  const id = `exec-${v.session_id}`;
+  if (status !== "completed" && status !== "partial") return removeRun(id);
+  const m = parseKmToMeters(v.running?.distance_km ?? "");
+  const sec = parseDuration(v.running?.duration ?? "");
+  const km = m && Number.isFinite(m) ? m / 1000 : 0;
+  const s = sec && Number.isFinite(sec) ? sec : 0;
+  const rpe = Number(String(v.rpe ?? "").replace(",", ".")) || 0;
+  const sport = kind === "running" ? "run" : kind === "strength" ? "gym" : kind === "mobility" ? "mobility" : "other";
+  if (sport === "run" && !km && !s) return;
+  unlogPlanned(`sess:${v.session_id}`);
+  addRun({ id, day: v.performed_on, km: sport === "run" ? km : 0, sec: s, rpe, note: v.comment ?? "", ref: `sess:${v.session_id}`, sport });
+}
 
 export function ExecutionForm({
   kind,
@@ -160,6 +176,7 @@ export function ExecutionForm({
             /* ignore */
           }
           toast.success(res.message);
+          if (!forAthleteId) toDiary(v, status, kind);
           if (res.data?.achievements?.length) setAchievements(res.data.achievements);
           reset(v);
           saved.current = false;
@@ -375,6 +392,10 @@ export function ExecutionForm({
                 start(async () => {
                   const res = await deleteExecution(initial.session_id);
                   if (!res.ok) return void toast.error(res.error);
+                  if (!forAthleteId) {
+                    removeRun(`exec-${initial.session_id}`);
+                    unlogPlanned(`sess:${initial.session_id}`);
+                  }
                   toast.success(res.message);
                   setConfirmDelete(false);
                   router.refresh();

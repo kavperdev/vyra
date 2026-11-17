@@ -10,7 +10,7 @@ import { useStore } from "@/lib/app/store";
 import { Building } from "@/components/app/building";
 import { TrialForm } from "@/components/app/trial-form";
 import { useAccess } from "@/components/app/access";
-import { addRun, useLog } from "@/lib/app/log";
+import { addRun, logPlanned, unlogPlanned, useLog } from "@/lib/app/log";
 import { completeRef, goalDoneSet } from "@/lib/app/plans";
 import { Seg, TimeInput, parseTime, useResult } from "@/components/app/tools";
 import { Sheet } from "@/components/app/sheet";
@@ -153,7 +153,15 @@ export function GoalPlanView() {
   const update = (v: GoalStore | null) => writeGoal(v);
   const toggle = (id: string) => {
     if (!g) return;
-    update({ ...g, done: doneSet.has(id) ? g.done.filter((x) => x !== id) : [...g.done, id] });
+    const on = !doneSet.has(id);
+    update({ ...g, done: on ? [...g.done, id] : g.done.filter((x) => x !== id) });
+    // Ticked without a recorded run: log it from the plan, so kilometres and progress count it.
+    const s = plan?.weeks.flatMap((w) => w.sessions).find((x) => x.id === id);
+    if (on && s && s.date <= today && s.km > 0) {
+      const pace = s.pace ? (s.pace[0] + s.pace[1]) / 2 : formNow ? (formNow / 5) * 1.3 : 360;
+      logPlanned(`goal:${id}`, { day: s.date, km: s.km, sec: Math.round(s.km * pace), title: s.title });
+    }
+    if (!on) unlogPlanned(`goal:${id}`);
     try {
       navigator.vibrate?.(10);
     } catch {

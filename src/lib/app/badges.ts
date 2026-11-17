@@ -42,7 +42,7 @@ export function weeklyKm(log: Run[], today: string, weeks = 12): { monday: strin
 export function records(log: Run[]) {
   const withKm = log.filter((r) => r.km > 0 && r.sec > 0);
   const longest = withKm.reduce<Run | null>((b, r) => (!b || r.km > b.km ? r : b), null);
-  const fastest = withKm.filter((r) => r.km >= 3).reduce<Run | null>((b, r) => (!b || r.sec / r.km < b.sec / b.km ? r : b), null);
+  const fastest = withKm.filter((r) => r.km >= 3 && !r.auto).reduce<Run | null>((b, r) => (!b || r.sec / r.km < b.sec / b.km ? r : b), null);
   const byWeek = new Map<string, number>();
   for (const r of withKm) byWeek.set(mondayOf(r.day), (byWeek.get(mondayOf(r.day)) ?? 0) + r.km);
   const bestWeek = Array.from(byWeek.entries()).reduce<[string, number] | null>((b, e) => (!b || e[1] > b[1] ? e : b), null);

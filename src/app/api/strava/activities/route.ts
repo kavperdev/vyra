@@ -5,8 +5,15 @@ export const dynamic = "force-dynamic";
 
 type Act = { id: number; name: string; sport_type?: string; type?: string; distance: number; moving_time: number; start_date_local: string; average_heartrate?: number; perceived_exertion?: number | null };
 const RUN = new Set(["Run", "TrailRun", "VirtualRun"]);
+const SPORT: Record<string, string> = {
+  Ride: "bike", VirtualRide: "bike", MountainBikeRide: "bike", GravelRide: "bike", EBikeRide: "bike", Velomobile: "bike",
+  Swim: "swim", WeightTraining: "gym", Crossfit: "gym", Workout: "gym", HighIntensityIntervalTraining: "gym",
+  Walk: "walk", Hike: "walk", Yoga: "mobility", Pilates: "mobility",
+  NordicSki: "ski", AlpineSki: "ski", BackcountrySki: "ski", RollerSki: "ski",
+  Soccer: "team", Basketball: "team", Volleyball: "team", Handball: "team", Tennis: "team", Badminton: "team", Squash: "team",
+};
 
-/** Recent runs from Strava. ?after=unix seconds; without it, the last 60 days. */
+/** Recent activities from Strava (runs and other sports). ?after=unix seconds; without it, the last 60 days. */
 export async function GET(req: NextRequest) {
   if (!configured()) return NextResponse.json({ connected: false, available: false });
   const link = await readLink();
@@ -16,14 +23,16 @@ export async function GET(req: NextRequest) {
   const token = await accessToken();
   if (!token) return NextResponse.json({ connected: false, available: true, error: "token" });
   const after = Number(new URL(req.url).searchParams.get("after")) || Math.floor(Date.now() / 1000) - 60 * 86400;
-  const runs: { id: string; day: string; km: number; sec: number; name: string; hr: number | null; rpe: number | null }[] = [];
+  const runs: { id: string; day: string; km: number; sec: number; name: string; hr: number | null; rpe: number | null; sport: string }[] = [];
   for (let page = 1; page <= 3; page++) {
     const res = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100&page=${page}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
     if (res.status === 429) return NextResponse.json({ connected: true, name: link.n, runs, error: "limit" });
     if (!res.ok) return NextResponse.json({ connected: true, name: link.n, runs, error: "strava" });
     const acts = (await res.json()) as Act[];
     for (const a of acts) {
-      if (!RUN.has(a.sport_type ?? a.type ?? "") || a.distance < 300 || !a.moving_time) continue;
+      const t = a.sport_type ?? a.type ?? "";
+      const run = RUN.has(t);
+      if (!a.moving_time || (run && a.distance < 300) || (!run && a.moving_time < 300)) continue;
       runs.push({
         id: `strava-${a.id}`,
         day: a.start_date_local.slice(0, 10),
@@ -32,6 +41,7 @@ export async function GET(req: NextRequest) {
         name: (a.name ?? "").slice(0, 80),
         hr: a.average_heartrate ? Math.round(a.average_heartrate) : null,
         rpe: a.perceived_exertion ?? null,
+        sport: run ? "run" : (SPORT[t] ?? "other"),
       });
     }
     if (acts.length < 100) break;

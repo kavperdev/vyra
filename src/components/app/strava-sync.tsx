@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import type { Run } from "@/components/app/run-log";
+import type { Run, Sport } from "@/lib/app/log";
 import { cn } from "@/lib/utils";
 
 const LAST = "vyra-strava-sync";
-type SRun = { id: string; day: string; km: number; sec: number; name: string; hr: number | null; rpe: number | null };
+type SRun = { id: string; day: string; km: number; sec: number; name: string; hr: number | null; rpe: number | null; sport?: string };
 
 const msg: Record<string, string> = {
-  ok: "Połączono ze Stravą. Pobieram biegi…",
+  ok: "Połączono ze Stravą. Pobieram treningi…",
   denied: "Nie udzielono dostępu w Stravie.",
   scope: "Zaznacz w Stravie zgodę na odczyt aktywności i spróbuj jeszcze raz.",
   error: "Nie udało się połączyć ze Stravą. Spróbuj ponownie.",
@@ -22,8 +22,10 @@ export function mergeStrava(log: Run[], runs: SRun[]): { next: Run[]; added: num
   const add: Run[] = [];
   for (const s of runs) {
     if (ids.has(s.id)) continue;
-    if (log.some((r) => r.day === s.day && Math.abs(r.km - s.km) <= Math.max(0.3, s.km * 0.04))) continue;
-    add.push({ id: s.id, day: s.day, km: s.km, sec: s.sec, rpe: s.rpe ?? 0, note: ["Strava", s.name, s.hr ? `śr. tętno ${s.hr}` : ""].filter(Boolean).join(" · ") });
+    const sport = (s.sport ?? "run") as Sport;
+    const same = (r: Run) => (r.sport ?? "run") === sport && !r.auto;
+    if (log.some((r) => same(r) && r.day === s.day && (sport === "run" ? Math.abs(r.km - s.km) <= Math.max(0.3, s.km * 0.04) : Math.abs(r.sec - s.sec) <= 300))) continue;
+    add.push({ id: s.id, day: s.day, km: s.km, sec: s.sec, rpe: s.rpe ?? 0, sport, note: ["Strava", s.name, s.hr ? `śr. tętno ${s.hr}` : ""].filter(Boolean).join(" · ") });
   }
   return { next: [...add, ...log].sort((a, b) => (a.day < b.day ? 1 : -1)), added: add.length };
 }
@@ -54,7 +56,7 @@ export function StravaSync({ getLog, onImport }: { getLog: () => Run[]; onImport
         }
         const { next, added } = mergeStrava(getLog(), j.runs ?? []);
         if (added) onImport(next);
-        setNote(j.error === "limit" ? "Strava chwilowo ogranicza pobieranie. Spróbuj za kwadrans." : added ? `Dodano ${added} ${added === 1 ? "bieg" : added < 5 ? "biegi" : "biegów"} ze Stravy.` : force ? "Wszystko aktualne." : null);
+        setNote(j.error === "limit" ? "Strava chwilowo ogranicza pobieranie. Spróbuj za kwadrans." : added ? `Dodano ${added} ${added === 1 ? "trening" : added < 5 ? "treningi" : "treningów"} ze Stravy.` : force ? "Wszystko aktualne." : null);
         if (!j.error) localStorage.setItem(LAST, String(Date.now()));
       } catch {
         setNote("Brak połączenia. Spróbuj później.");
@@ -89,7 +91,7 @@ export function StravaSync({ getLog, onImport }: { getLog: () => Run[]; onImport
       /* private mode */
     }
     setSt((s) => (s ? { ...s, connected: false } : s));
-    setNote("Odłączono Stravę. Zaimportowane biegi zostają w dzienniku.");
+    setNote("Odłączono Stravę. Zaimportowane treningi zostają w dzienniku.");
     setBusy(false);
   };
 
@@ -111,7 +113,7 @@ export function StravaSync({ getLog, onImport }: { getLog: () => Run[]; onImport
       ) : (
         <div>
           <p className="text-[15px] font-medium">Biegasz z zegarkiem?</p>
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-white/50">Połącz Stravę, a biegi z Garmina, Coros, Suunto czy Apple Watch same trafią do dziennika.</p>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-white/50">Połącz Stravę, a treningi z Garmina, Coros, Suunto czy Apple Watch (bieg, rower, pływanie i inne) same trafią do dziennika.</p>
           <a href="/api/strava/connect" className="mt-3 flex h-12 items-center justify-center rounded-full bg-[#FC4C02] text-[15px] font-semibold text-white active:scale-[0.98]">
             Połącz ze Stravą
           </a>

@@ -7,7 +7,7 @@ import { WeekSummary } from "@/components/app/week-summary";
 import { CountUp, celebrate } from "@/components/app/motion";
 import { badges, records, weekStreak, weeklyKm, type Badge } from "@/lib/app/badges";
 import { LESSONS } from "@/lib/app/course";
-import { useLog } from "@/lib/app/log";
+import { SPORTS, isRun, useActivities, useLog } from "@/lib/app/log";
 import { load, save, todayWaw, useStore } from "@/lib/app/store";
 import { useResult } from "@/components/app/tools";
 import { Sheet } from "@/components/app/sheet";
@@ -44,24 +44,36 @@ function BadgeTile({ b }: { b: Badge }) {
 /** Progress for every runner: totals, 12 weeks of kilometres, records, current form and badges. */
 export function ProgressView() {
   const log = useLog();
+  const acts = useActivities();
   const all = useBadges();
   const { r, p5k } = useResult();
   const today = todayWaw();
   const weeks = useMemo(() => weeklyKm(log, today), [log, today]);
   const rec = useMemo(() => records(log), [log]);
-  const streak = weekStreak(log, today);
+  const streak = weekStreak(acts, today);
+  const totalSec = acts.reduce((s, x) => s + x.sec, 0);
+  // Other sports, last 4 weeks: time per sport.
+  const since = new Date(Date.parse(`${today}T12:00:00Z`) - 27 * 86400000).toISOString().slice(0, 10);
+  const others = SPORTS.filter((sp) => sp.k !== "run")
+    .map((sp) => {
+      const xs = acts.filter((x) => !isRun(x) && (x.sport ?? "run") === sp.k && x.day >= since);
+      return { name: sp.name, n: xs.length, sec: xs.reduce((s, x) => s + x.sec, 0) };
+    })
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.sec - a.sec);
+  const hm = (sec: number) => (sec >= 3600 ? `${Math.floor(sec / 3600)} h ${Math.round((sec % 3600) / 60)} min` : `${Math.round(sec / 60)} min`);
   const max = Math.max(10, ...weeks.map((w) => w.km));
   const earned = all.filter((b) => b.earned).length;
   const last4 = weeks.slice(-4).reduce((s, w) => s + w.km, 0) / 4;
   const prev4 = weeks.slice(-8, -4).reduce((s, w) => s + w.km, 0) / 4;
 
-  if (!log.length)
+  if (!acts.length)
     return (
       <Card className="p-5 text-center">
-        <p className="text-[17px] font-semibold">Tu pojawią się Twoje postępy</p>
-        <p className="mt-1 text-[13.5px] leading-relaxed text-white/50">Zapisz pierwszy bieg: z GPS, z timera, ręcznie albo ze Stravy. Kilometry, rekordy i odznaki policzą się same.</p>
-        <Link href="/app/bieg" className="mt-4 inline-block rounded-full bg-white px-6 py-3 text-[14px] font-semibold text-black active:scale-[0.98]">
-          Biegnij z GPS
+        <p className="text-[17px] font-semibold">Tu zobaczysz, jak rośniesz</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed text-white/50">Każdy trening się liczy: dodany ręcznie w dzienniku, odhaczony w planie, ze Stravy albo z GPS. Kilometry, czas, rekordy i odznaki policzą się same.</p>
+        <Link href="/app/dziennik?add=1" className="mt-4 inline-block rounded-full bg-white px-6 py-3 text-[14px] font-semibold text-black active:scale-[0.98]">
+          Dodaj trening
         </Link>
       </Card>
     );
@@ -77,8 +89,8 @@ export function ProgressView() {
         <Users className="size-5 text-white/50" />
       </Link>
       <div className="grid grid-cols-3 gap-2">
-        <Tile k="Razem" v={<><CountUp value={rec.totalKm} /> km</>} s={`${rec.runs} treningów`} />
-        <Tile k="Czas" v={`${Math.round(rec.totalSec / 3600)} h`} s="w ruchu" />
+        <Tile k="Bieganie" v={<><CountUp value={rec.totalKm} /> km</>} s={`${rec.runs} ${rec.runs === 1 ? "bieg" : "biegów"}`} />
+        <Tile k="Czas" v={`${Math.round(totalSec / 3600)} h`} s={`${acts.length} treningów`} />
         <Tile
           k="Seria"
           v={
@@ -116,6 +128,22 @@ export function ProgressView() {
         </div>
         {prev4 > 0 && last4 > prev4 * 1.3 ? <p className="mt-3 rounded-xl bg-amber-400/10 p-3 text-[12.5px] leading-relaxed text-amber-200">Kilometry rosną szybciej niż 30% miesiąc do miesiąca. To najczęstsza droga do kontuzji: zrób lżejszy tydzień.</p> : null}
       </Card>
+
+      {others.length ? (
+        <Card className="p-4">
+          <p className="text-[12px] text-white/45">Inne sporty, ostatnie 4 tygodnie</p>
+          <div className="mt-2 divide-y divide-white/[0.05]">
+            {others.map((o) => (
+              <div key={o.name} className="flex items-center justify-between py-2 text-[14px]">
+                <span>{o.name}</span>
+                <span className="tabular-nums text-white/60">
+                  {o.n}× · {hm(o.sec)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <SectionHead title="Rekordy" />
       <div className="grid grid-cols-2 gap-2">

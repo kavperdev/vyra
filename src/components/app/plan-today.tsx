@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Play } from "lucide-react";
 import { quickComplete } from "@/lib/actions/executions";
-import { useLog } from "@/lib/app/log";
+import { logPlanned, useLog, type Sport } from "@/lib/app/log";
 import { todayWaw } from "@/lib/app/store";
 import { celebrate } from "@/components/app/motion";
 import { SectionHead } from "@/components/app/ui";
 import { cn } from "@/lib/utils";
 
-export type PlanSession = { id: string; title: string; planned_duration_s: number | null; goal: string | null; status: string; kind: string };
+export type PlanSession = { id: string; title: string; planned_duration_s: number | null; goal: string | null; status: string; kind: string; km?: number | null };
+const SPORT: Record<string, Sport> = { running: "run", strength: "gym", mobility: "mobility" };
 const DONE = ["completed", "partial"];
 
 /** Coach / VYRA Method sessions for today: one tap marks them done, and a run in the log ticks them by itself. */
@@ -23,13 +24,19 @@ export function PlanToday({ sessions }: { sessions: PlanSession[] }) {
   const [pending, start] = useTransition();
   const auto = useRef(false);
   const today = todayWaw();
-  const ranToday = log.filter((r) => r.day === today && (r.km >= 1 || r.sec >= 900));
+  const ranToday = log.filter((r) => r.day === today && !r.auto && (r.km >= 1 || r.sec >= 900));
   const isDone = (s: PlanSession) => done[s.id] || DONE.includes(s.status);
 
   const finish = (s: PlanSession, silent = false) => {
     setDone((d) => ({ ...d, [s.id]: true }));
     if (!silent) celebrate();
     const run = s.kind === "running" && ranToday[0] ? { km: ranToday[0].km, sec: ranToday[0].sec, day: today } : null;
+    // Nothing recorded today: log the planned session, so the diary and progress count it.
+    if (!run) {
+      const km = s.kind === "running" ? (s.km ?? (s.planned_duration_s ? Math.round(s.planned_duration_s / 36) / 10 : 0)) : 0;
+      const sec = s.planned_duration_s ?? (km ? km * 360 : 0);
+      if (sec > 0) logPlanned(`sess:${s.id}`, { day: today, km, sec, title: s.title, sport: SPORT[s.kind] ?? "other" });
+    }
     start(async () => {
       const r = await quickComplete(s.id, run);
       if (!r.ok) {

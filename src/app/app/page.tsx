@@ -34,12 +34,16 @@ export default async function AppHome() {
     const shift = (n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("training_sessions")
-      .select("id, title, planned_duration_s, goal, status, kind, scheduled_date")
+      .select("id, title, planned_duration_s, goal, status, kind, scheduled_date, running_workouts(planned_distance_m)")
       .eq("athlete_id", user.id)
       .gte("scheduled_date", shift(-dow))
       .lte("scheduled_date", shift(6 - dow))
       .limit(40);
-    const rows = (data ?? []) as (PlanSession & { scheduled_date: string })[];
+    type Row = PlanSession & { scheduled_date: string; running_workouts?: { planned_distance_m: number | null } | { planned_distance_m: number | null }[] | null };
+    const rows = ((data ?? []) as Row[]).map(({ running_workouts: rw, ...r }) => {
+      const m = (Array.isArray(rw) ? rw[0] : rw)?.planned_distance_m;
+      return { ...r, km: m ? Math.round(m / 100) / 10 : null };
+    });
     todays = rows.filter((r) => r.scheduled_date === day).slice(0, 3);
     week = rows.map((r) => ({ date: r.scheduled_date, done: r.status === "completed" || r.status === "partial" }));
   }

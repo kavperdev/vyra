@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { explainRun } from "@/lib/app/form";
 import { useForm } from "@/components/app/form-hub";
 
-import { addRun, readLog, removeRun, useLog, writeLog, type Run } from "@/lib/app/log";
+import { SPORTS, addRun, isRun, readAll, readLog, removeRun, sportName, useActivities, useLog, writeLog, type Run, type Sport } from "@/lib/app/log";
 export { readLog, type Run };
 
 const day = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(d);
@@ -66,8 +66,23 @@ export function WeekBars({ per, days }: { per: number[]; days: string[] }) {
   );
 }
 
+const plural = (n: number, one: string, few: string, many: string) => (n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many);
+const hm = (sec: number) => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return h ? `${h} h ${m} min` : `${m} min`;
+};
+
+/** One line of the diary: a run shows km, time and pace; other sports show what they have. */
+function entryLine(r: Run) {
+  if (isRun(r)) return r.km > 0 ? `${r.km.toString().replace(".", ",")} km · ${fmtTime(r.sec)} · ${fmtPace(r.sec / r.km)}/km` : `Bieg · ${fmtTime(r.sec)}`;
+  const parts = [sportName(r.sport), r.km > 0 ? `${r.km.toString().replace(".", ",")} km` : null, r.sec > 0 ? hm(r.sec) : null];
+  return parts.filter(Boolean).join(" · ");
+}
+
 export function RunLog() {
-  const log = useLog();
+  const all = useActivities();
+  const log = all.filter(isRun);
   const [sheet, setSheet] = useState(false);
   const [why, setWhy] = useState<string | null>(null);
   const form = useForm();
@@ -78,15 +93,18 @@ export function RunLog() {
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, []);
-  const [d, setD] = useState({ day: day(), km: "", sec: null as number | null, rpe: 4, note: "" });
-  const getLog = useCallback(() => readLog(), []);
+  const empty = { day: day(), km: "", sec: null as number | null, rpe: 4, note: "", sport: "run" as Sport };
+  const [d, setD] = useState(empty);
+  const getLog = useCallback(() => readAll(), []);
   const onImport = useCallback((next: Run[]) => writeLog(next), []);
+  const sp = SPORTS.find((x) => x.k === d.sport)!;
+  const kmNum = Number(d.km.replace(",", "."));
+  const valid = d.sport === "run" ? kmNum > 0 && kmNum < 400 && !!d.sec : !!d.sec && (!d.km || (kmNum > 0 && kmNum < 1000));
   const save = () => {
-    const km = Number(d.km.replace(",", "."));
-    if (!(km > 0 && km < 400) || !d.sec) return;
-    addRun({ day: d.day, km, sec: d.sec, rpe: d.rpe, note: d.note });
+    if (!valid || !d.sec) return;
+    addRun({ day: d.day, km: sp.dist && kmNum > 0 ? kmNum : 0, sec: d.sec, rpe: d.rpe, note: d.note, sport: d.sport });
     setSheet(false);
-    setD({ day: day(), km: "", sec: null, rpe: 4, note: "" });
+    setD({ ...empty, day: day() });
     try {
       navigator.vibrate?.([10, 40, 10]);
     } catch {
@@ -98,51 +116,57 @@ export function RunLog() {
   const start = monday(day());
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const per = days.map((x) => log.filter((r) => r.day === x).reduce((s, r) => s + r.km, 0));
-  const week = log.filter((r) => r.day >= start);
-  const month = log.filter((r) => r.day.slice(0, 7) === day().slice(0, 7));
+  const week = all.filter((r) => r.day >= start);
+  const weekRuns = week.filter(isRun);
+  const otherSec = week.filter((r) => !isRun(r)).reduce((s, r) => s + r.sec, 0);
+  const month = all.filter((r) => r.day.slice(0, 7) === day().slice(0, 7));
   const fmtDay = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
-  const valid = Number(d.km.replace(",", ".")) > 0 && !!d.sec;
 
   return (
     <div className="grid gap-3">
       <Card className="p-4">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[12px] text-white/45">Ten tydzień</p>
+            <p className="text-[12px] text-white/45">Ten tydzień · bieganie</p>
             <p className="mt-1 text-[40px] font-light leading-none tabular-nums tracking-tight">
-              {week.reduce((s, r) => s + r.km, 0).toFixed(1).replace(".", ",")}
+              {weekRuns.reduce((s, r) => s + r.km, 0).toFixed(1).replace(".", ",")}
               <span className="ml-1 text-[15px] text-white/45">km</span>
             </p>
           </div>
           <p className="text-right text-[12px] text-white/45">
-            {week.length} {week.length === 1 ? "bieg" : week.length < 5 && week.length > 1 ? "biegi" : "biegów"}
+            {week.length} {plural(week.length, "trening", "treningi", "treningów")}
             <br />
-            {fmtTime(week.reduce((s, r) => s + r.sec, 0))}
+            {hm(week.reduce((s, r) => s + r.sec, 0))} w ruchu
           </p>
         </div>
         <div className="mt-4">
           <WeekBars per={per} days={days} />
         </div>
+        {otherSec ? <p className="mt-3 text-[12.5px] text-white/50">+ {hm(otherSec)} innych sportów w tym tygodniu</p> : null}
       </Card>
       <div className="grid grid-cols-2 gap-2">
-        <Tile k="Ten miesiąc" v={`${month.reduce((s, r) => s + r.km, 0).toFixed(0)} km`} s={`${month.length} biegów`} />
-        <Tile k="Wszystkie" v={`${log.reduce((s, r) => s + r.km, 0).toFixed(0)} km`} s={`${log.length} biegów`} />
+        <Tile k="Ten miesiąc" v={`${month.filter(isRun).reduce((s, r) => s + r.km, 0).toFixed(0)} km`} s={`${month.length} ${plural(month.length, "trening", "treningi", "treningów")}`} />
+        <Tile k="Wszystkie" v={`${log.reduce((s, r) => s + r.km, 0).toFixed(0)} km`} s={`${all.length} ${plural(all.length, "trening", "treningi", "treningów")}`} />
       </div>
       <button type="button" onClick={() => setSheet(true)} className="flex h-13 items-center justify-center gap-2 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
-        <Plus className="size-5" /> Dodaj bieg
+        <Plus className="size-5" /> Dodaj trening
       </button>
       <StravaSync getLog={getLog} onImport={onImport} />
 
-      {log.length ? (
+      {all.length ? (
         <div className="divide-y divide-white/[0.05] rounded-[20px] border border-white/[0.06] bg-[#111113]">
-          {log.slice(0, 60).map((r) => (
+          {all.slice(0, 80).map((r) => (
             <div key={r.id} className="flex items-start gap-3 px-4 py-3">
-              <button type="button" onClick={() => setWhy(why === r.id ? null : r.id)} className="min-w-0 flex-1 text-left">
-                <span className="block text-[15px] font-medium tabular-nums">
-                  {r.km > 0 ? `${r.km.toString().replace(".", ",")} km · ${fmtTime(r.sec)} · ${fmtPace(r.sec / r.km)}/km` : `Trening · ${fmtTime(r.sec)}`}
+              <button type="button" onClick={() => isRun(r) && setWhy(why === r.id ? null : r.id)} className="min-w-0 flex-1 text-left">
+                <span className="flex items-center gap-2">
+                  <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.06em]", isRun(r) ? "bg-[var(--accent)]/15 text-[#ff8a8f]" : "bg-white/[0.08] text-white/65")}>{sportName(r.sport)}</span>
+                  <span className="truncate text-[15px] font-medium tabular-nums">{entryLine(r).replace(/^Bieg · /, "")}</span>
                 </span>
-                <span className="block mt-0.5 truncate text-[12px] capitalize text-white/45">
-                  {fmtDay(r.day)}{r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}{r.note ? ` · ${r.note}` : ""}
+                <span className="mt-0.5 block truncate text-[12px] capitalize text-white/45">
+                  {fmtDay(r.day)}
+                  {r.auto ? " · z planu" : ""}
+                  {r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}
+                  {r.note ? ` · ${r.note}` : ""}
                 </span>
                 {r.splits?.length ? (
                   <span className="app-scroll mt-1.5 flex gap-1 overflow-x-auto text-[11px] tabular-nums text-white/55">
@@ -153,7 +177,7 @@ export function RunLog() {
                     ))}
                   </span>
                 ) : null}
-                {why === r.id ? (
+                {!isRun(r) ? null : why === r.id ? (
                   <span className="mt-2 block rounded-[14px] bg-white/[0.05] p-3">
                     <span className="flex items-center gap-1.5 text-[11px] text-white/45">
                       <Sparkles className="size-3.5" /> Co dał ten trening · notatka automatyczna
@@ -173,20 +197,29 @@ export function RunLog() {
           ))}
         </div>
       ) : (
-        <p className="px-2 text-center text-[13px] text-white/40">Zapisuj biegi, a zobaczysz kilometry z tygodnia i miesiąca. Dane zostają na tym telefonie.</p>
+        <p className="px-2 text-center text-[13px] text-white/40">Zapisuj treningi: bieg, rower, pływanie, siłownię i inne. Zobaczysz tydzień, miesiąc i postępy.</p>
       )}
 
-      <Sheet open={sheet} onClose={() => setSheet(false)} title="Nowy bieg">
+      <Sheet open={sheet} onClose={() => setSheet(false)} title="Nowy trening">
         <div className="grid grid-cols-1 gap-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
+            {SPORTS.map((x) => (
+              <button key={x.k} type="button" onClick={() => setD({ ...d, sport: x.k, km: x.dist ? d.km : "" })} className={cn("h-10 min-w-0 truncate rounded-xl px-2 text-[12.5px] font-medium transition", d.sport === x.k ? "bg-white text-black" : "bg-white/[0.06] text-white/65")}>
+                {x.name}
+              </button>
+            ))}
+          </div>
+          <div className={cn("grid gap-2", sp.dist ? "grid-cols-2" : "grid-cols-1")}>
             <label className="grid min-w-0 gap-1.5 text-[12px] text-white/45">
               Dzień
               <input type="date" value={d.day} max={day()} onChange={(e) => setD({ ...d, day: e.target.value || day() })} className="h-12 w-full min-w-0 appearance-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-left text-[16px] outline-none [color-scheme:dark]" />
             </label>
-            <label className="grid min-w-0 gap-1.5 text-[12px] text-white/45">
-              Dystans (km)
-              <input inputMode="decimal" enterKeyHint="done" placeholder="np. 6,5" value={d.km} onChange={(e) => setD({ ...d, km: e.target.value.replace(/[^0-9.,]/g, "").slice(0, 6) })} className="h-12 w-full min-w-0 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-[16px] tabular-nums outline-none" />
-            </label>
+            {sp.dist ? (
+              <label className="grid min-w-0 gap-1.5 text-[12px] text-white/45">
+                Dystans (km){d.sport === "run" ? "" : ", opcjonalnie"}
+                <input inputMode="decimal" enterKeyHint="done" placeholder={d.sport === "swim" ? "np. 1,5" : d.sport === "bike" ? "np. 40" : "np. 6,5"} value={d.km} onChange={(e) => setD({ ...d, km: e.target.value.replace(/[^0-9.,]/g, "").slice(0, 6) })} className="h-12 w-full min-w-0 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-[16px] tabular-nums outline-none" />
+              </label>
+            ) : null}
           </div>
           <p className="text-[12px] text-white/45">Czas</p>
           <TimeInput value={d.sec} onChange={(sec) => setD({ ...d, sec })} />
@@ -200,7 +233,7 @@ export function RunLog() {
           </div>
           <input placeholder="Notatka (opcjonalnie)" value={d.note} onChange={(e) => setD({ ...d, note: e.target.value })} className="h-12 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[16px] outline-none" />
           <button type="button" disabled={!valid} onClick={save} className="mt-1 h-13 rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98] disabled:opacity-30">
-            Zapisz bieg
+            Zapisz trening
           </button>
         </div>
       </Sheet>

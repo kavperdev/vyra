@@ -153,7 +153,10 @@ export function TodayPlan() {
               <Footprints className="size-4" /> Z telefonem
             </Link>
           )}
-          <button type="button" onClick={() => completeRef(item.ref)} className="flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white active:scale-[0.97]">
+          <button type="button" onClick={() => {
+              const sec = item.km && mid ? item.km * mid : (item.minutes ?? 0) * 60;
+              completeRef(item.ref, { km: item.km ?? Math.round((sec / 480) * 10) / 10, sec: Math.round(sec), title: item.title });
+            }} className="flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white active:scale-[0.97]">
             <Check className="size-4" /> Zrobione
           </button>
         </div>
