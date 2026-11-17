@@ -29,7 +29,8 @@ body{width:1080px;height:1350px;background:#000;color:#fff;font-family:"Inter Di
 .foot{position:absolute;left:84px;right:84px;bottom:76px;display:flex;justify-content:space-between;font-size:28px;color:rgba(255,255,255,.4)}
 .day{display:grid;grid-template-columns:230px 1fr;gap:20px;padding:22px 0;border-top:1px solid rgba(255,255,255,.12)}
 .day b{font-size:30px;letter-spacing:.08em;text-transform:uppercase;color:#ff5a60;font-weight:600}.day small{display:block;font-size:26px;color:rgba(255,255,255,.4);margin-top:6px;letter-spacing:0;text-transform:none;font-weight:400}
-.day p{font-size:33px;line-height:1.3;color:rgba(255,255,255,.92)}.day p+p{color:rgba(255,255,255,.6);margin-top:4px}`;
+.day p{font-size:33px;line-height:1.3;color:rgba(255,255,255,.92)}.day p+p{color:rgba(255,255,255,.6);margin-top:4px}
+.day.t{padding:13px 0}.day.t p{font-size:27px;line-height:1.25}.day.t b{font-size:26px}.day.t small{font-size:22px}`;
 const shell = (body: string, page: string) =>
   `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body><div class="g" style="width:1300px;height:1300px;left:-300px;top:300px;background:radial-gradient(closest-side,rgba(229,52,59,.34),transparent 70%)"></div><div class="g" style="width:1000px;height:1000px;right:-450px;top:-300px;background:radial-gradient(closest-side,rgba(90,110,255,.15),transparent 70%)"></div><img class="logo" src="logo.png"><div class="pg">${page}</div>${body}</body></html>`;
 
@@ -39,25 +40,27 @@ slides.push(
   shell(
     `<div class="w" style="top:330px"><p class="m" style="font-size:40px;letter-spacing:.14em;text-transform:uppercase">Nocna Dycha · Siedlce</p>
 <h1 style="font-size:150px;margin-top:34px">Tydzień<br><span class="red">${n}</span> z ${NOCNA.weeks}.</h1>
-<p class="m" style="font-size:44px;line-height:1.35;margin-top:48px">${pl(w0.monday)} – ${pl(plus(w0.monday, 6))}<br>Plan na dwa poziomy.</p></div>
+<p class="m" style="font-size:44px;line-height:1.35;margin-top:48px">${pl(w0.monday)} – ${pl(plus(w0.monday, 6))}<br>Plan na 5 poziomów:<br>od pierwszej dychy do sub 40.</p></div>
 <div class="foot"><span>@vyra.athl</span><span>przesuń →</span></div>`,
-    `1 / 4`,
+    `1 / ${LEVELS.length + 2}`,
   ),
 );
-(["start", "pro"] as NLevel[]).forEach((lv, i) => {
+const TOTAL = LEVELS.length + 2;
+LEVELS.map((l) => l.k as NLevel).forEach((lv, i) => {
   const w = nocnaWeek(lv, n);
   const z = zonesFromP5k(REF_P5K[lv]);
   const meta = LEVELS.find((l) => l.k === lv)!;
+  const tight = w.days.length > 4;
   const rows = w.days
-    .map((d) => `<div class="day"><div><b>${d.label.slice(0, 3)}</b><small>${d.km} km</small></div><div>${d.lines.map((l) => `<p>${esc(resolveLine(l, z))}</p>`).join("")}</div></div>`)
+    .map((d) => `<div class="day${tight ? " t" : ""}"><div><b>${d.label.slice(0, 3)}</b><small>${d.km} km</small></div><div>${d.lines.map((l) => `<p>${esc(resolveLine(l, z))}</p>`).join("")}</div></div>`)
     .join("");
   slides.push(
     shell(
       `<div class="w" style="top:190px"><p class="m" style="font-size:30px;letter-spacing:.14em;text-transform:uppercase">${esc(meta.days)} · ok. ${w.km} km</p>
-<h1 style="font-size:104px;margin-top:18px">${esc(meta.name)}<span class="red">.</span></h1>
+<h1 style="font-size:${tight ? 88 : 104}px;margin-top:18px">${esc(meta.name)}<span class="red">.</span></h1>
 <p class="m" style="font-size:32px;margin:18px 0 30px">Cel: ${esc(meta.goal)}</p>${rows}</div>
 <div class="foot"><span>${esc(w.phase)}</span><span>Tempa dla celu, w aplikacji z Twojego wyniku</span></div>`,
-      `${i + 2} / 4`,
+      `${i + 2} / ${TOTAL}`,
     ),
   );
 });
@@ -67,7 +70,7 @@ slides.push(
 <p class="m" style="font-size:40px;line-height:1.4;margin-top:44px">Wpisz swój wynik w aplikacji VYRA, a plan pokaże konkretne min/km na każdy trening. Za darmo.</p>
 <p style="font-size:38px;margin-top:56px;font-weight:600">vyraathl.pl/nocna-dycha</p></div>
 <div class="foot"><span>@vyra.athl</span><span>Nocna Ekipa VYRA</span></div>`,
-    `4 / 4`,
+    `${LEVELS.length + 2} / ${LEVELS.length + 2}`,
   ),
 );
 

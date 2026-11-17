@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useResult } from "@/components/app/tools";
 import { useStore, todayWaw } from "@/lib/app/store";
-import { LEVELS, NOCNA, nocnaWeek, nocnaWeekNow, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
+import { LEVELS, NOCNA, normLevel, nocnaWeek, nocnaWeekNow, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
 import { cn } from "@/lib/utils";
 
 const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("pl-PL", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -16,7 +16,8 @@ const addDays = (s: string, n: number) => {
 };
 
 export function NocnaView() {
-  const [level, setLevel, ready] = useStore<NLevel | null>("vyra-nocna-level", null);
+  const [rawLevel, setLevel, ready] = useStore<NLevel | null>("vyra-nocna-level", null);
+  const level = normLevel(rawLevel);
   const { p5k } = useResult();
   const now = nocnaWeekNow(todayWaw());
   const current = Math.min(Math.max(now, 1), NOCNA.weeks);
@@ -28,12 +29,14 @@ export function NocnaView() {
   if (!level)
     return (
       <div className="grid gap-3">
-        <p className="text-[13px] text-white/50">Wybierz poziom. Możesz go zmienić w każdej chwili.</p>
+        <p className="text-[13px] text-white/50">Wybierz poziom według celu na 10 km. Możesz go zmienić w każdej chwili. Nie wiesz? Wybierz o jeden niżej niż myślisz.</p>
         {LEVELS.map((l) => (
           <button key={l.k} onClick={() => setLevel(l.k)} className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 text-left active:scale-[0.985]">
-            <span className="block text-[17px] font-medium">{l.name}</span>
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="block text-[17px] font-medium">{l.name}</span>
+              <span className="text-[12px] text-white/40">{l.days}</span>
+            </span>
             <span className="mt-1 block text-[13px] text-white/55">Cel: {l.goal}</span>
-            <span className="mt-0.5 block text-[13px] text-white/55">{l.days}</span>
             <span className="mt-2 block text-[12.5px] leading-snug text-white/40">{l.for}</span>
           </button>
         ))}
@@ -47,7 +50,7 @@ export function NocnaView() {
     <div className="grid gap-4">
       <div className="flex items-center justify-between gap-2 text-[13px]">
         <span className="text-white/55">{lv.name} · {lv.days}</span>
-        <button onClick={() => setLevel(level === "pro" ? "start" : "pro")} className="text-[#ff6a6f]">Zmień poziom</button>
+        <button onClick={() => setLevel(null)} className="text-[#ff6a6f]">Zmień poziom</button>
       </div>
 
       {now === 0 ? <p className="rounded-2xl bg-white/[0.05] p-3.5 text-[13px] text-white/70">Plan rusza {fmtDay(NOCNA.start)}. Tak wygląda tydzień 1.</p> : null}
