@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { grantMethod } from "@/lib/actions/athletes";
 import { cn } from "@/lib/utils";
 
-export type Account = { id: string; full_name: string; email: string; created_at: string; method_access: boolean; method_until: string | null; has_coach: boolean; paid_method: boolean };
+export type Account = { id: string; full_name: string; email: string; created_at: string; method_access: boolean; method_until: string | null; has_coach: boolean; paid_method: boolean; last_active?: string | null; runs?: number; devices?: number };
 
 const date = (s: string) => new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short", year: "numeric" }).format(new Date(s));
 const OPTIONS: { label: string; days: number | null }[] = [
@@ -30,10 +31,15 @@ function Row({ a }: { a: Account }) {
   return (
     <li className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0">
-        <p className="truncate font-medium">{a.full_name || a.email}</p>
+        <Link href={`/coach/konta/${a.id}`} className="flex items-center gap-1 font-medium hover:underline">
+          <span className="truncate">{a.full_name || a.email}</span> <ChevronRight className="size-4 shrink-0 text-muted" />
+        </Link>
         <p className="truncate text-sm text-muted">{a.email}</p>
         <p className="mt-1 flex flex-wrap gap-1.5 text-[12px]">
           <span className="rounded-full bg-surface px-2 py-0.5 text-muted">od {date(a.created_at)}</span>
+          {a.last_active ? <span className="rounded-full bg-surface px-2 py-0.5 text-muted">aktywny {date(a.last_active)}</span> : null}
+          {a.runs ? <span className="rounded-full bg-surface px-2 py-0.5 text-muted">{a.runs} biegów</span> : null}
+          {a.devices ? <span className="rounded-full bg-surface px-2 py-0.5 text-muted">push włączony</span> : null}
           {a.has_coach ? <span className="rounded-full bg-surface px-2 py-0.5 text-muted">z trenerem</span> : <span className="rounded-full bg-surface px-2 py-0.5 text-muted">konto darmowe</span>}
           {a.paid_method ? <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-emerald-300">Method kupiony</span> : null}
           {acc.on ? <span className="rounded-full bg-[var(--accent)]/15 px-2 py-0.5 text-[#ff6a6f]">Method za darmo{acc.until ? ` do ${date(acc.until)}` : ", bez końca"}</span> : null}
