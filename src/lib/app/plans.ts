@@ -5,6 +5,7 @@ import { logPlanned, readLog, type Run } from "@/lib/app/log";
 import { load, save } from "@/lib/app/store";
 import { celebrate } from "@/components/app/motion";
 import { fmtPace } from "@/lib/method/engine";
+import { parseShape, sessionShape, type Seg } from "@/lib/app/workout-shape";
 
 /**
  * The plans as one system: which plan is active, what is on today, and how a run anywhere in the app
@@ -115,6 +116,7 @@ export type TodayItem = {
   pace?: [number, number] | null;
   minutes?: number;
   next?: { title: string; sub: string; date: string | null } | null;
+  segs?: Seg[];
 };
 
 const runUrl = (ref: string, title: string, pace?: [number, number] | null) =>
@@ -153,6 +155,7 @@ export function todayItem(): TodayItem | null {
       week: plan.weeks.findIndex((w) => w.sessions.some((x) => x.id === s.id)) + 1,
       free: freeEvent(g),
       plan: "/app/cel",
+      segs: easy ? parseShape(`e${Math.round(Math.max(4, s.km * 0.6) * 6)}`) : sessionShape(s),
       km: easy ? Math.max(4, Math.round(s.km * 0.6)) : s.km,
       pace: easy ? null : s.pace,
       next: nx && nx.id !== s.id ? { title: nx.title, sub: `${nx.km} km`, date: nx.date } : null,

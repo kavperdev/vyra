@@ -9,6 +9,7 @@ import { PARTNER_RACES, addDays, todayLocal } from "@/lib/app/goal-plan";
 import { SectionHead } from "@/components/app/ui";
 import { useAccess } from "@/components/app/access";
 import { CountUp } from "@/components/app/motion";
+import { WorkoutBars } from "@/components/app/workout-bars";
 
 const dayName = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 
@@ -127,7 +128,8 @@ export function TodayPlan() {
         ) : (
           <p className="mt-1 text-[13px] text-black/55">{item.sub}</p>
         )}
-        <p className="mt-3 line-clamp-3 text-[13.5px] leading-relaxed text-black/70">{item.desc}</p>
+        {item.segs?.length ? <WorkoutBars segs={item.segs} light className="mt-3" /> : null}
+        <p className="mt-3 line-clamp-2 text-[13.5px] leading-relaxed text-black/70">{item.desc}</p>
 
         {low && item.quality ? (
           <div className="mt-3 rounded-[14px] bg-amber-100 p-3 text-[12.5px] leading-relaxed text-amber-900">

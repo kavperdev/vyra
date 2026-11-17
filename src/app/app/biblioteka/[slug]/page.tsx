@@ -6,6 +6,18 @@ import { Card, Tile } from "@/components/app/ui";
 import { Paywall } from "@/components/app/paywall";
 import { premiumStatus } from "@/lib/app/premium";
 import { CATS, workout } from "@/lib/app/workouts";
+import { LIBRARY_SHAPES, parseShape } from "@/lib/app/workout-shape";
+import { WorkoutBars } from "@/components/app/workout-bars";
+import { ExerciseStrip } from "@/components/app/exercise-strip";
+
+const EX: Record<string, string[]> = {
+  "sila-biegacza": ["przysiad", "wykroki", "wspiecia-na-palce", "deska", "most-biodrowy"],
+  "rozgrzewka-startowa": ["wymachy-nog", "skip-a", "skip-c", "przebiezka"],
+  przebiezki: ["przebiezka"],
+  "bieg-spokojny": ["przebiezka"],
+  "interwaly-1000": ["wymachy-nog", "skip-a", "przebiezka"],
+  "test-5-km": ["wymachy-nog", "skip-a", "przebiezka"],
+};
 
 export default async function AppWorkout({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -37,10 +49,21 @@ export default async function AppWorkout({ params }: { params: Promise<{ slug: s
         <h1 className="mt-1 text-[30px] font-semibold leading-tight tracking-[-0.02em]">{w.name}</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-white/65">{w.why}</p>
       </div>
+      {LIBRARY_SHAPES[w.slug] ? (
+        <Card className="p-4">
+          <WorkoutBars segs={parseShape(LIBRARY_SHAPES[w.slug])} legend />
+        </Card>
+      ) : null}
       <div className="grid grid-cols-2 gap-2">
         <Tile k="Czas" v={<span className="text-[18px]">{w.minutes}</span>} />
         <Tile k="Wysiłek" v={<span className="text-[18px]">{w.rpe}</span>} />
       </div>
+      {EX[w.slug] ? (
+        <div>
+          <p className="mb-2 mt-1 px-0.5 text-[12px] text-white/45">Ćwiczenia w tym treningu</p>
+          <ExerciseStrip slugs={EX[w.slug]} />
+        </div>
+      ) : null}
       {w.zone ? <MyPace zone={w.zone} /> : null}
       <Card className="p-4">
         <p className="text-[12px] text-white/45">Jak to zrobić</p>

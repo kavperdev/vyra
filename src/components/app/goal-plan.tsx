@@ -12,6 +12,8 @@ import { TrialForm } from "@/components/app/trial-form";
 import { useAccess } from "@/components/app/access";
 import { addRun, logPlanned, unlogPlanned, useLog } from "@/lib/app/log";
 import { completeRef, goalDoneSet } from "@/lib/app/plans";
+import { sessionShape } from "@/lib/app/workout-shape";
+import { WorkoutBars } from "@/components/app/workout-bars";
 import { Seg, TimeInput, parseTime, useResult } from "@/components/app/tools";
 import { Sheet } from "@/components/app/sheet";
 import { Card, Chip, Tile } from "@/components/app/ui";
@@ -349,6 +351,7 @@ export function GoalPlanView() {
                           {isToday ? "Dziś" : day(s.date)}
                         </span>
                         <span className={cn("mt-1 block text-[16px] font-semibold leading-snug", on && "line-through")}>{s.title}</span>
+                        <WorkoutBars segs={sessionShape(s)} className="mt-2.5" />
                       </button>
                       <button
                         type="button"
@@ -377,7 +380,7 @@ export function GoalPlanView() {
                 );
               })
             )}
-            <p className="px-1 pt-1 text-[12px] text-white/35">Dotknij treningu, żeby zobaczyć opis, przenieść go na inny dzień albo włączyć timer.</p>
+            <p className="px-1 pt-1 text-[12px] text-white/35">Dotknij treningu: opis, timer, zmiana dnia.</p>
           </div>
         );
       })()}
@@ -392,6 +395,7 @@ export function GoalPlanView() {
       <Sheet open={!!open} onClose={() => setOpen(null)} title={open?.title ?? ""} sub={open ? `${day(open.date)} · ok. ${open.km} km` : undefined}>
         {open ? (
           <div className="grid gap-3">
+            <WorkoutBars segs={sessionShape(open)} legend />
             <p className="text-[14.5px] leading-relaxed text-white/75">{open.desc}</p>
             {open.pace ? (
               <div className="flex flex-wrap gap-1.5">
