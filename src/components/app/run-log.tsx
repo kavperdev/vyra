@@ -246,7 +246,7 @@ export function HomeWeek() {
   const w = useWeek();
   const n = useWeekNumbers();
   return (
-    <a href="/app/postepy" className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
+    <a href="/app/forma?t=historia" className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-[12px] text-white/45">Ten tydzień</p>

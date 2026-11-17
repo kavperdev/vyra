@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
+import { Activity, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Plus, TimerReset, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormCard } from "@/components/app/form-hub";
 import { CourseCard } from "@/components/app/course-progress";
@@ -65,8 +65,7 @@ export default async function AppHome() {
   const quick = [
     { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj trening", "Log run"), main: true },
     { href: "/app/forma", icon: Activity, label: t("Forma", "Form") },
-    { href: "/app/postepy", icon: TrendingUp, label: t("Postępy", "Progress") },
-    { href: paid ? "/panel" : "/app/cel", icon: CalendarDays, label: t("Plan", "Plan") },
+    { href: "/app/cel", icon: CalendarDays, label: t("Plan", "Plan") },
     ...(todayISO() <= "2027-05-22" ? [{ href: "/app/nocna", icon: Moon, label: "Nocna Ekipa", main: false }] : []),
   ];
 

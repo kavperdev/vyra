@@ -217,7 +217,7 @@ export function BadgeWatcher() {
             </span>
           </div>
         ))}
-        <Link href="/app/postepy" onClick={() => setFresh([])} className="mt-1 rounded-full bg-white py-3.5 text-center text-[15px] font-semibold text-black active:scale-[0.98]">
+        <Link href="/app/forma?t=historia" onClick={() => setFresh([])} className="mt-1 rounded-full bg-white py-3.5 text-center text-[15px] font-semibold text-black active:scale-[0.98]">
           Zobacz postępy
         </Link>
       </div>

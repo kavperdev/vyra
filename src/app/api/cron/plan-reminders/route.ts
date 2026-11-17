@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       const next = FREE_PLAN.flatMap((w) => w.sessions.map((x, i) => ({ id: `${w.week}-${i}`, week: w.week, n: i + 1, text: x.pl }))).find((x) => !done.includes(x.id));
       if (next) msg = { title: `Dziś trening: tydzień ${next.week}, nr ${next.n}`, body: `${next.text}. Timer poprowadzi Cię sygnałami.`, link: "/app" };
     }
-    if (!msg && dow === 1) msg = { title: "Podsumowanie tygodnia czeka", body: "Zobacz kilometry, serię i porównanie z poprzednim tygodniem.", link: "/app/postepy" };
+    if (!msg && dow === 1) msg = { title: "Podsumowanie tygodnia czeka", body: "Zobacz kilometry, serię i porównanie z poprzednim tygodniem.", link: "/app/forma?t=historia" };
     if (!msg) continue;
     const r = await supabase.rpc("app_remind", { p_secret: secret, p_user: user, p_day: today, p_title: msg.title, p_body: msg.body, p_link: msg.link });
     if (!r.error && r.data === true) sent++;

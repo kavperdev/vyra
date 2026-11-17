@@ -96,7 +96,7 @@ export default async function AppTraining() {
         <IconTile href="/app/plan" tone="green" icon={<Footprints />} title={t("Zacznij biegać", "Start running")} />
         <IconTile href="/app/biblioteka" icon={<Dumbbell />} title={t("Biblioteka treningów", "Workout library")} />
         <IconTile href="/app/dziennik" icon={<NotebookPen />} title={t("Dziennik", "Log")} />
-        <IconTile href="/app/postepy" tone="blue" icon={<TrendingUp />} title={t("Postępy", "Progress")} />
+        <IconTile href="/app/forma" tone="blue" icon={<TrendingUp />} title={t("Forma i rekordy", "Form and records")} />
         <IconTile href="/app/kurs" icon={<BookOpen />} title={t("Kurs: Biegaj mądrze", "Course: Run smart")} />
         <IconTile href="/app/bieg" icon={<Footprints />} title={t("Bieg z GPS", "GPS run")} />
         <IconTile href="/app/timer" icon={<TimerReset />} title={t("Timer interwałów", "Interval timer")} />

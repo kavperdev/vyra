@@ -56,7 +56,7 @@ export default async function AppYou() {
       <SectionHead title={t("Więcej", "More")} />
       <Group>
         <InstallRow />
-        <Row href="/app/postepy" icon={<Medal className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} />
+        <Row href="/app/forma?t=historia" icon={<Medal className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} />
         <Row href="/app/znajomi" icon={<Users className="size-4" />} title={t("Znajomi i ranking", "Friends and ranking")} sub={t("Porównujcie kilometry z tygodnia", "Compare weekly kilometres")} />
         {user?.profile.role === "athlete" ? <Row href="/athlete/settings" icon={<Bell className="size-4" />} title={t("Przypomnienia o treningu", "Training reminders")} sub={t("Włącz powiadomienia: rano dostaniesz trening na dziś", "Turn notifications on: get today's session every morning")} /> : null}
         <Row href="/app/wyzwania" icon={<Trophy className="size-4" />} title={t("Wyzwania", "Challenges")} />
