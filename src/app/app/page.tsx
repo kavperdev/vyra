@@ -61,7 +61,7 @@ export default async function AppHome() {
     { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj trening", "Log run"), main: true },
     { href: "/app/forma", icon: Activity, label: t("Forma", "Form") },
     { href: "/app/postepy", icon: TrendingUp, label: t("Postępy", "Progress") },
-    { href: paid ? "/panel" : "/app/trening", icon: CalendarDays, label: t("Plan", "Plan") },
+    { href: paid ? "/panel" : "/app/cel", icon: CalendarDays, label: t("Plan", "Plan") },
     ...(todayISO() <= "2027-05-22" ? [{ href: "/app/nocna", icon: Moon, label: "Nocna Ekipa", main: false }] : []),
   ];
 

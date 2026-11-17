@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2, Lock } from "lucide-react";
+import { Check, Flag, Footprints, Pencil, TimerReset, Trash2, Lock } from "lucide-react";
 import { fmtPace, fmtTime, timeFor, vdotOf } from "@/lib/method/engine";
 import { GOAL_DISTS, GOAL_KEY, PARTNER_RACES, addDays, buildPlan, daysBetween, freeEvent, todayLocal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { writeGoal } from "@/lib/app/goal-store";
@@ -138,9 +138,17 @@ export function GoalPlanView() {
   const [open, setOpen] = useState<GoalSession | null>(null);
   const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
+  const weekRow = useRef<HTMLDivElement>(null);
   const today = todayLocal();
   const plan = useMemo(() => (g ? buildPlan(g, today) : null), [g, today]);
   const doneSet = useMemo(() => (g && plan ? goalDoneSet(g, plan.weeks.flatMap((w) => w.sessions), log) : new Set<string>()), [g, plan, log]);
+
+  // Centre the current week in the week picker once, when the plan shows.
+  useEffect(() => {
+    const row = weekRow.current;
+    const cur = row?.querySelector<HTMLElement>("[data-cur]");
+    if (row && cur) row.scrollLeft = cur.offsetLeft - row.clientWidth / 2 + cur.clientWidth / 2;
+  }, [plan?.weeks.length]);
 
   const update = (v: GoalStore | null) => writeGoal(v);
   const toggle = (id: string) => {
@@ -276,66 +284,95 @@ export function GoalPlanView() {
         </Card>
       ) : null}
 
-      {plan.weeks.map((w, wi) => {
-        // Without VYRA Method: the first week is open, the rest of the plan is part of Method.
-        if (!premium && wi > 0)
+      {/* Week picker: every week of the plan one tap away, the current one in focus. */}
+      <div ref={weekRow} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        {plan.weeks.map((w, wi) => {
+          const locked = !premium && wi > 0;
+          const on = w.n === shown;
+          const cur = wi === curIdx;
+          const allDone = w.sessions.length > 0 && w.sessions.every((s) => doneSet.has(s.id));
           return (
-            <div key={w.n} className="flex items-center justify-between gap-3 rounded-[20px] border border-white/[0.04] bg-[#0d0d0f] p-4">
-              <span className="min-w-0">
-                <span className="block text-[15px] font-semibold text-white/55">
-                  Tydzień {w.n} <span className="ml-1 text-[12px] font-normal text-white/30">{day(w.monday)}</span>
-                </span>
-                <span className="mt-0.5 block select-none text-[12.5px] text-white/30 blur-[3px]">{w.phase} · ok. {w.km} km · {w.sessions.length} treningi</span>
-              </span>
-              <Lock className="size-4 shrink-0 text-white/30" />
-            </div>
-          );
-        const isOpen = w.n === shown;
-        const wDone = w.sessions.filter((s) => doneSet.has(s.id)).length;
-        const past = addDays(w.monday, 6) < today;
-        return (
-          <div key={w.n} className={cn("rounded-[20px] border bg-[#111113] transition", isOpen ? "border-white/20" : "border-white/[0.06]", past && !isOpen && "opacity-60")}>
-            <button type="button" onClick={() => setOpenWeek(isOpen ? -1 : w.n)} className="flex w-full items-center justify-between gap-3 p-4 text-left">
-              <span className="min-w-0">
-                <span className="block text-[16px] font-semibold">
-                  Tydzień {w.n} <span className="ml-1 text-[12px] font-normal text-white/40">{day(w.monday)}</span>
-                </span>
-                <span className="mt-0.5 block text-[12.5px] text-white/50">
-                  {w.phase} · ok. {w.km} km · {wDone}/{w.sessions.length}
-                </span>
-              </span>
-              <ChevronDown className={cn("size-4 shrink-0 text-white/40 transition", isOpen && "rotate-180")} />
+            <button
+              key={w.n}
+              type="button"
+              data-cur={cur ? "" : undefined}
+              onClick={() => setOpenWeek(w.n)}
+              className={cn("flex w-[52px] shrink-0 flex-col items-center gap-0.5 rounded-[14px] py-2 transition active:scale-95", on ? "bg-white text-black" : "bg-white/[0.05] text-white/70")}
+            >
+              <span className={cn("text-[10px] font-medium tracking-[0.08em]", on ? "text-black/50" : "text-white/35")}>TYDZ</span>
+              <span className="text-[16px] font-semibold tabular-nums">{w.n}</span>
+              {locked ? <Lock className="size-3 opacity-50" /> : <span className={cn("size-1.5 rounded-full", allDone ? "bg-[var(--accent)]" : cur ? (on ? "bg-black" : "bg-white") : "bg-transparent")} />}
             </button>
-            {isOpen ? (
-              <div className="grid gap-2 px-4 pb-4">
-                {w.sessions.map((s) => {
-                  const on = doneSet.has(s.id);
-                  const isToday = s.date === today;
-                  return (
-                    <div key={s.id} className={cn("flex items-center gap-3 rounded-[14px] bg-white/[0.04] p-2.5", isToday && "ring-1 ring-white/30")}>
+          );
+        })}
+      </div>
+
+      {(() => {
+        const wi = plan.weeks.findIndex((w) => w.n === shown);
+        const w = plan.weeks[wi < 0 ? curIdx : wi];
+        if (!w) return null;
+        const locked = !premium && plan.weeks.indexOf(w) > 0;
+        const wDone = w.sessions.filter((s) => doneSet.has(s.id)).length;
+        return (
+          <div className="grid gap-2">
+            <div className="flex items-end justify-between px-1 pt-1">
+              <div>
+                <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-[#ff6a6f]">{w.phase}</p>
+                <p className="text-[19px] font-semibold">Tydzień {w.n} <span className="text-[13px] font-normal text-white/40">od {day(w.monday)}</span></p>
+              </div>
+              <p className="text-[13px] tabular-nums text-white/55">ok. {w.km} km · {wDone}/{w.sessions.length}</p>
+            </div>
+            {locked ? (
+              <div className="flex items-center gap-3 rounded-[20px] border border-white/[0.06] bg-[#0d0d0f] p-4">
+                <Lock className="size-5 shrink-0 text-white/40" />
+                <p className="text-[13.5px] leading-relaxed text-white/55">Ten tydzień jest w VYRA Method. Plan przelicza się co tydzień z Twoich treningów.</p>
+              </div>
+            ) : (
+              w.sessions.map((s) => {
+                const on = doneSet.has(s.id);
+                const isToday = s.date === today;
+                const mid = s.pace ? (s.pace[0] + s.pace[1]) / 2 : null;
+                return (
+                  <div key={s.id} className={cn("rounded-[20px] border bg-[#111113] p-4 transition", isToday ? "border-[#ff6a6f]/50" : "border-white/[0.06]", on && "opacity-60")}>
+                    <div className="flex items-start gap-3">
+                      <button type="button" onClick={() => setOpen(s)} className="min-w-0 flex-1 text-left">
+                        <span className="flex items-center gap-1.5 text-[11.5px] font-medium uppercase tracking-[0.08em] text-white/45">
+                          <span className={cn("size-1.5 rounded-full", kindIcon[s.kind])} />
+                          {isToday ? "Dziś" : day(s.date)}
+                        </span>
+                        <span className={cn("mt-1 block text-[16px] font-semibold leading-snug", on && "line-through")}>{s.title}</span>
+                      </button>
                       <button
                         type="button"
                         aria-label={on ? "Odznacz" : "Zrobione"}
                         onClick={() => toggle(s.id)}
-                        className={cn("grid size-9 shrink-0 place-items-center rounded-full border transition active:scale-90", on ? "border-transparent bg-[var(--accent)] text-white" : "border-white/15 text-transparent")}
+                        className={cn("grid size-10 shrink-0 place-items-center rounded-full border transition active:scale-90", on ? "border-transparent bg-emerald-400 text-black" : "border-white/15 text-white/25")}
                       >
-                        <Check className="size-4" />
-                      </button>
-                      <button type="button" onClick={() => setOpen(s)} className="min-w-0 flex-1 text-left">
-                        <span className="flex items-center gap-1.5 text-[11.5px] text-white/45">
-                          <span className={cn("size-1.5 rounded-full", kindIcon[s.kind])} />
-                          {isToday ? "Dziś" : day(s.date)} · {s.km} km
-                        </span>
-                        <span className={cn("mt-0.5 block truncate text-[14.5px] font-medium", on && "text-white/45 line-through")}>{s.title}</span>
+                        <Check className="size-4" strokeWidth={3} />
                       </button>
                     </div>
-                  );
-                })}
-              </div>
-            ) : null}
+                    <button type="button" onClick={() => setOpen(s)} className="mt-3 grid w-full grid-cols-3 gap-2 border-t border-white/[0.06] pt-3 text-left">
+                      <span>
+                        <span className="block text-[10.5px] uppercase tracking-[0.08em] text-white/40">Dystans</span>
+                        <span className="block text-[15px] font-semibold tabular-nums">{String(s.km).replace(".", ",")} km</span>
+                      </span>
+                      <span>
+                        <span className="block text-[10.5px] uppercase tracking-[0.08em] text-white/40">Tempo</span>
+                        <span className="block text-[15px] font-semibold tabular-nums">{s.pace ? `${fmtPace(s.pace[0])}–${fmtPace(s.pace[1])}` : "luźno"}</span>
+                      </span>
+                      <span>
+                        <span className="block text-[10.5px] uppercase tracking-[0.08em] text-white/40">Czas</span>
+                        <span className="block text-[15px] font-semibold tabular-nums">{mid ? `~${Math.round((s.km * mid) / 60)} min` : "–"}</span>
+                      </span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+            <p className="px-1 pt-1 text-[12px] text-white/35">Dotknij treningu, żeby zobaczyć opis, przenieść go na inny dzień albo włączyć timer.</p>
           </div>
         );
-      })}
+      })()}
 
       {premium ? null : (
         <div className="sticky bottom-24 z-20 rounded-[22px] border border-white/10 bg-[#18181b]/95 p-4 shadow-2xl backdrop-blur">

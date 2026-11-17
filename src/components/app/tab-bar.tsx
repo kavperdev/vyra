@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, Home, ShoppingBag, User } from "lucide-react";
+import { Activity, CalendarDays, Home, ShoppingBag, User } from "lucide-react";
 import { useT } from "@/lib/i18n/client";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/app", icon: Home, pl: "Dziś", en: "Today" },
+  { href: "/app/cel", icon: CalendarDays, pl: "Plan", en: "Plan" },
   { href: "/app/trening", icon: Activity, pl: "Trening", en: "Train" },
-  { href: "/app/wiedza", icon: BookOpen, pl: "Wiedza", en: "Learn" },
   { href: "/app/sklep", icon: ShoppingBag, pl: "Sklep", en: "Shop" },
   { href: "/app/ty", icon: User, pl: "Ty", en: "You" },
 ];
