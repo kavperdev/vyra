@@ -12,9 +12,9 @@ export const GOAL_DISTS: { k: GoalDist; label: string; m: number }[] = [
 
 export type GoalInput = { dist: GoalDist; race: string; p5k: number; days: 3 | 4 | 5; name?: string; event?: string; moves?: Record<string, string> };
 
-/** Races VYRA prepares for with the organisers: one tap fills the plan, and the whole plan is free. */
+/** Races VYRA prepares for with the organisers: one tap fills the plan, (free: true opens the whole personal plan; Nocna Dycha uses the level plans in nocna-plan.ts instead). */
 export const PARTNER_RACES: { id: string; name: string; dist: GoalDist; race: string; place: string; free: boolean }[] = [
-  { id: "nocna-dycha", name: "MKL Siedlecka Nocna Dycha", dist: "10k", race: "2027-05-22", place: "Siedlce, start wieczorem na stadionie ARMS", free: true },
+  { id: "nocna-dycha", name: "MKL Siedlecka Nocna Dycha", dist: "10k", race: "2027-05-22", place: "Siedlce, start wieczorem na stadionie ARMS", free: false },
 ];
 export const freeEvent = (g: { event?: string; race: string } | null | undefined) => !!g?.event && PARTNER_RACES.some((r) => r.id === g.event && r.free && r.race === g.race);
 export type Kind = "easy" | "long" | "quality" | "race" | "shake";

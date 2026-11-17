@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/nocna-dycha" },
 };
 
-const PLAN = "/app/cel?bieg=nocna-dycha";
+const PLAN = "/app/nocna";
 
 /** Landing page for runners of the new night 10 km in Siedlce. VYRA is not the organiser. */
 export default function NocnaDychaPage() {
@@ -17,11 +17,11 @@ export default function NocnaDychaPage() {
       <PageHero
         image="/site/night-city.jpg"
         eyebrow="10 km · Siedlce · 22 maja 2027"
-        title="Biegniesz Nocną Dychę? Masz plan za darmo."
-        lead="Cały plan treningowy na MKL Siedlecką Nocną Dychę w aplikacji VYRA. Tempa liczone z Twojej formy, tydzień po tygodniu aż do startu, z odliczaniem i lżejszymi tygodniami przed biegiem."
+        title="Biegniesz Nocną Dychę? Masz plan tygodnia za darmo."
+        lead="Co poniedziałek nowy tydzień treningów na MKL Siedlecką Nocną Dychę, osobno dla początkujących i zaawansowanych. Na Instagramie @vyra.athl i w aplikacji VYRA, gdzie tempa liczą się z Twojej formy."
       >
         <div className="flex flex-wrap gap-3">
-          <PrimaryLink href={PLAN}>Odbierz plan</PrimaryLink>
+          <PrimaryLink href={PLAN}>Zobacz plan</PrimaryLink>
           <GhostLink href="/pobierz">Pobierz aplikację</GhostLink>
         </div>
       </PageHero>
@@ -33,7 +33,7 @@ export default function NocnaDychaPage() {
             items={[
               { title: "Załóż darmowe konto VYRA", body: "W aplikacji albo w przeglądarce. Bez karty i bez zobowiązań." },
               { title: "Podaj swój wynik", body: "Ostatni czas na 5 km, 10 km albo półmaraton. Z niego liczymy tempa na każdy trening." },
-              { title: "Biegaj według planu", body: "Na ekranie Dziś zawsze widzisz trening na dziś. Biegi z zegarka (przez Stravę) odhaczają się same." },
+              { title: "Biegaj według planu", body: "Wybierasz poziom i co poniedziałek widzisz nowy tydzień, ten sam co na Instagramie. Biegi z zegarka (przez Stravę) trafiają do dziennika same." },
             ]}
           />
         </Reveal>
@@ -61,16 +61,16 @@ export default function NocnaDychaPage() {
         <Reveal className="mt-10">
           <Faq
             items={[
-              { q: "Ile to kosztuje?", a: "Nic. Plan na Nocną Dychę jest w całości za darmo, razem z kontem VYRA." },
-              { q: "Dla kogo jest ten plan?", a: "Dla każdego, kto chce przebiec 10 km: od osób, które biegają od kilku miesięcy, po tych, którzy walczą o życiówkę. Jeśli dopiero zaczynasz, zacznij od darmowego planu „Zacznij biegać”." },
-              { q: "Ile razy w tygodniu się biega?", a: "Wybierasz sam: 3, 4 albo 5 dni. Plan dopasuje się do tego wyboru." },
+              { q: "Ile to kosztuje?", a: "Nic. Plan tygodniowy Nocnej Ekipy jest za darmo, razem z kontem VYRA. VYRA Method to osobny, płatny plan liczony tylko dla Ciebie." },
+              { q: "Dla kogo jest ten plan?", a: "Są dwa poziomy. Początkujący: 3 treningi w tygodniu, cel to przebiec 10 km (ok. 60 min). Zaawansowany: 4 treningi, cel to 10 km poniżej 50 min. Jeśli dopiero zaczynasz biegać, zacznij od planu „Zacznij biegać”." },
+              { q: "Od kiedy ruszamy?", a: "Tydzień 1 startuje 7 grudnia 2026, a plan prowadzi 24 tygodnie, do startu 22 maja 2027." },
               { q: "Gdzie się zapisać na bieg?", a: "Zapisy prowadzi organizator na nocnadycha.siedlce.pl. VYRA nie jest organizatorem biegu, przygotowujemy biegaczy do startu." },
             ]}
           />
         </Reveal>
       </section>
 
-      <CtaBand title="22 maja wieczorem. Przygotuj się już teraz." lead="Im wcześniej zaczniesz, tym spokojniej zbudujesz formę na start." href={PLAN} label="Odbierz plan" />
+      <CtaBand title="22 maja wieczorem. Przygotuj się już teraz." lead="Im wcześniej zaczniesz, tym spokojniej zbudujesz formę na start." href={PLAN} label="Zobacz plan" />
     </>
   );
 }
