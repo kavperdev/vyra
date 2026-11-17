@@ -17,8 +17,8 @@ export function parseShape(spec: string): Seg[] {
       const n = Number(rep[1]);
       const lvl = rep[4] ? Number(rep[4]) : 4;
       for (let i = 0; i < n; i++) {
-        out.push({ t: "work", sec: Number(rep[2]) * 60, lvl });
-        if (Number(rep[3]) > 0) out.push({ t: "rest", sec: Number(rep[3]) * 60, lvl: 1 });
+        out.push({ t: lvl < 3 ? "easy" : "work", sec: Number(rep[2]) * 60, lvl });
+        if (Number(rep[3]) > 0) out.push({ t: lvl < 3 ? "walk" : "rest", sec: Number(rep[3]) * 60, lvl: 1 });
       }
       continue;
     }

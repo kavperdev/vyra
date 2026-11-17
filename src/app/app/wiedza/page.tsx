@@ -1,5 +1,7 @@
 import { CourseCard } from "@/components/app/course-progress";
-import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Dumbbell, GraduationCap, PersonStanding } from "lucide-react";
+import { Group, IconTile, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { ExerciseStrip } from "@/components/app/exercise-strip";
 import { listArticles } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
 import { articlesFor, categoryLabel } from "@/lib/i18n/labels";
@@ -12,12 +14,15 @@ export default async function AppKnowledge() {
   const { items } = articlesFor(await listArticles(await createClient(), { publishedOnly: true }).catch(() => []), lang);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Wiedza", "Learn")} sub={t("Kurs, biblioteka treningów i artykuły trenerów VYRA.", "Course, workout library and articles from VYRA coaches.")} />
+      <PageHead title={t("Wiedza", "Learn")} />
       <CourseCard />
-      <Group className="mt-2">
-        <Row href="/app/kurs" title={t("Wszystkie lekcje kursu", "All course lessons")} sub="Biegaj mądrze · 9 lekcji" />
-        <Row href="/app/biblioteka" title={t("Biblioteka treningów", "Workout library")} sub={t("Po co, jak i w jakim tempie", "Why, how and at what pace")} />
-      </Group>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <IconTile href="/app/kurs" tone="green" icon={<GraduationCap />} title={t("Kurs", "Course")} />
+        <IconTile href="/app/cwiczenia" tone="red" icon={<PersonStanding />} title={t("Ćwiczenia", "Exercises")} />
+        <IconTile href="/app/biblioteka" icon={<Dumbbell />} title={t("Treningi", "Workouts")} />
+      </div>
+      <SectionHead title={t("Ćwiczenia", "Exercises")} href="/app/cwiczenia" more={t("Wszystkie", "All")} />
+      <ExerciseStrip />
       {items.length ? (
         <>
           <SectionHead title={t("Artykuły", "Articles")} />

@@ -20,10 +20,10 @@ function frameBox(key: AnimKey) {
   }
   if (PROPS[key] === "box") x1 = Math.max(x1, 110);
   // 4:3, ground near the bottom
-  const h = Math.max(G - y0 + 24, (x1 - x0 + 30) * 0.75);
+  const h = Math.max(G - y0 + 16, (x1 - x0 + 22) * 0.75);
   const w = h / 0.75;
   const cx = (x0 + x1) / 2;
-  return { x: cx - w / 2, y: G + 12 - h, w, h };
+  return { x: cx - w / 2, y: G + 8 - h, w, h };
 }
 
 function Figure({ s, prop, box }: { s: Shape; prop?: "box" | "mat"; box: { x: number; w: number } }) {
