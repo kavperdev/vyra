@@ -109,6 +109,10 @@ export type TodayItem = {
   week?: number; // race plan: week number, from 1
   free?: boolean; // partner race: the whole plan is open
   plan: string; // where the whole plan lives
+  km?: number;
+  pace?: [number, number] | null;
+  minutes?: number;
+  next?: { title: string; sub: string; date: string | null } | null;
 };
 
 const runUrl = (ref: string, title: string, pace?: [number, number] | null) =>
@@ -128,6 +132,7 @@ export function todayItem(): TodayItem | null {
     const s = t ?? all.find((x) => x.date > today && !done.has(x.id));
     if (!s) return null;
     const ref = `goal:${s.id}`;
+    const nx = all.find((x) => x.date > today && !done.has(x.id));
     const easy = swapped(s.id) && s.kind === "quality";
     const title = easy ? `Spokojnie ${Math.max(4, Math.round(s.km * 0.6))} km (zamiast akcentu)` : s.title;
     return {
@@ -146,6 +151,9 @@ export function todayItem(): TodayItem | null {
       week: plan.weeks.findIndex((w) => w.sessions.some((x) => x.id === s.id)) + 1,
       free: freeEvent(g),
       plan: "/app/cel",
+      km: easy ? Math.max(4, Math.round(s.km * 0.6)) : s.km,
+      pace: easy ? null : s.pace,
+      next: nx && nx.id !== s.id ? { title: nx.title, sub: `${nx.km} km`, date: nx.date } : null,
     };
   }
   if (startActive()) {
@@ -166,6 +174,8 @@ export function todayItem(): TodayItem | null {
       run: runUrl(ref, `Tydzień ${n.week} · trening ${n.i + 1}`),
       doneToday: ranToday,
       plan: "/app/plan",
+      minutes: n.minutes,
+      next: ranToday ? { title: `Tydzień ${n.week} · trening ${n.i + 1}`, sub: n.text, date: null } : null,
     };
   }
   return null;

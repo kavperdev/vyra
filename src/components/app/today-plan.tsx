@@ -9,7 +9,6 @@ import { PARTNER_RACES, addDays, todayLocal } from "@/lib/app/goal-plan";
 import { SectionHead } from "@/components/app/ui";
 import { useAccess } from "@/components/app/access";
 import { CountUp } from "@/components/app/motion";
-import { cn } from "@/lib/utils";
 
 const dayName = (iso: string) => new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
 
@@ -66,67 +65,101 @@ export function TodayPlan() {
     );
   const low = ready != null && ready < 50;
   const id = item.ref.slice(item.ref.indexOf(":") + 1);
+  const mmss = (x: number) => `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, "0")}`;
+  const mid = item.pace ? (item.pace[0] + item.pace[1]) / 2 : null;
+  const stats = [
+    item.km ? { l: "Dystans", v: `${String(item.km).replace(".", ",")} km` } : null,
+    item.pace ? { l: "Tempo", v: `${mmss(item.pace[0])}–${mmss(item.pace[1])}` } : null,
+    item.km && mid ? { l: "Czas", v: `~${Math.round((item.km * mid) / 60)} min` } : item.minutes ? { l: "Czas", v: `~${item.minutes} min` } : null,
+  ].filter(Boolean) as { l: string; v: string }[];
+
+  if (item.doneToday)
+    return (
+      <>
+        <SectionHead title="Dziś zrobione" href={item.plan} more="Cały plan" />
+        <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3">
+          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-emerald-400 text-black">
+            <Check className="size-4" strokeWidth={3} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[14.5px] font-medium">{item.source === "start" ? "Trening z planu Zacznij biegać" : item.title}</span>
+            <span className="block text-[12px] text-white/45">Odpoczywaj. Regeneracja to też trening.</span>
+          </span>
+        </div>
+        {item.next ? (
+          <Link href={item.plan} className="mt-2 flex items-center justify-between rounded-[18px] border border-white/[0.06] bg-[#111113] px-4 py-3 active:scale-[0.985]">
+            <span className="min-w-0">
+              <span className="block text-[12px] capitalize text-white/45">{item.next.date ? `Następny · ${dayName(item.next.date)}` : "Następny"}</span>
+              <span className="block truncate text-[14.5px] font-medium">{item.next.title}</span>
+            </span>
+            <span className="shrink-0 pl-3 text-[13px] tabular-nums text-white/55">{item.next.sub}</span>
+          </Link>
+        ) : null}
+      </>
+    );
+
   return (
     <>
       <SectionHead title={item.when === "today" ? "Twój trening na dziś" : "Następny trening"} href={item.plan} more="Cały plan" />
-      <div className={cn("rounded-[22px] p-4", item.doneToday ? "border border-white/[0.06] bg-[#111113]" : "app-sheen bg-white text-black shadow-[0_18px_50px_-18px_rgba(229,52,59,0.55)]")}>
+      <div className="app-sheen rounded-[22px] bg-white p-4 text-black shadow-[0_18px_50px_-18px_rgba(229,52,59,0.55)]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className={cn("text-[12px] capitalize", item.doneToday ? "text-white/45" : "text-black/50")}>{item.when === "next" && item.date ? dayName(item.date) : item.source === "start" ? "Zacznij biegać" : "Plan pod start"}</p>
-            <p className="mt-0.5 text-[18px] font-semibold leading-snug">{item.title}</p>
-            <p className={cn("mt-0.5 text-[13px]", item.doneToday ? "text-white/50" : "text-black/55")}>{item.sub}</p>
+            <p className="text-[12px] capitalize text-black/50">{item.when === "next" && item.date ? dayName(item.date) : item.source === "start" ? "Zacznij biegać" : `Plan pod start${item.week ? ` · tydzień ${item.week}` : ""}`}</p>
+            <p className="mt-0.5 text-[20px] font-semibold leading-snug">{item.title}</p>
           </div>
           {item.countdown ? (
-            <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-center text-[11.5px] font-medium tabular-nums", item.doneToday ? "bg-white/[0.07] text-white/70" : "bg-black/[0.07]")}>
+            <span className="shrink-0 rounded-full bg-black/[0.07] px-2.5 py-1 text-center text-[11.5px] font-medium tabular-nums">
               <CountUp value={item.countdown.days} comma={false} /> {item.countdown.days === 1 ? "dzień" : "dni"}
               <span className="block text-[10px] font-normal opacity-60">{item.countdown.label}</span>
             </span>
           ) : null}
         </div>
 
-        {item.doneToday ? (
-          <p className="mt-3 flex items-center gap-2 text-[14px] text-emerald-300">
-            <Check className="size-4" /> Dzisiejszy trening zrobiony. Odpoczywaj, następny jutro lub później.
-          </p>
-        ) : (
-          <>
-            <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-black/65">{item.desc}</p>
-            {low && item.quality ? (
-              <div className="mt-3 rounded-[14px] bg-amber-100 p-3 text-[12.5px] leading-relaxed text-amber-900">
-                Gotowość dziś {ready}/100. Mocny trening może bardziej zaszkodzić niż pomóc.
-                <button type="button" onClick={() => setSwap(id, true)} className="mt-2 block w-full rounded-full bg-amber-900 py-2 text-[13px] font-semibold text-amber-50 active:scale-[0.98]">
-                  Zamień na spokojny bieg
-                </button>
-                {premium ? null : (
-                  <Link href="/app/sklep" className="mt-2 block text-center text-[12px] underline underline-offset-2">
-                    VYRA Method zmniejsza obciążenie na cały tydzień, gdy coś boli
-                  </Link>
-                )}
+        {stats.length ? (
+          <div className="mt-3 grid grid-cols-3 gap-2 border-y border-black/10 py-3">
+            {stats.map((x) => (
+              <div key={x.l}>
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-black/45">{x.l}</p>
+                <p className="mt-0.5 text-[16px] font-semibold tabular-nums">{x.v}</p>
               </div>
-            ) : null}
-            {item.title.includes("zamiast akcentu") ? (
-              <button type="button" onClick={() => setSwap(id, false)} className="mt-2 text-[12.5px] text-black/50 underline underline-offset-2">
-                Jednak robię akcent
-              </button>
-            ) : null}
-            <p className="mt-3 flex items-center gap-2 rounded-[14px] bg-black/[0.05] px-3 py-2.5 text-[12.5px] leading-snug text-black/65">
-              <Watch className="size-4 shrink-0" /> Biegnij z zegarkiem. Po synchronizacji ze Stravą trening odhaczy się sam.
-            </p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {item.timer ? (
-                <Link href={item.timer} className="flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white active:scale-[0.97]">
-                  <TimerReset className="size-4" /> Timer
-                </Link>
-              ) : null}
-              <button type="button" onClick={() => completeRef(item.ref)} className={cn("flex items-center justify-center gap-2 rounded-full py-3 text-[14px] font-semibold active:scale-[0.97]", item.timer ? "bg-black/[0.07]" : "col-span-2 bg-black text-white")}>
-                <Check className="size-4" /> Zrobione
-              </button>
-            </div>
-            <Link href={item.run} className="mt-2 flex items-center justify-center gap-1.5 py-1.5 text-[12.5px] text-black/50">
-              <Footprints className="size-3.5" /> Bez zegarka? Biegnij z telefonem
-            </Link>
-          </>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-1 text-[13px] text-black/55">{item.sub}</p>
         )}
+        <p className="mt-3 line-clamp-3 text-[13.5px] leading-relaxed text-black/70">{item.desc}</p>
+
+        {low && item.quality ? (
+          <div className="mt-3 rounded-[14px] bg-amber-100 p-3 text-[12.5px] leading-relaxed text-amber-900">
+            Gotowość dziś {ready}/100. Mocny trening może bardziej zaszkodzić niż pomóc.
+            <button type="button" onClick={() => setSwap(id, true)} className="mt-2 block w-full rounded-full bg-amber-900 py-2 text-[13px] font-semibold text-amber-50 active:scale-[0.98]">
+              Zamień na spokojny bieg
+            </button>
+          </div>
+        ) : null}
+        {item.title.includes("zamiast akcentu") ? (
+          <button type="button" onClick={() => setSwap(id, false)} className="mt-2 text-[12.5px] text-black/50 underline underline-offset-2">
+            Jednak robię akcent
+          </button>
+        ) : null}
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {item.timer ? (
+            <Link href={item.timer} className="flex items-center justify-center gap-2 rounded-full bg-black/[0.07] py-3 text-[14px] font-semibold active:scale-[0.97]">
+              <TimerReset className="size-4" /> Timer
+            </Link>
+          ) : (
+            <Link href={item.run} className="flex items-center justify-center gap-2 rounded-full bg-black/[0.07] py-3 text-[14px] font-semibold active:scale-[0.97]">
+              <Footprints className="size-4" /> Z telefonem
+            </Link>
+          )}
+          <button type="button" onClick={() => completeRef(item.ref)} className="flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white active:scale-[0.97]">
+            <Check className="size-4" /> Zrobione
+          </button>
+        </div>
+        <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[12px] text-black/45">
+          <Watch className="size-3.5" /> Bieg z zegarka (Strava) odhaczy się sam
+        </p>
       </div>
     </>
   );

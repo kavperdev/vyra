@@ -29,6 +29,7 @@ export async function saveExecution(values: ExecutionFormValues, status: Executi
     const { error } = await supabase.rpc("save_execution", { p: payload });
     if (error) return dbError(error);
 
+    revalidatePath("/app");
     revalidatePath("/athlete", "layout");
     revalidatePath(`/athlete/sessions/${s.id}`);
     revalidatePath("/coach", "layout");
@@ -123,5 +124,33 @@ export async function deleteExecution(sessionId: string): Promise<ActionResult> 
     revalidatePath("/athlete", "layout");
     revalidatePath("/coach", "layout");
     return { ok: true, message: "Usunięto zapis wykonania. Plan treningu pozostał." };
+  });
+}
+
+/** One tap on the home screen: mark a planned session as done, optionally with the run from the log. */
+export async function quickComplete(sessionId: string, run?: { km: number; sec: number; day: string } | null): Promise<ActionResult> {
+  return withUser("athlete", async ({ supabase, user }) => {
+    const { data } = await supabase.from("training_sessions").select("id, kind, athlete_id, scheduled_date").eq("id", sessionId).maybeSingle();
+    const s = data as { id: string; kind: string; athlete_id: string; scheduled_date: string } | null;
+    if (!s || s.athlete_id !== user.id) return { ok: false, error: "Możesz oznaczyć tylko własny trening." };
+    const payload: Record<string, unknown> = { session_id: s.id, status: "completed", performed_on: run?.day ?? s.scheduled_date, rpe: null, feeling: null, comment: null };
+    if (s.kind === "running")
+      payload.running = {
+        distance_m: run?.km ? Math.round(run.km * 1000) : null,
+        duration_s: run?.sec || null,
+        avg_pace_s: run?.km && run.sec ? Math.round(run.sec / run.km) : null,
+        pace_is_manual: false,
+        avg_hr: null,
+        max_hr: null,
+        elevation_gain_m: null,
+        cadence_spm: null,
+        conditions: null,
+      };
+    const { error } = await supabase.rpc("save_execution", { p: payload });
+    if (error) return dbError(error);
+    revalidatePath("/app");
+    revalidatePath("/athlete", "layout");
+    revalidatePath("/coach", "layout");
+    return { ok: true, message: "Trening zapisany jako wykonany." };
   });
 }

@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Activity, ArrowUpRight, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Play, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
+import { Activity, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Plus, TimerReset, TrendingUp, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormCard } from "@/components/app/form-hub";
 import { CourseCard } from "@/components/app/course-progress";
 import { ForYou } from "@/components/app/for-you";
 import { TodayPlan } from "@/components/app/today-plan";
+import { PlanToday, type PlanSession } from "@/components/app/plan-today";
+import { WeekStrip } from "@/components/app/week-strip";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
@@ -24,15 +26,22 @@ export default async function AppHome() {
   const supabase = await createClient();
   const [user, challenges] = await Promise.all([isSupabaseConfigured() ? getCurrentUser().catch(() => null) : null, listChallenges(supabase).catch(() => [])]);
   // Signed in: today's sessions straight from the plan (VYRA Method or the coach).
-  let todays: { id: string; title: string; planned_duration_s: number | null; goal: string | null }[] = [];
+  let todays: PlanSession[] = [];
+  let week: { date: string; done: boolean }[] = [];
   if (user) {
+    const day = todayISO();
+    const dow = (new Date(`${day}T12:00:00Z`).getUTCDay() || 7) - 1;
+    const shift = (n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("training_sessions")
-      .select("id, title, planned_duration_s, goal")
+      .select("id, title, planned_duration_s, goal, status, kind, scheduled_date")
       .eq("athlete_id", user.id)
-      .eq("scheduled_date", todayISO())
-      .limit(3);
-    todays = (data ?? []) as typeof todays;
+      .gte("scheduled_date", shift(-dow))
+      .lte("scheduled_date", shift(6 - dow))
+      .limit(40);
+    const rows = (data ?? []) as (PlanSession & { scheduled_date: string })[];
+    todays = rows.filter((r) => r.scheduled_date === day).slice(0, 3);
+    week = rows.map((r) => ({ date: r.scheduled_date, done: r.status === "completed" || r.status === "partial" }));
   }
   const athlete = user?.profile.role === "athlete";
   const paid = athlete && user ? await athleteHasAccess(supabase, user.id).catch(() => false) : !!user;
@@ -53,6 +62,7 @@ export default async function AppHome() {
     { href: "/app/forma", icon: Activity, label: t("Forma", "Form") },
     { href: "/app/postepy", icon: TrendingUp, label: t("Postępy", "Progress") },
     { href: paid ? "/panel" : "/app/trening", icon: CalendarDays, label: t("Plan", "Plan") },
+    ...(todayISO() <= "2027-05-22" ? [{ href: "/app/nocna", icon: Moon, label: "Nocna Ekipa", main: false }] : []),
   ];
 
   return (
@@ -66,69 +76,26 @@ export default async function AppHome() {
       </div>
 
       <div className="grid min-w-0 grid-cols-1 content-start">
-      {/* The heart of the app: what the runs mean, today. */}
-      <div className="mt-4 lg:mt-6">
-        <FormCard />
-      </div>
+      <WeekStrip planned={week} />
 
-      {/* The four things people open the app for, always one tap away. */}
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      {!paid ? <TodayPlan /> : user ? <PlanToday sessions={todays} /> : null}
+
+      {/* Shortcuts as quiet chips: the tab bar already covers the big sections. */}
+      <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
         {quick.map((q) => (
-          <Link key={q.href} href={q.href} className={cn("flex flex-col items-center gap-1.5 rounded-[18px] py-3 text-[11.5px] font-medium transition active:scale-95", q.main ? "bg-[var(--accent)] text-white shadow-[0_10px_30px_-10px_rgba(229,52,59,0.8)]" : "bg-white/[0.06] text-white/85")}>
-            <q.icon className="size-[22px]" strokeWidth={1.9} />
+          <Link key={q.href} href={q.href} className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition active:scale-95", q.main ? "bg-[var(--accent)] text-white" : "border border-white/[0.08] bg-white/[0.04] text-white/85")}>
+            <q.icon className="size-4" strokeWidth={2} />
             {q.label}
           </Link>
         ))}
       </div>
 
-      {todayISO() <= "2027-05-22" ? (
-        <Link href="/app/nocna" className="mt-3 flex items-center gap-3.5 rounded-[20px] border border-[#ff6a6f]/30 bg-[#111113] p-4 transition active:scale-[0.985]">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#ff6a6f]/15">
-            <Moon className="size-5 text-[#ff6a6f]" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-medium">Nocna Ekipa VYRA</span>
-            <span className="mt-0.5 block text-[12.5px] leading-snug text-white/45">Plan tygodnia na Nocną Dychę. Wybierz poziom.</span>
-          </span>
-          <ArrowUpRight className="size-5 text-white/50" />
-        </Link>
-      ) : null}
-
-      {!paid ? (
-        <TodayPlan />
-      ) : user ? (
-        todays.length ? (
-          <>
-            <SectionHead title={t("Twój trening na dziś", "Today's session")} href="/panel" more={t("Plan", "Plan")} />
-            {todays.map((s) => (
-              <Link key={s.id} href={`/athlete/sessions/${s.id}`} className="app-sheen mb-2 block rounded-[22px] bg-white px-4 py-4 text-black shadow-[0_18px_50px_-18px_rgba(229,52,59,0.55)] transition active:scale-[0.985]">
-                <span className="flex items-start justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block text-[17px] font-semibold leading-snug">{s.title}</span>
-                    {s.goal ? <span className="mt-0.5 line-clamp-2 block text-[13px] text-black/55">{s.goal}</span> : null}
-                  </span>
-                  {s.planned_duration_s ? <span className="shrink-0 rounded-full bg-black/[0.07] px-2.5 py-1 text-[12px] font-medium tabular-nums">{Math.round(s.planned_duration_s / 60)} min</span> : null}
-                </span>
-                <span className="mt-3 flex items-center justify-center gap-2 rounded-full bg-black py-3 text-[14px] font-semibold text-white">
-                  <Play className="size-4" /> {t("Otwórz trening", "Open session")}
-                </span>
-              </Link>
-            ))}
-          </>
-        ) : (
-          <Link href="/panel" className="mt-6 flex items-center justify-between rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-4 transition active:scale-[0.985]">
-            <span>
-              <span className="block text-[12px] text-white/45">{t("Twój plan", "Your plan")}</span>
-              <span className="block text-[15px] font-medium">{t("Dziś dzień bez treningu. Zobacz cały tydzień", "Rest day. See your week")}</span>
-            </span>
-            <ArrowUpRight className="size-5 text-white/50" />
-          </Link>
-        )
-      ) : null}
-
       <div className="mt-3">
         <Today synced={synced} athlete={athlete} part="ready" />
       </div>
+
+      <SectionHead title={t("Twoja forma", "Your form")} href="/app/forma" more={t("Szczegóły", "Details")} />
+      <FormCard />
 
       <SectionHead title={t("Dziennik", "Log")} href="/app/dziennik" more={t("Dodaj bieg", "Add run")} />
       <HomeWeek />
