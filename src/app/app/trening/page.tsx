@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, Calculator, Dumbbell, Flag, Footprints, HeartPulse, NotebookPen, Timer, TimerReset, TrendingUp, Trophy } from "lucide-react";
 import { Chip, Group, IconTile, PageHead, Row, SectionHead } from "@/components/app/ui";
-import { ExerciseStrip } from "@/components/app/exercise-strip";
+import { RoutineList } from "@/components/app/routine-cards";
 import { ProBadge } from "@/components/app/paywall";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
@@ -87,8 +87,8 @@ export default async function AppTraining() {
         </Link>
       )}
 
-      <SectionHead title={t("Ćwiczenia", "Exercises")} href="/app/cwiczenia" more={t("Wszystkie", "All")} />
-      <ExerciseStrip />
+      <SectionHead title={t("Zestawy ćwiczeń", "Guided sets")} href="/app/cwiczenia" more={t("Wszystkie ćwiczenia", "All exercises")} />
+      <RoutineList />
 
       <SectionHead title={t("Treningi", "Workouts")} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

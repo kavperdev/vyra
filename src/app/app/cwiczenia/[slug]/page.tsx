@@ -4,6 +4,8 @@ import { ChevronLeft, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/app/ui";
 import { ExerciseAnim } from "@/components/app/exercise-anim";
 import { EXERCISES, EX_CATS, exercise } from "@/lib/app/exercises";
+import { ROUTINES } from "@/lib/app/routines";
+import { RoutineCard } from "@/components/app/routine-cards";
 
 export function generateStaticParams() {
   return EXERCISES.map((e) => ({ slug: e.slug }));
@@ -18,6 +20,7 @@ export default async function ExercisePage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const e = exercise(slug);
   if (!e) notFound();
+  const inSets = ROUTINES.filter((r) => r.steps.some((x) => x.ex === e.slug));
   const more = EXERCISES.filter((x) => x.cat === e.cat && x.slug !== e.slug).slice(0, 4);
   return (
     <article className="app-rise grid grid-cols-1 gap-3">
@@ -49,6 +52,16 @@ export default async function ExercisePage({ params }: { params: Promise<{ slug:
         <TriangleAlert className="mt-0.5 size-5 shrink-0 text-[#ff8a8f]" />
         <p className="text-[14px] leading-relaxed text-white/80">{e.mistake}</p>
       </div>
+      {inSets.length ? (
+        <>
+          <p className="mt-3 px-0.5 text-[16px] font-semibold tracking-tight">Robisz je w zestawach</p>
+          <div className="grid gap-2">
+            {inSets.map((r) => (
+              <RoutineCard key={r.slug} r={r} />
+            ))}
+          </div>
+        </>
+      ) : null}
       {more.length ? (
         <>
           <p className="mt-3 px-0.5 text-[16px] font-semibold tracking-tight">Więcej: {EX_CATS[e.cat].name.toLowerCase()}</p>

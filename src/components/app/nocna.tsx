@@ -105,10 +105,21 @@ export function NocnaView() {
               {d.sub.map((l, i) => (
                 <p key={i} className="mt-1 text-[13px] leading-snug text-white/50">{resolveLine(l, zones)}</p>
               ))}
+              {d.kind === "quality" ? (
+                <Link href="/app/zestaw/rozgrzewka" className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1.5 text-[12.5px] font-medium text-white/85 active:scale-95">
+                  ▶ Rozgrzewka przed akcentem, 5 min
+                </Link>
+              ) : null}
             </div>
           );
         })}
-        <p className="px-1 text-[12.5px] text-white/40">Pozostałe dni: odpoczynek, spacer albo mobilność.</p>
+        <p className="px-1 text-[12.5px] text-white/40">
+          Pozostałe dni: odpoczynek albo{" "}
+          <Link href="/app/zestaw/sila-start" className="text-white/70 underline underline-offset-2">
+            Siła na start
+          </Link>{" "}
+          (8 min).
+        </p>
       </div>
 
       <Link href="/app/cel?bieg=nocna-dycha" className="px-1 text-[12.5px] text-white/40 underline-offset-2">Chcesz plan tylko dla siebie, przeliczany co tydzień? To VYRA Method.</Link>

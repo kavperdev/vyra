@@ -10,7 +10,7 @@ import { WeekStrip } from "@/components/app/week-strip";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, IconTile, Row, SectionHead } from "@/components/app/ui";
-import { ExerciseStrip } from "@/components/app/exercise-strip";
+import { TodayRoutine } from "@/components/app/today-routine";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -98,6 +98,8 @@ export default async function AppHome() {
         <Today synced={synced} athlete={athlete} part="ready" />
       </div>
 
+      <TodayRoutine />
+
       <SectionHead title={t("Twoja forma", "Your form")} href="/app/forma" more={t("Szczegóły", "Details")} />
       <FormCard />
 
@@ -112,8 +114,6 @@ export default async function AppHome() {
 
       <ForYou />
 
-      <SectionHead title={t("Ćwiczenia", "Exercises")} href="/app/cwiczenia" more={t("Wszystkie", "All")} />
-      <ExerciseStrip slugs={["skip-a", "przebiezka", "wykroki", "most-biodrowy", "wspiecia-na-palce", "deska"]} />
 
       <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
       <CourseCard />
