@@ -13,7 +13,8 @@ import { getT } from "@/lib/i18n/server";
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   const { t } = await getT();
-  const panel = user ? { href: "/panel", label: t("Panel", "Dashboard") } : { href: "/login", label: t("Zaloguj się", "Sign in") };
+  // Runners land in the app (the same one as on the phone, in a desktop layout); staff in their panel.
+  const panel = user ? (user.profile.role === "athlete" ? { href: "/app", label: t("Moja VYRA", "My VYRA") } : { href: "/panel", label: t("Panel", "Dashboard") }) : { href: "/app/zaloguj", label: t("Zaloguj się", "Sign in") };
   return (
     <div className="dark min-h-dvh bg-black text-white antialiased selection:bg-[var(--accent)] selection:text-white">
       {/* Enables scroll-reveal styles before first paint; without JS everything stays visible. */}
