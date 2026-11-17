@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useResult } from "@/components/app/tools";
 import { useStore, todayWaw } from "@/lib/app/store";
-import { LEVELS, NOCNA, ZONE_NAME, ZONE_ORDER, levelZones, normLevel, nocnaWeek, nocnaWeekNow, paceText, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
+import { LEVELS, NOCNA, ZONE_FEEL, ZONE_HR, ZONE_NAME, ZONE_ORDER, byFeel, levelFor, levelZones, normLevel, nocnaWeek, nocnaWeekNow, paceText, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
 import { cn } from "@/lib/utils";
 
 const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("pl-PL", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -44,7 +44,12 @@ export function NocnaView() {
     );
 
   const w = nocnaWeek(level, n);
-  const zones = own ?? levelZones(level);
+  // Paces come from the chosen level. A result of yours refines them only when it fits that level;
+  // otherwise we suggest the level that does (a sub-40 runner on "Ukończyć" must not get 4:45 easy runs).
+  const fit = p5k ? levelFor(p5k) : null;
+  const mine = !!own && fit === level;
+  const zones = mine && own ? own : levelZones(level);
+  const feel = byFeel(level);
   const used = ZONE_ORDER.filter((k) => w.days.some((d) => d.lines.some((l) => l.includes(`{${k}}`))));
   const lv = LEVELS.find((l) => l.k === level)!;
   const todayIso = todayWaw();
@@ -54,6 +59,14 @@ export function NocnaView() {
         <span className="text-white/55">{lv.name} · {lv.days}</span>
         <button onClick={() => setLevel(null)} className="text-[#ff6a6f]">Zmień poziom</button>
       </div>
+      {fit && fit !== level ? (
+        <div className="flex items-center gap-3 rounded-[18px] border border-white/[0.08] bg-[#111113] p-3.5">
+          <p className="min-w-0 flex-1 text-[13px] leading-snug text-white/70">Twój wynik na 5 km pasuje do poziomu <span className="font-semibold text-white">{LEVELS.find((l) => l.k === fit)?.name}</span>. Tempa poniżej są dla poziomu {lv.name}.</p>
+          <button onClick={() => setLevel(fit)} className="shrink-0 rounded-full bg-white px-3.5 py-2 text-[12.5px] font-semibold text-black active:scale-95">
+            Przełącz
+          </button>
+        </div>
+      ) : null}
 
       {now === 0 ? <p className="rounded-2xl bg-white/[0.05] p-3.5 text-[13px] text-white/70">Plan rusza {fmtDay(NOCNA.start)}. Tak wygląda tydzień 1.</p> : null}
       {now > NOCNA.weeks ? <p className="rounded-2xl bg-white/[0.05] p-3.5 text-[13px] text-white/70">Start już za nami. Gratulacje! Plan zostaje do podglądu.</p> : null}
@@ -68,22 +81,36 @@ export function NocnaView() {
       </div>
       <p className="text-[13px] leading-relaxed text-white/55">{w.note}</p>
 
-      {/* Paces first: every session below uses them. */}
+      {/* Paces first: every session below uses them. Beginners get feel and heart rate instead. */}
       <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
         <div className="flex items-baseline justify-between">
-          <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-white/45">Tempa w tym tygodniu</p>
-          <p className="text-[11.5px] text-white/35">{own ? "z Twojej formy" : `dla celu: ${lv.name}`}</p>
+          <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-white/45">{feel ? "Jak mocno biec" : "Tempa w tym tygodniu"}</p>
+          <p className="text-[11.5px] text-white/35">{feel ? "na czucie i tętno" : mine ? "z Twojej formy" : `dla poziomu ${lv.name}`}</p>
         </div>
-        <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div className="mt-2.5 grid gap-2.5">
           {used.map((k) => (
-            <div key={k}>
-              <p className="text-[11.5px] text-white/45">{ZONE_NAME[k]}</p>
-              <p className="text-[16px] font-semibold tabular-nums">{paceText(zones[k])}<span className="ml-1 text-[11px] font-normal text-white/40">/km</span></p>
+            <div key={k} className="flex items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-medium">{ZONE_NAME[k]}</p>
+                {feel ? <p className="text-[12px] text-white/50">{ZONE_FEEL[k]}</p> : null}
+              </div>
+              <div className="shrink-0 text-right">
+                {!feel || k === "tenK" ? (
+                  <p className="text-[16px] font-semibold tabular-nums">
+                    {paceText(zones[k])}
+                    <span className="ml-1 text-[11px] font-normal text-white/40">/km</span>
+                  </p>
+                ) : null}
+                <p className="text-[11.5px] tabular-nums text-white/45">tętno {ZONE_HR[k]}{ZONE_HR[k].includes("%") ? " max" : ""}</p>
+              </div>
             </div>
           ))}
         </div>
-        {!own ? (
-          <Link href="/app/narzedzia" className="mt-3 block text-[12.5px] text-[#ff6a6f]">Wpisz swój wynik, a tempa policzą się pod Ciebie</Link>
+        <p className="mt-3 text-[12px] leading-relaxed text-white/40">
+          {feel ? "Pierwsze tygodnie biegnij na rozmowę. Brakuje tchu? Przejdź do marszu na minutę, to część planu." : "Tętno wyżej niż w zakresie? Zwolnij, nawet jeśli tempo wychodzi wolniejsze. Liczy się wysiłek, nie zegarek."}
+        </p>
+        {!p5k && !feel ? (
+          <Link href="/app/narzedzia" className="mt-2 block text-[12.5px] text-[#ff6a6f]">Wpisz swój wynik, a tempa policzą się pod Ciebie</Link>
         ) : null}
       </div>
 
@@ -101,9 +128,9 @@ export function NocnaView() {
                 <p className="text-[13px] font-medium tabular-nums text-white/70">{String(d.km).replace(".", ",")} km</p>
               </div>
               <p className={cn("mt-2 text-[12.5px] font-semibold uppercase tracking-[0.06em]", hard ? "text-[#ff6a6f]" : "text-emerald-300/80")}>{d.title}</p>
-              <p className="mt-0.5 text-[16px] font-semibold leading-snug">{resolveLine(d.main, zones)}</p>
+              <p className="mt-0.5 text-[16px] font-semibold leading-snug">{resolveLine(d.main, zones, feel)}</p>
               {d.sub.map((l, i) => (
-                <p key={i} className="mt-1 text-[13px] leading-snug text-white/50">{resolveLine(l, zones)}</p>
+                <p key={i} className="mt-1 text-[13px] leading-snug text-white/50">{resolveLine(l, zones, feel)}</p>
               ))}
               {d.kind === "quality" ? (
                 <Link href="/app/zestaw/rozgrzewka" className="mt-3 flex w-fit items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1.5 text-[12.5px] font-medium text-white/85 active:scale-95">

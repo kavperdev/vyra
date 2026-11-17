@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import { mkdirSync, writeFileSync, copyFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { LEVELS, NOCNA, ZONE_NAME, levelZones, nocnaWeek, paceText, resolveLine, type NLevel } from "../src/lib/app/nocna-plan.ts";
+import { LEVELS, NOCNA, ZONE_NAME, byFeel, levelZones, nocnaWeek, paceText, resolveLine, type NLevel } from "../src/lib/app/nocna-plan.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -36,7 +36,7 @@ body{width:1080px;height:1350px;background:#000;color:#fff;font-family:"Inter Di
 const shell = (body: string, page: string) =>
   `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body><div class="g" style="width:1300px;height:1300px;left:-300px;top:300px;background:radial-gradient(closest-side,rgba(229,52,59,.34),transparent 70%)"></div><div class="g" style="width:1000px;height:1000px;right:-450px;top:-300px;background:radial-gradient(closest-side,rgba(90,110,255,.15),transparent 70%)"></div><img class="logo" src="logo.png"><div class="pg">${page}</div>${body}</body></html>`;
 
-const w0 = nocnaWeek("pro", n);
+const w0 = nocnaWeek("s50", n);
 const slides: string[] = [];
 slides.push(
   shell(
@@ -48,14 +48,15 @@ slides.push(
   ),
 );
 const TOTAL = LEVELS.length + 3;
-const r = (line: string, z: ReturnType<typeof levelZones>) => esc(resolveLine(line, z).replace(/\/km/g, ""));
+const r = (line: string, z: ReturnType<typeof levelZones>, feel = false) => esc(resolveLine(line, z, feel).replace(/\/km/g, ""));
 
 // Slajd 2: tabela temp dla wszystkich poziomów.
 const ZK = ["easy", "threshold", "tenK", "vo2"] as const;
 const head = ZK.map((k) => `<th>${ZONE_NAME[k]}</th>`).join("");
 const body = LEVELS.map((l) => {
   const z = levelZones(l.k as NLevel);
-  return `<tr><td class="lv">${esc(l.name)}</td>${ZK.map((k) => `<td>${paceText(z[k])}</td>`).join("")}</tr>`;
+  const FEEL: Record<string, string> = { easy: "na rozmowę", threshold: "pojedyncze słowa", vo2: "mocno" };
+  return `<tr><td class="lv">${esc(l.name)}</td>${ZK.map((k) => `<td>${byFeel(l.k as NLevel) && k !== "tenK" ? `<span style="font-size:24px;color:rgba(255,255,255,.7)">${FEEL[k]}</span>` : paceText(z[k])}</td>`).join("")}</tr>`;
 }).join("");
 slides.push(
   shell(
@@ -77,7 +78,7 @@ LEVELS.map((l) => l.k as NLevel).forEach((lv, i) => {
   const rows = w.days
     .map(
       (d) =>
-        `<div class="day${tight ? " t" : ""}"><div><b>${d.label.slice(0, 3)}</b><small>${String(d.km).replace(".", ",")} km</small></div><div><i class="${d.kind === "quality" || d.kind === "race" ? "q" : "e"}">${esc(d.title)}</i><p>${r(d.main, z)}</p>${d.sub.map((x) => `<p class="s">${r(x, z)}</p>`).join("")}</div></div>`,
+        `<div class="day${tight ? " t" : ""}"><div><b>${d.label.slice(0, 3)}</b><small>${String(d.km).replace(".", ",")} km</small></div><div><i class="${d.kind === "quality" || d.kind === "race" ? "q" : "e"}">${esc(d.title)}</i><p>${r(d.main, z, byFeel(lv))}</p>${d.sub.map((x) => `<p class="s">${r(x, z, byFeel(lv))}</p>`).join("")}</div></div>`,
     )
     .join("");
   slides.push(

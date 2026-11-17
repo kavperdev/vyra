@@ -47,7 +47,7 @@ export const normLevel = (v: unknown): NLevel | null => (v === "pro" ? "s50" : P
  * Tempo startowe to dokładnie cel, reszta wokół niego. Przedziały wąskie i zaokrąglone do 5 s.
  */
 export const ZONE_RATIO: Record<string, [number, number]> = {
-  easy: [1.2, 1.3], // spokojnie, na rozmowę
+  easy: [1.2, 1.35], // spokojnie, na rozmowę
   marathon: [1.09, 1.12], // szybsza końcówka długiego biegu
   threshold: [1.03, 1.06], // próg: "komfortowo ciężko", ok. 1 h wysiłku
   tenK: [0.99, 1.01], // tempo startowe 10 km
@@ -60,6 +60,25 @@ export const ZONE_ORDER = ["easy", "marathon", "threshold", "tenK", "vo2", "rep"
 
 /** Przykładowe tempa do grafik: z docelowego czasu na 10 km (Riegel, t5 = t10 / 2,085). */
 export const REF_P5K = Object.fromEntries(P.map((p) => [p.k, Math.round(p.t10 / 2.085)])) as Record<NLevel, number>;
+
+/** Heart rate (% of max) for each zone: shown next to the pace, and instead of it for beginners. */
+export const ZONE_HR: Record<string, string> = { easy: "65–75%", marathon: "75–82%", threshold: "83–88%", tenK: "88–92%", vo2: "92–96%", rep: "krótko, tętno nie zdąży" };
+/** How it should feel: beginners ("start") get this instead of a pace, except the race pace. */
+export const ZONE_FEEL: Record<string, string> = {
+  easy: "spokojnie, w tempie rozmowy",
+  marathon: "żwawo, ale swobodnie",
+  threshold: "mocno, ale równo (mówisz pojedyncze słowa)",
+  tenK: "w tempie startowym",
+  vo2: "mocno, ostatnie sekundy ciężko",
+  rep: "szybko i luźno",
+};
+/** Beginners train by feel and heart rate: a pace from a goal time means little before the first 10 km. */
+export const byFeel = (k: NLevel) => k === "start";
+/** The level that fits a 5 km result: the fastest one the runner is already at (or the slowest). */
+export function levelFor(p5k: number): NLevel {
+  const fits = (P.map((p) => p.k) as NLevel[]).filter((k) => p5k <= REF_P5K[k] * 1.03);
+  return fits.length ? fits[fits.length - 1] : "start";
+}
 
 export type NDay = {
   dow: 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -204,7 +223,7 @@ function levelWeek(p: Params, n: number): NDay[] {
   const fast = ph === "Szczyt" && !down && p.k !== "start";
   const longDay = fast
     ? day(7, "long", "Długi z szybszą końcówką", `${fk(long)} po {easy}`, [`Ostatnie ${p.days >= 5 ? 4 : 3} km po {marathon}`], long)
-    : day(7, "long", "Długi bieg", `${fk(long)} po {easy}`, [long >= 14 ? "Na rozmowę. Weź picie" : "Na rozmowę"], long);
+    : day(7, "long", "Długi bieg", `${fk(long)} po {easy}`, [p.k === "start" ? "Minuta marszu, gdy brakuje tchu, jest ok" : long >= 14 ? "Na rozmowę. Weź picie" : "Na rozmowę"], long);
 
   const q1 = pickQ(Q1[ph], n, p, prog, down);
   const q2 = p.q2 ? pickQ(Q2[ph], n, p, prog, down) : null;
@@ -264,8 +283,9 @@ export const levelZones = (k: NLevel): ZoneMap => zonesFromP10((P.find((p) => p.
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 export const paceText = (z: [number, number]) => `${mmss(z[0])}–${mmss(z[1])}`;
 /** Podmienia {znaczniki}: konkretne tempo /km, gdy znamy formę, inaczej nazwa strefy. */
-export function resolveLine(line: string, zones: ZoneMap | null): string {
+export function resolveLine(line: string, zones: ZoneMap | null, feel = false): string {
   return line.replace(/(po )?\{(\w+)\}/g, (_, po: string | undefined, k: string) => {
+    if (feel && k !== "tenK") return ZONE_FEEL[k] ?? k;
     const z = zones?.[k];
     if (!z) return `w tempie ${ZONE_LOC[k] ?? k}`;
     return `${po ?? ""}${paceText(z)}/km`;
