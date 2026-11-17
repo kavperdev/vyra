@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Flag, Footprints, Rocket, Sprout, TimerReset, Watch } from "lucide-react";
+import { Check, Flag, Footprints, Rocket, Sprout, TimerReset, Watch, Moon } from "lucide-react";
 import { completeRef, readinessToday, setSwap, todayItem, type TodayItem } from "@/lib/app/plans";
 import { useStoreTick } from "@/lib/app/store";
+import { PARTNER_RACES, addDays, todayLocal } from "@/lib/app/goal-plan";
 import { SectionHead } from "@/components/app/ui";
 import { useAccess } from "@/components/app/access";
 import { CountUp } from "@/components/app/motion";
@@ -30,6 +31,7 @@ export function TodayPlan() {
         <SectionHead title="Wybierz swój plan" />
         <div className="grid gap-2">
           {[
+            ...PARTNER_RACES.filter((r) => r.race >= addDays(todayLocal(), 7)).map((r) => ({ href: `/app/cel?bieg=${r.id}`, icon: Moon, t: r.name, d: "Biegniesz? Cały plan do startu za darmo, z tempami z Twojej formy." })),
             { href: "/app/plan", icon: Sprout, t: "Zacznij biegać", d: "Od zera do 25 minut biegu w 6 tygodni. Timer prowadzi każdy trening." },
             { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." },
             ...(premium ? [] : [{ href: "/app/sklep", icon: Rocket, t: "VYRA Method", d: "Masz start albo wracasz po kontuzji? Plan liczony co tydzień od nowa. 14 dni za darmo." }]),
@@ -48,7 +50,7 @@ export function TodayPlan() {
       </>
     );
 
-  if (item.source === "goal" && !premium && (item.week ?? 1) > 1)
+  if (item.source === "goal" && !premium && !item.free && (item.week ?? 1) > 1)
     return (
       <>
         <SectionHead title="Twój plan pod start" href="/app/cel" more="Plan" />

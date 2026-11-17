@@ -40,7 +40,7 @@ export function MembershipCard({ items }: { items: MembershipInfo[] }) {
         </div>
         {shown.status === "ended" ? (
           <Button asChild variant="accent">
-            <a href="/prowadzenie#pakiety">{tl("Wybierz pakiet", "Choose a package")}</a>
+            <a href="/app/sklep#prowadzenie">{tl("Wybierz pakiet", "Choose a package")}</a>
           </Button>
         ) : shown.kind === "monthly" && shown.stripe_customer ? (
           <Button

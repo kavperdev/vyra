@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useStoreApp } from "@/lib/app/platform-client";
 import Link from "next/link";
 import { Check, Crown, Gauge, Users } from "lucide-react";
 import { startTrialForMe } from "@/lib/actions/trial";
@@ -16,15 +17,16 @@ export function ChoosePlan({ trial, premium }: { trial: boolean; premium: boolea
   const [err, setErr] = useState<string | null>(null);
   const [building, setBuilding] = useState<null | "free" | "method">(null);
   const [pending, start] = useTransition();
+  const store = useStoreApp();
   const opts: { k: Choice; icon: typeof Gauge; title: string; price: string; tag?: string; points: string[] }[] = [
-    { k: "method", icon: Crown, title: "VYRA Method", price: "14 dni za darmo, potem od 16,58 zł/mies.", tag: "Polecane", points: ["Plan pod Twój start, liczony co tydzień od nowa", "Odpuszcza, gdy coś boli albo źle śpisz", "Tempa rosną razem z formą"] },
-    { k: "free", icon: Gauge, title: "Za darmo", price: "0 zł, na zawsze", points: ["Forma, zmęczenie, ryzyko przeciążenia", "Dziennik i import ze Stravy", "Plan „Zacznij biegać”, odznaki, znajomi"] },
-    { k: "coach", icon: Users, title: "Prowadzenie z trenerem", price: "osobny trener, pakiety w Sklepie", points: ["Trener VYRA układa plan dla Ciebie", "Rozmowa z trenerem w aplikacji", "Komentarz do każdego treningu"] },
+    { k: "method", icon: Crown, title: "VYRA Method", price: store ? "14 dni za darmo, bez karty" : "14 dni za darmo, potem od 16,58 zł/mies.", tag: "Polecane", points: ["Plan pod Twój start, liczony co tydzień od nowa", "Odpuszcza, gdy coś boli albo źle śpisz", "Tempa rosną razem z formą"] },
+    { k: "free", icon: Gauge, title: "Za darmo", price: store ? "Na zawsze" : "0 zł, na zawsze", points: ["Forma, zmęczenie, ryzyko przeciążenia", "Dziennik i import ze Stravy", "Plan „Zacznij biegać”, odznaki, znajomi"] },
+    { k: "coach", icon: Users, title: "Prowadzenie z trenerem", price: store ? "Napisz do nas, trener się odezwie" : "osobny trener, pakiety w Sklepie", points: ["Trener VYRA układa plan dla Ciebie", "Rozmowa z trenerem w aplikacji", "Komentarz do każdego treningu"] },
   ];
   const go = () => {
     setErr(null);
     save("vyra-chosen", pick);
-    if (pick === "coach") return void window.location.assign("/app/sklep#prowadzenie");
+    if (pick === "coach") return void window.location.assign(store ? "/app/kontakt" : "/app/sklep#prowadzenie");
     if (pick === "free") return setBuilding("free");
     if (premium) return void window.location.assign("/athlete/metoda");
     start(async () => {

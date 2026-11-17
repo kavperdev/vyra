@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { premiumStatus } from "@/lib/app/premium";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { storeApp } from "@/lib/app/platform";
 
 export const metadata = { title: "Sklep" };
 
@@ -22,7 +23,7 @@ export default async function AppShop() {
     listCamps(supabase, { publicOnly: true }).catch(() => []),
   ]);
   const pay = stripeConfigured();
-  const [{ premium: pro }, me] = await Promise.all([premiumStatus().catch(() => ({ premium: false })), getCurrentUser().catch(() => null)]);
+  const [{ premium: pro }, me, store] = await Promise.all([premiumStatus().catch(() => ({ premium: false })), getCurrentUser().catch(() => null), storeApp()]);
   // Bought (or trial) VYRA Method: show it as owned, never offer it again.
   const premium = pro && me?.profile.role === "athlete";
   const m = method.filter((p) => p.visible);
@@ -32,7 +33,7 @@ export default async function AppShop() {
   const c = coaching.filter((p) => p.visible).sort((a, b) => a.sort - b.sort);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Sklep", "Shop")} sub={t("Bez zakładania konta. Dostęp przychodzi na e-mail.", "No account needed. Access arrives by e-mail.")} />
+      <PageHead title={store ? "VYRA Method" : t("Sklep", "Shop")} sub={store ? t("Co daje VYRA Method i jak zacząć.", "What VYRA Method gives you and how to start.") : t("Wszystko trafia na Twoje konto VYRA.", "Everything goes to your VYRA account.")} />
 
       {premium ? (
         <Link href="/athlete/metoda" className="flex items-center gap-3.5 rounded-[22px] bg-white p-5 text-black active:scale-[0.985]">
@@ -53,9 +54,9 @@ export default async function AppShop() {
         <div className="px-5 pb-5 pt-32">
           <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-medium backdrop-blur-md">VYRA Method</span>
           <p className="mt-3 text-[28px] font-semibold leading-[1.1] tracking-[-0.02em]">{t("Plan, który zmienia się razem z Tobą.", "A plan that changes with you.")}</p>
-          <p className="mt-2 text-[14px] leading-relaxed text-white/70">{t("Dla tych, którzy mają start w kalendarzu, wracają po przerwie albo kontuzji i nie chcą płacić 300 zł za trenera.", "For runners with a race on the calendar, coming back after a break or injury, who don't want to pay for a personal coach.")}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/70">{store ? t("Dla tych, którzy mają start w kalendarzu albo wracają po przerwie lub kontuzji.", "For runners with a race on the calendar or coming back after a break or injury.") : t("Dla tych, którzy mają start w kalendarzu, wracają po przerwie albo kontuzji i nie chcą płacić 300 zł za trenera.", "For runners with a race on the calendar, coming back after a break or injury, who don't want to pay for a personal coach.")}</p>
           <ul className="mt-4 grid gap-1.5">
-            {[t("14 dni za darmo, bez karty", "14 days free, no card"), perMonth ? t(`Potem od ${perMonth} zł miesięcznie`, `Then from PLN ${perMonth} a month`) : t("Potem 29 zł miesięcznie", "Then PLN 29 a month"), t("Rezygnujesz jednym kliknięciem", "Cancel with one tap")].map((x) => (
+            {(store ? [t("14 dni za darmo, bez karty", "14 days free, no card"), t("Plan pod Twój start, liczony co tydzień", "A plan for your race, recalculated weekly")] : [t("14 dni za darmo, bez karty", "14 days free, no card"), perMonth ? t(`Potem od ${perMonth} zł miesięcznie`, `Then from PLN ${perMonth} a month`) : t("Potem 29 zł miesięcznie", "Then PLN 29 a month"), t("Rezygnujesz jednym kliknięciem", "Cancel with one tap")]).map((x) => (
               <li key={x} className="flex items-center gap-2 text-[14px] text-white/80">
                 <Check className="size-4 shrink-0 text-emerald-300" /> {x}
               </li>
@@ -68,7 +69,7 @@ export default async function AppShop() {
       <SectionHead title={t("Co dostajesz ponad darmowy plan", "What you get beyond the free plan")} />
       <MethodCompare />
 
-      {m.length ? (
+      {m.length && !store ? (
         <>
           <SectionHead title={t("Zostań z VYRA Method", "Stay with VYRA Method")} />
           <MethodPicker plans={m} pay={pay} />
@@ -78,7 +79,15 @@ export default async function AppShop() {
         </>
       )}
 
-      {c.length ? (
+      <span id="prowadzenie" className="block scroll-mt-20" />
+      {store ? (
+        <>
+          <SectionHead title={t("Trener 1:1", "1:1 coach")} />
+          <Group>
+            <Row href="/app/kontakt" icon={<Check className="size-4" />} title={t("Prowadzenie z trenerem VYRA", "Coaching with a VYRA coach")} sub={t("Napisz do nas, a trener odezwie się do Ciebie", "Write to us and a coach will get back to you")} />
+          </Group>
+        </>
+      ) : c.length ? (
         <>
           <SectionHead title={t("Trener 1:1", "1:1 coach")} />
           <p className="-mt-1 mb-3 px-0.5 text-[13px] leading-relaxed text-white/50">{t("Indywidualny plan, analiza każdego treningu i stały kontakt z trenerem VYRA.", "A personal plan, analysis of every session and direct contact with a VYRA coach.")}</p>
@@ -86,6 +95,8 @@ export default async function AppShop() {
         </>
       ) : null}
 
+      {store ? null : (
+        <>
       <SectionHead title={t("Obozy i prezenty", "Camps and gifts")} />
       <Group>
         {camps.slice(0, 3).map((camp) => (
@@ -104,6 +115,8 @@ export default async function AppShop() {
       <div className="mt-6 flex items-center justify-center gap-2 text-[12px] text-white/40">
         <ShieldCheck className="size-4" /> {t("Bezpieczna płatność: BLIK, karta, Przelewy24", "Secure payment: BLIK, card, Przelewy24")}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -32,7 +32,7 @@ export function Paywall({ title, signedIn }: { title: string; signedIn: boolean 
         </ul>
         <TrialButton className="mt-5" />
         <Link href="/app/sklep" className="mt-2 block py-2 text-center text-[13px] text-white/55">
-          Zobacz ceny
+          Więcej o VYRA Method
         </Link>
       </div>
       {signedIn ? null : (

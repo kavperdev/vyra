@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "pl.vyraathl.twa",
-        "sha256_cert_fingerprints": ["93:FC:67:4B:C6:DD:D0:9B:9B:4F:3D:37:6B:49:C7:DD:56:77:10:9A:A9:0D:C8:B0:48:10:03:05:50:CF:D8:9B"]
-      }
-    }]

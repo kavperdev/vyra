@@ -149,3 +149,67 @@ export const mmss = (s: number) => {
 };
 const MONTHS = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"];
 export const monthName = (ym: string) => MONTHS[Number(ym.slice(5, 7)) - 1] ?? ym;
+
+/* ---------- Wynik dnia: one number for "how hard can I go today" ---------- */
+
+export type DayScore = { score: number; label: string; advice: string; tone: "good" | "warn" | "info" };
+
+/** 0–100 from form balance and overload risk, blended with the morning check-in when there is one. */
+export function dayScore(f: Form, readiness: number | null): DayScore | null {
+  if (f.days.every((d) => !d.load) && readiness == null) return null;
+  const fresh = f.balance / Math.max(5, f.fitness); // −0.5 tired … +0.3 fresh
+  let s = Math.max(15, Math.min(95, 65 + fresh * 80));
+  if (f.ratioZone === "risk") s = Math.min(s, 40);
+  else if (f.ratioZone === "watch") s -= 10;
+  if (readiness != null) s = readiness <= 25 ? Math.min(35, (s + readiness) / 2) : (s + readiness) / 2;
+  const score = Math.round(s);
+  if (score >= 75) return { score, tone: "good", label: "Gotowy na mocny trening", advice: "Dobry dzień na akcent albo test. Rozgrzej się porządnie." };
+  if (score >= 55) return { score, tone: "good", label: "Normalny dzień treningowy", advice: "Trenuj według planu. Spokojne biegi naprawdę spokojnie." };
+  if (score >= 35) return { score, tone: "info", label: "Dziś raczej spokojnie", advice: "Lekki bieg albo krótszy trening. Mocny akcent przesuń o dzień lub dwa." };
+  return { score, tone: "warn", label: "Odpoczynek albo bardzo lekko", advice: "Organizm jeszcze odrabia zmęczenie. Wolne, spacer albo 20–30 min truchtu." };
+}
+
+/* ---------- Strefy temp z aktualnej formy ---------- */
+
+export type PaceZone = { key: string; name: string; use: string; pace: [number, number] };
+
+export function paceZones(p5k: number | null): PaceZone[] {
+  if (!p5k) return [];
+  const p = p5k / 5;
+  const z = (a: number, b: number): [number, number] => [Math.round(p * a), Math.round(p * b)];
+  return [
+    { key: "easy", name: "Spokojnie", use: "większość biegów, długie wybieganie", pace: z(1.22, 1.35) },
+    { key: "marathon", name: "Tempo maratońskie", use: "długie odcinki w tempie startowym", pace: z(1.12, 1.18) },
+    { key: "threshold", name: "Próg", use: "tempówki 15–30 min, odcinki 1–2 km", pace: z(1.06, 1.1) },
+    { key: "tenK", name: "Tempo 10 km", use: "odcinki 1–3 km", pace: z(1.02, 1.06) },
+    { key: "vo2", name: "Interwały (VO₂max)", use: "odcinki 400 m – 1 km", pace: z(0.96, 1.0) },
+  ];
+}
+
+/* ---------- Wyjaśnij mój trening: an automatic note for each run ---------- */
+
+/** Plain-language note about one run against current form. Generated automatically from the numbers. */
+export function explainRun(r: Run, log: Run[], p5k: number | null): string | null {
+  if (!r.sec) return null;
+  const min = Math.round(r.sec / 60);
+  const pace = r.km ? r.sec / r.km : null;
+  const prev = log.filter((x) => x.day < r.day && x.day >= iso(d0(r.day) - 28 * DAY) && x.km > 0);
+  const avgKm = prev.length ? prev.reduce((s, x) => s + x.km, 0) / prev.length : null;
+  const e = effortOf(r, p5k);
+  const parts: string[] = [];
+  let kind: "easy" | "long" | "tempo" | "hard" = e >= 8 ? "hard" : e >= 6 ? "tempo" : "easy";
+  if (kind === "easy" && avgKm && r.km >= Math.max(10, avgKm * 1.5)) kind = "long";
+  if (kind === "long") parts.push(`Długi bieg: ${r.km.toFixed(1).replace(".", ",")} km, o ${Math.round((r.km / avgKm! - 1) * 100)}% dłużej niż Twój zwykły bieg. Buduje wytrzymałość i odporność nóg na zmęczenie.`);
+  else if (kind === "easy") parts.push(`Spokojny bieg (${min} min). Buduje bazę tlenową i pomaga regenerować się po mocniejszych dniach.`);
+  else if (kind === "tempo") parts.push(`Bieg w umiarkowanie mocnym tempie. Podnosi próg, czyli tempo, które utrzymasz długo bez zakwaszenia.`);
+  else parts.push(`Mocny trening. Najbardziej rozwija szybkość i VO₂max, ale kosztuje 1–2 dni regeneracji.`);
+  if (p5k && pace) {
+    const easyTop = (p5k / 5) * 1.22;
+    if (r.rpe > 0 && r.rpe <= 4 && pace < easyTop - 5) parts.push(`Uwaga: odczucie lekkie, ale tempo ${fmt(pace)}/km jest szybsze niż Twoja strefa spokojna (od ${fmt(easyTop)}/km). Na spokojnych dniach zwolnij.`);
+    if (kind === "easy" && !r.rpe && pace < easyTop - 10) parts.push(`Jak na spokojny bieg trochę za szybko: Twoja strefa spokojna zaczyna się od ${fmt(easyTop)}/km.`);
+  }
+  const next = log.some((x) => x.day > r.day);
+  if (!next) parts.push(kind === "hard" || kind === "long" ? "Jutro: wolne albo bardzo spokojnie." : "Jutro możesz trenować normalnie.");
+  return parts.join(" ");
+}
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;

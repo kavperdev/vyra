@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, Flag, Footprints, Pencil, TimerReset, Trash2, Lock } from "lucide-react";
 import { fmtPace, fmtTime, timeFor, vdotOf } from "@/lib/method/engine";
-import { GOAL_DISTS, GOAL_KEY, addDays, buildPlan, daysBetween, todayLocal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { GOAL_DISTS, GOAL_KEY, PARTNER_RACES, addDays, buildPlan, daysBetween, freeEvent, todayLocal, type GoalDist, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { writeGoal } from "@/lib/app/goal-store";
 import { useStore } from "@/lib/app/store";
 import { Building } from "@/components/app/building";
@@ -35,6 +35,22 @@ function Setup({ initial, onDone, onCancel }: { initial: GoalStore | null; onDon
   const [race, setRace] = useState(initial?.race ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [days, setDays] = useState<3 | 4 | 5>(initial?.days ?? 4);
+  const [event, setEvent] = useState<string | undefined>(initial?.event);
+  const pickRace = (id: string) => {
+    const x = PARTNER_RACES.find((r) => r.id === id);
+    if (!x) return;
+    setEvent(x.id);
+    setDist(x.dist);
+    setRace(x.race);
+    setName(x.name);
+  };
+  // Link from a partner race (e.g. /app/cel?bieg=nocna-dycha) fills the form.
+  useEffect(() => {
+    if (initial) return;
+    const id = new URLSearchParams(window.location.search).get("bieg");
+    if (id) pickRace(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [resDist, setResDist] = useState("5k");
   const [sec, setSec] = useState<number | null>(null);
   useEffect(() => {
@@ -52,11 +68,21 @@ function Setup({ initial, onDone, onCancel }: { initial: GoalStore | null; onDon
   const submit = () => {
     if (!ok || !p5k) return;
     if (sec) save({ dist: resDist, time: fmtTime(sec) });
-    onDone({ dist, race, name: name.trim() || undefined, days, p5k: Math.round(p5k), done: initial?.done ?? [] });
+    const ev = event && PARTNER_RACES.some((x) => x.id === event && x.race === race && x.dist === dist) ? event : undefined;
+    onDone({ dist, race, name: name.trim() || undefined, event: ev, days, p5k: Math.round(p5k), done: initial?.done ?? [] });
   };
 
   return (
     <div className="grid gap-3">
+      {PARTNER_RACES.filter((x) => x.race >= min).map((x) => (
+        <button key={x.id} type="button" onClick={() => pickRace(x.id)} className={cn("rounded-[20px] border p-4 text-left transition active:scale-[0.99]", event === x.id ? "border-white bg-white text-black" : "border-white/[0.08] bg-[#111113]")}>
+          <span className={cn("text-[11px] font-semibold uppercase tracking-[0.08em]", event === x.id ? "text-black/50" : "text-[#ff6a6f]")}>Biegniesz? Plan za darmo</span>
+          <span className="mt-1 block text-[16px] font-semibold">{x.name}</span>
+          <span className={cn("mt-0.5 block text-[12.5px]", event === x.id ? "text-black/55" : "text-white/50")}>
+            {GOAL_DISTS.find((d) => d.k === x.dist)?.label} · {new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${x.race}T12:00:00Z`))} · {x.place}
+          </span>
+        </button>
+      ))}
       <Card className="grid gap-4 p-4">
         <div>
           <p className="mb-2 text-[12px] text-white/45">Dystans startu</p>
@@ -101,8 +127,10 @@ function Setup({ initial, onDone, onCancel }: { initial: GoalStore | null; onDon
 
 export function GoalPlanView() {
   const [raw, , ready] = useStore<GoalStore | null>(GOAL_KEY, null);
-  const { premium } = useAccess();
+  const { premium: paid } = useAccess();
   const g = raw && raw.race && raw.p5k ? { ...raw, done: raw.done ?? [] } : null;
+  // Partner races (Nocna Dycha): the whole plan is open without Method.
+  const premium = paid || freeEvent(g);
   const log = useLog();
   const { p5k: formNow, save: saveRes } = useResult();
   const [edit, setEdit] = useState(false);

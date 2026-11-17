@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/app/sheet";
 import { StravaSync } from "@/components/app/strava-sync";
 import { useWeekNumbers } from "@/components/app/week-summary";
@@ -10,6 +10,8 @@ import { TimeInput } from "@/components/app/tools";
 import { Card, Tile } from "@/components/app/ui";
 import { fmtPace, fmtTime } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
+import { explainRun } from "@/lib/app/form";
+import { useForm } from "@/components/app/form-hub";
 
 import { addRun, readLog, removeRun, useLog, writeLog, type Run } from "@/lib/app/log";
 export { readLog, type Run };
@@ -67,6 +69,8 @@ export function WeekBars({ per, days }: { per: number[]; days: string[] }) {
 export function RunLog() {
   const log = useLog();
   const [sheet, setSheet] = useState(false);
+  const [why, setWhy] = useState<string | null>(null);
+  const form = useForm();
   // "Dodaj bieg" on the home screen lands here with the form open.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("add") === "1") {
@@ -132,24 +136,36 @@ export function RunLog() {
       {log.length ? (
         <div className="divide-y divide-white/[0.05] rounded-[20px] border border-white/[0.06] bg-[#111113]">
           {log.slice(0, 60).map((r) => (
-            <div key={r.id} className="flex items-center gap-3 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-medium tabular-nums">
+            <div key={r.id} className="flex items-start gap-3 px-4 py-3">
+              <button type="button" onClick={() => setWhy(why === r.id ? null : r.id)} className="min-w-0 flex-1 text-left">
+                <span className="block text-[15px] font-medium tabular-nums">
                   {r.km > 0 ? `${r.km.toString().replace(".", ",")} km · ${fmtTime(r.sec)} · ${fmtPace(r.sec / r.km)}/km` : `Trening · ${fmtTime(r.sec)}`}
-                </p>
-                <p className="mt-0.5 truncate text-[12px] capitalize text-white/45">
+                </span>
+                <span className="block mt-0.5 truncate text-[12px] capitalize text-white/45">
                   {fmtDay(r.day)}{r.rpe ? ` · wysiłek ${r.rpe}/10` : ""}{r.note ? ` · ${r.note}` : ""}
-                </p>
+                </span>
                 {r.splits?.length ? (
-                  <p className="app-scroll mt-1.5 flex gap-1 overflow-x-auto text-[11px] tabular-nums text-white/55">
+                  <span className="app-scroll mt-1.5 flex gap-1 overflow-x-auto text-[11px] tabular-nums text-white/55">
                     {r.splits.map((s, i) => (
                       <span key={i} className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5">
                         {i + 1}: {fmtPace(s)}
                       </span>
                     ))}
-                  </p>
+                  </span>
                 ) : null}
-              </div>
+                {why === r.id ? (
+                  <span className="mt-2 block rounded-[14px] bg-white/[0.05] p-3">
+                    <span className="flex items-center gap-1.5 text-[11px] text-white/45">
+                      <Sparkles className="size-3.5" /> Co dał ten trening · notatka automatyczna
+                    </span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-white/80">{explainRun(r, log, form.p5k) ?? "Za mało danych o tym treningu."}</span>
+                  </span>
+                ) : (
+                  <span className="mt-1 flex items-center gap-1 text-[11.5px] text-white/35">
+                    Co dał ten trening <ChevronDown className="size-3" />
+                  </span>
+                )}
+              </button>
               <button type="button" aria-label="Usuń" onClick={() => remove(r.id)} className="grid size-8 place-items-center rounded-full text-white/30 active:bg-white/10">
                 <Trash2 className="size-4" />
               </button>

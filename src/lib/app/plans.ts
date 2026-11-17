@@ -1,5 +1,5 @@
 import { FREE_PLAN } from "@/lib/free-plan";
-import { GOAL_KEY, buildPlan, todayLocal, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
+import { GOAL_KEY, buildPlan, freeEvent, todayLocal, type GoalSession, type GoalStore } from "@/lib/app/goal-plan";
 import { readGoal } from "@/lib/app/goal-store";
 import { readLog, type Run } from "@/lib/app/log";
 import { load, save } from "@/lib/app/store";
@@ -107,6 +107,7 @@ export type TodayItem = {
   doneToday: boolean;
   countdown?: { days: number; label: string };
   week?: number; // race plan: week number, from 1
+  free?: boolean; // partner race: the whole plan is open
   plan: string; // where the whole plan lives
 };
 
@@ -143,6 +144,7 @@ export function todayItem(): TodayItem | null {
       doneToday: !!t && done.has(t.id),
       countdown,
       week: plan.weeks.findIndex((w) => w.sessions.some((x) => x.id === s.id)) + 1,
+      free: freeEvent(g),
       plan: "/app/cel",
     };
   }

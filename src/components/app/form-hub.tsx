@@ -1,21 +1,42 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
-import { analyse, mmss, monthName, type Form, type Insight } from "@/lib/app/form";
+import { analyse, dayScore, mmss, monthName, paceZones, type Form, type Insight } from "@/lib/app/form";
+import { readinessToday } from "@/lib/app/plans";
 import { useLog } from "@/lib/app/log";
 import { todayWaw } from "@/lib/app/store";
 import { useResult } from "@/components/app/tools";
 import { CountUp } from "@/components/app/motion";
 import { Card, SectionHead } from "@/components/app/ui";
-import { timeFor } from "@/lib/method/engine";
+import { fmtPace, timeFor } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
 
 export function useForm(): Form {
   const log = useLog();
   const { p5k } = useResult();
   return useMemo(() => analyse(log, todayWaw(), p5k ?? null), [log, p5k]);
+}
+
+/** Wynik dnia with the morning check-in (read after mount: it lives on the phone). */
+function useDayScore(f: Form) {
+  const [ready, setReady] = useState<number | null>(null);
+  useEffect(() => setReady(readinessToday()), []);
+  return useMemo(() => dayScore(f, ready), [f, ready]);
+}
+
+function ScoreRing({ score, size = 58 }: { score: number; size?: number }) {
+  const r = 24;
+  const c = 2 * Math.PI * r;
+  const col = score >= 55 ? "#4fd08b" : score >= 35 ? "#f0c869" : "#ff6a6f";
+  return (
+    <svg viewBox="0 0 56 56" width={size} height={size} className="shrink-0" role="img" aria-label={`Wynik dnia ${score} na 100`}>
+      <circle cx="28" cy="28" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+      <circle cx="28" cy="28" r={r} fill="none" stroke={col} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(score / 100) * c} ${c}`} transform="rotate(-90 28 28)" className="app-draw" />
+      <text x="28" y="33" textAnchor="middle" fontSize="16" fontWeight="600" fill="white">{score}</text>
+    </svg>
+  );
 }
 
 const toneText = { good: "text-emerald-300", warn: "text-amber-300", info: "text-white/70" } as const;
@@ -80,6 +101,11 @@ export function FormCard() {
       </Card>
     );
   const top = f.insights[0];
+  return <FormCardBody f={f} top={top} />;
+}
+
+function FormCardBody({ f, top }: { f: Form; top: Insight | undefined }) {
+  const ds = useDayScore(f);
   return (
     <Link href="/app/forma" className="block overflow-hidden rounded-[24px] border border-white/[0.07] bg-[linear-gradient(160deg,#16161a,#0d0d0f)] p-4 transition active:scale-[0.99]">
       <div className="flex items-start justify-between gap-3">
@@ -94,6 +120,15 @@ export function FormCard() {
           </div>
         ) : null}
       </div>
+      {ds ? (
+        <div className="mt-3 flex items-center gap-3 rounded-[16px] bg-white/[0.04] p-2.5">
+          <ScoreRing score={ds.score} size={46} />
+          <div className="min-w-0">
+            <p className="text-[11px] text-white/45">Wynik dnia</p>
+            <p className="text-[14px] font-medium leading-snug">{ds.label}</p>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-3">
         <FormChart f={f} days={60} height={70} />
       </div>
@@ -129,8 +164,23 @@ export function FormView() {
   const [win, setWin] = useState(90);
   const zone = f.ratioZone;
   const ratioPos = f.ratio == null ? null : Math.min(1, Math.max(0, (f.ratio - 0.5) / 1.3));
+  const ds = useDayScore(f);
+  const zones = paceZones(f.p5k);
   return (
     <div className="grid gap-3">
+      {ds ? (
+        <Card className="flex items-center gap-4 p-4">
+          <ScoreRing score={ds.score} size={72} />
+          <div className="min-w-0">
+            <p className="text-[12px] text-white/45">Wynik dnia</p>
+            <p className={cn("text-[18px] font-semibold leading-snug", toneText[ds.tone])}>{ds.label}</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-white/55">{ds.advice}</p>
+            <Link href="/app" className="mt-1.5 inline-block text-[12px] text-white/45 underline underline-offset-2">
+              Poranna gotowość na ekranie Dziś zrobi go dokładniejszym
+            </Link>
+          </div>
+        </Card>
+      ) : null}
       <Card className="p-4">
         <div className="flex items-start justify-between">
           <div>
@@ -224,6 +274,27 @@ export function FormView() {
             </div>
           ) : null}
           <p className="mt-3 text-[11px] leading-relaxed text-white/35">Z najlepszych mocnych biegów z 6 tygodni albo z Twojego wyniku ze startu. Spokojne biegi nie obniżają prognozy.</p>
+        </Card>
+      ) : null}
+
+      {zones.length ? (
+        <Card className="p-4">
+          <p className="text-[12px] text-white/45">Twoje tempa treningowe</p>
+          <div className="mt-2 divide-y divide-white/[0.05]">
+            {zones.map((z) => (
+              <div key={z.key} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-[14px] font-medium">{z.name}</p>
+                  <p className="text-[11.5px] text-white/45">{z.use}</p>
+                </div>
+                <p className="shrink-0 text-[15px] tabular-nums">
+                  {fmtPace(z.pace[0])}–{fmtPace(z.pace[1])}
+                  <span className="ml-1 text-[11px] text-white/40">/km</span>
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-white/35">Liczone z Twojej aktualnej formy na 5 km. Zmieniają się same, gdy pobiegniesz szybciej.</p>
         </Card>
       ) : null}
 

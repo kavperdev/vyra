@@ -45,7 +45,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
             <p>{data.access === null ? "VYRA Method uruchamiamy na Twoim koncie. Zajrzyj tu za chwilę." : "Nie masz jeszcze dostępu do VYRA Method."}</p>
             {data.access === false ? (
               <Button asChild variant="accent">
-                <Link href="/metoda">
+                <Link href="/app/sklep">
                   Zobacz VYRA Method <ArrowRight className="size-4" />
                 </Link>
               </Button>
@@ -256,7 +256,7 @@ export default async function MethodPage({ searchParams }: { searchParams: Promi
           </CardHeader>
           <CardContent>
             <Button asChild variant="outline">
-              <Link href="/prowadzenie">
+              <Link href="/app/sklep#prowadzenie">
                 Prowadzenie z trenerem <ArrowRight className="size-4" />
               </Link>
             </Button>
