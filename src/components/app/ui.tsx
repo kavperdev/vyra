@@ -84,3 +84,15 @@ export const Chip = ({ children, tone = "quiet", className }: { children: React.
     {children}
   </span>
 );
+
+/** A big, icon-first link tile: less text, easy to hit. */
+export function IconTile({ href, icon, title, tone = "white", badge }: { href: string; icon: React.ReactNode; title: string; tone?: "white" | "red" | "green" | "blue"; badge?: React.ReactNode }) {
+  const t = { white: "bg-white/[0.08] text-white", red: "bg-[var(--accent)]/15 text-[#ff8a8f]", green: "bg-emerald-400/12 text-emerald-300", blue: "bg-[#5a6eff]/15 text-[#9aa6ff]" }[tone];
+  return (
+    <Card href={href} className="relative flex min-h-[112px] flex-col justify-between p-3.5">
+      <span className={cn("grid size-10 place-items-center rounded-2xl [&>svg]:size-5", t)}>{icon}</span>
+      {badge ? <span className="absolute right-3 top-3">{badge}</span> : null}
+      <p className="mt-3 text-[14.5px] font-semibold leading-tight">{title}</p>
+    </Card>
+  );
+}

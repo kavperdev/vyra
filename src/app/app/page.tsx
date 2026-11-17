@@ -9,7 +9,8 @@ import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { WeekStrip } from "@/components/app/week-strip";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
-import { Card, Chip, Group, Row, SectionHead } from "@/components/app/ui";
+import { Card, Chip, Group, IconTile, Row, SectionHead } from "@/components/app/ui";
+import { ExerciseStrip } from "@/components/app/exercise-strip";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -112,6 +113,9 @@ export default async function AppHome() {
 
       <ForYou />
 
+      <SectionHead title={t("Ćwiczenia", "Exercises")} href="/app/cwiczenia" more={t("Wszystkie", "All")} />
+      <ExerciseStrip slugs={["skip-a", "przebiezka", "wykroki", "most-biodrowy", "wspiecia-na-palce", "deska"]} />
+
       <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
       <CourseCard />
 
@@ -125,11 +129,7 @@ export default async function AppHome() {
           { href: "/app/bieg", icon: Footprints, title: t("Bieg z telefonem", "Run with phone"), sub: t("GPS, gdy nie masz zegarka", "GPS when you have no watch") },
           { href: "/app/znajomi", icon: Users, title: t("Znajomi", "Friends"), sub: t("ranking kilometrów", "kilometre ranking") },
         ].map((x) => (
-          <Card key={x.href} href={x.href} className="p-4">
-            <x.icon className="size-5 text-white/70" />
-            <p className="mt-6 text-[15px] font-medium leading-tight">{x.title}</p>
-            <p className="mt-0.5 text-[12px] text-white/45">{x.sub}</p>
-          </Card>
+          <IconTile key={x.href} href={x.href} icon={<x.icon />} title={x.title} />
         ))}
       </div>
 

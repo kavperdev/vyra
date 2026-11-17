@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, Calculator, Dumbbell, Flag, Footprints, HeartPulse, NotebookPen, Timer, TimerReset, TrendingUp, Trophy } from "lucide-react";
-import { Chip, Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Chip, Group, IconTile, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { ExerciseStrip } from "@/components/app/exercise-strip";
 import { ProBadge } from "@/components/app/paywall";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
@@ -48,7 +49,7 @@ export default async function AppTraining() {
   }
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Trening", "Train")} sub={t("Plan, treningi i narzędzia w jednym miejscu.", "Plan, workouts and tools in one place.")} />
+      <PageHead title={t("Trening", "Train")} />
       {user && !athlete ? (
         <Link href="/coach" className="flex items-center justify-between rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
           <span className="block text-[16px] font-semibold">{t("Panel trenera", "Coach panel")}</span>
@@ -86,30 +87,29 @@ export default async function AppTraining() {
         </Link>
       )}
 
-      <SectionHead title={t("Treningi", "Workouts")} />
-      <Group>
-        <Row href="/app/postepy" icon={<TrendingUp className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} sub={t("Kilometry, rekordy, forma, serie", "Kilometres, records, form, streaks")} />
-        <Row href="/app/dziennik" icon={<NotebookPen className="size-4" />} title={t("Dziennik biegów", "Run log")} sub={t("Kilometry z tygodnia i miesiąca", "Weekly and monthly kilometres")} />
-        <Row href="/app/bieg" icon={<Footprints className="size-4" />} title={t("Biegnij z GPS", "Run with GPS")} sub={t("Dystans, tempo i głos co kilometr", "Distance, pace and a voice split every km")} />
-        <Row href="/app/timer" icon={<TimerReset className="size-4" />} title={t("Timer interwałów", "Interval timer")} sub={t("Dźwięk i wibracja przy każdej zmianie", "Sound and vibration at every change")} />
-        <Row href="/app/biblioteka" icon={<Dumbbell className="size-4" />} title={t("Biblioteka treningów", "Workout library")} sub={t("18 treningów z tempem dla Ciebie", "18 workouts with your paces")} />
-        <Row href="/app/cel" icon={<Flag className="size-4" />} title={t("Plan pod start", "Race plan")} sub={t("5 km, 10 km, półmaraton, maraton", "5k, 10k, half, marathon")} />
-        <Row href="/app/plan" icon={<Footprints className="size-4" />} title={t("Zacznij biegać", "Start running")} sub={t("Darmowy plan: od zera do 25 minut", "Free plan: zero to 25 minutes")} />
-        <Row href="/app/kurs" icon={<BookOpen className="size-4" />} title={t("Kurs: Biegaj mądrze", "Course: Run smart")} sub={t("9 krótkich lekcji", "9 short lessons")} />
-      </Group>
+      <SectionHead title={t("Ćwiczenia", "Exercises")} href="/app/cwiczenia" more={t("Wszystkie", "All")} />
+      <ExerciseStrip />
 
-      <SectionHead title={t("Zaawansowane", "Advanced")} />
-      <Group>
-        <Row href="/app/strategia" icon={<Flag className="size-4" />} title={t("Strategia na start", "Race strategy")} sub={t("Tempo na każdy km i plan biegu", "Pace for every km and a race plan")} right={<ProBadge />} />
-        <Row href="/app/obciazenie" icon={<TrendingUp className="size-4" />} title={t("Obciążenie i ryzyko", "Load and injury risk")} sub={t("Czy nie przesadzasz z treningiem", "Are you overdoing it")} right={<ProBadge />} />
-      </Group>
+      <SectionHead title={t("Treningi", "Workouts")} />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <IconTile href="/app/cel" tone="red" icon={<Flag />} title={t("Plan pod start", "Race plan")} />
+        <IconTile href="/app/plan" tone="green" icon={<Footprints />} title={t("Zacznij biegać", "Start running")} />
+        <IconTile href="/app/biblioteka" icon={<Dumbbell />} title={t("Biblioteka treningów", "Workout library")} />
+        <IconTile href="/app/dziennik" icon={<NotebookPen />} title={t("Dziennik", "Log")} />
+        <IconTile href="/app/postepy" tone="blue" icon={<TrendingUp />} title={t("Postępy", "Progress")} />
+        <IconTile href="/app/kurs" icon={<BookOpen />} title={t("Kurs: Biegaj mądrze", "Course: Run smart")} />
+        <IconTile href="/app/bieg" icon={<Footprints />} title={t("Bieg z GPS", "GPS run")} />
+        <IconTile href="/app/timer" icon={<TimerReset />} title={t("Timer interwałów", "Interval timer")} />
+        <IconTile href="/app/strategia" icon={<Flag />} title={t("Strategia na start", "Race strategy")} badge={<ProBadge />} />
+        <IconTile href="/app/obciazenie" icon={<TrendingUp />} title={t("Obciążenie", "Training load")} badge={<ProBadge />} />
+      </div>
 
       <SectionHead title={t("Narzędzia", "Tools")} />
-      <Group>
-        <Row href="/app/narzedzia?t=prognoza" icon={<Timer className="size-4" />} title={t("Prognoza wyniku i tempa", "Race predictor and paces")} />
-        <Row href="/app/narzedzia?t=tetno" icon={<HeartPulse className="size-4" />} title={t("Strefy tętna", "Heart rate zones")} />
-        <Row href="/app/narzedzia?t=paliwo" icon={<Calculator className="size-4" />} title={t("Paliwo na start", "Race fuel")} />
-      </Group>
+      <div className="grid grid-cols-3 gap-2">
+        <IconTile href="/app/narzedzia?t=prognoza" icon={<Timer />} title={t("Prognoza", "Predictor")} />
+        <IconTile href="/app/narzedzia?t=tetno" tone="red" icon={<HeartPulse />} title={t("Strefy tętna", "HR zones")} />
+        <IconTile href="/app/narzedzia?t=paliwo" icon={<Calculator />} title={t("Paliwo", "Fuel")} />
+      </div>
 
       <SectionHead title={t("Wyzwania", "Challenges")} href="/app/wyzwania" more={t("Wszystkie", "All")} />
       <Group>

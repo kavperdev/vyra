@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, CalendarDays, Gauge, Home, LineChart, Moon, NotebookPen, ShoppingBag, User, Users } from "lucide-react";
+import { Activity, BookOpen, CalendarDays, Dumbbell, Gauge, Home, LineChart, Moon, NotebookPen, ShoppingBag, User, Users } from "lucide-react";
 import { useStoreApp } from "@/lib/app/platform-client";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ const ITEMS = [
   { href: "/app/dziennik", icon: NotebookPen, label: "Dziennik" },
   { href: "/app/trening", icon: Activity, label: "Trening" },
   { href: "/app/postepy", icon: LineChart, label: "Postępy" },
+  { href: "/app/cwiczenia", icon: Dumbbell, label: "Ćwiczenia" },
   { href: "/app/wiedza", icon: BookOpen, label: "Wiedza" },
   { href: "/app/nocna", icon: Moon, label: "Nocna Ekipa" },
   { href: "/app/znajomi", icon: Users, label: "Znajomi" },
