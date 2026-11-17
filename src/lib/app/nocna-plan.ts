@@ -42,20 +42,35 @@ export const LEVELS = P.map(({ k, name, short, goal, days, for: f }) => ({ k, na
 /** Stare zapisane poziomy (pierwsza wersja planu) wskazują na najbliższe nowe. */
 export const normLevel = (v: unknown): NLevel | null => (v === "pro" ? "s50" : P.some((p) => p.k === v) ? (v as NLevel) : null);
 
-/** Mnożniki tempa na 1 km względem tempa 5 km (jak w paceZones). */
+/**
+ * Strefy tempa jako mnożniki tempa docelowego na 10 km (P10).
+ * Tempo startowe to dokładnie cel, reszta wokół niego. Przedziały wąskie i zaokrąglone do 5 s.
+ */
 export const ZONE_RATIO: Record<string, [number, number]> = {
-  easy: [1.22, 1.35],
-  marathon: [1.12, 1.18],
-  threshold: [1.06, 1.1],
-  tenK: [1.02, 1.06],
-  vo2: [0.96, 1.0],
+  easy: [1.2, 1.3], // spokojnie, na rozmowę
+  marathon: [1.09, 1.12], // szybsza końcówka długiego biegu
+  threshold: [1.03, 1.06], // próg: "komfortowo ciężko", ok. 1 h wysiłku
+  tenK: [0.99, 1.01], // tempo startowe 10 km
+  vo2: [0.94, 0.97], // interwały 400 m – 1 km (ok. tempo 3–5 km)
+  rep: [0.89, 0.93], // krótkie szybkie odcinki 200 m
 };
-export const ZONE_NAME: Record<string, string> = { easy: "tempo spokojne", marathon: "tempo maratońskie", threshold: "tempo progowe", tenK: "tempo 10 km", vo2: "tempo interwałowe" };
+export const ZONE_NAME: Record<string, string> = { easy: "Spokojnie", marathon: "Maratońskie", threshold: "Próg", tenK: "Tempo 10 km", vo2: "Interwały", rep: "Szybkie 200 m" };
+const ZONE_LOC: Record<string, string> = { easy: "spokojnym", marathon: "maratońskim", threshold: "progowym", tenK: "startowym 10 km", vo2: "interwałowym", rep: "szybkim" };
+export const ZONE_ORDER = ["easy", "marathon", "threshold", "tenK", "vo2", "rep"] as const;
 
 /** Przykładowe tempa do grafik: z docelowego czasu na 10 km (Riegel, t5 = t10 / 2,085). */
 export const REF_P5K = Object.fromEntries(P.map((p) => [p.k, Math.round(p.t10 / 2.085)])) as Record<NLevel, number>;
 
-export type NDay = { dow: 1 | 2 | 3 | 4 | 5 | 6 | 7; label: string; lines: string[]; km: number; kind: "easy" | "quality" | "long" | "race" | "rest" };
+export type NDay = {
+  dow: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  label: string;
+  title: string; // nazwa treningu: "Interwały", "Spokojny bieg"
+  main: string; // najważniejsza linia
+  sub: string[]; // rozgrzewka, przebieżki, wskazówki (drobnym drukiem)
+  lines: string[]; // main + sub (zgodność)
+  km: number;
+  kind: "easy" | "quality" | "long" | "race" | "rest";
+};
 export type NWeek = { n: number; monday: string; phase: string; note: string; km: number; days: NDay[] };
 
 const DOW = ["", "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek", "Sobota", "Niedziela"];
@@ -66,13 +81,23 @@ const addDays = (s: string, n: number) => {
 };
 const r1 = (x: number) => Math.round(x * 2) / 2;
 const fk = (x: number) => `${String(r1(x)).replace(".", ",")} km`;
+const day = (dow: NDay["dow"], kind: NDay["kind"], title: string, main: string, sub: string[], km: number): NDay => ({
+  dow,
+  label: DOW[dow],
+  title,
+  main,
+  sub,
+  lines: [main, ...sub],
+  km: r1(km),
+  kind,
+});
 
 type Phase = "Baza" | "Rozwój" | "Szczyt" | "Taper" | "Start";
 export function phaseOf(n: number): { name: Phase; note: string } {
   if (n === 24) return { name: "Start", note: "Tydzień startowy. Mało, świeżo, bez nowości. W piątek odpoczynek." };
-  if (n >= 22) return { name: "Taper", note: "Objętość spada, krótkie akcenty zostają. Nogi mają się zrobić lekkie." };
+  if (n >= 22) return { name: "Taper", note: "Mniej kilometrów, krótkie akcenty zostają. Nogi mają się zrobić lekkie." };
   if (n >= 17) return { name: "Szczyt", note: "Tempo startowe 10 km. Najważniejsze tygodnie przed biegiem." };
-  if (n >= 9) return { name: "Rozwój", note: "Dokładamy tempo progowe i interwały. Spokojne dni naprawdę spokojnie." };
+  if (n >= 9) return { name: "Rozwój", note: "Dochodzi próg i interwały. Spokojne dni naprawdę spokojnie." };
   return { name: "Baza", note: "Budujemy bazę tlenową i szybkość bez zakwaszenia. Większość biegów na rozmowę." };
 }
 const isDown = (n: number) => n <= 20 && n % 4 === 0;
@@ -81,52 +106,54 @@ const stepIn = (n: number, from: number, to: number) => Math.min(1, Math.max(0, 
 
 /* ---------------- akcenty ---------------- */
 
-type W = { t: (r: number) => string; base: number; min: number; km: (r: number) => number };
-const rep = (dist: number, pace: string, rest: string, base: number, min = 3): W => ({
-  t: (r) => `${r}×${dist >= 1000 ? `${String(dist / 1000).replace(".", ",")} km` : `${dist} m`} w {${pace}}, przerwa ${rest}`,
+type W = { name: string; t: (r: number) => string; base: number; min: number; km: (r: number) => number };
+const dist = (m: number) => (m >= 1000 ? `${String(m / 1000).replace(".", ",")} km` : `${m} m`);
+const rep = (name: string, m: number, pace: string, rest: string, base: number, min = 3): W => ({
+  name,
+  t: (r) => `${r} × ${dist(m)} po {${pace}}, przerwa ${rest}`,
   base,
   min,
-  km: (r) => (r * dist) / 1000 + r * 0.25,
+  km: (r) => (r * m) / 1000 + r * 0.25,
 });
-const timed = (txt: (r: number) => string, base: number, min: number, kmPer: number): W => ({ t: txt, base, min, km: (r) => r * kmPer });
+const timed = (name: string, txt: (r: number) => string, base: number, min: number, kmPer: number): W => ({ name, t: txt, base, min, km: (r) => r * kmPer });
 
 // Akcent 1 (wtorek): szybkość / VO2max / tempo 10 km
 const Q1: Record<Phase, W[]> = {
   Baza: [
-    timed((r) => `${r}×30" mocno pod górkę, powrót truchtem w dół`, 8, 5, 0.3),
-    timed((r) => `Fartlek: ${r}×1' żwawo / 1' lekko`, 8, 5, 0.4),
-    rep(200, "vo2", "200 m truchtu (szybko, ale luźno)", 8, 5),
+    timed("Podbiegi", (r) => `${r} × 30" mocno pod górkę, w dół truchtem`, 8, 5, 0.3),
+    timed("Fartlek", (r) => `${r} × 1' żwawo / 1' lekko`, 8, 5, 0.4),
+    rep("Szybkie odcinki", 200, "rep", "200 m truchtu", 8, 5),
   ],
-  Rozwój: [rep(800, "vo2", "2' truchtu", 5, 3), rep(1000, "tenK", "90\" truchtu", 5, 3), rep(600, "vo2", "90\" truchtu", 6, 4)],
-  Szczyt: [rep(1000, "tenK", "60\" truchtu", 6, 4), rep(2000, "tenK", "2' truchtu", 3, 2), rep(400, "vo2", "60\" truchtu", 10, 6)],
-  Taper: [rep(1000, "tenK", "90\" truchtu", 4, 3), rep(400, "tenK", "60\" truchtu", 5, 4)],
-  Start: [rep(1000, "tenK", "2' truchtu", 3, 2)],
+  Rozwój: [rep("Interwały", 800, "vo2", "2' truchtu", 5, 3), rep("Odcinki w tempie 10 km", 1000, "tenK", "90\" truchtu", 5, 3), rep("Interwały", 600, "vo2", "90\" truchtu", 6, 4)],
+  Szczyt: [rep("Odcinki w tempie 10 km", 1000, "tenK", "60\" truchtu", 6, 4), rep("Odcinki w tempie 10 km", 2000, "tenK", "2' truchtu", 3, 2), rep("Interwały", 400, "vo2", "60\" truchtu", 10, 6)],
+  Taper: [rep("Odcinki w tempie 10 km", 1000, "tenK", "90\" truchtu", 4, 3), rep("Krótkie odcinki", 400, "tenK", "60\" truchtu", 5, 4)],
+  Start: [rep("Przypomnienie tempa", 1000, "tenK", "2' truchtu", 3, 2)],
 };
 // Akcent 2 (czwartek): próg / tempo startowe
 const Q2: Record<Phase, W[]> = {
   Baza: [
-    timed((r) => `Bieg progresywny: ostatnie ${r}' w {marathon}`, 12, 8, 0.2),
-    timed((r) => `${r}×3' w {threshold}, przerwa 60" truchtu`, 4, 3, 0.85),
+    timed("Bieg progresywny", (r) => `Spokojnie, ostatnie ${r}' po {marathon}`, 12, 8, 0.2),
+    timed("Próg", (r) => `${r} × 3' po {threshold}, przerwa 60" truchtu`, 4, 3, 0.85),
   ],
   Rozwój: [
-    timed((r) => `${r}×8' w {threshold}, przerwa 2' truchtu`, 3, 2, 1.9),
-    timed((r) => `${r}' ciągłego biegu w {threshold}`, 20, 15, 0.19),
-    timed((r) => `${r}×5' w {threshold}, przerwa 90" truchtu`, 4, 3, 1.25),
+    timed("Próg", (r) => `${r} × 8' po {threshold}, przerwa 2' truchtu`, 3, 2, 1.9),
+    timed("Tempówka", (r) => `${r}' ciągiem po {threshold}`, 20, 15, 0.19),
+    timed("Próg", (r) => `${r} × 5' po {threshold}, przerwa 90" truchtu`, 4, 3, 1.25),
   ],
   Szczyt: [
-    timed((r) => `${r} km w tempie startowym ({tenK})`, 5, 3, 1),
-    rep(1600, "threshold", "90\" truchtu", 4, 3),
-    timed((r) => `${r}' w {threshold}, potem 4×200 m w {vo2}`, 25, 15, 0.22),
+    timed("Tempo startowe", (r) => `${r} km ciągiem po {tenK}`, 5, 3, 1),
+    rep("Próg", 1600, "threshold", "90\" truchtu", 4, 3),
+    timed("Tempówka + szybkość", (r) => `${r}' po {threshold}, potem 4 × 200 m po {vo2}`, 25, 15, 0.22),
   ],
-  Taper: [timed((r) => `${r}' w {threshold}`, 12, 8, 0.2)],
+  Taper: [timed("Krótka tempówka", (r) => `${r}' po {threshold}`, 12, 8, 0.2)],
   Start: [],
 };
 
-function pickQ(list: W[], n: number, p: Params, prog: number, down: boolean): { line: string; km: number } {
+function pickQ(list: W[], n: number, p: Params, prog: number, down: boolean): { name: string; line: string; km: number } {
   const w = list[(n - 1) % list.length];
   const raw = w.base * p.vol * (0.85 + 0.3 * prog) * (down ? 0.7 : 1);
   const r = Math.max(w.min, Math.round(raw));
-  return { line: w.t(r), km: w.km(r) };
+  return { name: w.name, line: w.t(r), km: w.km(r) };
 }
 
 /* ---------------- tydzień ---------------- */
@@ -145,20 +172,10 @@ function longKm(p: Params, n: number): number {
   return r1(isDown(n) ? base * 0.75 : base);
 }
 
-const qDay = (dow: NDay["dow"], wu: number, q: { line: string; km: number }): NDay => ({
-  dow,
-  label: DOW[dow],
-  lines: [`${fk(wu)} rozgrzewki + 4 przebieżki`, q.line, `${fk(wu)} schłodzenia`],
-  km: r1(wu * 2 + q.km),
-  kind: "quality",
-});
-const easyDay = (dow: NDay["dow"], km: number, strides = false): NDay => ({
-  dow,
-  label: DOW[dow],
-  lines: [`${fk(km)} spokojnie w {easy}`, ...(strides ? ["Na koniec 6×20\" przebieżek, przerwa 40\""] : [])],
-  km: r1(km),
-  kind: "easy",
-});
+const qDay = (dow: NDay["dow"], wu: number, q: { name: string; line: string; km: number }): NDay =>
+  day(dow, "quality", q.name, q.line, [`Rozgrzewka ${fk(wu)} + 4 przebieżki, schłodzenie ${fk(wu)}`], wu * 2 + q.km);
+const easyDay = (dow: NDay["dow"], km: number, strides = false): NDay =>
+  day(dow, "easy", strides ? "Spokojnie + przebieżki" : "Spokojny bieg", `${fk(km)} po {easy}`, strides ? ['Na koniec 6 × 20" przebieżek, przerwa 40"'] : [], km);
 
 function raceWeek(p: Params): NDay[] {
   const wu = p.days >= 5 ? 2.5 : 2;
@@ -168,14 +185,11 @@ function raceWeek(p: Params): NDay[] {
   if (p.k === "start") days.push(easyDay(2, 4, true));
   else days.push(qDay(2, wu, q));
   if (p.days >= 5) days.push(easyDay(3, Math.max(5, p.minEasy - 1)));
-  days.push({ dow: 4, label: DOW[4], lines: [`${fk(p.k === "start" ? 3 : 5)} spokojnie`, "4×100 m w tempie startowym"], km: p.k === "start" ? 3 : 5, kind: "easy" });
-  days.push({
-    dow: 6,
-    label: DOW[6],
-    lines: ["NOCNA DYCHA, 10 km", p.k === "start" ? "Pierwsze 3 km wolniej, niż Ci się wydaje. Marsz na punkcie z wodą jest ok." : "Pierwsze 2 km równo w tempie, nie szybciej. Od 7 km dajesz wszystko."],
-    km: 10,
-    kind: "race",
-  });
+  const shake = p.k === "start" ? 3 : 5;
+  days.push(day(4, "easy", "Rozruch", `${fk(shake)} po {easy}`, ["4 × 100 m w tempie startowym"], shake));
+  days.push(
+    day(6, "race", "NOCNA DYCHA", "10 km, start wieczorem", [p.k === "start" ? "Pierwsze 3 km wolniej, niż Ci się wydaje. Marsz na punkcie z wodą jest ok." : "Pierwsze 2 km równo po {tenK}, nie szybciej. Od 7 km dajesz wszystko."], 10),
+  );
   return days;
 }
 
@@ -187,11 +201,10 @@ function levelWeek(p: Params, n: number): NDay[] {
   const wu = p.days >= 5 ? 2.5 : p.k === "start" ? 1.5 : 2;
   const total = targetKm(p, n);
   const long = longKm(p, n);
-  const longLines = [`${fk(long)} spokojnie w {easy}`];
-  if (ph === "Szczyt" && !down && p.k !== "start") longLines.push(`Ostatnie ${p.days >= 5 ? 4 : 3} km w {marathon}`);
-  else if (ph === "Rozwój" && !down && p.days >= 5 && n % 2 === 0) longLines.push("Ostatnie 15' trochę szybciej, ale bez zakwaszenia");
-  else longLines.push("Na rozmowę. Picie, jeśli ponad 75 min");
-  const longDay: NDay = { dow: 7, label: DOW[7], lines: longLines, km: long, kind: "long" };
+  const fast = ph === "Szczyt" && !down && p.k !== "start";
+  const longDay = fast
+    ? day(7, "long", "Długi z szybszą końcówką", `${fk(long)} po {easy}`, [`Ostatnie ${p.days >= 5 ? 4 : 3} km po {marathon}`], long)
+    : day(7, "long", "Długi bieg", `${fk(long)} po {easy}`, [long >= 14 ? "Na rozmowę. Weź picie" : "Na rozmowę"], long);
 
   const q1 = pickQ(Q1[ph], n, p, prog, down);
   const q2 = p.q2 ? pickQ(Q2[ph], n, p, prog, down) : null;
@@ -204,8 +217,7 @@ function levelWeek(p: Params, n: number): NDay[] {
   const fixed = quality.reduce((s, d) => s + d.km, 0) + long + (q2alt ? wu * 2 + q2alt.km : 0);
 
   // Spokojne dni dzielą resztę objętości.
-  const easyDows: NDay["dow"][] =
-    p.days === 3 ? [4] : p.days === 4 ? (q2 ? [6] : q2alt ? [4] : [4, 6]) : p.days === 5 ? [3, 6] : [1, 3, 6];
+  const easyDows: NDay["dow"][] = p.days === 3 ? [4] : p.days === 4 ? (q2 ? [6] : q2alt ? [4] : [4, 6]) : p.days === 5 ? [3, 6] : [1, 3, 6];
   const floor = ph === "Taper" ? p.minEasy * 0.7 : p.minEasy;
   const each = Math.max(floor, (total - fixed) / easyDows.length);
 
@@ -234,18 +246,28 @@ export function nocnaWeekNow(today: string): number {
 }
 
 export type ZoneMap = Record<string, [number, number]>;
-export function zonesFromP5k(p5k: number): ZoneMap {
-  const p = p5k / 5;
+const r5 = (x: number) => Math.round(x / 5) * 5;
+/** Strefy z tempa docelowego na 10 km (s/km). */
+export function zonesFromP10(p10: number): ZoneMap {
   const out: ZoneMap = {};
-  for (const [k, [a, b]] of Object.entries(ZONE_RATIO)) out[k] = [Math.round(p * a), Math.round(p * b)];
+  for (const [k, [a, b]] of Object.entries(ZONE_RATIO)) {
+    const lo = r5(p10 * a);
+    out[k] = [lo, Math.max(lo + 5, r5(p10 * b))];
+  }
   return out;
 }
-const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-/** Podmienia {znaczniki}: konkretne tempo, gdy znamy formę, inaczej nazwa strefy. */
+/** Strefy z aktualnej formy (czas na 5 km), przez przewidywane tempo na 10 km. */
+export const zonesFromP5k = (p5k: number): ZoneMap => zonesFromP10((p5k * 2.085) / 10);
+/** Tempa dla celu danego poziomu (do grafik i podglądu bez wyniku). */
+export const levelZones = (k: NLevel): ZoneMap => zonesFromP10((P.find((p) => p.k === k) ?? P[2]).t10 / 10);
+
+export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+export const paceText = (z: [number, number]) => `${mmss(z[0])}–${mmss(z[1])}`;
+/** Podmienia {znaczniki}: konkretne tempo /km, gdy znamy formę, inaczej nazwa strefy. */
 export function resolveLine(line: string, zones: ZoneMap | null): string {
-  return line.replace(/\{(\w+)\}/g, (_, k: string) => {
+  return line.replace(/(po )?\{(\w+)\}/g, (_, po: string | undefined, k: string) => {
     const z = zones?.[k];
-    if (!z) return ZONE_NAME[k] ?? k;
-    return `${mmss(z[0])}–${mmss(z[1])}/km`;
+    if (!z) return `w tempie ${ZONE_LOC[k] ?? k}`;
+    return `${po ?? ""}${paceText(z)}/km`;
   });
 }

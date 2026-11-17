@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useResult } from "@/components/app/tools";
 import { useStore, todayWaw } from "@/lib/app/store";
-import { LEVELS, NOCNA, normLevel, nocnaWeek, nocnaWeekNow, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
+import { LEVELS, NOCNA, ZONE_NAME, ZONE_ORDER, levelZones, normLevel, nocnaWeek, nocnaWeekNow, paceText, resolveLine, zonesFromP5k, type NLevel } from "@/lib/app/nocna-plan";
 import { cn } from "@/lib/utils";
 
 const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("pl-PL", { day: "numeric", month: "long", timeZone: "UTC" });
@@ -23,7 +23,7 @@ export function NocnaView() {
   const current = Math.min(Math.max(now, 1), NOCNA.weeks);
   const [shown, setShown] = useState<number | null>(null);
   const n = shown ?? current;
-  const zones = useMemo(() => (p5k ? zonesFromP5k(p5k) : null), [p5k]);
+  const own = useMemo(() => (p5k ? zonesFromP5k(p5k) : null), [p5k]);
   if (!ready) return <div className="h-40" />;
 
   if (!level)
@@ -44,6 +44,8 @@ export function NocnaView() {
     );
 
   const w = nocnaWeek(level, n);
+  const zones = own ?? levelZones(level);
+  const used = ZONE_ORDER.filter((k) => w.days.some((d) => d.lines.some((l) => l.includes(`{${k}}`))));
   const lv = LEVELS.find((l) => l.k === level)!;
   const todayIso = todayWaw();
   return (
@@ -66,32 +68,49 @@ export function NocnaView() {
       </div>
       <p className="text-[13px] leading-relaxed text-white/55">{w.note}</p>
 
+      {/* Paces first: every session below uses them. */}
+      <div className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-white/45">Tempa w tym tygodniu</p>
+          <p className="text-[11.5px] text-white/35">{own ? "z Twojej formy" : `dla celu: ${lv.name}`}</p>
+        </div>
+        <div className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+          {used.map((k) => (
+            <div key={k}>
+              <p className="text-[11.5px] text-white/45">{ZONE_NAME[k]}</p>
+              <p className="text-[16px] font-semibold tabular-nums">{paceText(zones[k])}<span className="ml-1 text-[11px] font-normal text-white/40">/km</span></p>
+            </div>
+          ))}
+        </div>
+        {!own ? (
+          <Link href="/app/narzedzia" className="mt-3 block text-[12.5px] text-[#ff6a6f]">Wpisz swój wynik, a tempa policzą się pod Ciebie</Link>
+        ) : null}
+      </div>
+
       <div className="grid gap-2">
         {w.days.map((d) => {
           const date = addDays(w.monday, d.dow - 1);
           const today = date === todayIso;
+          const hard = d.kind === "quality" || d.kind === "race";
           return (
-            <div key={d.dow} className={cn("rounded-[20px] border bg-[#111113] p-4", today ? "border-[#ff6a6f]/60" : "border-white/[0.06]", d.kind === "race" && "border-[#ff6a6f]/40")}>
-              <div className="flex items-baseline justify-between">
-                <p className="text-[15px] font-medium">{d.label}{today ? " · dziś" : ""}</p>
-                <p className="text-[12.5px] tabular-nums text-white/45">{fmtDay(date)} · {d.km} km</p>
+            <div key={d.dow} className={cn("rounded-[20px] border bg-[#111113] p-4", today ? "border-[#ff6a6f]/60" : hard ? "border-white/[0.12]" : "border-white/[0.06]")}>
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+                  {today ? "Dziś" : d.label} <span className="font-normal normal-case tracking-normal text-white/30">· {fmtDay(date)}</span>
+                </p>
+                <p className="text-[13px] font-medium tabular-nums text-white/70">{String(d.km).replace(".", ",")} km</p>
               </div>
-              <ul className="mt-2 grid gap-1">
-                {d.lines.map((l, i) => (
-                  <li key={i} className="text-[14px] leading-snug text-white/80">{resolveLine(l, zones)}</li>
-                ))}
-              </ul>
+              <p className={cn("mt-2 text-[12.5px] font-semibold uppercase tracking-[0.06em]", hard ? "text-[#ff6a6f]" : "text-emerald-300/80")}>{d.title}</p>
+              <p className="mt-0.5 text-[16px] font-semibold leading-snug">{resolveLine(d.main, zones)}</p>
+              {d.sub.map((l, i) => (
+                <p key={i} className="mt-1 text-[13px] leading-snug text-white/50">{resolveLine(l, zones)}</p>
+              ))}
             </div>
           );
         })}
         <p className="px-1 text-[12.5px] text-white/40">Pozostałe dni: odpoczynek, spacer albo mobilność.</p>
       </div>
 
-      {!zones ? (
-        <Link href="/app/narzedzia" className="rounded-2xl bg-white/[0.05] p-3.5 text-[13px] text-white/70 active:scale-[0.985]">Wpisz swój ostatni wynik, a zamiast nazw temp pokażemy konkretne min/km.</Link>
-      ) : (
-        <p className="px-1 text-[12.5px] text-white/40">Tempa wyliczone z Twojej formy ({Math.floor(p5k! / 60)}:{String(Math.round(p5k! % 60)).padStart(2, "0")} na 5 km).</p>
-      )}
       <Link href="/app/cel?bieg=nocna-dycha" className="px-1 text-[12.5px] text-white/40 underline-offset-2">Chcesz plan tylko dla siebie, przeliczany co tydzień? To VYRA Method.</Link>
     </div>
   );
