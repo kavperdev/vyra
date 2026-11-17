@@ -56,8 +56,8 @@ export default async function AppHome() {
   ];
 
   return (
-    <div className="app-rise grid grid-cols-1">
-      <div className="pt-1">
+    <div className="app-rise app-wide grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-10">
+      <div className="pt-1 lg:col-span-2">
         <p className="text-[12px] capitalize text-white/40">{today}</p>
         <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em]">
           {hello}
@@ -65,8 +65,9 @@ export default async function AppHome() {
         </h1>
       </div>
 
+      <div className="grid min-w-0 grid-cols-1 content-start">
       {/* The heart of the app: what the runs mean, today. */}
-      <div className="mt-4">
+      <div className="mt-4 lg:mt-6">
         <FormCard />
       </div>
 
@@ -118,6 +119,9 @@ export default async function AppHome() {
 
       <SectionHead title={t("Dziennik", "Log")} href="/app/dziennik" more={t("Dodaj bieg", "Add run")} />
       <HomeWeek />
+      </div>
+
+      <div className="grid min-w-0 grid-cols-1 content-start lg:pt-2">
 
       <SectionHead title={t("Warunki do biegu", "Running conditions")} />
       <Today part="weather" />
@@ -128,7 +132,7 @@ export default async function AppHome() {
       <CourseCard />
 
       <SectionHead title={t("Narzędzia", "Tools")} href="/app/narzedzia" more={t("Wszystkie", "All")} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
         {[
           { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
           { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("plan żeli i picia", "gels and drinks plan") },
@@ -169,6 +173,7 @@ export default async function AppHome() {
           </div>
         </Card>
       ) : null}
+      </div>
     </div>
   );
 }

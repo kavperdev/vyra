@@ -10,6 +10,7 @@ import { BadgeWatcher } from "@/components/app/progress";
 import { StatsPublisher } from "@/components/app/friends";
 import { StayInApp } from "@/components/app/stay-in-app";
 import { AppTabBar } from "@/components/app/tab-bar";
+import { SideNav } from "@/components/app/side-nav";
 import { RevealObserver } from "@/components/site/reveal";
 import { SourceTracker } from "@/components/site/source-tracker";
 import { getCurrentUser } from "@/lib/auth";
@@ -33,8 +34,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* The status bar is translucent in the installed app: a frosted strip keeps the clock readable over scrolling content
           and lets the background glow run up to the top edge, so the bar doesn't stand out as a separate block. */}
       <div aria-hidden className="fixed inset-x-0 top-0 z-40 h-[env(safe-area-inset-top)] bg-black/55 backdrop-blur-xl" />
-      <header className="relative z-30 pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
+      <header className={`relative z-30 pt-[env(safe-area-inset-top)] ${user ? "lg:hidden" : ""}`}>
+        <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4 lg:h-20 lg:max-w-6xl lg:px-10">
           <Link href="/app" aria-label="VYRA">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/branding/vyra-logo-white.svg" alt="VYRA" className="h-4 w-auto" />
@@ -55,8 +56,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <i />
       </div>
       <Confetti />
-      <main className="relative z-10 mx-auto w-full max-w-md px-4 pb-32 pt-2">
-        <AccessProvider value={access}>{children}</AccessProvider>
+      {user ? <SideNav name={user.profile.full_name ?? ""} email={user.profile.email ?? ""} /> : null}
+      <main className={`app-main relative z-10 mx-auto w-full max-w-md px-4 pb-32 pt-2 lg:pb-16 ${user ? "lg:ml-64 lg:mr-0 lg:max-w-none lg:px-12 lg:pt-12" : "lg:pt-10"}`}>
+        <div className={user ? "lg:mx-auto lg:max-w-6xl" : ""}>
+          <AccessProvider value={access}>{children}</AccessProvider>
+        </div>
       </main>
       <AppTabBar />
       <Onboarding signedIn={!!user} />
