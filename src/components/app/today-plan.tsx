@@ -31,7 +31,7 @@ export function TodayPlan() {
         <SectionHead title="Wybierz swój plan" />
         <div className="grid gap-2">
           {[
-            ...PARTNER_RACES.filter((r) => r.race >= addDays(todayLocal(), 7)).map((r) => ({ href: "/app/nocna", icon: Moon, t: "Nocna Ekipa VYRA", d: "Biegniesz Nocną Dychę? Plan tygodniowy dla Twojego poziomu, za darmo." })),
+            ...PARTNER_RACES.filter((r) => r.race >= addDays(todayLocal(), 7)).map(() => ({ href: "/app/nocna", icon: Moon, t: "Nocna Ekipa VYRA", d: "Biegniesz Nocną Dychę? Plan tygodniowy dla Twojego poziomu, za darmo." })),
             { href: "/app/plan", icon: Sprout, t: "Zacznij biegać", d: "Od zera do 25 minut biegu w 6 tygodni. Timer prowadzi każdy trening." },
             { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." },
             ...(premium ? [] : [{ href: "/app/sklep", icon: Rocket, t: "VYRA Method", d: "Masz start albo wracasz po kontuzji? Plan liczony co tydzień od nowa. 14 dni za darmo." }]),
