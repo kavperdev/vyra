@@ -92,7 +92,7 @@ export default async function AppTraining() {
 
       <SectionHead title={t("Treningi", "Workouts")} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <IconTile href="/app/cel" tone="red" icon={<Flag />} title={t("Plan pod start", "Race plan")} />
+        <IconTile href="/app/cel" tone="red" icon={<Flag />} title={t("Plan pod start", "Race plan")} badge={method ? undefined : <ProBadge />} />
         <IconTile href="/app/plan" tone="green" icon={<Footprints />} title={t("Zacznij biegać", "Start running")} />
         <IconTile href="/app/biblioteka" icon={<Dumbbell />} title={t("Biblioteka treningów", "Workout library")} />
         <IconTile href="/app/dziennik" icon={<NotebookPen />} title={t("Dziennik", "Log")} />

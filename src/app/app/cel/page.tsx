@@ -65,7 +65,7 @@ export default async function AppPlan() {
 
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Plan" sub="Tydzień po tygodniu aż do startu. Tempa z Twojej formy." />
+      <PageHead title="Plan pod start" sub={method ? "Tydzień po tygodniu aż do startu. Tempa z Twojej formy." : "Ustaw start i zobacz podgląd planu. Cały plan z tempami jest w VYRA Method."} />
       <GoalPlanView />
     </div>
   );

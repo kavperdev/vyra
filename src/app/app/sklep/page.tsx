@@ -66,7 +66,7 @@ export default async function AppShop() {
         </div>
       </div>
 
-      <SectionHead title={t("Co dostajesz ponad darmowy plan", "What you get beyond the free plan")} />
+      <SectionHead title={t("Co jest za darmo, a co w Method", "Free vs Method")} />
       <MethodCompare />
 
       {m.length && !store ? (

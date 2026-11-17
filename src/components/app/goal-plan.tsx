@@ -297,7 +297,7 @@ export function GoalPlanView() {
       {/* Week picker: every week of the plan one tap away, the current one in focus. */}
       <div ref={weekRow} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
         {plan.weeks.map((w, wi) => {
-          const locked = !premium && wi > 0;
+          const locked = !premium;
           const on = w.n === shown;
           const cur = wi === curIdx;
           const allDone = w.sessions.length > 0 && w.sessions.every((s) => doneSet.has(s.id));
@@ -321,7 +321,7 @@ export function GoalPlanView() {
         const wi = plan.weeks.findIndex((w) => w.n === shown);
         const w = plan.weeks[wi < 0 ? curIdx : wi];
         if (!w) return null;
-        const locked = !premium && plan.weeks.indexOf(w) > 0;
+        const locked = !premium;
         const wDone = w.sessions.filter((s) => doneSet.has(s.id)).length;
         return (
           <div className="grid gap-2">
@@ -333,10 +333,30 @@ export function GoalPlanView() {
               <p className="text-[13px] tabular-nums text-white/55">ok. {w.km} km · {wDone}/{w.sessions.length}</p>
             </div>
             {locked ? (
-              <div className="flex items-center gap-3 rounded-[20px] border border-white/[0.06] bg-[#0d0d0f] p-4">
-                <Lock className="size-5 shrink-0 text-white/40" />
-                <p className="text-[13.5px] leading-relaxed text-white/55">Ten tydzień jest w VYRA Method. Plan przelicza się co tydzień z Twoich treningów.</p>
-              </div>
+              <>
+                <div className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/30 bg-[var(--accent)]/[0.07] p-4">
+                  <Lock className="size-5 shrink-0 text-[#ff8a8f]" />
+                  <p className="text-[13.5px] leading-relaxed text-white/75">Podgląd. Tempa, dystanse i odhaczanie są w VYRA Method, a plan przelicza się co tydzień z Twoich treningów.</p>
+                </div>
+                {w.sessions.map((s) => (
+                  <div key={s.id} className="rounded-[20px] border border-white/[0.06] bg-[#111113] p-4">
+                    <span className="flex items-center gap-1.5 text-[11.5px] font-medium uppercase tracking-[0.08em] text-white/45">
+                      <span className={cn("size-1.5 rounded-full", kindIcon[s.kind])} />
+                      {day(s.date)}
+                    </span>
+                    <span className="mt-1 block text-[16px] font-semibold leading-snug">{s.title}</span>
+                    <WorkoutBars segs={sessionShape(s)} className="mt-2.5 opacity-80" />
+                    <span className="mt-3 flex gap-2 border-t border-white/[0.06] pt-3">
+                      {["Dystans", "Tempo", "Czas"].map((k) => (
+                        <span key={k} className="flex-1">
+                          <span className="block text-[10.5px] uppercase tracking-[0.08em] text-white/40">{k}</span>
+                          <span className="mt-1 block h-3.5 w-14 rounded bg-white/[0.08]" />
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </>
             ) : (
               w.sessions.map((s) => {
                 const on = doneSet.has(s.id);
@@ -388,7 +408,7 @@ export function GoalPlanView() {
       {premium ? null : (
         <div className="sticky bottom-24 z-20 rounded-[22px] border border-white/10 bg-[#18181b]/95 p-4 shadow-2xl backdrop-blur">
           <p className="text-[16px] font-semibold">Cały plan do startu: w VYRA Method</p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-white/55">Tydzień 1 masz za darmo. Pozostałe {plan.weeks.length - 1} tygodnie, przeliczane co tydzień z Twoich treningów, odblokujesz w VYRA Method.</p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-white/55">Wszystkie {plan.weeks.length} tygodnie z tempami, przeliczane co tydzień, do tego zestawy siły i strategia na start. 14 dni za darmo, bez karty.</p>
           <TrialForm className="mt-3" />
         </div>
       )}

@@ -22,7 +22,7 @@ export function TodayPlan() {
   useEffect(() => {
     setItem(todayItem());
     setReady(readinessToday());
-  }, [tick]);
+  }, [tick, premium]);
   if (item === undefined) return <div className="h-40" />;
 
   if (!item)
@@ -33,8 +33,9 @@ export function TodayPlan() {
           {[
             ...PARTNER_RACES.filter((r) => r.race >= addDays(todayLocal(), 7)).map(() => ({ href: "/app/nocna", icon: Moon, t: "Nocna Ekipa VYRA", d: "Biegniesz Nocną Dychę? Plan tygodniowy dla Twojego poziomu, za darmo." })),
             { href: "/app/plan", icon: Sprout, t: "Zacznij biegać", d: "Od zera do 25 minut biegu w 6 tygodni. Timer prowadzi każdy trening." },
-            { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." },
-            ...(premium ? [] : [{ href: "/app/sklep", icon: Rocket, t: "VYRA Method", d: "Masz start albo wracasz po kontuzji? Plan liczony co tydzień od nowa. 14 dni za darmo." }]),
+            premium
+              ? { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." }
+              : { href: "/app/cel", icon: Rocket, t: "Plan pod Twój start · VYRA Method", d: "Osobisty plan do startu, przeliczany co tydzień. 14 dni za darmo, bez karty." },
           ].map((x) => (
             <Link key={x.href} href={x.href} className="flex items-center gap-3.5 rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]">
@@ -50,14 +51,14 @@ export function TodayPlan() {
       </>
     );
 
-  if (item.source === "goal" && !premium && !item.free && (item.week ?? 1) > 1)
+  if (item.source === "goal" && !premium && !item.free)
     return (
       <>
         <SectionHead title="Twój plan pod start" href="/app/cel" more="Plan" />
         <div className="rounded-[22px] border border-white/10 bg-[#111113] p-4">
           {item.countdown ? <p className="text-[12px] text-white/45">{item.countdown.label} · za {item.countdown.days} dni</p> : null}
-          <p className="mt-1 text-[17px] font-semibold leading-snug">Tydzień {item.week} czeka w VYRA Method</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-white/55">Pierwszy tydzień był za darmo. Dalej plan liczy się co tydzień z Twoich treningów, aż do startu.</p>
+          <p className="mt-1 text-[17px] font-semibold leading-snug">Twój plan czeka w VYRA Method</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-white/55">Treningi z tempami na każdy dzień, liczone co tydzień z tego, co zrobiłeś, aż do startu.</p>
           <Link href="/app/wybierz?trial=1" className="mt-3 flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
             Odbierz 14 dni za darmo
           </Link>
