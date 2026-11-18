@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-const KEYS = new Set(["vyra-log", "vyra-log-del", "vyra-result", "vyra-start-plan", "vyra-start-on", "vyra-goal-plan", "vyra-me", "vyra-onboarded", "vyra-course-done", "vyra-swaps", "vyra-badges-seen", "vyra-week-goal"]);
+const KEYS = new Set(["vyra-log", "vyra-log-del", "vyra-result", "vyra-start-plan", "vyra-start-on", "vyra-goal-plan", "vyra-me", "vyra-onboarded", "vyra-course-done", "vyra-swaps", "vyra-badges-seen", "vyra-week-goal", "vyra-nocna-level", "vyra-routines"]);
 export type StateRow = { key: string; value: unknown; ts: number };
 
 /** Everything the app saved on this account. Null when signed out or before the migration. */
