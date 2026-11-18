@@ -11,6 +11,7 @@ import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
 import { Card, Chip, Group, IconTile, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
+import { TodayRings } from "@/components/app/rings";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -79,6 +80,10 @@ export default async function AppHome() {
           <span className="text-[var(--accent)]">.</span>
         </h1>
       </PhotoCard>
+
+      <div className="lg:col-span-2">
+        <TodayRings />
+      </div>
 
       <div className="grid min-w-0 grid-cols-1 content-start">
       <WeekStrip planned={week} />

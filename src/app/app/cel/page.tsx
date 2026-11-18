@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CalendarDays, Sparkles } from "lucide-react";
 import { GoalPlanView } from "@/components/app/goal-plan";
+import { MonthCalendar } from "@/components/app/month-calendar";
+import { plannedDays } from "@/lib/app/planned-days";
 import { MyWeek, type WeekSession } from "@/components/app/my-week";
 import { Group, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
@@ -46,6 +48,9 @@ export default async function AppPlan() {
     return (
       <div className="app-rise grid grid-cols-1">
         <PhotoHead photo="track" title="Twój plan" sub={method ? "VYRA Method · plan dopasowuje się co tydzień" : "Od Twojego trenera"} />
+        <div className="mt-2">
+          <MonthCalendar planned={await plannedDays().catch(() => [])} />
+        </div>
         {shown.map((w, i) => (
           <div key={w.start}>
             <SectionHead title={i === 0 ? "Ten tydzień" : `${fmt(w.days[0])} – ${fmt(w.days[6])}`} />

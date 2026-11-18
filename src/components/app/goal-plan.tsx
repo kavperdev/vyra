@@ -14,6 +14,7 @@ import { addRun, logPlanned, unlogPlanned, useLog } from "@/lib/app/log";
 import { completeRef, goalDoneSet } from "@/lib/app/plans";
 import { sessionShape } from "@/lib/app/workout-shape";
 import { WorkoutBars } from "@/components/app/workout-bars";
+import { PlanChat } from "@/components/app/plan-chat";
 import { Seg, TimeInput, parseTime, useResult } from "@/components/app/tools";
 import { Sheet } from "@/components/app/sheet";
 import { Card, Chip, Tile } from "@/components/app/ui";
@@ -294,6 +295,8 @@ export function GoalPlanView() {
         </Card>
       ) : null}
 
+      {premium ? <PlanChat tweaks={g.tweaks ?? {}} onChange={(t) => update({ ...g, tweaks: t })} /> : null}
+
       {/* Week picker: every week of the plan one tap away, the current one in focus. */}
       <div ref={weekRow} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
         {plan.weeks.map((w, wi) => {
@@ -332,6 +335,7 @@ export function GoalPlanView() {
               </div>
               <p className="text-[13px] tabular-nums text-white/55">ok. {w.km} km · {wDone}/{w.sessions.length}</p>
             </div>
+            {w.note && !locked ? <p className="w-fit rounded-full bg-amber-400/12 px-3 py-1 text-[12px] text-amber-200">Zmieniony: {w.note}</p> : null}
             {locked ? (
               <>
                 <div className="flex items-center gap-3 rounded-[20px] border border-[var(--accent)]/30 bg-[var(--accent)]/[0.07] p-4">

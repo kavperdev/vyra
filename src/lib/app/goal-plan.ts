@@ -10,7 +10,9 @@ export const GOAL_DISTS: { k: GoalDist; label: string; m: number }[] = [
   { k: "marathon", label: "Maraton", m: 42195 },
 ];
 
-export type GoalInput = { dist: GoalDist; race: string; p5k: number; days: 3 | 4 | 5; name?: string; event?: string; moves?: Record<string, string> };
+/** A change for one week, said in words ("only 3 days", "my knee hurts", "I have a cold"). Keyed by the week's Monday. */
+export type WeekTweak = { days?: number; light?: boolean; rest?: boolean; note: string };
+export type GoalInput = { dist: GoalDist; race: string; p5k: number; days: 3 | 4 | 5; name?: string; event?: string; moves?: Record<string, string>; tweaks?: Record<string, WeekTweak> };
 
 /** Races VYRA prepares for with the organisers: one tap fills the plan, (free: true opens the whole personal plan; Nocna Dycha uses the level plans in nocna-plan.ts instead). */
 export const PARTNER_RACES: { id: string; name: string; dist: GoalDist; race: string; place: string; free: boolean }[] = [
@@ -28,7 +30,7 @@ export type GoalSession = {
   pace: [number, number] | null;
   timer: string | null; // /app/timer?…
 };
-export type GoalWeek = { n: number; monday: string; phase: string; km: number; sessions: GoalSession[] };
+export type GoalWeek = { n: number; monday: string; phase: string; km: number; sessions: GoalSession[]; note?: string };
 export type GoalPlan = { weeks: GoalWeek[]; start: string; predicted: number; racePace: number; skipped: number };
 
 export const GOAL_KEY = "vyra-goal-plan";
@@ -192,6 +194,11 @@ export function buildPlan(inp: GoalInput, today = todayLocal()): GoalPlan {
     }
     weeks.push({ n, monday: mon, phase: recovery ? "Odpoczynek" : phase, km: r1(sessions.reduce((a, s) => a + s.km, 0)), sessions });
   }
+  // Weeks the runner changed in words: fewer days, lighter (pain, fatigue) or rest (illness).
+  for (const w of weeks) {
+    const t = inp.tweaks?.[w.monday];
+    if (t && w.phase !== "Start") applyTweak(w, t, z);
+  }
   // Sessions the runner moved to another day of the same week keep their id and take the new date.
   const moves = inp.moves ?? {};
   for (const w of weeks) {
@@ -202,4 +209,31 @@ export function buildPlan(inp: GoalInput, today = todayLocal()): GoalPlan {
     w.sessions.sort((a, b) => a.date.localeCompare(b.date));
   }
   return { weeks, start, predicted, racePace, skipped };
+}
+
+/** Rewrites one week: illness → two short easy runs; pain/fatigue → no hard sessions, shorter; fewer days → the key sessions stay. */
+const kmPl = (x: number) => String(r1(x)).replace(".", ",");
+function applyTweak(w: GoalWeek, t: WeekTweak, z: ReturnType<typeof zonesFor>) {
+  let ss = w.sessions;
+  if (t.rest) {
+    ss = ss.filter((s) => s.kind !== "quality").slice(-2).map((s) => ({ ...s, kind: "easy" as Kind, title: "Lekko 20–30 min", desc: `Tylko jeśli nie ma gorączki i czujesz się dobrze. Bardzo luźno ${pr(z.recovery)}. Gorzej? Odpuść, zdrowie najpierw.`, km: 4, pace: z.recovery, timer: null }));
+  } else {
+    if (t.light)
+      ss = ss.map((s) =>
+        s.kind === "quality"
+          ? { ...s, kind: "easy" as Kind, title: `Spokojnie ${kmPl(Math.max(4, s.km * 0.7))} km zamiast akcentu`, desc: `Ten tydzień bez mocnego tempa. Luźno ${pr(z.easy)}. Ból rośnie w trakcie? Przerwij i przejdź do marszu.`, km: r1(Math.max(4, s.km * 0.7)), pace: z.easy, timer: null }
+          : s.kind === "long"
+            ? { ...s, title: `Długi bieg ${kmPl(s.km * 0.7)} km, lżej`, desc: `Krócej niż zwykle, spokojnie ${pr(z.easy)}. Bez przyspieszania na końcu.`, km: r1(s.km * 0.7) }
+            : { ...s, km: r1(s.km * 0.85), title: `Spokojnie ${kmPl(s.km * 0.85)} km` },
+      );
+    if (t.days && t.days < ss.length) {
+      // keep: the long run, then the first hard session, then easy runs
+      const rank = (s: GoalSession) => (s.kind === "long" ? 0 : s.kind === "quality" ? 1 + ss.filter((x) => x.kind === "quality").indexOf(s) * 2 : 2);
+      const keep = new Set([...ss].sort((a, b) => rank(a) - rank(b)).slice(0, t.days).map((s) => s.id));
+      ss = ss.filter((s) => keep.has(s.id));
+    }
+  }
+  w.sessions = ss;
+  w.km = r1(ss.reduce((a, s) => a + s.km, 0));
+  w.note = t.note;
 }
