@@ -9,7 +9,7 @@ import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { WeekStrip } from "@/components/app/week-strip";
 import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
-import { Card, Chip, Group, IconTile, Row, SectionHead } from "@/components/app/ui";
+import { Card, Chip, Group, IconTile, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
@@ -71,13 +71,14 @@ export default async function AppHome() {
 
   return (
     <div className="app-rise app-wide grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-10">
-      <div className="pt-1 lg:col-span-2">
-        <p className="text-[12px] capitalize text-white/40">{today}</p>
-        <h1 className="mt-0.5 text-[26px] font-semibold leading-tight tracking-[-0.02em]">
+      <PhotoCard photo={photoOfDay(todayISO())} minH={170} pos="center 40%" className="lg:col-span-2">
+        <p className="text-[12px] font-medium capitalize tracking-wide text-white/65">{today}</p>
+        <h1 className="mt-1 text-[30px] font-semibold leading-[1.05] tracking-[-0.025em]">
           {hello}
           {first ? `, ${first}` : ""}
+          <span className="text-[var(--accent)]">.</span>
         </h1>
-      </div>
+      </PhotoCard>
 
       <div className="grid min-w-0 grid-cols-1 content-start">
       <WeekStrip planned={week} />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BookOpen, Calculator, Dumbbell, Flag, Footprints, HeartPulse, NotebookPen, Timer, TimerReset, TrendingUp, Trophy } from "lucide-react";
-import { Chip, Group, IconTile, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Chip, Group, IconTile, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { RoutineList } from "@/components/app/routine-cards";
 import { ProBadge } from "@/components/app/paywall";
 import { getCurrentUser } from "@/lib/auth";
@@ -49,7 +49,7 @@ export default async function AppTraining() {
   }
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Trening", "Train")} />
+      <PhotoHead photo="track" title={t("Trening", "Train")} sub={t("Plan, zestawy ćwiczeń i biblioteka treningów.", "Plan, guided sets and the workout library.")} />
       {user && !athlete ? (
         <Link href="/coach" className="flex items-center justify-between rounded-[20px] bg-white px-4 py-4 text-black transition active:scale-[0.985]">
           <span className="block text-[16px] font-semibold">{t("Panel trenera", "Coach panel")}</span>

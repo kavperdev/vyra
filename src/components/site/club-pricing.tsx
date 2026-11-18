@@ -17,13 +17,13 @@ export function ClubPricing({ lines, labels, initial }: { lines: ClubLine[]; lab
   const line = lines.find((l) => l.key === key) ?? lines[0];
   return (
     <div className="mt-12">
-      <div className="inline-flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+      <div className="flex flex-wrap gap-1 rounded-2xl border border-white/10 bg-white/[0.03] p-1 sm:inline-flex sm:rounded-full">
         {lines.map((l) => (
           <button
             key={l.key}
             type="button"
             onClick={() => setKey(l.key)}
-            className={cn("rounded-full px-5 py-2.5 text-sm font-semibold transition-colors", l.key === key ? "bg-white text-black" : "text-white/60 hover:text-white")}
+            className={cn("flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors sm:flex-none sm:rounded-full sm:px-5", l.key === key ? "bg-white text-black" : "text-white/60 hover:text-white")}
           >
             {l.label}
           </button>

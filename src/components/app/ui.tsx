@@ -96,3 +96,55 @@ export function IconTile({ href, icon, title, tone = "white", badge }: { href: s
     </Card>
   );
 }
+
+/** Brand photos (black and white, motion): headers and poster cards, so screens are not only text. */
+export const PHOTOS = {
+  track: "/site/track.jpg",
+  night: "/site/night-city.jpg",
+  legs: "/site/hero.jpg",
+  road: "/branding/source/mood-motion-01.jpg",
+  blur: "/site/manifest-poster.jpg",
+} as const;
+export type PhotoKey = keyof typeof PHOTOS;
+/** A photo for the day, so the home screen changes a little every day. */
+export const photoOfDay = (iso: string): PhotoKey => {
+  const keys = Object.keys(PHOTOS) as PhotoKey[];
+  return keys[Math.floor(Date.parse(`${iso}T12:00:00Z`) / 864e5) % keys.length];
+};
+
+/** A card on a brand photo: dark gradient for legible words, a red glow in the corner. */
+export function PhotoCard({ photo, href, className, children, pos = "center", minH = 180 }: { photo: PhotoKey; href?: string; className?: string; children: React.ReactNode; pos?: string; minH?: number }) {
+  const body = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={PHOTOS[photo]} alt="" aria-hidden className="absolute inset-0 size-full object-cover grayscale contrast-[1.15] brightness-110" style={{ objectPosition: pos }} loading="lazy" />
+      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/0" />
+      <span aria-hidden className="absolute -bottom-24 -left-16 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(229,52,59,0.45),transparent)]" />
+      <div className="relative flex flex-1 flex-col justify-end p-4">{children}</div>
+    </>
+  );
+  const cls = cn("relative flex flex-col overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#0c0c0e]", href && "transition active:scale-[0.985]", className);
+  return href ? (
+    <Link href={href} className={cls} style={{ minHeight: minH }}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls} style={{ minHeight: minH }}>
+      {body}
+    </div>
+  );
+}
+
+/** A screen title on a brand photo instead of plain text. */
+export function PhotoHead({ photo, title, sub, pos, children }: { photo: PhotoKey; title: string; sub?: string; pos?: string; children?: React.ReactNode }) {
+  return (
+    <PhotoCard photo={photo} pos={pos ?? "center 40%"} minH={150} className="mb-1">
+      <h1 className="text-[30px] font-semibold leading-[1.05] tracking-[-0.025em]">
+        {title}
+        <span className="text-[var(--accent)]">.</span>
+      </h1>
+      {sub ? <p className="mt-1.5 max-w-[34ch] text-[13.5px] leading-snug text-white/70">{sub}</p> : null}
+      {children}
+    </PhotoCard>
+  );
+}

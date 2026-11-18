@@ -257,54 +257,46 @@ function StrengthComparison({ session }: { session: SessionDetail }) {
         const best = bestSet(x.sets);
         const e1rm = best ? estimateOneRepMax(best.load_kg, best.reps) : null;
         return (
-          <div key={x.id} className="rounded-md border border-border">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
-              <p className="font-semibold">{x.exercise_name}</p>
-              <div className="flex items-center gap-2">
-                {e1rm ? <span className="num text-[12px] text-muted">szac. 1RM ≈ {formatNumber(e1rm)} kg</span> : null}
+          <div key={x.id} className="min-w-0 overflow-hidden rounded-md border border-border">
+            <div className="grid gap-1.5 border-b border-border px-3 py-2.5">
+              <p className="font-semibold leading-snug">{x.exercise_name}</p>
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={x.status === "done" ? "done" : x.status === "skipped" ? "problem" : "warning"}>
                   {x.status === "done" ? tl("wykonane", "done") : x.status === "skipped" ? tl("pominięte", "skipped") : x.status === "partial" ? tl("częściowo", "partly") : tl("nie uzupełniono", "not logged")}
                 </Badge>
+                {e1rm ? <span className="text-[12px] tabular-nums text-muted">{tl("szac. 1RM", "est. 1RM")} ≈ {formatNumber(e1rm)} kg</span> : null}
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[420px] text-sm">
-                <thead>
-                  <tr className="text-left text-[12px] text-muted">
-                    <th className="px-3 py-2 font-medium">{tl("Seria", "Set")}</th>
-                    <th className="px-3 py-2 font-medium">{tl("Plan", "Plan")}</th>
-                    <th className="px-3 py-2 font-medium">{tl("Wykonanie", "Result")}</th>
-                    <th className="px-3 py-2 font-medium">{tl("Różnica", "Difference")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {x.sets.map((s, i) => {
-                    const ps = plan?.sets?.find((p) => p.id === s.set_id) ?? plan?.sets?.[i];
-                    const d = compareSet(ps, s);
-                    const diff = [
-                      d.reps != null && d.reps !== 0 ? `${d.reps > 0 ? "+" : ""}${d.reps} ${tl("powt.", "reps")}` : null,
-                      d.load != null && d.load !== 0 ? `${d.load > 0 ? "+" : ""}${formatNumber(d.load)} kg` : null,
-                      d.duration != null && d.duration !== 0 ? `${d.duration > 0 ? "+" : "−"}${formatDuration(Math.abs(d.duration))}` : null,
-                    ].filter(Boolean);
-                    return (
-                      <tr key={s.id} className={cn(!s.completed && "text-muted")}>
-                        <td className="num px-3 py-2">{i + 1}</td>
-                        <td className="num px-3 py-2 text-muted">
-                          {ps ? [ps.planned_reps != null ? `${ps.planned_reps}` : null, ps.planned_load_kg != null ? formatKg(ps.planned_load_kg) : null, ps.planned_duration_s ? formatDuration(ps.planned_duration_s) : null].filter(Boolean).join(" × ") || "–" : tl("spoza planu", "not in plan")}
-                        </td>
-                        <td className="num px-3 py-2 font-medium">
-                          {s.completed
-                            ? [s.reps != null ? `${s.reps}` : null, s.load_kg != null ? formatKg(s.load_kg) : null, s.duration_s ? formatDuration(s.duration_s) : null, s.rpe ? `RPE ${formatNumber(s.rpe)}` : null, s.rir != null ? `RIR ${s.rir}` : null].filter(Boolean).join(" × ") || "✓"
-                            : tl("nie wykonano", "not done")}
-                        </td>
-                        <td className={cn("px-3 py-2 text-[13px]", diff.length ? "text-warning" : "text-done")}>
-                          {s.completed ? (diff.length ? diff.join(", ") : ps ? tl("zgodnie z planem", "as planned") : "–") : "–"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* A row per set, stacked so it fits a phone: result big, plan and difference under it. */}
+            <div className="divide-y divide-border">
+              {x.sets.map((s, i) => {
+                const ps = plan?.sets?.find((p) => p.id === s.set_id) ?? plan?.sets?.[i];
+                const d = compareSet(ps, s);
+                const diff = [
+                  d.reps != null && d.reps !== 0 ? `${d.reps > 0 ? "+" : ""}${d.reps} ${tl("powt.", "reps")}` : null,
+                  d.load != null && d.load !== 0 ? `${d.load > 0 ? "+" : ""}${formatNumber(d.load)} kg` : null,
+                  d.duration != null && d.duration !== 0 ? `${d.duration > 0 ? "+" : "−"}${formatDuration(Math.abs(d.duration))}` : null,
+                ].filter(Boolean);
+                const planText = ps ? [ps.planned_reps != null ? `${ps.planned_reps}` : null, ps.planned_load_kg != null ? formatKg(ps.planned_load_kg) : null, ps.planned_duration_s ? formatDuration(ps.planned_duration_s) : null].filter(Boolean).join(" × ") || "–" : tl("spoza planu", "not in plan");
+                return (
+                  <div key={s.id} className={cn("grid grid-cols-[28px_1fr_auto] items-center gap-x-3 px-3 py-2.5", !s.completed && "text-muted")}>
+                    <span className="text-[13px] tabular-nums text-muted">{i + 1}</span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-medium tabular-nums">
+                        {s.completed ? [s.reps != null ? `${s.reps}` : null, s.load_kg != null ? formatKg(s.load_kg) : null, s.duration_s ? formatDuration(s.duration_s) : null].filter(Boolean).join(" × ") || "✓" : tl("nie wykonano", "not done")}
+                        {s.completed && s.rpe ? <span className="ml-2 text-[12px] font-normal text-muted">RPE {formatNumber(s.rpe)}</span> : null}
+                        {s.completed && s.rir != null ? <span className="ml-2 text-[12px] font-normal text-muted">RIR {s.rir}</span> : null}
+                      </span>
+                      <span className="block text-[12px] tabular-nums text-muted">
+                        {tl("plan", "plan")}: {planText}
+                      </span>
+                    </span>
+                    <span className={cn("text-right text-[12px] leading-tight", diff.length ? "text-warning" : "text-done")}>
+                      {s.completed ? (diff.length ? diff.join(", ") : ps ? "✓" : "–") : "–"}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             {x.comment ? <p className="border-t border-border px-3 py-2 text-[13px] text-muted">{x.comment}</p> : null}
           </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageHead, SectionHead } from "@/components/app/ui";
+import { PhotoHead, SectionHead } from "@/components/app/ui";
 import { ProBadge } from "@/components/app/paywall";
 import { CATS, WORKOUTS } from "@/lib/app/workouts";
 import { LIBRARY_SHAPES, parseShape } from "@/lib/app/workout-shape";
@@ -11,7 +11,7 @@ export default function AppLibrary() {
   const cats = Object.keys(CATS) as (keyof typeof CATS)[];
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Biblioteka treningów" sub={`${WORKOUTS.length} treningów. Zobacz, jak wyglądają.`} />
+      <PhotoHead photo="track" title="Biblioteka treningów" sub={`${WORKOUTS.length} treningów. Zobacz, jak wyglądają.`} />
       {cats.map((c) => (
         <div key={c}>
           <SectionHead title={CATS[c].name} />

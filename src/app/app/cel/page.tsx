@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, Sparkles } from "lucide-react";
 import { GoalPlanView } from "@/components/app/goal-plan";
 import { MyWeek, type WeekSession } from "@/components/app/my-week";
-import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Group, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -45,7 +45,7 @@ export default async function AppPlan() {
     const shown = weeks.filter((w, i) => i === 0 || w.list.length);
     return (
       <div className="app-rise grid grid-cols-1">
-        <PageHead title="Twój plan" sub={method ? "VYRA Method · plan dopasowuje się co tydzień" : "Od Twojego trenera"} />
+        <PhotoHead photo="track" title="Twój plan" sub={method ? "VYRA Method · plan dopasowuje się co tydzień" : "Od Twojego trenera"} />
         {shown.map((w, i) => (
           <div key={w.start}>
             <SectionHead title={i === 0 ? "Ten tydzień" : `${fmt(w.days[0])} – ${fmt(w.days[6])}`} />
@@ -65,7 +65,7 @@ export default async function AppPlan() {
 
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Plan pod start" sub={method ? "Tydzień po tygodniu aż do startu. Tempa z Twojej formy." : "Ustaw start i zobacz podgląd planu. Cały plan z tempami jest w VYRA Method."} />
+      <PhotoHead photo="blur" title="Plan pod start" sub={method ? "Tydzień po tygodniu aż do startu. Tempa z Twojej formy." : "Ustaw start i zobacz podgląd planu. Cały plan z tempami jest w VYRA Method."} />
       <GoalPlanView />
     </div>
   );

@@ -67,8 +67,8 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
       {!done && (session.segments.length || session.exercises.length) ? (
         <WorkoutPlayer sessionId={session.id} title={session.title} segments={session.segments} exercises={session.exercises} autoStart={start === "1"} />
       ) : null}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div className="grid content-start gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-6">
           <PlanDetails session={session} />
           {isMethod && done ? (
             <Card>
@@ -93,7 +93,7 @@ export default async function AthleteSessionPage({ params, searchParams }: { par
             </CardContent>
           </Card>
         </div>
-        <div className="grid content-start gap-6">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-6">
           {done ? <PlanVsActual session={session} /> : null}
           <section className="grid gap-3" aria-labelledby="log-title">
             <h2 id="log-title" className="eyebrow">

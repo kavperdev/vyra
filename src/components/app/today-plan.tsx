@@ -6,7 +6,7 @@ import { Check, Flag, Footprints, Rocket, Sprout, TimerReset, Watch, Moon } from
 import { completeRef, readinessToday, setSwap, todayItem, type TodayItem } from "@/lib/app/plans";
 import { useStoreTick } from "@/lib/app/store";
 import { PARTNER_RACES, addDays, todayLocal } from "@/lib/app/goal-plan";
-import { SectionHead } from "@/components/app/ui";
+import { PhotoCard, SectionHead } from "@/components/app/ui";
 import { useAccess } from "@/components/app/access";
 import { CountUp } from "@/components/app/motion";
 import { WorkoutBars } from "@/components/app/workout-bars";
@@ -36,16 +36,14 @@ export function TodayPlan() {
             premium
               ? { href: "/app/cel", icon: Flag, t: "Plan pod start", d: "5 km, 10 km, półmaraton lub maraton. Tempa z Twojej formy, odliczanie do startu." }
               : { href: "/app/cel", icon: Rocket, t: "Plan pod Twój start · VYRA Method", d: "Osobisty plan do startu, przeliczany co tydzień. 14 dni za darmo, bez karty." },
-          ].map((x) => (
-            <Link key={x.href} href={x.href} className="flex items-center gap-3.5 rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 active:scale-[0.985]">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06]">
-                <x.icon className="size-5 text-white/85" />
+          ].map((x, i) => (
+            <PhotoCard key={x.href} href={x.href} photo={(["night", "legs", "track"] as const)[i % 3]} minH={150} pos="center 35%">
+              <span className="grid size-9 place-items-center rounded-xl bg-white/15 backdrop-blur">
+                <x.icon className="size-[18px] text-white" />
               </span>
-              <span className="min-w-0">
-                <span className="block text-[15px] font-medium">{x.t}</span>
-                <span className="mt-0.5 block text-[12.5px] leading-snug text-white/45">{x.d}</span>
-              </span>
-            </Link>
+              <span className="mt-2.5 block text-[18px] font-semibold leading-tight">{x.t}</span>
+              <span className="mt-1 block text-[12.5px] leading-snug text-white/70">{x.d}</span>
+            </PhotoCard>
           ))}
         </div>
       </>
@@ -55,14 +53,18 @@ export function TodayPlan() {
     return (
       <>
         <SectionHead title="Twój plan pod start" href="/app/cel" more="Plan" />
-        <div className="rounded-[22px] border border-white/10 bg-[#111113] p-4">
-          {item.countdown ? <p className="text-[12px] text-white/45">{item.countdown.label} · za {item.countdown.days} dni</p> : null}
-          <p className="mt-1 text-[17px] font-semibold leading-snug">Twój plan czeka w VYRA Method</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-white/55">Treningi z tempami na każdy dzień, liczone co tydzień z tego, co zrobiłeś, aż do startu.</p>
-          <Link href="/app/wybierz?trial=1" className="mt-3 flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
+        <PhotoCard photo="night" minH={260} pos="center 40%">
+          {item.countdown ? (
+            <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/70">
+              {item.countdown.label} · <span className="text-[#ff8a8f]">za {item.countdown.days} dni</span>
+            </p>
+          ) : null}
+          <p className="mt-1.5 text-[22px] font-semibold leading-tight">Twój plan czeka w VYRA Method</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-white/70">Treningi z tempami na każdy dzień, liczone co tydzień z tego, co zrobiłeś.</p>
+          <Link href="/app/wybierz?trial=1" className="mt-3.5 flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
             Odbierz 14 dni za darmo
           </Link>
-        </div>
+        </PhotoCard>
       </>
     );
   const low = ready != null && ready < 50;

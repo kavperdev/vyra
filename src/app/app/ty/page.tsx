@@ -5,7 +5,7 @@ import { SignOutButton } from "@/components/app/sign-out";
 import { DeleteAccount } from "@/components/app/delete-account";
 import { storeApp } from "@/lib/app/platform";
 import { ReopenOnboarding } from "@/components/app/onboarding";
-import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Group, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
@@ -18,7 +18,7 @@ export default async function AppYou() {
   const store = await storeApp();
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={user ? (user.profile.full_name || t("Twoje konto", "Your account")) : t("Ty", "You")} sub={user ? user.profile.email ?? undefined : undefined} />
+      <PhotoHead photo="blur" title={user ? (user.profile.full_name || t("Twoje konto", "Your account")) : t("Ty", "You")} sub={user ? user.profile.email ?? undefined : undefined} />
       {user ? (
         user.profile.role === "coach" ? (
           <Group>

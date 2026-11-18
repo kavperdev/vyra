@@ -1,6 +1,6 @@
 import { CourseCard } from "@/components/app/course-progress";
 import { Dumbbell, GraduationCap, PersonStanding } from "lucide-react";
-import { Group, IconTile, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Group, IconTile, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { ExerciseStrip } from "@/components/app/exercise-strip";
 import { listArticles } from "@/lib/data/camps";
 import { getT } from "@/lib/i18n/server";
@@ -14,7 +14,7 @@ export default async function AppKnowledge() {
   const { items } = articlesFor(await listArticles(await createClient(), { publishedOnly: true }).catch(() => []), lang);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={t("Wiedza", "Learn")} />
+      <PhotoHead photo="road" title={t("Wiedza", "Learn")} sub={t("Kurs, ćwiczenia i treningi, wyjaśnione krótko.", "Course, exercises and workouts, explained briefly.")} />
       <CourseCard />
       <div className="mt-2 grid grid-cols-3 gap-2">
         <IconTile href="/app/kurs" tone="green" icon={<GraduationCap />} title={t("Kurs", "Course")} />

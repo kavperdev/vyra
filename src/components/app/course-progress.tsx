@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Check, ChevronRight } from "lucide-react";
-import { Group, Row } from "@/components/app/ui";
+import { Check } from "lucide-react";
+import { PhotoCard } from "@/components/app/ui";
 import { LESSONS } from "@/lib/app/course";
 import { save, useStore } from "@/lib/app/store";
 
@@ -48,25 +48,29 @@ export function CourseBar({ className }: { className?: string }) {
   );
 }
 
+const LESSON_PHOTO = ["legs", "track", "road", "night", "blur"] as const;
+
 export function LessonList() {
   const done = useCourseDone();
   const next = LESSONS.find((l) => !done.includes(l.slug));
   return (
-    <Group>
+    <div className="grid grid-cols-2 gap-2.5">
       {LESSONS.map((l, i) => {
         const ok = done.includes(l.slug);
         const now = next?.slug === l.slug;
         return (
-          <Row
-            key={l.slug}
-            href={`/app/kurs/${l.slug}`}
-            icon={ok ? <Check className="size-4 text-[var(--accent)]" /> : <span className={`text-[13px] tabular-nums ${now ? "text-white" : "text-white/50"}`}>{pad(i + 1)}</span>}
-            title={l.title}
-            sub={`${l.minutes} min${now ? " · następna" : ok ? " · ukończona" : ""}`}
-          />
+          <PhotoCard key={l.slug} href={`/app/kurs/${l.slug}`} photo={LESSON_PHOTO[i % LESSON_PHOTO.length]} minH={170} className={now ? "border-[var(--accent)]/50" : undefined}>
+            <span className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-black/50 text-[12px] font-semibold tabular-nums backdrop-blur">
+              {ok ? <Check className="size-4 text-emerald-300" /> : pad(i + 1)}
+            </span>
+            <span className="block text-[14.5px] font-semibold leading-tight">{l.title}</span>
+            <span className="mt-1 block text-[11.5px] text-white/60">
+              {l.minutes} min{now ? " · następna" : ok ? " · ukończona" : ""}
+            </span>
+          </PhotoCard>
         );
       })}
-    </Group>
+    </div>
   );
 }
 
@@ -77,17 +81,14 @@ export function CourseCard() {
   const i = LESSONS.findIndex((l) => !done.includes(l.slug));
   const next = i >= 0 ? LESSONS[i] : null;
   return (
-    <Link href={next ? `/app/kurs/${next.slug}` : "/app/kurs"} className="block rounded-[20px] border border-white/[0.06] bg-[#111113] p-4 transition active:scale-[0.985]">
-      <div className="flex items-center gap-3.5">
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white/[0.06] text-[18px] font-light tabular-nums">{next ? pad(i + 1) : "✓"}</span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[12px] text-white/45">{next ? (n ? "Kontynuuj · Biegaj mądrze" : "Darmowy kurs · Biegaj mądrze") : "Kurs ukończony"}</span>
-          <span className="mt-0.5 block truncate text-[15px] font-medium">{next ? next.title : "Wszystkie lekcje"}</span>
-        </span>
-        <ChevronRight className="size-4 shrink-0 text-white/25" />
-      </div>
-      <CourseBar className="mt-3.5" />
-    </Link>
+    <PhotoCard href={next ? `/app/kurs/${next.slug}` : "/app/kurs"} photo={LESSON_PHOTO[Math.max(0, i) % LESSON_PHOTO.length]} minH={160}>
+      <span className="text-[12px] font-medium text-white/65">{next ? (n ? "Kontynuuj · Biegaj mądrze" : "Darmowy kurs · Biegaj mądrze") : "Kurs ukończony"}</span>
+      <span className="mt-1 flex items-baseline gap-2.5">
+        <span className="text-[28px] font-light tabular-nums leading-none text-[#ff8a8f]">{next ? pad(i + 1) : "✓"}</span>
+        <span className="min-w-0 truncate text-[17px] font-semibold">{next ? next.title : "Wszystkie lekcje"}</span>
+      </span>
+      <CourseBar className="mt-3" />
+    </PhotoCard>
   );
 }
 

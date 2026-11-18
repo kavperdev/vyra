@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageHead, SectionHead } from "@/components/app/ui";
+import { PhotoHead, SectionHead } from "@/components/app/ui";
 import { ExerciseAnim } from "@/components/app/exercise-anim";
 import { RoutineList } from "@/components/app/routine-cards";
 import { EXERCISES, EX_CATS, type ExCat } from "@/lib/app/exercises";
@@ -10,7 +10,7 @@ export default function Exercises() {
   const cats = Object.keys(EX_CATS) as ExCat[];
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Ćwiczenia" sub="Zestawy prowadzą Cię krok po kroku. Niżej każde ćwiczenie osobno." />
+      <PhotoHead photo="legs" title="Ćwiczenia" sub="Zestawy prowadzą Cię krok po kroku. Niżej każde ćwiczenie osobno." />
       <SectionHead title="Zestawy" />
       <RoutineList />
       <SectionHead title="Jak robić każde ćwiczenie" />

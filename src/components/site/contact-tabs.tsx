@@ -15,7 +15,7 @@ export function ContactTabs() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("coaching");
   return (
     <div className="grid gap-8">
-      <div role="tablist" aria-label={en ? "Request type" : "Rodzaj zgłoszenia"} className="inline-flex w-fit flex-wrap gap-1 rounded-full border border-white/15 p-1">
+      <div role="tablist" aria-label={en ? "Request type" : "Rodzaj zgłoszenia"} className="grid w-full max-w-md grid-cols-2 gap-1 rounded-2xl border border-white/15 p-1">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -26,7 +26,7 @@ export function ContactTabs() {
             aria-controls={`panel-${t.key}`}
             onClick={() => setTab(t.key)}
             className={cn(
-              "h-10 rounded-full px-5 text-sm font-semibold transition-colors",
+              "min-h-10 rounded-xl px-3 py-2 text-[13px] font-semibold leading-tight transition-colors sm:text-sm",
               tab === t.key ? "bg-white text-black" : "text-white/60 hover:text-white",
             )}
           >

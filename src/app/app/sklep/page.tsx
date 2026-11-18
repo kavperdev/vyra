@@ -1,7 +1,7 @@
 import { Check, Gift, ShieldCheck, Tent } from "lucide-react";
 import { CoachCards, MethodPicker, TrialButton } from "@/components/app/shop";
 import { MethodCompare } from "@/components/app/method-compare";
-import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { Group, Row, SectionHead } from "@/components/app/ui";
 import { listCamps, listCoachingPlans } from "@/lib/data/camps";
 import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
@@ -33,7 +33,18 @@ export default async function AppShop() {
   const c = coaching.filter((p) => p.visible).sort((a, b) => a.sort - b.sort);
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title={store ? "VYRA Method" : t("Sklep", "Shop")} sub={store ? t("Co daje VYRA Method i jak zacząć.", "What VYRA Method gives you and how to start.") : t("Wszystko trafia na Twoje konto VYRA.", "Everything goes to your VYRA account.")} />
+      {/* Brand film as the header: the shop is where VYRA should feel like a brand, not a price list. */}
+      <div className="relative mb-1 flex min-h-[220px] flex-col justify-end overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#0c0c0e]">
+        <video src="/site/manifest.mp4" poster="/site/manifest-poster.jpg" autoPlay muted loop playsInline aria-hidden className="absolute inset-0 size-full object-cover grayscale" />
+        <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/0" />
+        <div className="relative p-4">
+          <h1 className="text-[30px] font-semibold leading-[1.05] tracking-[-0.025em]">
+            {store ? "VYRA Method" : t("Sklep", "Shop")}
+            <span className="text-[var(--accent)]">.</span>
+          </h1>
+          <p className="mt-1.5 text-[13.5px] text-white/70">{store ? t("Co daje VYRA Method i jak zacząć.", "What VYRA Method gives you and how to start.") : t("Wszystko trafia na Twoje konto VYRA.", "Everything goes to your VYRA account.")}</p>
+        </div>
+      </div>
 
       {premium ? (
         <Link href="/athlete/metoda" className="flex items-center gap-3.5 rounded-[22px] bg-white p-5 text-black active:scale-[0.985]">
