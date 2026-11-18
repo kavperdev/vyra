@@ -6,6 +6,7 @@ import { Confetti } from "@/components/app/motion";
 import { AccessProvider } from "@/components/app/access";
 import { DiarySync, type DoneSession } from "@/components/app/diary-sync";
 import { Assistant } from "@/components/app/assistant";
+import { ShareSync } from "@/components/app/moments";
 import { createClient } from "@/lib/supabase/server";
 import { premiumStatus } from "@/lib/app/premium";
 import { IosInstallNudge } from "@/components/app/ios-install-nudge";
@@ -93,6 +94,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </main>
       <AppTabBar />
       <Assistant signedIn={!!user} />
+      <ShareSync signedIn={!!user} />
       <Onboarding signedIn={!!user} />
       <AccountSync signedIn={!!user} />
       <IosInstallNudge />

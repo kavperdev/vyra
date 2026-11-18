@@ -1,4 +1,4 @@
-import { CalendarDays, Moon, Trophy, Users } from "lucide-react";
+import { CalendarDays, Flame, Moon, Trophy, Users } from "lucide-react";
 import { TodayPlan } from "@/components/app/today-plan";
 import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { WeekStrip } from "@/components/app/week-strip";
@@ -89,6 +89,7 @@ export default async function AppHome() {
 
         <SectionHead title={t("W VYRA", "At VYRA")} />
         <Group>
+          <Row href="/app/znajomi" icon={<Flame className="size-4" />} title={t("Ekipa", "Crew")} sub={t("Treningi znajomych, 🔥 i komentarze", "Friends' sessions, 🔥 and comments")} />
           <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club VYRA" sub={t("Czwartki 18:00 · Park Aleksandria", "Thursdays 18:00 · Park Aleksandria")} />
           {live ? (
             <Row

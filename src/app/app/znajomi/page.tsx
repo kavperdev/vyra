@@ -1,4 +1,5 @@
-import { FriendsView } from "@/components/app/friends";
+import { Suspense } from "react";
+import { FriendsTabs } from "@/components/app/friends-tabs";
 import { PageHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -9,8 +10,10 @@ export default async function AppFriends() {
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   return (
     <div className="app-rise grid grid-cols-1">
-      <PageHead title="Znajomi" sub="Ranking kilometrów z ludźmi, z którymi biegasz." />
-      <FriendsView signedIn={!!user} />
+      <PageHead title="Ekipa" sub="Treningi znajomych, 🔥 i komentarze. Ranking kilometrów." />
+      <Suspense>
+        <FriendsTabs signedIn={!!user} />
+      </Suspense>
     </div>
   );
 }

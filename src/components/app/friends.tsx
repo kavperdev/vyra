@@ -144,7 +144,7 @@ export function FriendsView({ signedIn }: { signedIn: boolean }) {
             <Copy className="size-4" /> {copied ? "Skopiowano" : "Wyślij znajomemu"}
           </button>
         </div>
-        <p className="mt-2 text-[12px] leading-relaxed text-white/40">Kto doda Twój kod, zobaczy Twoje imię, kilometry z tygodnia i miesiąca oraz serię. Nic więcej.</p>
+        <p className="mt-2 text-[12px] leading-relaxed text-white/40">Kto doda Twój kod, zobaczy Twoje imię, kilometry z tygodnia i miesiąca oraz serię. Treningi zobaczy w Ekipie tylko wtedy, gdy włączysz udostępnianie.</p>
       </Card>
 
       <Card className="p-4">
