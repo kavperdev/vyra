@@ -1,15 +1,10 @@
 import Link from "next/link";
-import { Activity, Calculator, CalendarDays, Dumbbell, Footprints, Moon, Plus, TimerReset, Trophy, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { FormCard } from "@/components/app/form-hub";
-import { CourseCard } from "@/components/app/course-progress";
-import { ForYou } from "@/components/app/for-you";
+import { CalendarDays, Moon, Trophy, Users } from "lucide-react";
 import { TodayPlan } from "@/components/app/today-plan";
 import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { WeekStrip } from "@/components/app/week-strip";
-import { HomeWeek } from "@/components/app/run-log";
 import { Today } from "@/components/app/today";
-import { Card, Chip, Group, IconTile, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
+import { Chip, Group, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { TodayRings } from "@/components/app/rings";
 import { getCurrentUser } from "@/lib/auth";
@@ -63,85 +58,40 @@ export default async function AppHome() {
   const first = (user?.profile.full_name ?? "").trim().split(/\s+/)[0];
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
   const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
-  const quick = [
-    { href: "/app/dziennik?add=1", icon: Plus, label: t("Dodaj trening", "Log run"), main: true },
-    { href: "/app/forma", icon: Activity, label: t("Forma", "Form") },
-    { href: "/app/cel", icon: CalendarDays, label: t("Plan", "Plan") },
-    ...(todayISO() <= "2027-05-22" ? [{ href: "/app/nocna", icon: Moon, label: "Nocna Ekipa", main: false }] : []),
-  ];
-
   return (
     <div className="app-rise app-wide grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-10">
-      <PhotoCard photo={photoOfDay(todayISO())} minH={170} pos="center 40%" className="lg:col-span-2">
+      <PhotoCard photo={photoOfDay(todayISO())} minH={130} pos="center 40%" className="lg:col-span-2">
         <p className="text-[12px] font-medium capitalize tracking-wide text-white/65">{today}</p>
-        <h1 className="mt-1 text-[30px] font-semibold leading-[1.05] tracking-[-0.025em]">
+        <h1 className="mt-1 text-[28px] font-semibold leading-[1.05] tracking-[-0.025em]">
           {hello}
           {first ? `, ${first}` : ""}
           <span className="text-[var(--accent)]">.</span>
         </h1>
       </PhotoCard>
 
-      <div className="lg:col-span-2">
+      {/* Dziś = three questions only: how am I, what do I do today, how is the week. The rest lives in the tabs. */}
+      <div className="mt-4 lg:col-span-2">
         <TodayRings />
       </div>
 
       <div className="grid min-w-0 grid-cols-1 content-start">
-      <WeekStrip planned={week} />
-
-      {!paid ? <TodayPlan /> : user ? <PlanToday sessions={todays} /> : null}
-
-      {/* Shortcuts as quiet chips: the tab bar already covers the big sections. */}
-      <div className="-mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
-        {quick.map((q) => (
-          <Link key={q.href} href={q.href} className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition active:scale-95", q.main ? "bg-[var(--accent)] text-white" : "border border-white/[0.08] bg-white/[0.04] text-white/85")}>
-            <q.icon className="size-4" strokeWidth={2} />
-            {q.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-3">
-        <Today synced={synced} athlete={athlete} part="ready" />
-      </div>
-
-      <TodayRoutine />
-
-      <SectionHead title={t("Twoja forma", "Your form")} href="/app/forma" more={t("Szczegóły", "Details")} />
-      <FormCard />
-
-      <SectionHead title={t("Dziennik", "Log")} href="/app/dziennik" more={t("Dodaj bieg", "Add run")} />
-      <HomeWeek />
+        <div className="mt-3">
+          <Today synced={synced} athlete={athlete} part="ready" />
+        </div>
+        {!paid ? <TodayPlan /> : user ? <PlanToday sessions={todays} /> : null}
+        <TodayRoutine />
+        <WeekStrip planned={week} />
       </div>
 
       <div className="grid min-w-0 grid-cols-1 content-start lg:pt-2">
+        <div className="mt-3">
+          <Today part="weather" />
+        </div>
 
-      <SectionHead title={t("Warunki do biegu", "Running conditions")} />
-      <Today part="weather" />
-
-      <ForYou />
-
-
-      <SectionHead title={t("Ucz się", "Learn")} href="/app/wiedza" more={t("Wiedza", "Learn")} />
-      <CourseCard />
-
-      <SectionHead title={t("Narzędzia", "Tools")} href="/app/narzedzia" more={t("Wszystkie", "All")} />
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
-        {[
-          { href: "/app/biblioteka", icon: Dumbbell, title: t("Biblioteka", "Library"), sub: t("18 treningów", "18 workouts") },
-          { href: "/app/narzedzia?t=paliwo", icon: Calculator, title: t("Paliwo na start", "Race fuel"), sub: t("plan żeli i picia", "gels and drinks plan") },
-          { href: "/app/strategia", icon: Trophy, title: t("Strategia na start", "Race strategy"), sub: t("tempo na każdy km", "pace for every km") },
-          { href: "/app/timer", icon: TimerReset, title: t("Timer interwałów", "Interval timer"), sub: t("sygnał przy każdej zmianie", "a beep at every change") },
-          { href: "/app/bieg", icon: Footprints, title: t("Bieg z telefonem", "Run with phone"), sub: t("GPS, gdy nie masz zegarka", "GPS when you have no watch") },
-          { href: "/app/znajomi", icon: Users, title: t("Znajomi", "Friends"), sub: t("ranking kilometrów", "kilometre ranking") },
-        ].map((x) => (
-          <IconTile key={x.href} href={x.href} icon={<x.icon />} title={x.title} />
-        ))}
-      </div>
-
-      {live ? (
-        <>
-          <SectionHead title={t("Wyzwanie", "Challenge")} href="/app/wyzwania" more={t("Wszystkie", "All")} />
-          <Group>
+        <SectionHead title={t("W VYRA", "At VYRA")} />
+        <Group>
+          <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club VYRA" sub={t("Czwartki 18:00 · Park Aleksandria", "Thursdays 18:00 · Park Aleksandria")} />
+          {live ? (
             <Row
               href={`/app/wyzwania/${live.slug}`}
               icon={<Trophy className="size-4" />}
@@ -149,19 +99,11 @@ export default async function AppHome() {
               sub={`${formatDate(live.starts_on, "d.MM")} – ${formatDate(live.ends_on, "d.MM")}`}
               right={<Chip tone={challengeState(live) === "live" ? "good" : "quiet"}>{challengeState(live) === "live" ? t("trwa", "live") : t("wkrótce", "soon")}</Chip>}
             />
-          </Group>
-        </>
-      ) : null}
-
-      {!paid ? (
-        <Card href="/app/sklep" className="mt-7 overflow-hidden p-0">
-          <div className="h-32 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/site/night-city.jpg)" }} />
-          <div className="p-4">
-            <Chip tone="accent">{t("14 dni za darmo, bez karty", "14 days free, no card")}</Chip>
-            <p className="mt-2.5 text-[17px] font-semibold leading-snug">{t("VYRA Method: plan, który co tydzień dopasowuje się do Ciebie", "VYRA Method: a plan that adapts to you every week")}</p>
-          </div>
-        </Card>
-      ) : null}
+          ) : todayISO() <= "2027-05-22" ? (
+            <Row href="/app/nocna" icon={<Moon className="size-4" />} title="Nocna Ekipa" sub={t("Darmowy plan na Nocną Dychę", "Free plan for the night 10K")} />
+          ) : null}
+          {!paid ? <Row href="/app/sklep" icon={<CalendarDays className="size-4" />} title="VYRA Method" sub={t("Plan dopasowany do Ciebie · 14 dni za darmo", "A plan fitted to you · 14 days free")} /> : null}
+        </Group>
       </div>
     </div>
   );
