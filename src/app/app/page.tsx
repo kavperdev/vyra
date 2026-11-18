@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CalendarDays, Moon, Trophy, Users } from "lucide-react";
 import { TodayPlan } from "@/components/app/today-plan";
 import { PlanToday, type PlanSession } from "@/components/app/plan-today";
