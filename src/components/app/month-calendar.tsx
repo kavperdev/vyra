@@ -61,7 +61,7 @@ export function MonthCalendar({ planned = [] }: { planned?: PlannedDay[] }) {
   const monthActs = all.filter((r) => r.day.startsWith(ym));
 
   return (
-    <div className="rounded-[24px] border border-white/[0.06] bg-[#111113] p-3.5">
+    <div className="min-w-0 overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#111113] p-3.5">
       <div className="flex items-center justify-between px-1">
         <p className="text-[18px] font-semibold">
           {MONTHS[Number(ym.slice(5)) - 1]} <span className="text-white/40">{ym.slice(0, 4)}</span>
@@ -93,13 +93,13 @@ export function MonthCalendar({ planned = [] }: { planned?: PlannedDay[] }) {
           const Icon = sport ? ICON[sport] : null;
           const isToday = d === today;
           return (
-            <button key={d} type="button" onClick={() => setSel(d)} className={cn("relative mx-auto grid size-10 place-items-center rounded-full text-[13px] tabular-nums transition", out && "opacity-25", sel === d && "ring-2 ring-white/70", isToday && sel !== d && "ring-1 ring-white/30")}>
+            <button key={d} type="button" onClick={() => setSel(d)} className={cn("relative mx-auto grid size-9 place-items-center rounded-full text-[13px] tabular-nums transition sm:size-10", out && "opacity-25", sel === d && "ring-2 ring-white/70", isToday && sel !== d && "ring-1 ring-white/30")}>
               {main && Icon ? (
-                <span className={cn("grid size-10 place-items-center rounded-full", TONE[sport!])}>
+                <span className={cn("grid size-9 place-items-center rounded-full sm:size-10", TONE[sport!])}>
                   <Icon className="size-[18px]" />
                 </span>
               ) : pl.length && Icon ? (
-                <span className={cn("grid size-10 place-items-center rounded-full border border-dashed", d < today ? "border-white/15 text-white/25" : "border-white/35 text-white/70")}>
+                <span className={cn("grid size-9 place-items-center rounded-full border border-dashed sm:size-10", d < today ? "border-white/15 text-white/25" : "border-white/35 text-white/70")}>
                   <Icon className="size-[16px]" />
                 </span>
               ) : (
@@ -116,14 +116,14 @@ export function MonthCalendar({ planned = [] }: { planned?: PlannedDay[] }) {
           {sel === today ? "Dziś, " : ""}
           {new Intl.DateTimeFormat("pl-PL", { weekday: sel === today ? undefined : "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${sel}T12:00:00Z`))}
         </p>
-        <div className="mt-2 grid gap-1.5">
+        <div className="mt-2 grid min-w-0 grid-cols-1 gap-1.5">
           {done.map((r) => (
             <Entry key={r.id} r={r} />
           ))}
           {todo.map((p, i) => {
             const Icon = ICON[p.sport];
             return (
-              <Link key={i} href={p.href ?? "/app/cel"} className="flex items-center gap-3 rounded-2xl border border-dashed border-white/15 px-3 py-2.5 active:scale-[0.99]">
+              <Link key={i} href={p.href ?? "/app/cel"} className="flex min-w-0 items-center gap-3 rounded-2xl border border-dashed border-white/15 px-3 py-2.5 active:scale-[0.99]">
                 <span className="grid size-9 shrink-0 place-items-center rounded-full border border-dashed border-white/30 text-white/70">
                   <Icon className="size-4" />
                 </span>
@@ -162,7 +162,7 @@ function Entry({ r }: { r: Run }) {
   const Icon = ICON[sport];
   const run = sport === "run" && r.km > 0;
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
+    <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-white/[0.04] px-3 py-2.5">
       <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", TONE[sport])}>
         <Icon className="size-4" />
       </span>
