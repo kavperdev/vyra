@@ -110,8 +110,41 @@ export function formatKg(value: number | null | undefined): string {
 }
 
 // Dates follow the active language (see lib/i18n/runtime); `lang` overrides it.
+/**
+ * An instant as the wall clock in Poland. date-fns formats in the runtime's own zone (UTC on the
+ * server, the phone's zone in the browser), so 17:00Z showed as 17:00 on the site and 18:00 in e-mails.
+ */
+export function inWarsaw(d: Date): Date {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Warsaw", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" })
+      .formatToParts(d)
+      .map((x) => [x.type, x.value]),
+  );
+  return new Date(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute), Number(p.second));
+}
+
+/** "2026-11-19T18:00" typed as Polish time → ISO instant (handles summer and winter time). */
+export function warsawLocalToIso(local: string): string {
+  const [date, time = "00:00"] = local.split("T");
+  const [y, m, d] = date.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  const guess = Date.UTC(y, m - 1, d, h, mi);
+  const shown = inWarsaw(new Date(guess));
+  const offset = Date.UTC(shown.getFullYear(), shown.getMonth(), shown.getDate(), shown.getHours(), shown.getMinutes()) - guess;
+  return new Date(guess - offset).toISOString();
+}
+
+/** ISO instant → "2026-11-19T18:00" in Polish time, for <input type="datetime-local">. */
+export function isoToWarsawLocal(iso: string | null): string {
+  if (!iso) return "";
+  const d = inWarsaw(new Date(iso));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function formatDate(iso: string | Date, pattern = "d MMM yyyy", lang?: Lang): string {
-  const d = typeof iso === "string" ? parseISO(iso) : iso;
+  // A plain date ("2026-11-19") is a calendar day; anything with a time is an instant shown in Polish time.
+  const d = typeof iso === "string" ? (iso.length > 10 ? inWarsaw(parseISO(iso)) : parseISO(iso)) : inWarsaw(iso);
   return format(d, pattern, { locale: (lang ?? activeLang()) === "en" ? enGB : pl });
 }
 

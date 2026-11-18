@@ -10,17 +10,12 @@ import { Checkbox, Field, Input, Textarea } from "@/components/ui/form-controls"
 import { PhotoUpload } from "@/components/content/photo-upload";
 import { announceRunClub, deleteRunClubEvent, deleteRunClubPhoto, deleteTestimonial, notifyRunClubSubscribers, saveRunClubEvent, saveRunClubPhoto, saveTestimonial } from "@/lib/actions/club";
 import type { RunClubEvent, RunClubPhoto, RunClubSignup, Testimonial } from "@/lib/data/club";
-import { formatDate } from "@/lib/format";
+import { formatDate, isoToWarsawLocal, warsawLocalToIso } from "@/lib/format";
 import { channelLabel } from "@/lib/run-club-channels";
 import { tl } from "@/lib/i18n/runtime";
 
-/** "2026-11-05T18:30" for <input type="datetime-local"> in the browser's time zone. */
-function toLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+/** The form shows and takes Polish time, whatever zone the phone or laptop is in. */
+const toLocalInput = isoToWarsawLocal;
 
 function EventForm({ ev, onDone }: { ev: RunClubEvent | null; onDone?: () => void }) {
   const router = useRouter();
@@ -48,7 +43,7 @@ function EventForm({ ev, onDone }: { ev: RunClubEvent | null; onDone?: () => voi
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const res = await saveRunClubEvent(ev?.id ?? null, { ...v, starts_at: v.starts_at ? new Date(v.starts_at).toISOString() : "" });
+          const res = await saveRunClubEvent(ev?.id ?? null, { ...v, starts_at: v.starts_at ? warsawLocalToIso(v.starts_at) : "" });
           if (!res.ok) {
             setErrors(res.fieldErrors ?? {});
             toast.error(res.error);
