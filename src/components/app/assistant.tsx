@@ -212,8 +212,8 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
                 ask(text);
               }}
             >
-              <input value={text} onChange={(e) => setText(e.target.value)} disabled={!signedIn} placeholder={signedIn ? "Napisz pytanie…" : "Zaloguj się, żeby pisać"} className="h-11 min-w-0 flex-1 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[16px] outline-none placeholder:text-white/30" />
-              <button type="submit" aria-label="Wyślij" disabled={!text.trim() || busy || !signedIn} className={cn("grid size-11 shrink-0 place-items-center rounded-full bg-white text-black transition active:scale-90", (!text.trim() || busy) && "opacity-30")}>
+              <input value={text} onChange={(e) => setText(e.target.value)} disabled={!signedIn} placeholder={signedIn ? "Napisz pytanie…" : "Zaloguj się, żeby pisać"} enterKeyHint="send" className="h-11 w-full min-w-0 flex-1 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[16px] outline-none placeholder:text-white/30" />
+              <button type="button" onClick={() => ask(text)} aria-label="Wyślij" disabled={!text.trim() || busy || !signedIn} className={cn("grid size-11 shrink-0 place-items-center rounded-full bg-white text-black transition active:scale-90", (!text.trim() || busy) && "opacity-30")}>
                 <ArrowUp className="size-5" />
               </button>
             </form>
