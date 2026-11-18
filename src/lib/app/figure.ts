@@ -187,3 +187,49 @@ export const ANIMS = {
 export type AnimKey = keyof typeof ANIMS;
 /** Props drawn with the figure (a box for step-ups). */
 export const PROPS: Partial<Record<AnimKey, "box" | "mat">> = { stepup: "box", bridge: "mat", deadbug: "mat", plank: "mat", pushup: "mat" };
+
+/* ---------- drawing: a solid athlete silhouette (tapered limbs, shoes), not a stick figure ---------- */
+
+export type Part = { d: string; fill: string };
+const f1 = (n: number) => Math.round(n * 10) / 10;
+/** A tapered limb: a quad between two widths, with round ends. */
+function limbParts(a: P, b: P, wa: number, wb: number, fill: string): Part[] {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const q = `M${f1(a.x + nx * wa / 2)} ${f1(a.y + ny * wa / 2)}L${f1(b.x + nx * wb / 2)} ${f1(b.y + ny * wb / 2)}L${f1(b.x - nx * wb / 2)} ${f1(b.y - ny * wb / 2)}L${f1(a.x - nx * wa / 2)} ${f1(a.y - ny * wa / 2)}Z`;
+  return [{ d: q, fill }, dot(a, wa / 2, fill), dot(b, wb / 2, fill)];
+}
+const dot = (c: P, r: number, fill: string): Part => ({ d: `M${f1(c.x - r)} ${f1(c.y)}a${f1(r)} ${f1(r)} 0 1 0 ${f1(2 * r)} 0a${f1(r)} ${f1(r)} 0 1 0 ${f1(-2 * r)} 0Z`, fill });
+const lerp = (a: P, b: P, t: number): P => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+
+export type Layer = { parts: Part[]; outline: boolean };
+/**
+ * Pictogram style: far arm and leg in grey, head, near leg, red VYRA singlet, near arm on top.
+ * Shoes in the accent colour.
+ */
+export function bodyLayers(s: Shape, c = { near: "#f4f4f5", far: "#55555b", accent: "#ff5a60", farAccent: "#8f3236", top: "#e5343b" }): Layer[] {
+  const leg = (k: Shape["n"], col: string, shoe: string) => {
+    const heel = lerp(k.toe, k.ankle, 1.3);
+    const calf = lerp(k.knee, k.ankle, 0.35);
+    return [
+      ...limbParts(s.hip, k.knee, 14, 9, col),
+      ...limbParts(k.knee, calf, 9, 8.6, col),
+      ...limbParts(calf, k.ankle, 8.6, 5, col),
+      ...limbParts(heel, k.toe, 6.2, 4.4, shoe),
+    ];
+  };
+  const arm = (k: Shape["n"], col: string) => [...limbParts(s.shoulder, k.elbow, 7.8, 6, col), ...limbParts(k.elbow, k.hand, 6, 4.4, col), dot(k.hand, 3.2, col)];
+  const chest = lerp(s.hip, s.shoulder, 0.72);
+  return [
+    { parts: arm(s.f, c.far), outline: false },
+    { parts: leg(s.f, c.far, c.farAccent), outline: false },
+    { parts: [...limbParts(s.shoulder, s.neck, 6, 5.5, c.near), dot(s.head, 8, c.near)], outline: false },
+    { parts: leg(s.n, c.near, c.accent), outline: false },
+    // VYRA singlet: the red top makes the body read as a person, and the near arm stands out on it.
+    { parts: [...limbParts(s.hip, chest, 15, 16.5, c.top), ...limbParts(chest, s.shoulder, 16.5, 12, c.top)], outline: false },
+    { parts: arm(s.n, c.near), outline: false },
+  ];
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ANIMS, PROPS, poseAt, shape, type AnimKey, type Shape } from "@/lib/app/figure";
+import { ANIMS, PROPS, bodyLayers, poseAt, shape, type AnimKey, type Shape } from "@/lib/app/figure";
 import { cn } from "@/lib/utils";
 
 const G = 100; // ground line in figure units
@@ -27,25 +27,19 @@ function frameBox(key: AnimKey) {
 }
 
 function Figure({ s, prop, box }: { s: Shape; prop?: "box" | "mat"; box: { x: number; w: number } }) {
-  const ln = (a: Pt, b: Pt, w: number, c: string) => <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={c} strokeWidth={w} strokeLinecap="round" />;
-  const dim = "rgba(255,255,255,0.32)";
   return (
     <>
       <line x1={box.x} y1={G + 1} x2={box.x + box.w} y2={G + 1} stroke="rgba(255,255,255,0.12)" strokeWidth={1.2} />
       {prop === "mat" ? <rect x={box.x + box.w * 0.08} y={G - 0.5} width={box.w * 0.84} height={2.5} rx={1.2} fill="rgba(255,90,96,0.25)" /> : null}
       {prop === "box" ? <rect x={68} y={G - 27} width={40} height={27.5} rx={2} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} /> : null}
-      {ln(s.shoulder, s.f.elbow, 5.5, dim)}
-      {ln(s.f.elbow, s.f.hand, 5, dim)}
-      {ln(s.hip, s.f.knee, 7, dim)}
-      {ln(s.f.knee, s.f.ankle, 6, dim)}
-      {ln(s.f.ankle, s.f.toe, 4.5, dim)}
-      {ln(s.hip, s.neck, 9, "#fff")}
-      <circle cx={s.head.x} cy={s.head.y} r={7.5} fill="#fff" />
-      {ln(s.hip, s.n.knee, 7, "#ff5a60")}
-      {ln(s.n.knee, s.n.ankle, 6, "#ff5a60")}
-      {ln(s.n.ankle, s.n.toe, 4.5, "#ff5a60")}
-      {ln(s.shoulder, s.n.elbow, 5.5, "#fff")}
-      {ln(s.n.elbow, s.n.hand, 5, "#fff")}
+      {bodyLayers(s).map((l, i) => (
+        <g key={i}>
+          {l.outline ? l.parts.map((p, j) => <path key={`o${j}`} d={p.d} fill="none" stroke="#0c0c0e" strokeWidth={2.6} strokeLinejoin="round" />) : null}
+          {l.parts.map((p, j) => (
+            <path key={j} d={p.d} fill={p.fill} />
+          ))}
+        </g>
+      ))}
     </>
   );
 }
