@@ -60,7 +60,8 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
   const [place, setPlace] = useState<Place | null>(null);
 
   useEffect(() => {
-    if (!get(ONBOARD_KEY)) setOpen(true);
+    // Only for a signed-in runner who hasn't set the app up: someone signed out lands on the sign-in screen, not a quiz.
+    if (signedIn && !get(ONBOARD_KEY)) setOpen(true);
     const me = get<Me>(ME_KEY);
     if (me) {
       setGoal(me.goal);
@@ -81,7 +82,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
       window.removeEventListener(OPEN_ONBOARDING, reopen);
       window.removeEventListener(STORE_EVENT, synced);
     };
-  }, []);
+  }, [signedIn]);
 
   useEffect(() => {
     document.documentElement.style.overflow = open ? "hidden" : "";
@@ -104,8 +105,6 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
       { timeout: 10000 },
     );
 
-  const acct = !signedIn; // free account step for guests
-  // Guests end on the account step: the app runs on a (free) account, so there is no "later".
   const steps = 6;
   const canNext = step === 1 ? !!goal : step === 2 ? !!level : true;
   const next = () => (step < steps - 1 ? setStep(step + 1) : finish());
@@ -119,7 +118,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
             <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors duration-300", i <= step ? "bg-white" : "bg-white/12")} />
           ))}
         </div>
-        {step > 0 && step < steps - 1 && !(step === 5 && acct) ? (
+        {step > 0 && step < steps - 1 ? (
           <button type="button" onClick={() => setStep(step + 1)} className="text-[13px] text-white/45">
             Pomiń
           </button>
@@ -198,26 +197,6 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
               ))}
             </div>
           </>
-        ) : step === 5 && acct ? (
-          <>
-            <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Załóż darmowe konto</h2>
-            <p className="mb-2 text-[14px] leading-relaxed text-white/50">Twój plan, dziennik biegów i postępy zapiszą się na stałe. Zmienisz telefon albo wyczyścisz pamięć i nic nie zginie.</p>
-            {[
-              "Darmowy plan „Zacznij biegać” z timerem",
-              "Dziennik i import biegów ze Stravy",
-              "Wyzwania i odznaki z innymi biegaczami",
-            ].map((x) => (
-              <div key={x} className="flex items-center gap-3 rounded-[18px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-[14.5px]">
-                <span className="size-1.5 shrink-0 rounded-full bg-[var(--accent)]" /> {x}
-              </div>
-            ))}
-            <Link href="/app/konto?next=/app/wybierz" onClick={() => finish(false)} className="mt-3 flex h-14 items-center justify-center rounded-full bg-[var(--accent)] text-[16px] font-semibold text-white active:scale-[0.98]">
-              Załóż konto za darmo
-            </Link>
-            <Link href="/app/zaloguj?next=/app" onClick={() => finish(false)} className="flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-medium active:scale-[0.98]">
-              Mam konto, zaloguj się
-            </Link>
-          </>
         ) : (
           <>
             <h2 className="text-[26px] font-semibold leading-tight tracking-[-0.02em]">Gotowe. Twój plan:</h2>
@@ -261,7 +240,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
         )}
       </div>
 
-      <div className={cn("mx-auto w-full max-w-md px-5 pt-3", step === 5 && acct && "hidden")}>
+      <div className="mx-auto w-full max-w-md px-5 pt-3">
         <button
           type="button"
           disabled={!canNext}

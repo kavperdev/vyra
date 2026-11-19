@@ -35,9 +35,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   // Someone a club signed up uses the club's app, never the VYRA runner app (shop, Method, readiness...).
   // Password reset and legal pages stay reachable.
-  if (user && (await myClub())) {
+  // Coaches have their own panel too: the runner app is not theirs.
+  if (user && (user.profile.role === "coach" || (await myClub()))) {
     const path = (await headers()).get("x-vyra-path") ?? "";
-    if (!/^\/app\/(haslo|dokument|kontakt|zaloguj)(\/|$)/.test(path)) redirect("/athlete");
+    if (!/^\/app\/(haslo|dokument|kontakt|zaloguj)(\/|$)/.test(path)) redirect(user.profile.role === "coach" ? "/coach" : "/athlete");
   }
   const { t } = await getT();
   const access = user ? await premiumStatus().catch(() => ({ signedIn: true, premium: false })) : { signedIn: false, premium: false };

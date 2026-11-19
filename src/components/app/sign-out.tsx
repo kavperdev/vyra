@@ -18,7 +18,7 @@ export function SignOutButton({ label = "Wyloguj się" }: { label?: string }) {
         } finally {
           // The next person on this phone must not see this account's data.
           wipeAccountData();
-          window.location.assign("/app");
+          window.location.assign("/app/zaloguj");
         }
       }}
       className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-[#111113] text-[15px] font-medium text-[#ff6a6f] transition active:scale-[0.98] disabled:opacity-50"

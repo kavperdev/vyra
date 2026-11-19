@@ -71,7 +71,7 @@ export function useStoreTick(): number {
 }
 
 /** Device settings that are not anyone's data: they stay when the account on this phone changes. */
-const DEVICE_KEYS = new Set(["vyra-src", "vyra-kanal", "vyra-player-voice", "vyra-consent", "vyra-lang", "vyra-ios-nudge", "vyra-cookie-settings", "vyra-nudge-snooze"]);
+const DEVICE_KEYS = new Set(["vyra-src", "vyra-kanal", "vyra-player-voice", "vyra-consent", "vyra-lang", "vyra-ios-nudge", "vyra-cookie-settings", "vyra-nudge-snooze", "vyra-place"]);
 export const OWNER_KEY = "vyra-owner";
 
 /**
