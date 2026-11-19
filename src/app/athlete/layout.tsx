@@ -63,7 +63,6 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
     ...(linked ? [{ href: "/athlete/wiadomosci", label: t("Trener", "Coach"), icon: "inbox", badge: msgUnread, mobile: true } as NavItem] : []),
     ...(method ? [{ href: "/athlete/metoda", label: "VYRA Method", icon: "method" } as NavItem] : []),
-    ...(club ? [{ href: "/athlete/klub", label: club.name, icon: "club" } as NavItem] : []),
     { href: "/athlete/history", label: t("Historia", "History"), icon: "history", mobile: !hasCamp },
     { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress", mobile: true },
     { href: "/athlete/records", label: t("Rekordy i cele", "Records & goals"), icon: "records", mobile: true },
@@ -73,7 +72,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     { href: "/athlete/settings", label: t("Ustawienia", "Settings"), icon: "settings" },
   ];
   return (
-    <AppShell role="athlete" roleLabel={club ? `${t("Zawodnik", "Athlete")} · ${club.name}` : undefined} name={user.profile.full_name} items={items} unread={unread}>
+    <AppShell role="athlete" name={user.profile.full_name} items={items} unread={unread}>
       <AccessGate access={access}>{children}</AccessGate>
     </AppShell>
   );
