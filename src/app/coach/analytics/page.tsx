@@ -75,7 +75,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
       <div className="grid gap-6">
         <PageHeader eyebrow={tl("Analityka", "Analytics")} title={selected.full_name} actions={<PeriodFilter weeks={weeks} basePath="/coach/analytics" extra={{ athlete: selected.id, kind: sp.kind }} />} />
         {header}
-        <KindFilter current={kind} link={filterLink} />
+        <KindFilter current={kind} link={filterLink} sport={sport} />
         <AthleteAnalytics sessions={sessions} strength={strength} today={today} weeks={weeks} kind={kind === "running" ? "running" : kind ? "strength" : "all"} />
       </div>
     );
