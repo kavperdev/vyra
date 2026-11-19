@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Activity,
@@ -81,6 +82,27 @@ const STEPS: Record<GuideVariant, Step[]> = {
 
 const key = (userId: string, v: GuideVariant) => `vyraguide:${userId}:${v}`;
 
+const GUIDE_CSS = `
+@keyframes g-in{from{opacity:0}to{opacity:1}}
+@keyframes g-next{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes g-prev{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes g-up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes g-pop{0%{opacity:0;transform:scale(.6) rotate(-8deg)}60%{opacity:1;transform:scale(1.08) rotate(2deg)}100%{transform:none}}
+@keyframes g-pulse{0%,100%{box-shadow:0 0 0 0 rgba(229,52,59,.45)}50%{box-shadow:0 0 0 18px rgba(229,52,59,0)}}
+@keyframes g-glow{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+.guide-in{animation:g-in .3s ease-out both}
+.guide-next{animation:g-next .45s cubic-bezier(.2,.8,.2,1) both}
+.guide-prev{animation:g-prev .45s cubic-bezier(.2,.8,.2,1) both}
+.guide-up{animation:g-up .5s cubic-bezier(.2,.8,.2,1) both}
+.guide-pop{animation:g-pop .6s cubic-bezier(.2,.8,.2,1) both}
+.guide-pulse{animation:g-pulse 2s ease-in-out infinite}
+.guide-fade{animation:g-in .4s .15s ease-out both}
+.guide-bar{animation:g-up .5s .1s cubic-bezier(.2,.8,.2,1) both}
+.guide-glow{animation:g-glow 9s ease-in-out infinite}
+.guide-glow2{animation:g-glow 11s ease-in-out infinite reverse}
+@media (prefers-reduced-motion:reduce){.guide-in,.guide-next,.guide-prev,.guide-up,.guide-pop,.guide-pulse,.guide-fade,.guide-bar,.guide-glow,.guide-glow2{animation:none}}
+`;
+
 /**
  * A short walk through the app for someone who opens it for the first time: which tabs there are, what is
  * in each one and what to do first. Shown once per account and app (runner, club member, coach);
@@ -88,7 +110,13 @@ const key = (userId: string, v: GuideVariant) => `vyraguide:${userId}:${v}`;
  */
 export function AppGuide({ variant, userId, next = null, auto = true, coach = true }: { variant: GuideVariant; userId: string; next?: GuideNext; auto?: boolean; coach?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [i, setI] = useState(0);
+  const [i, setStep] = useState(0);
+  const [dir, setDir] = useState<1 | -1>(1);
+  const [touch, setTouch] = useState<number | null>(null);
+  const setI = (n: number) => {
+    setDir(n >= i ? 1 : -1);
+    setStep(n);
+  };
   // A club member without a coach has no "Trener" tab.
   const tabs = variant === "club" && !coach ? TABS.club.filter((t) => t.label !== "Trener") : TABS[variant];
   const steps = (variant === "club" && !coach ? STEPS.club.filter((s) => s.tab !== 2).map((s) => (s.tab && s.tab > 2 ? { ...s, tab: s.tab - 1 } : s)) : STEPS[variant]).concat(
@@ -108,7 +136,7 @@ export function AppGuide({ variant, userId, next = null, auto = true, coach = tr
     };
     check();
     const reopen = () => {
-      setI(0);
+      setStep(0);
       setOpen(true);
     };
     window.addEventListener(OPEN_GUIDE, reopen);
@@ -131,12 +159,27 @@ export function AppGuide({ variant, userId, next = null, auto = true, coach = tr
   const s = steps[i];
   const last = i === steps.length - 1;
 
-  return (
-    <div role="dialog" aria-modal="true" aria-label="Przewodnik po aplikacji" className="fixed inset-0 z-[70] flex flex-col bg-[#060607]/95 backdrop-blur-xl">
+  // Rendered into <body>: inside the page a transformed parent would trap it under the header, the tab bar and Puls.
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label="Przewodnik po aplikacji" className="guide-in fixed inset-0 z-[200] flex flex-col overflow-hidden bg-[#060607]"
+      onTouchStart={(e) => setTouch(e.touches[0].clientX)}
+      onTouchEnd={(e) => {
+        if (touch == null) return;
+        const dx = e.changedTouches[0].clientX - touch;
+        setTouch(null);
+        if (dx < -60 && !last) setI(i + 1);
+        else if (dx > 60 && i > 0) setI(i - 1);
+      }}
+    >
+      <style>{GUIDE_CSS}</style>
+      <div aria-hidden className="guide-glow pointer-events-none absolute -left-40 top-1/3 size-[420px] rounded-full bg-[#e5343b]/25 blur-[90px]" />
+      <div aria-hidden className="guide-glow2 pointer-events-none absolute -right-40 bottom-10 size-[360px] rounded-full bg-[#5a6eff]/20 blur-[90px]" />
       <div className="mx-auto flex w-full max-w-md items-center gap-3 px-5 pt-[calc(env(safe-area-inset-top)+16px)]">
         <div className="flex flex-1 gap-1.5">
           {steps.map((_, n) => (
-            <span key={n} className={cn("h-1 flex-1 rounded-full transition-colors", n <= i ? "bg-white" : "bg-white/15")} />
+            <span key={n} className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
+              <span className="block h-full origin-left rounded-full bg-white transition-transform duration-500 ease-out" style={{ transform: `scaleX(${n <= i ? 1 : 0})` }} />
+            </span>
           ))}
         </div>
         <button type="button" onClick={close} aria-label="Zamknij przewodnik" className="grid size-10 place-items-center rounded-full bg-white/[0.08] active:scale-90">
@@ -144,26 +187,26 @@ export function AppGuide({ variant, userId, next = null, auto = true, coach = tr
         </button>
       </div>
 
-      <div key={i} className="app-rise mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6">
+      <div key={i} className={cn("relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6", dir > 0 ? "guide-next" : "guide-prev")}>
         {s.puls ? (
-          <div className="mb-8 flex justify-center">
-            <span className="grid size-24 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_25%,#2a2a30,#0c0c0e)] shadow-[0_10px_40px_rgba(229,52,59,0.45)] ring-1 ring-white/15">
+          <div className="guide-pop mb-8 flex justify-center">
+            <span className="guide-pulse grid size-24 place-items-center rounded-full bg-[radial-gradient(circle_at_30%_25%,#2a2a30,#0c0c0e)] shadow-[0_10px_40px_rgba(229,52,59,0.45)] ring-1 ring-white/15">
               <svg viewBox="0 0 32 32" className="size-12" aria-hidden>
                 <path d="M2 17h6l3-7 5 14 4-10 2 3h8" fill="none" stroke="#ff5a60" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </div>
         ) : s.tab !== undefined ? null : (
-          <div className="mb-8 flex justify-center">
+          <div className="guide-pop mb-8 flex justify-center">
             <span className="grid size-24 place-items-center rounded-[30px] bg-[#e5343b] text-[44px] font-black tracking-[-0.06em] text-white shadow-[0_18px_50px_-10px_rgba(229,52,59,0.7)]">{last && next ? "1" : "V"}</span>
           </div>
         )}
-        <h2 className="text-[30px] font-semibold leading-[1.1] tracking-[-0.025em]">{s.title}</h2>
-        <p className="mt-3 text-[17px] leading-relaxed text-white/75">{s.text}</p>
+        <h2 className="guide-up text-[30px] font-semibold leading-[1.1] tracking-[-0.025em]" style={{ animationDelay: "60ms" }}>{s.title}</h2>
+        <p className="guide-up mt-3 text-[17px] leading-relaxed text-white/75" style={{ animationDelay: "130ms" }}>{s.text}</p>
         {s.points ? (
           <ul className="mt-5 grid gap-2.5">
-            {s.points.map((p) => (
-              <li key={p} className="flex gap-3 rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] leading-snug">
+            {s.points.map((p, n) => (
+              <li key={p} className="guide-up flex gap-3 rounded-2xl bg-white/[0.06] px-4 py-3 text-[16px] leading-snug" style={{ animationDelay: `${200 + n * 80}ms` }}>
                 <span className="mt-[7px] size-2 shrink-0 rounded-full bg-[#ff5a60]" />
                 {p}
               </li>
@@ -173,14 +216,14 @@ export function AppGuide({ variant, userId, next = null, auto = true, coach = tr
       </div>
 
       {s.tab !== undefined ? (
-        <div className="mx-auto mb-5 flex w-full max-w-md justify-center px-4" aria-hidden>
+        <div className="guide-bar mx-auto mb-5 flex w-full max-w-md justify-center px-4" aria-hidden>
           <div className="flex items-center gap-1 rounded-full border border-white/[0.1] bg-[#18181b] p-1.5">
             {tabs.map((t, n) => {
               const on = n === s.tab;
               return (
-                <span key={t.label} className={cn("flex h-12 items-center gap-2 rounded-full transition-all duration-300", on ? "bg-white px-4 text-black" : "w-[52px] justify-center text-white/35")}>
+                <span key={t.label} className={cn("flex h-12 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-full transition-all duration-500 ease-[cubic-bezier(.2,.9,.3,1.2)]", on ? "w-[128px] bg-white text-black shadow-[0_8px_30px_rgba(255,255,255,0.18)]" : "w-[48px] text-white/35")}>
                   <t.icon className="size-[21px]" strokeWidth={on ? 2.2 : 1.8} />
-                  {on ? <span className="text-[14px] font-semibold">{t.label}</span> : null}
+                  {on ? <span className="guide-fade text-[14px] font-semibold">{t.label}</span> : null}
                 </span>
               );
             })}
@@ -204,7 +247,8 @@ export function AppGuide({ variant, userId, next = null, auto = true, coach = tr
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
