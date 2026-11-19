@@ -8,7 +8,11 @@ const STORE_SHUT = ["/app/voucher", "/app/obozy"];
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   // Layouts read the path (e.g. to send a club member out of the runner app without breaking password reset).
-  request.headers.set("x-vyra-path", path);
+  try {
+    request.headers.set("x-vyra-path", path);
+  } catch {
+    /* read-only headers on this runtime: layouts then treat the path as unknown */
+  }
   // The Android app file can't run on an iPhone: send iPhones to the install steps for Safari.
   if (path === "/download/vyra.apk" && !/android/i.test(request.headers.get("user-agent") ?? "")) {
     const url = request.nextUrl.clone();
