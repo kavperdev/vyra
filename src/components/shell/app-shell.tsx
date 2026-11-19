@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { BottomNav, SidebarNav, type NavItem } from "@/components/shell/nav";
-import { AppTabBar } from "@/components/app/tab-bar";
+import { AppTabBar, ClubTabBar } from "@/components/app/tab-bar";
 import { StayInApp } from "@/components/app/stay-in-app";
 import { PlanNav } from "@/components/shell/plan-nav";
 import { InstallHint } from "@/components/shell/install-hint";
@@ -24,7 +24,7 @@ export async function AppShell({
   children,
 }: {
   /** A club member: the app is the club's (its name and badge, its menu), with nothing of the VYRA runner app. */
-  club?: { name: string; logo_url: string | null };
+  club?: { name: string; logo_url: string | null; coach?: boolean };
   role: UserRole;
   /** Overrides the default "Trener" / "Zawodnik" label, e.g. with the staff role. */
   roleLabel?: string;
@@ -100,7 +100,11 @@ export async function AppShell({
         </main>
       </div>
 
-      {role === "athlete" && !club ? (
+      {role === "athlete" && club ? (
+        <div className="lg:hidden">
+          <ClubTabBar coach={club.coach} />
+        </div>
+      ) : role === "athlete" ? (
         <div className="lg:hidden">
           <AppTabBar />
           <StayInApp />
