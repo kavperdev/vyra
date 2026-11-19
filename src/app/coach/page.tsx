@@ -1,3 +1,6 @@
+import { coachSport } from "@/lib/clubs/member-guard";
+import { isTeamSport } from "@/lib/training/categories";
+import { ClubCoachHome } from "@/components/club/club-coach-home";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, MessageSquare, Plus } from "lucide-react";
@@ -73,6 +76,8 @@ function attentionFor(
 }
 
 export default async function CoachDashboard() {
+  // A volleyball, football or swimming club: its own day, without kilometres and running plans.
+  if (isTeamSport(await coachSport())) return <ClubCoachHome />;
   await getLang();
   const user = await requireRole("coach");
   const supabase = await createClient();

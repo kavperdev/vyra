@@ -1,3 +1,5 @@
+import { coachSport } from "@/lib/clubs/member-guard";
+import { categoriesForSport, isTeamSport } from "@/lib/training/categories";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -68,7 +70,9 @@ export default async function NewSessionPage({
 
   const date = isISODate(sp.date) ? sp.date : todayISO(user.profile.timezone);
   const athleteIds = sp.athlete && active.some((a) => a.id === sp.athlete) ? [sp.athlete] : [];
-  const kind: SessionKind = sp.kind === "strength" || sp.kind === "mobility" || sp.kind === "other" ? sp.kind : "running";
+  const sport = await coachSport();
+  const team = isTeamSport(sport);
+  const kind: SessionKind = sp.kind === "strength" || sp.kind === "mobility" || sp.kind === "other" ? sp.kind : team ? "other" : "running";
   const template = sp.template ? templates.find((t) => t.id === sp.template) : undefined;
   const base = { athlete_ids: athleteIds, scheduled_date: date, plan_id: sp.plan && plans.some((p) => p.id === sp.plan) ? sp.plan : "" };
   const fromSuggestion = athleteIds[0] ? await suggestionForm(supabase, sp.suggestion, athleteIds, base.plan_id) : null;
@@ -76,7 +80,7 @@ export default async function NewSessionPage({
     ? fromSuggestion
     : template
       ? payloadToForm(template.payload, { ...base, template_id: template.id })
-      : { ...emptySessionForm(kind, date, athleteIds), plan_id: base.plan_id };
+      : { ...emptySessionForm(kind, date, athleteIds), plan_id: base.plan_id, ...(team ? { category: categoriesForSport(kind, sport)[0]?.key ?? "other" } : {}) };
 
   return (
     <div className="grid gap-6">
@@ -86,6 +90,7 @@ export default async function NewSessionPage({
         description={tl("Trening trafi do kalendarza wybranych zawodników. Każdy dostanie powiadomienie.", "The session goes to the selected athletes’ calendars. Each gets a notification.")}
       />
       <SessionForm
+        sport={sport}
         mode="create"
         initial={initial}
         athletes={active.map((a) => ({ id: a.id, full_name: a.full_name }))}
