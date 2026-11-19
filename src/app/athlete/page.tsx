@@ -1,5 +1,5 @@
 import { myClub } from "@/lib/clubs/member-guard";
-import AthleteClubPage from "./klub/page";
+import { ClubHome } from "@/components/club/club-home";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, MessageSquare, Play, Trophy } from "lucide-react";
@@ -34,7 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AthleteDashboard() {
   await getLang();
   // A club member's home is the club: schedule, notices, fees, matches. No runner dashboard, no questionnaire.
-  if (await myClub()) return <AthleteClubPage />;
+  const club = await myClub();
+  if (club) return <ClubHome club={club} />;
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const today = todayISO(user.profile.timezone);

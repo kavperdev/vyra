@@ -10,7 +10,7 @@ import { load, todayWaw, useStoreTick } from "@/lib/app/store";
 import { useLog } from "@/lib/app/log";
 
 /** One ring: value 0–1, a number in the middle, a short word under it. */
-function Ring({ v, color, big, small, label }: { v: number; color: string; big: string; small?: string; label: string }) {
+export function Ring({ v, color, big, small, label }: { v: number; color: string; big: string; small?: string; label: string }) {
   const r = 30;
   const c = 2 * Math.PI * r;
   const [shown, setShown] = useState(0);

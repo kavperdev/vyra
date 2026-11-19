@@ -37,8 +37,9 @@ export default async function AthleteLayout({ children }: { children: React.Reac
     // A club member: the club's app. Only the club, its calendar and the coach; the club pays, so no access gate.
     const running = isRunningClub(club);
     const clubItems: NavItem[] = [
-      { href: "/athlete", label: club.name, icon: "club", mobile: true },
+      { href: "/athlete", label: t("Dziś", "Today"), icon: "home", mobile: true },
       { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+      { href: "/athlete/klub", label: club.name, icon: "club", mobile: true },
       ...(linked ? [{ href: "/athlete/wiadomosci", label: t("Trener", "Coach"), icon: "inbox", badge: msgUnread, mobile: true } as NavItem] : []),
       ...(running
         ? [
@@ -50,7 +51,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
       { href: "/athlete/settings", label: t("Ustawienia", "Settings"), icon: "settings" },
     ];
     return (
-      <AppShell role="athlete" club={club} roleLabel={t("Zawodnik", "Athlete")} name={user.profile.full_name} items={clubItems} unread={unread}>
+      <AppShell role="athlete" club={{ name: club.name, logo_url: club.logo_url, coach: linked }} roleLabel={t("Zawodnik", "Athlete")} name={user.profile.full_name} items={clubItems} unread={unread}>
         {children}
       </AppShell>
     );
