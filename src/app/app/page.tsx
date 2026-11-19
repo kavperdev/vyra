@@ -1,4 +1,5 @@
-import { CalendarDays, Flame, Moon, Trophy, Users } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Flame, Moon, Trophy, Users, MapPin } from "lucide-react";
 import { TodayPlan } from "@/components/app/today-plan";
 import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { WeekStrip } from "@/components/app/week-strip";
@@ -16,6 +17,9 @@ import { todayISO } from "@/lib/dates";
 import { athleteHasAccess } from "@/lib/data/access";
 
 export const metadata = { title: "Dziś" };
+
+import { AppGuide } from "@/components/app/guide";
+import { blockingStep, guideNext } from "@/lib/data/first-step";
 
 export default async function AppHome() {
   const { t } = await getT();
@@ -51,6 +55,7 @@ export default async function AppHome() {
     const { data, error } = await supabase.from("readiness").select("sleep, energy, soreness, pain").eq("athlete_id", user.id).eq("day", todayISO(user.profile.timezone)).maybeSingle();
     if (!error && data) synced = data as Synced;
   }
+  const todo = athlete && user ? await blockingStep(supabase, user.id).catch(() => null) : null;
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
   const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
@@ -67,6 +72,16 @@ export default async function AppHome() {
           <span className="text-[var(--accent)]">.</span>
         </h1>
       </PhotoCard>
+
+      {todo ? (
+        <Link href={todo.href} className="mt-4 block rounded-[24px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99] lg:col-span-2">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#ff8a8f]">{t("Zrób to najpierw", "Do this first")}</p>
+          <p className="mt-1.5 text-[20px] font-semibold leading-tight tracking-[-0.01em]">{todo.title}</p>
+          <p className="mt-2 text-[15px] leading-relaxed text-white/75">{todo.text}</p>
+          <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[15px] font-semibold text-black">{todo.cta} →</span>
+        </Link>
+      ) : null}
+      {athlete && user ? <AppGuide variant="runner" userId={user.id} next={guideNext(todo)} /> : null}
 
       {/* Dziś = three questions only: how am I, what do I do today, how is the week. The rest lives in the tabs. */}
       <div className="mt-4 lg:col-span-2">
@@ -90,6 +105,7 @@ export default async function AppHome() {
         <SectionHead title={t("W VYRA", "At VYRA")} />
         <Group>
           <Row href="/app/znajomi" icon={<Flame className="size-4" />} title={t("Ekipa", "Crew")} sub={t("Treningi znajomych, 🔥 i komentarze", "Friends' sessions, 🔥 and comments")} />
+          <Row href="/app/wspolne-biegi" icon={<MapPin className="size-4" />} title={t("Wspólne biegi", "Run together")} sub={t("Znajdź ekipę do biegania w okolicy", "Find people to run with nearby")} />
           <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club VYRA" sub={t("Czwartki 18:00 · Park Aleksandria", "Thursdays 18:00 · Park Aleksandria")} />
           {live ? (
             <Row

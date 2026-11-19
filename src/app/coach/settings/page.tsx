@@ -1,3 +1,4 @@
+import { AppGuide, GuideButton } from "@/components/app/guide";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
 import { AccountSettings } from "@/components/shared/account-settings";
@@ -30,6 +31,8 @@ export default async function CoachSettingsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader eyebrow={tl("Konto", "Account")} title={tl("Ustawienia", "Settings")} />
+      <AppGuide variant="coach" userId={user.id} auto={false} />
+      <GuideButton className="w-full rounded-2xl border border-border bg-surface px-4 py-3.5 text-left text-[15px] font-medium active:scale-[0.99]" label="Przewodnik: jak działa aplikacja" />
       {planner ? <CoachMethodCard initial={own} inherited={inherited} /> : null}
       <AccountSettings fullName={user.profile.full_name} email={user.email} />
       {user.profile.staff_role === "founder" ? <MailTest /> : null}

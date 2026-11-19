@@ -1,3 +1,4 @@
+import { AppGuide } from "@/components/app/guide";
 import { coachSport } from "@/lib/clubs/member-guard";
 import { isTeamSport } from "@/lib/training/categories";
 import { ClubCoachHome } from "@/components/club/club-coach-home";
@@ -152,6 +153,7 @@ export default async function CoachDashboard() {
 
   return (
     <div className="grid grid-cols-1 gap-8">
+      <AppGuide variant="coach" userId={user.id} next={{ title: "Zacznij od zawodników", text: "Dodaj zawodnika albo wyślij mu zaproszenie. Potem rozpisz pierwszy trening w Kalendarzu.", href: "/coach/athletes", cta: "Zawodnicy" }} />
       <HelloCard
         eyebrow={formatDate(today, "EEEE, d MMMM")}
         title={`Cześć, ${user.profile.full_name.split(" ")[0]}`}
