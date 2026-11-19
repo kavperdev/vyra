@@ -1,3 +1,5 @@
+import { coachSport } from "@/lib/clubs/member-guard";
+import { isTeamSport, kindsForSport } from "@/lib/training/categories";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +12,6 @@ import { listAthletes, strengthHistory } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import { formatDuration, formatNumber, formatPace } from "@/lib/format";
 import { completionStats, periodStart, runningTotals, weeklyBuckets } from "@/lib/training/analytics";
-import { KIND_LABEL } from "@/lib/training/categories";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionKind } from "@/lib/types";
 import { getLang, getT } from "@/lib/i18n/server";
@@ -22,6 +23,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CoachAnalyticsPage({ searchParams }: { searchParams: Promise<{ weeks?: string; athlete?: string; kind?: string }> }) {
+  const sport = await coachSport();
+  const team = isTeamSport(sport);
   await getLang();
   const sp = await searchParams;
   const user = await requireRole("coach");
@@ -98,7 +101,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
         actions={<PeriodFilter weeks={weeks} basePath="/coach/analytics" extra={{ kind: sp.kind }} />}
       />
       {header}
-      <KindFilter current={kind} link={filterLink} />
+      <KindFilter current={kind} link={filterLink} sport={sport} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -108,14 +111,16 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
             <CompletionChart data={buckets.map((b) => ({ weekStart: b.weekStart, completion: b.completion, doneSessions: b.doneSessions, dueSessions: b.dueSessions }))} />
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{tl("Objętość biegowa", "Running volume")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <VolumeChart data={buckets.map((b) => ({ weekStart: b.weekStart, plannedKm: b.plannedKm, actualKm: b.actualKm }))} />
-          </CardContent>
-        </Card>
+        {team ? null : (
+          <Card>
+            <CardHeader>
+              <CardTitle>{tl("Objętość biegowa", "Running volume")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <VolumeChart data={buckets.map((b) => ({ weekStart: b.weekStart, plannedKm: b.plannedKm, actualKm: b.actualKm }))} />
+            </CardContent>
+          </Card>
+        )}
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[760px] text-sm">
@@ -126,7 +131,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
               <th className="px-4 py-2.5 font-medium">{tl("Wykonane / zaplanowane", "Done / planned")}</th>
               <th className="px-4 py-2.5 font-medium">{tl("Pominięte", "Skipped")}</th>
               <th className="px-4 py-2.5 font-medium">{tl("Brak wpisu", "Not logged")}</th>
-              <th className="px-4 py-2.5 font-medium">{tl("Bieganie", "Running")}</th>
+              {team ? null : <th className="px-4 py-2.5 font-medium">{tl("Bieganie", "Running")}</th>}
               <th className="px-4 py-2.5 font-medium">{tl("Śr. RPE", "Avg RPE")}</th>
             </tr>
           </thead>
@@ -149,7 +154,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
                 </td>
                 <td className="num px-4 py-3">{comp.skipped}</td>
                 <td className={`num px-4 py-3 ${comp.missing ? "text-warning" : ""}`}>{comp.missing}</td>
-                <td className="num px-4 py-3 text-muted">
+                {team ? null : <td className="num px-4 py-3 text-muted">
                   {run.sessions ? `${formatNumber(run.distanceM / 1000)} km · ${formatDuration(run.durationS)}${run.avgPaceS ? ` · ${formatPace(run.avgPaceS)}/km` : ""}` : "–"}
                 </td>
                 <td className="num px-4 py-3">{avgRpe == null ? "–" : formatNumber(avgRpe)}</td>
@@ -162,15 +167,15 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
   );
 }
 
-function KindFilter({ current, link }: { current: SessionKind | undefined; link: (p: Record<string, string | undefined>) => string }) {
+function KindFilter({ current, link, sport }: { current: SessionKind | undefined; link: (p: Record<string, string | undefined>) => string; sport: string | null }) {
   return (
     <nav aria-label={tl("Rodzaj treningu", "Session category")} className="flex flex-wrap gap-1">
       <Link href={link({ kind: undefined })} className={`rounded-md px-2.5 py-1 text-[13px] ${!current ? "bg-surface-2" : "text-muted"}`}>
         {tl("Wszystkie", "All")}
       </Link>
-      {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
+      {kindsForSport(sport).map(({ kind: k, label }) => (
         <Link key={k} href={link({ kind: k })} className={`rounded-md px-2.5 py-1 text-[13px] ${current === k ? "bg-surface-2" : "text-muted"}`}>
-          {KIND_LABEL[k]}
+          {label}
         </Link>
       ))}
     </nav>

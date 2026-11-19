@@ -4,7 +4,9 @@ import type { SessionKind } from "@/lib/types";
 export type CategoryKey =
   | "easy" | "recovery" | "long" | "tempo" | "threshold" | "intervals" | "fartlek" | "hills"
   | "progression" | "race_pace" | "test" | "race" | "custom_run"
-  | "strength" | "power" | "circuit" | "mobility" | "motor_prep" | "other";
+  | "strength" | "power" | "circuit" | "mobility" | "motor_prep" | "other"
+  // Club sports (volleyball, football, swimming...): the session is a team practice, not a run.
+  | "technique" | "tactics" | "game" | "match" | "sparring" | "swim";
 
 export interface CategoryDef {
   key: CategoryKey;
@@ -34,7 +36,64 @@ export const CATEGORIES: CategoryDef[] = [
   { key: "motor_prep", get label() { return tl("Przygotowanie motoryczne", "Athletic preparation"); }, kind: "strength" },
   { key: "mobility", get label() { return tl("Mobilność / stabilizacja", "Mobility / stability"); }, kind: "mobility" },
   { key: "other", get label() { return tl("Inne", "Other"); }, kind: "other" },
+  { key: "technique", get label() { return tl("Technika", "Technique"); }, kind: "other" },
+  { key: "tactics", get label() { return tl("Taktyka i ustawienia", "Tactics"); }, kind: "other" },
+  { key: "game", get label() { return tl("Gra i małe gry", "Game play"); }, kind: "other" },
+  { key: "match", get label() { return tl("Mecz / zawody", "Match / competition"); }, kind: "other" },
+  { key: "sparring", get label() { return tl("Sparing", "Sparring"); }, kind: "other" },
+  { key: "swim", get label() { return tl("Trening pływacki", "Swim session"); }, kind: "other" },
 ];
+
+/** Session categories that only make sense for runners (and athletics). */
+const RUN_ONLY = new Set<CategoryKey>(["easy", "recovery", "long", "tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race", "custom_run"]);
+const CLUB_ONLY = new Set<CategoryKey>(["technique", "tactics", "game", "match", "sparring", "swim"]);
+
+/** What each club sport plans (the "other" kind is its practice). Athletics and runners keep the running list. */
+const SPORT_CATS: Record<string, CategoryKey[]> = {
+  football: ["technique", "tactics", "game", "match", "sparring", "other"],
+  volleyball: ["technique", "tactics", "game", "match", "sparring", "other"],
+  basketball: ["technique", "tactics", "game", "match", "sparring", "other"],
+  handball: ["technique", "tactics", "game", "match", "sparring", "other"],
+  tennis: ["technique", "tactics", "game", "match", "other"],
+  swimming: ["swim", "technique", "match", "other"],
+  martial_arts: ["technique", "sparring", "match", "other"],
+  gymnastics: ["technique", "match", "other"],
+  other: ["technique", "tactics", "game", "match", "other"],
+};
+
+/** True for a club whose sport is not running/athletics: its coaches never see running fields. */
+export const isTeamSport = (sport: string | null | undefined) => !!sport && sport !== "athletics" && sport in SPORT_CATS;
+
+/** Sport-specific wording for the practice categories. */
+const SPORT_LABEL: Record<string, Partial<Record<CategoryKey, string>>> = {
+  volleyball: { technique: "Technika: zagrywka, przyjęcie, atak, blok", tactics: "Taktyka: ustawienia i systemy gry", game: "Gra 6 na 6 i małe gry", match: "Mecz", sparring: "Sparing" },
+  football: { technique: "Technika: podanie, przyjęcie, drybling, strzał", tactics: "Taktyka i stałe fragmenty", game: "Gry w małych grupach", match: "Mecz", sparring: "Sparing" },
+  basketball: { technique: "Technika: kozłowanie, podanie, rzut", tactics: "Taktyka: atak i obrona", game: "Gra 5 na 5 i małe gry", match: "Mecz", sparring: "Sparing" },
+  handball: { technique: "Technika: podanie, rzut, zwody", tactics: "Taktyka: atak pozycyjny, obrona", game: "Gra i małe gry", match: "Mecz", sparring: "Sparing" },
+  tennis: { technique: "Technika: forhend, bekhend, serwis", tactics: "Taktyka meczowa", game: "Gra punktowa", match: "Turniej / mecz" },
+  swimming: { swim: "Trening w wodzie (serie)", technique: "Technika pływania", match: "Zawody" },
+  martial_arts: { technique: "Technika", sparring: "Sparing / randori", match: "Zawody" },
+  gymnastics: { technique: "Elementy i układy", match: "Zawody" },
+};
+
+/** Categories a coach picks from, for this kind of session and this club sport (none = runner / athletics). */
+export function categoriesForSport(kind: SessionKind, sport?: string | null): CategoryDef[] {
+  if (!isTeamSport(sport)) return CATEGORIES.filter((c) => c.kind === kind && !CLUB_ONLY.has(c.key));
+  const keys = kind === "other" ? SPORT_CATS[sport!] : null;
+  const list = keys ? keys.map((k) => CATEGORIES.find((c) => c.key === k)!).filter(Boolean) : CATEGORIES.filter((c) => c.kind === kind && !RUN_ONLY.has(c.key) && !CLUB_ONLY.has(c.key));
+  const words = SPORT_LABEL[sport!] ?? {};
+  return list.map((c) => (words[c.key] ? { ...c, label: words[c.key]! } : c));
+}
+
+/** The session types a club sport's coach chooses between, with their names. */
+export function kindsForSport(sport?: string | null): { kind: SessionKind; label: string }[] {
+  if (!isTeamSport(sport)) return (Object.keys(KIND_LABEL) as SessionKind[]).map((k) => ({ kind: k, label: KIND_LABEL[k] }));
+  return [
+    { kind: "other", label: tl("Trening", "Practice") },
+    { kind: "strength", label: tl("Motoryka", "Conditioning") },
+    { kind: "mobility", label: tl("Regeneracja", "Recovery") },
+  ];
+}
 
 const BY_KEY = new Map(CATEGORIES.map((c) => [c.key, c]));
 
@@ -43,7 +102,7 @@ export function categoryLabel(key: string): string {
 }
 
 export function categoriesFor(kind: SessionKind): CategoryDef[] {
-  return CATEGORIES.filter((c) => c.kind === kind);
+  return CATEGORIES.filter((c) => c.kind === kind && !CLUB_ONLY.has(c.key));
 }
 
 export function defaultCategory(kind: SessionKind): CategoryKey {

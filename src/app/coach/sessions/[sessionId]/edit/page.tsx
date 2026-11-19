@@ -1,3 +1,4 @@
+import { coachSport } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/misc";
@@ -33,6 +34,7 @@ export default async function EditSessionPage({ params }: { params: Promise<{ se
     <div className="grid gap-6">
       <PageHeader eyebrow={`Edycja · ${session.athlete?.full_name ?? ""}`} title={session.title} />
       <SessionForm
+        sport={await coachSport()}
         mode="edit"
         initial={initial}
         plans={plans.map((p) => ({ id: p.id, athlete_id: p.athlete_id, name: p.name }))}

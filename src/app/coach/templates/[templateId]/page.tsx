@@ -1,3 +1,4 @@
+import { coachSport } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/misc";
@@ -24,7 +25,7 @@ export default async function EditTemplatePage({ params }: { params: Promise<{ t
   return (
     <div className="grid gap-6">
       <PageHeader eyebrow={tl("Biblioteka · edycja szablonu", "Library · edit template")} title={t.name} description={tl("Zmiany dotyczą tylko szablonu. Treningi utworzone wcześniej pozostają bez zmian.", "Changes apply only to the template. Sessions created earlier stay unchanged.")} />
-      <SessionForm mode="template" initial={payloadToForm(t.payload)} templateMeta={{ id: t.id, name: t.name, description: t.description ?? "" }} cancelHref="/coach/templates" />
+      <SessionForm sport={await coachSport()} mode="template" initial={payloadToForm(t.payload)} templateMeta={{ id: t.id, name: t.name, description: t.description ?? "" }} cancelHref="/coach/templates" />
     </div>
   );
 }

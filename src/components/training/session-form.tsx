@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { saveSession, saveTemplate } from "@/lib/actions/sessions";
 import { saveOwnSession } from "@/lib/actions/self-sessions";
-import { categoriesFor, defaultCategory, INTENSITY_LABEL, KIND_LABEL, RECOVERY_LABEL, SEGMENT_TYPE_LABEL, STRUCTURE_LABEL, ZONES } from "@/lib/training/categories";
+import { categoriesForSport, INTENSITY_LABEL, isTeamSport, KIND_LABEL, kindsForSport, RECOVERY_LABEL, SEGMENT_TYPE_LABEL, STRUCTURE_LABEL, ZONES } from "@/lib/training/categories";
 import type { SessionKind, SessionPayload } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -51,7 +51,10 @@ export function SessionForm({
   executed = false,
   cancelHref,
   self = false,
+  sport = null,
 }: {
+  /** The coach's club sport: a volleyball coach plans practices (technique, tactics, matches), never runs. */
+  sport?: string | null;
   mode: Mode;
   initial: SessionFormValues;
   athletes?: AthleteOption[];
@@ -64,6 +67,7 @@ export function SessionForm({
   self?: boolean;
 }) {
   const router = useRouter();
+  const team = isTeamSport(sport);
   const [pending, start] = useTransition();
   const [meta, setMeta] = useState(templateMeta ?? { name: "", description: "" });
   const submitted = useRef(false);
@@ -94,13 +98,13 @@ export function SessionForm({
 
   const onKindChange = (k: SessionKind) => {
     setValue("kind", k, { shouldDirty: true });
-    setValue("category", defaultCategory(k), { shouldDirty: true });
+    setValue("category", categoriesForSport(k, sport)[0]?.key ?? "other", { shouldDirty: true });
     if (k !== "running" && form.getValues("exercises").length === 0) setValue("exercises", [emptyExercise()], { shouldDirty: true });
   };
 
   const onCategoryChange = (c: string) => {
     setValue("category", c, { shouldDirty: true, shouldValidate: true });
-    const def = categoriesFor(kind).find((x) => x.key === c);
+    const def = categoriesForSport(kind, sport).find((x) => x.key === c);
     if (def?.structure) setValue("running.structure", def.structure, { shouldDirty: true });
   };
 
@@ -256,7 +260,7 @@ export function SessionForm({
         </CardHeader>
         <CardContent className="grid gap-4">
           <div role="radiogroup" aria-label={tl("Typ treningu", "Session type")} className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-            {(Object.keys(KIND_LABEL) as SessionKind[]).map((k) => (
+            {kindsForSport(sport).map(({ kind: k, label }) => (
               <button
                 key={k}
                 type="button"
@@ -269,14 +273,14 @@ export function SessionForm({
                   kind === k ? "border-foreground bg-foreground text-background" : "border-border text-muted hover:border-border-strong hover:text-foreground",
                 )}
               >
-                {KIND_LABEL[k]}
+                {label}
               </button>
             ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <Field label={tl("Rodzaj", "Category")} htmlFor="category" error={errors.category?.message}>
               <Select id="category" value={watch("category")} onChange={(e) => onCategoryChange(e.target.value)}>
-                {categoriesFor(kind).map((c) => (
+                {categoriesForSport(kind, sport).map((c) => (
                   <option key={c.key} value={c.key}>
                     {c.label}
                   </option>
@@ -284,11 +288,11 @@ export function SessionForm({
               </Select>
             </Field>
             <Field label={tl("Nazwa", "Name")} htmlFor="title" error={errors.title?.message}>
-              <Input id="title" placeholder={kind === "running" ? tl("np. 6 × 800 m w tempie 5 km", "e.g. 6 × 800 m at 5K pace") : tl("np. Siła A — dół ciała", "e.g. Strength A — lower body")} {...register("title")} aria-invalid={!!errors.title} />
+              <Input id="title" placeholder={kind === "running" ? tl("np. 6 × 800 m w tempie 5 km", "e.g. 6 × 800 m at 5K pace") : team && kind === "other" ? tl("np. Przyjęcie zagrywki w strefie 5", "e.g. Serve reception, zone 5") : tl("np. Siła A — dół ciała", "e.g. Strength A — lower body")} {...register("title")} aria-invalid={!!errors.title} />
             </Field>
           </div>
           <Field label={tl("Cel treningu", "Session goal")} htmlFor="goal" error={errors.goal?.message}>
-            <Input id="goal" placeholder={tl("np. VO2max, utrzymanie tempa na zmęczeniu", "e.g. VO2max, holding pace when tired")} {...register("goal")} />
+            <Input id="goal" placeholder={team ? tl("np. pewne przyjęcie pod presją, komunikacja w obronie", "e.g. steady reception under pressure") : tl("np. VO2max, utrzymanie tempa na zmęczeniu", "e.g. VO2max, holding pace when tired")} {...register("goal")} />
           </Field>
           <Field label={self ? tl("Opis i wskazówki", "Description and cues") : tl("Instrukcje dla zawodnika", "Instructions for the athlete")} htmlFor="instructions" error={errors.instructions?.message}>
             <Textarea id="instructions" placeholder={tl("Rozgrzewka, technika, na co uważać…", "Warm-up, technique, what to watch out for…")} {...register("instructions")} />

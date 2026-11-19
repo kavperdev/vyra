@@ -27,3 +27,12 @@ export async function notForClubMembers(opts: { runningClubsToo?: boolean } = {}
   if (opts.runningClubsToo === false && isRunningClub(club)) return;
   redirect("/athlete");
 }
+
+/** The sport of the signed-in coach's club (null: VYRA coach or founder, who plan running). Once per request. */
+export const coachSport = cache(async (): Promise<string | null> => {
+  const user = await getCurrentUser();
+  if (!user || user.profile.role !== "coach" || user.profile.staff_role === "founder") return null;
+  const supabase = await createClient();
+  const club = await getMyClub(supabase, user.id).catch(() => null);
+  return club ? (club.sport ?? "athletics") : null;
+});
