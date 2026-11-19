@@ -16,6 +16,7 @@ import {
   type GroupRunInput,
 } from "@/lib/actions/group-runs";
 import { load, save } from "@/lib/app/store";
+import { Portal } from "@/components/app/sheet";
 import { cn } from "@/lib/utils";
 
 const CITIES = ["Warszawa", "Kraków", "Wrocław", "Poznań", "Gdańsk", "Łódź", "Lublin", "Siedlce"];
@@ -80,10 +81,18 @@ function NewRun({ city, onClose, onSaved }: { city: string; onClose: () => void;
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const set = (k: keyof GroupRunInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setV({ ...v, [k]: e.target.value });
-  const input = "mt-1.5 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-[16px] outline-none";
+  const input = "mt-1.5 h-12 w-full min-w-0 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-[16px] outline-none";
+  useEffect(() => {
+    const prev = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = prev;
+    };
+  }, []);
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[28px] border border-white/10 bg-[#0c0c0e] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+    <Portal>
+    <div className="app-native fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="Twój bieg" onClick={(e) => e.stopPropagation()} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-t-[28px] border-t border-white/10 bg-[#0c0c0e] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
         <div className="flex items-center justify-between">
           <h2 className="text-[20px] font-semibold">Twój bieg</h2>
           <button type="button" aria-label="Zamknij" onClick={onClose} className="grid size-10 place-items-center rounded-full bg-white/[0.07]">
@@ -104,12 +113,12 @@ function NewRun({ city, onClose, onSaved }: { city: string; onClose: () => void;
             Dzień i godzina
             <input type="datetime-local" className={input} value={v.when} onChange={set("when")} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-[14px] text-white/70">
+          <div className="grid min-w-0 grid-cols-2 gap-3">
+            <label className="min-w-0 text-[14px] text-white/70">
               Dystans (km)
               <input inputMode="decimal" className={input} value={v.distance} onChange={set("distance")} />
             </label>
-            <label className="text-[14px] text-white/70">
+            <label className="min-w-0 text-[14px] text-white/70">
               Tempo
               <input className={input} value={v.pace} onChange={set("pace")} placeholder="np. 6:00/km" />
             </label>
@@ -150,6 +159,7 @@ function NewRun({ city, onClose, onSaved }: { city: string; onClose: () => void;
         </div>
       </div>
     </div>
+    </Portal>
   );
 }
 
