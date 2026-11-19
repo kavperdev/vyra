@@ -156,7 +156,7 @@ export default async function CoachAnalyticsPage({ searchParams }: { searchParam
                 <td className={`num px-4 py-3 ${comp.missing ? "text-warning" : ""}`}>{comp.missing}</td>
                 {team ? null : <td className="num px-4 py-3 text-muted">
                   {run.sessions ? `${formatNumber(run.distanceM / 1000)} km · ${formatDuration(run.durationS)}${run.avgPaceS ? ` · ${formatPace(run.avgPaceS)}/km` : ""}` : "–"}
-                </td>
+                </td>}
                 <td className="num px-4 py-3">{avgRpe == null ? "–" : formatNumber(avgRpe)}</td>
               </tr>
             ))}
