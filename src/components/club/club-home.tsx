@@ -1,4 +1,5 @@
 import { ClubToday } from "@/components/club/club-today";
+import { AppGuide } from "@/components/app/guide";
 import { getCurrentUser } from "@/lib/auth";
 import type { SportClub } from "@/lib/data/clubs";
 import { loadMemberClubView } from "@/lib/data/club-management";
@@ -24,7 +25,10 @@ export async function ClubHome({ club }: { club: SportClub }) {
   ]);
   const occurrences = expandSchedule(v.slots, v.events, (id) => v.groups.find((g) => g.id === id)?.name ?? "", monday, to);
   const sport = club.sport ?? "athletics";
+  const { count: coaches } = await supabase.from("coach_athletes").select("athlete_id", { count: "exact", head: true }).eq("athlete_id", user.id).eq("status", "active");
   return (
+    <>
+    <AppGuide variant="club" userId={user.id} coach={(coaches ?? 0) > 0} next={{ title: "Zacznij od kalendarza", text: "Sprawdź, kiedy masz najbliższe treningi i mecze. Włącz powiadomienia, żeby nie przegapić zmian i odwołanych zajęć.", href: "/athlete/calendar", cta: "Otwórz kalendarz" }} />
     <ClubToday
       data={{
         club: { name: club.name, logo_url: club.logo_url },
@@ -40,5 +44,6 @@ export async function ClubHome({ club }: { club: SportClub }) {
         hasCard: fit.ready && fit.results.length > 0,
       }}
     />
+    </>
   );
 }

@@ -1,3 +1,4 @@
+import { AppGuide, GuideButton } from "@/components/app/guide";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,12 @@ export default async function AthleteSettingsPage() {
         title={tl("Ustawienia", "Settings")}
         description={coaches.length ? tl(`Trener: ${coaches.map((c) => c.full_name).join(", ")}. Trener widzi Twoje treningi, wyniki i dane poniżej.`, `Coach: ${coaches.map((c) => c.full_name).join(", ")}. Your coach sees your sessions, results and the details below.`) : undefined}
       />
+      {club ? (
+        <>
+          <AppGuide variant="club" userId={user.id} auto={false} coach={coaches.length > 0} />
+          <GuideButton className="w-full rounded-2xl border border-border bg-surface px-4 py-3.5 text-left text-[15px] font-medium active:scale-[0.99]" label="Przewodnik: jak działa aplikacja" />
+        </>
+      ) : null}
       {club ? null : <MembershipCard items={memberships} />}
       {club ? null : (
       <Card>

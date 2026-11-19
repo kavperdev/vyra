@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Clock, MapPin, Megaphone, Plus, Trophy, Users, Wallet } from "lucide-react";
 import { Ring } from "@/components/app/rings";
+import { AppGuide } from "@/components/app/guide";
 import { ClubBadge } from "@/components/coach/club-space";
 import { getCurrentUser } from "@/lib/auth";
 import { getMyClub } from "@/lib/data/clubs";
@@ -70,6 +71,11 @@ export async function ClubCoachHome() {
 
   return (
     <div className="mx-auto grid max-w-3xl gap-4 pb-6">
+      <AppGuide
+        variant="coach"
+        userId={user.id}
+        next={ws.athletes.length ? { title: "Zacznij od dzisiejszych zajęć", text: "Na Pulpicie zobaczysz dzisiejsze treningi. Kliknij trening i zaznacz obecność, to zajmie minutę.", href: "/coach", cta: "Przejdź do Pulpitu" } : { title: "Zacznij od zawodników", text: "Dodaj zawodników albo wyślij im zaproszenie. Potem ustaw grupy i harmonogram w zakładce Klub.", href: "/coach/athletes", cta: "Dodaj zawodników" }}
+      />
       <header className="flex items-center gap-3 pt-1">
         <ClubBadge club={club} size={44} />
         <div className="min-w-0 flex-1">

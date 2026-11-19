@@ -257,7 +257,7 @@ export function Onboarding({ signedIn = false }: { signedIn?: boolean }) {
 export function ReopenOnboarding({ className }: { className?: string }) {
   return (
     <button type="button" onClick={() => window.dispatchEvent(new Event(OPEN_ONBOARDING))} className={className}>
-      Jak działa aplikacja · ustaw cel od nowa
+      Ustaw cel i pytania powitalne od nowa
     </button>
   );
 }
