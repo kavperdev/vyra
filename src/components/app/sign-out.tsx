@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LogOut } from "lucide-react";
+import { wipeAccountData } from "@/lib/app/store";
 
 /** Sign out from inside the app and land back on the app home. */
 export function SignOutButton({ label = "Wyloguj się" }: { label?: string }) {
@@ -15,11 +16,8 @@ export function SignOutButton({ label = "Wyloguj się" }: { label?: string }) {
         try {
           await fetch("/auth/signout", { method: "POST" });
         } finally {
-          try {
-            localStorage.removeItem("vyra-challenge");
-          } catch {
-            /* none */
-          }
+          // The next person on this phone must not see this account's data.
+          wipeAccountData();
           window.location.assign("/app");
         }
       }}

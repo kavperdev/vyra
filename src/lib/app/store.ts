@@ -70,4 +70,49 @@ export function useStoreTick(): number {
   return n;
 }
 
+/** Device settings that are not anyone's data: they stay when the account on this phone changes. */
+const DEVICE_KEYS = new Set(["vyra-src", "vyra-kanal", "vyra-player-voice", "vyra-consent", "vyra-lang", "vyra-ios-nudge", "vyra-cookie-settings", "vyra-nudge-snooze"]);
+export const OWNER_KEY = "vyra-owner";
+
+/**
+ * Everything one person keeps on this phone (log, readiness, plans, chat with Puls...) is removed, so the
+ * next person who signs in on the same phone starts clean and gets only their own account's copy.
+ */
+export function wipeAccountData() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("vyra-") && !DEVICE_KEYS.has(k)) keys.push(k);
+    }
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* storage blocked: nothing kept anyway */
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(STORE_EVENT, { detail: { key: "*", local: false } }));
+}
+
+/**
+ * Makes sure the data on this phone belongs to this account (null = signed out). A different owner, or
+ * signing out, clears it first. Data made before signing in (no owner yet) moves into the account.
+ */
+export function claimDevice(userId: string | null): boolean {
+  let owner: string | null = null;
+  try {
+    owner = localStorage.getItem(OWNER_KEY);
+  } catch {
+    return false;
+  }
+  if (owner === userId) return false;
+  const wipe = owner != null;
+  if (wipe) wipeAccountData();
+  try {
+    if (userId) localStorage.setItem(OWNER_KEY, userId);
+    else localStorage.removeItem(OWNER_KEY);
+  } catch {
+    /* none */
+  }
+  return wipe;
+}
+
 export const todayWaw = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());

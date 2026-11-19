@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader, SectionTitle } from "@/components/ui/misc";
@@ -28,6 +29,7 @@ const views = () => [
 ] as const;
 
 export default async function AthleteProgressPage({ searchParams }: { searchParams: Promise<{ weeks?: string; view?: string }> }) {
+  await notForClubMembers({ runningClubsToo: false });
   await getLang();
   const sp = await searchParams;
   const user = await requireRole("athlete");

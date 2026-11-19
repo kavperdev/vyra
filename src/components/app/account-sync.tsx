@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { pullAppState, pushAppState, type StateRow } from "@/lib/actions/app-state";
 import { mergeLogs } from "@/lib/app/log";
-import { STORE_EVENT, SYNCED, load, save, stamps } from "@/lib/app/store";
+import { STORE_EVENT, SYNCED, claimDevice, load, save, stamps } from "@/lib/app/store";
 
 const UNION = ["vyra-start-plan", "vyra-course-done", "vyra-log-del", "vyra-badges-seen"];
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -20,8 +20,11 @@ const has = (k: string) => {
  * (run log and tick lists are combined, everything else takes the newer side); after that every change
  * is sent up a moment later.
  */
-export function AccountSync({ signedIn }: { signedIn: boolean }) {
+export function AccountSync({ userId }: { userId: string | null }) {
+  const signedIn = !!userId;
   useEffect(() => {
+    // Another account (or nobody) used this phone before: their data goes before anything is merged.
+    claimDevice(userId);
     if (!signedIn) return;
     let alive = true;
     let ready = false;
@@ -91,6 +94,6 @@ export function AccountSync({ signedIn }: { signedIn: boolean }) {
       window.removeEventListener(STORE_EVENT, onChange);
       document.removeEventListener("visibilitychange", onHide);
     };
-  }, [signedIn]);
+  }, [signedIn, userId]);
   return null;
 }

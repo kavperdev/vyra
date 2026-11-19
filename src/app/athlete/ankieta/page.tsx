@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
 import { IntakeForm } from "@/components/athlete/intake-form";
@@ -13,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function IntakePage() {
+  await notForClubMembers();
   await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();

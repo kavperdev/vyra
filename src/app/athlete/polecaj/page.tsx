@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { Gift } from "lucide-react";
 import { ReferralShare } from "@/components/athlete/referral-share";
@@ -17,6 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ReferPage() {
+  await notForClubMembers();
   await getLang();
   await requireRole("athlete");
   const supabase = await createClient();

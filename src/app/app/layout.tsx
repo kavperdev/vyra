@@ -20,6 +20,9 @@ import { SourceTracker } from "@/components/site/source-tracker";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { myClub } from "@/lib/clubs/member-guard";
 
 export const metadata: Metadata = {
   title: { default: "VYRA", template: "%s · VYRA" },
@@ -30,6 +33,12 @@ export const metadata: Metadata = {
 /** The VYRA app: open to everyone, no account needed. Training plans and purchases sign in when needed. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
+  // Someone a club signed up uses the club's app, never the VYRA runner app (shop, Method, readiness...).
+  // Password reset and legal pages stay reachable.
+  if (user && (await myClub())) {
+    const path = (await headers()).get("x-vyra-path") ?? "";
+    if (!/^\/app\/(haslo|dokument|kontakt|zaloguj)(\/|$)/.test(path)) redirect("/athlete");
+  }
   const { t } = await getT();
   const access = user ? await premiumStatus().catch(() => ({ signedIn: true, premium: false })) : { signedIn: false, premium: false };
   // Finished plan sessions (coach or VYRA Method) go into the diary, on every device.
@@ -96,7 +105,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Assistant signedIn={!!user} />
       <ShareSync signedIn={!!user} />
       <Onboarding signedIn={!!user} />
-      <AccountSync signedIn={!!user} />
+      <AccountSync userId={user?.id ?? null} />
       <IosInstallNudge />
       <BadgeWatcher />
       <StatsPublisher signedIn={!!user} />

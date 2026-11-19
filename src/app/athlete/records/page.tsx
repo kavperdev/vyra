@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/misc";
 import { GoalsSection, RecordsSection } from "@/components/athlete/records-goals";
@@ -18,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AthleteRecordsPage() {
+  await notForClubMembers({ runningClubsToo: false });
   await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();

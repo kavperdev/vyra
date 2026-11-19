@@ -11,6 +11,7 @@ import { getAthleteProfile, listCoaches } from "@/lib/data/people";
 import { createClient } from "@/lib/supabase/server";
 import { getLang, getT } from "@/lib/i18n/server";
 import { tl } from "@/lib/i18n/runtime";
+import { isRunningClub, myClub } from "@/lib/clubs/member-guard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -21,6 +22,7 @@ export default async function AthleteSettingsPage() {
   await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();
+  const club = await myClub();
   const [profile, coaches, memberships] = await Promise.all([
     getAthleteProfile(supabase, user.id),
     listCoaches(supabase, user.id),
@@ -37,7 +39,8 @@ export default async function AthleteSettingsPage() {
         title={tl("Ustawienia", "Settings")}
         description={coaches.length ? tl(`Trener: ${coaches.map((c) => c.full_name).join(", ")}. Trener widzi Twoje treningi, wyniki i dane poniżej.`, `Coach: ${coaches.map((c) => c.full_name).join(", ")}. Your coach sees your sessions, results and the details below.`) : undefined}
       />
-      <MembershipCard items={memberships} />
+      {club ? null : <MembershipCard items={memberships} />}
+      {club ? null : (
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
           <div className="grid gap-0.5">
@@ -49,8 +52,10 @@ export default async function AthleteSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+      )}
       <AccountSettings fullName={user.profile.full_name} email={user.email} />
-      <AthleteProfileForm athleteId={user.id} profile={profile} title={tl("Dane treningowe", "Training details")} />
+      {/* Running details (weekly km, zones) only for runners: a volleyball player's club doesn't ask for them. */}
+      {!club || isRunningClub(club) ? <AthleteProfileForm athleteId={user.id} profile={profile} title={tl("Dane treningowe", "Training details")} /> : null}
     </div>
   );
 }

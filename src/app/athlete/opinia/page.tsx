@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import { FeedbackForm } from "@/components/athlete/feedback-form";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
@@ -12,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FeedbackPage() {
+  await notForClubMembers();
   await getLang();
   const user = await requireRole("athlete");
   const supabase = await createClient();

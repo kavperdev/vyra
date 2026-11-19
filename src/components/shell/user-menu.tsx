@@ -6,11 +6,12 @@ import { useTheme } from "next-themes";
 import { LangSwitch } from "@/components/shared/lang-switch";
 import { Initials } from "@/components/ui/misc";
 import { useT } from "@/lib/i18n/client";
+import { wipeAccountData } from "@/lib/app/store";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { name: string; roleLabel: string; settingsHref: string; compact?: boolean }) {
+export function UserMenu({ name, roleLabel, settingsHref, compact = false, vyraApp = true }: { name: string; roleLabel: string; settingsHref: string; compact?: boolean; vyraApp?: boolean }) {
   const t = useT();
   const { resolvedTheme, setTheme } = useTheme();
   const dark = resolvedTheme !== "light";
@@ -31,11 +32,13 @@ export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { n
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/app">
-            <Compass /> {t("Aplikacja VYRA: wiedza, kurs, sklep", "VYRA app: learn, course, shop")}
-          </Link>
-        </DropdownMenuItem>
+        {vyraApp ? (
+          <DropdownMenuItem asChild>
+            <Link href="/app">
+              <Compass /> {t("Aplikacja VYRA: wiedza, kurs, sklep", "VYRA app: learn, course, shop")}
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link href={settingsHref}>
             <Settings /> {t("Ustawienia", "Settings")}
@@ -55,8 +58,9 @@ export function UserMenu({ name, roleLabel, settingsHref, compact = false }: { n
             try {
               await fetch("/auth/signout", { method: "POST" });
             } finally {
-              // Full reload clears cached screens of the signed-out account.
-              window.location.assign("/app");
+              // This account's data leaves the phone; a full reload clears its cached screens.
+              wipeAccountData();
+              window.location.assign("/login");
             }
           }}
         >

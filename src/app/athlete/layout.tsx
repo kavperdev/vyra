@@ -6,6 +6,7 @@ import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMyClub } from "@/lib/data/clubs";
 import { AccessGate } from "@/components/shell/access-gate";
+import { isRunningClub } from "@/lib/clubs/member-guard";
 
 export default async function AthleteLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("athlete");
@@ -32,6 +33,28 @@ export default async function AthleteLayout({ children }: { children: React.Reac
       .eq("status", "active")
       .then((r) => (r.count ?? 0) > 0),
   ]);
+  if (club) {
+    // A club member: the club's app. Only the club, its calendar and the coach; the club pays, so no access gate.
+    const running = isRunningClub(club);
+    const clubItems: NavItem[] = [
+      { href: "/athlete", label: club.name, icon: "club", mobile: true },
+      { href: "/athlete/calendar", label: t("Kalendarz", "Calendar"), icon: "calendar", mobile: true },
+      ...(linked ? [{ href: "/athlete/wiadomosci", label: t("Trener", "Coach"), icon: "inbox", badge: msgUnread, mobile: true } as NavItem] : []),
+      ...(running
+        ? [
+            { href: "/athlete/history", label: t("Historia", "History"), icon: "history" } as NavItem,
+            { href: "/athlete/progress", label: t("Postępy", "Progress"), icon: "progress" } as NavItem,
+          ]
+        : []),
+      { href: "/athlete/notifications", label: t("Powiadomienia", "Notifications"), icon: "bell", badge: unread, mobile: true },
+      { href: "/athlete/settings", label: t("Ustawienia", "Settings"), icon: "settings" },
+    ];
+    return (
+      <AppShell role="athlete" club={club} roleLabel={t("Zawodnik", "Athlete")} name={user.profile.full_name} items={clubItems} unread={unread}>
+        {children}
+      </AppShell>
+    );
+  }
   const access = linked || method;
   const hasCamp = campCount > 0;
   const items: NavItem[] = [

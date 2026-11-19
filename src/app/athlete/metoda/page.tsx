@@ -1,3 +1,4 @@
+import { notForClubMembers } from "@/lib/clubs/member-guard";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
@@ -30,6 +31,7 @@ const DOW = ["nd", "pn", "wt", "śr", "cz", "pt", "so"];
 const dayName = (iso: string) => `${DOW[new Date(`${iso}T12:00:00Z`).getUTCDay()]} ${iso.slice(8)}.${iso.slice(5, 7)}`;
 
 export default async function MethodPage({ searchParams }: { searchParams: Promise<{ edytuj?: string }> }) {
+  await notForClubMembers();
   const user = await requireRole("athlete");
   const supabase = await createClient();
   const today = todayISO();
