@@ -441,3 +441,6 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
   .app-main .app-rise:not(.app-wide) { max-width: 46rem; margin-inline: auto; }
   .app-main .app-narrow { max-width: 28rem !important; }
 }
+
+/* The runner app (redesign A): Inter everywhere inside the app, calm black, one red accent. */
+.app-ui, .app-ui .display { font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }

@@ -80,21 +80,15 @@ const STEPS: Step[] = [
   },
   {
     target: "tab-2",
-    title: "Trening",
-    text: "Wszystko, co pomaga biegać lepiej.",
-    how: ["Dziennik i import biegów ze Stravy", "Ćwiczenia z animacjami i gotowe zestawy", "Kurs „Biegaj mądrze”, wiedza i kalkulatory"],
+    title: "Forma",
+    text: "Czy idziesz do przodu: forma teraz, obciążenie, kilometry i rekordy.",
+    how: ["Liczy się sama z biegów ze Stravy i z dziennika", "Historia i odznaki są w drugiej zakładce"],
   },
   {
     target: "tab-3",
-    title: "Sklep",
-    text: "Gdy chcesz plan zrobiony pod siebie albo trenera.",
-    how: ["VYRA Method: 14 dni za darmo, bez karty", "Trener 1:1: ogląda każdy Twój trening"],
-  },
-  {
-    target: "tab-4",
     title: "Ty",
-    text: "Konto i wszystko o Tobie.",
-    how: ["Sezon, Pamięć Pulsa, znajomi i Run Club", "Powiadomienia i przypomnienia o treningu", "Tu włączysz ten samouczek jeszcze raz"],
+    text: "Pakiet, cel, dziennik ze Stravą, konto i społeczność.",
+    how: ["Run Club, wspólne biegi i znajomi", "Powiadomienia i przypomnienia o treningu", "Tu włączysz ten samouczek jeszcze raz"],
   },
   {
     target: "puls",

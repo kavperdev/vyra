@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, JetBrains_Mono } from "next/font/google";
+import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AppToaster, ThemeProvider } from "@/components/theme-provider";
 import { publicOrigin } from "@/lib/env";
@@ -11,6 +11,12 @@ const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
   axes: ["wdth"],
   variable: "--font-archivo",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -77,7 +83,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLang();
   return (
-    <html lang={lang} suppressHydrationWarning className={`${archivo.variable} ${jetbrains.variable}`}>
+    <html lang={lang} suppressHydrationWarning className={`${archivo.variable} ${inter.variable} ${jetbrains.variable}`}>
       <body>
         <LangProvider lang={lang}>
           <ThemeProvider>

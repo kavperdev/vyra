@@ -2,28 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, CalendarDays, Dumbbell, Gauge, Home, Moon, NotebookPen, ShoppingBag, User, Users } from "lucide-react";
-import { useStoreApp } from "@/lib/app/platform-client";
+import { CalendarDays, Sun, TrendingUp, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
-  { href: "/app", icon: Home, label: "Dziś" },
-  { href: "/app/cel", icon: CalendarDays, label: "Plan" },
-  { href: "/app/forma", icon: Gauge, label: "Forma" },
-  { href: "/app/dziennik", icon: NotebookPen, label: "Dziennik" },
-  { href: "/app/trening", icon: Activity, label: "Trening" },
-  { href: "/app/cwiczenia", icon: Dumbbell, label: "Ćwiczenia" },
-  { href: "/app/wiedza", icon: BookOpen, label: "Wiedza" },
-  { href: "/app/nocna", icon: Moon, label: "Nocna Ekipa" },
-  { href: "/app/znajomi", icon: Users, label: "Znajomi" },
-  { href: "/app/sklep", icon: ShoppingBag, label: "VYRA Method" },
+  { href: "/app", icon: Sun, label: "Dziś", match: /^\/app$/ },
+  { href: "/app/cel", icon: CalendarDays, label: "Plan", match: /^\/app\/(cel|plan|trening|dziennik|bieg|timer|strategia|cwiczenia|zestaw|nocna)(\/|$)/ },
+  { href: "/app/forma", icon: TrendingUp, label: "Forma", match: /^\/app\/(forma|postepy|obciazenie|sezon)(\/|$)/ },
 ];
 
 /** Desktop: a fixed sidebar instead of the floating phone tab bar. */
 export function SideNav({ name, email }: { name: string; email: string }) {
   const path = usePathname();
-  const store = useStoreApp();
-  const on = (href: string) => (href === "/app" ? path === "/app" : path === href || path.startsWith(`${href}/`));
+  const on = (href: string) => path === href || path.startsWith(`${href}/`);
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/[0.06] bg-[#0a0a0b]/90 px-4 py-6 backdrop-blur-xl lg:flex">
       <Link href="/app" aria-label="VYRA" className="px-3">
@@ -31,14 +22,14 @@ export function SideNav({ name, email }: { name: string; email: string }) {
         <img src="/branding/vyra-logo-white.svg" alt="VYRA" className="h-[18px] w-auto" />
       </Link>
       <nav aria-label="Nawigacja aplikacji" className="mt-10 grid gap-1">
-        {ITEMS.filter((i) => !(store && i.href === "/app/sklep")).map((i) => (
+        {ITEMS.map((i) => (
           <Link
             key={i.href}
             href={i.href}
-            aria-current={on(i.href) ? "page" : undefined}
-            className={cn("flex h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] transition-colors", on(i.href) ? "bg-white/[0.09] font-medium text-white" : "text-white/55 hover:bg-white/[0.04] hover:text-white")}
+            aria-current={i.match.test(path) ? "page" : undefined}
+            className={cn("flex h-11 items-center gap-3 rounded-xl px-3 text-[14.5px] transition-colors", i.match.test(path) ? "bg-white/[0.09] font-medium text-white" : "text-white/55 hover:bg-white/[0.04] hover:text-white")}
           >
-            <i.icon className={cn("size-[18px]", on(i.href) ? "text-[#ff6a6f]" : "")} strokeWidth={1.9} />
+            <i.icon className={cn("size-[18px]", i.match.test(path) ? "text-[#ff6a6f]" : "")} strokeWidth={1.9} />
             {i.label}
           </Link>
         ))}

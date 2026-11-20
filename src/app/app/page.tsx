@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, Flame, Moon, Trophy, Users, MapPin } from "lucide-react";
-import { TodayPlan } from "@/components/app/today-plan";
 import type { PlanSession } from "@/components/app/plan-today";
 import { Today } from "@/components/app/today";
-import { Chip, Group, Row, SectionHead } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
-import { OsBento, OsTiles, OsToday } from "@/components/app/athlete-os";
+import { OsToday } from "@/components/app/athlete-os";
+import { WeekStrip } from "@/components/app/week-strip";
 import { getCurrentUser } from "@/lib/auth";
-import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
-import { formatDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { todayISO } from "@/lib/dates";
@@ -23,7 +19,7 @@ import { blockingStep, guideNext } from "@/lib/data/first-step";
 export default async function AppHome() {
   const { t } = await getT();
   const supabase = await createClient();
-  const [user, challenges] = await Promise.all([isSupabaseConfigured() ? getCurrentUser().catch(() => null) : null, listChallenges(supabase).catch(() => [])]);
+  const user = isSupabaseConfigured() ? await getCurrentUser().catch(() => null) : null;
   // Signed in: today's sessions straight from the plan (VYRA Method or the coach).
   let todays: PlanSession[] = [];
   let week: { date: string; done: boolean }[] = [];
@@ -57,25 +53,24 @@ export default async function AppHome() {
     if (!error && data) synced = data as Synced;
   }
   const todo = athlete && user ? await blockingStep(supabase, user.id).catch(() => null) : null;
-  const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
 
   const first = (user?.profile.full_name ?? "").trim().split(/\s+/)[0];
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
   const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
   const plan = paid && user ? { hasPlan: week.length > 0, sessions: todays.map((s) => ({ title: s.title, kind: s.kind, category: todayCats[s.id] ?? null, km: s.km ?? null, status: s.status })) } : undefined;
+  const date = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
   return (
-    <div className="app-rise app-wide grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-10">
-      <header className="px-1 pb-4 pt-1 lg:col-span-2">
-        <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.2em] text-white/40">VYRA · Athlete OS</p>
-        <h1 className="mt-1.5 text-[30px] font-semibold leading-[1.02] tracking-[-0.035em]">
+    <div className="app-rise mx-auto grid w-full max-w-xl grid-cols-1 gap-3">
+      <header className="flex items-end justify-between px-1 pb-1 pt-1">
+        <h1 className="text-[28px] font-semibold leading-[1.05] tracking-[-0.03em]">
           {hello}
           {first ? `, ${first}` : ""}
-          <span className="text-[var(--accent)]">.</span>
         </h1>
+        <p className="pb-1 text-[13px] capitalize text-white/50">{date}</p>
       </header>
 
       {todo ? (
-        <Link href={todo.href} className="mb-3 block rounded-[24px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99] lg:col-span-2">
+        <Link href={todo.href} className="block rounded-[22px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99]">
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#ff8a8f]">{t("Zrób to najpierw", "Do this first")}</p>
           <p className="mt-1.5 text-[20px] font-semibold leading-tight tracking-[-0.01em]">{todo.title}</p>
           <p className="mt-2 text-[15px] leading-relaxed text-white/75">{todo.text}</p>
@@ -84,51 +79,32 @@ export default async function AppHome() {
       ) : null}
       {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
 
-      {/* Athlete OS: one card for today (score, verdict, today's session, morning actions), three numbers, the grid. */}
+      {/* One card for today: readiness, the call (do it / lighter / rest), today's session, the morning check-in. */}
       <OsToday plan={plan} sessions={paid ? todays : []} />
       {/* the morning check-in sheet and its sync live here; the card above opens it */}
       <div className="hidden">
         <Today synced={synced} athlete={athlete} part="sheet" />
       </div>
-      {!paid ? (
-        <div className="lg:col-span-2">
-          <TodayPlan />
-        </div>
+
+      {!paid || !week.length ? (
+        <Link href="/app/cel" className="block rounded-[22px] border border-white/[0.07] bg-[#111113] p-5 active:scale-[0.99]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/45">{t("Plan", "Plan")}</p>
+          <p className="mt-1.5 text-[19px] font-semibold leading-tight tracking-[-0.01em]">{t("Ułóż plan pod swój start", "Build a plan for your race")}</p>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-white/60">{t("5 km, 10 km, półmaraton albo maraton. Pierwsze 14 dni za darmo, bez karty.", "5K, 10K, half or full marathon. The first 14 days are free, no card.")}</p>
+          <span className="mt-4 inline-flex h-11 items-center rounded-full bg-white px-5 text-[15px] font-semibold text-black">{t("Zaczynam", "Start")} →</span>
+        </Link>
       ) : null}
-      <OsTiles planned={week} />
-      <OsBento />
 
-      <div className="grid min-w-0 grid-cols-1 content-start">
-        <TodayRoutine
-          hard={todays.some((x) => x.status === "planned" && ["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"].includes(todayCats[x.id] ?? ""))}
-          strength={todays.some((x) => x.status === "planned" && x.kind === "strength")}
-          run={todays.some((x) => x.kind === "running")}
-        />
-        <div className="mt-3">
-          <Today part="weather" />
-        </div>
-      </div>
+      <section className="rounded-[22px] border border-white/[0.07] bg-[#0d0d0e] p-4">
+        <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/45">{t("Ten tydzień", "This week")}</p>
+        <WeekStrip planned={week} />
+      </section>
 
-      <div className="grid min-w-0 grid-cols-1 content-start lg:pt-2">
-        <SectionHead title={t("W VYRA", "At VYRA")} />
-        <Group>
-          <Row href="/app/znajomi" icon={<Flame className="size-4" />} title={t("Ekipa", "Crew")} sub={t("Treningi znajomych, 🔥 i komentarze", "Friends' sessions, 🔥 and comments")} />
-          <Row href="/app/wspolne-biegi" icon={<MapPin className="size-4" />} title={t("Wspólne biegi", "Run together")} sub={t("Znajdź ekipę do biegania w okolicy", "Find people to run with nearby")} />
-          <Row href="/app/run-club" icon={<Users className="size-4" />} title="Run Club VYRA" sub={t("Czwartki 18:00 · Park Aleksandria", "Thursdays 18:00 · Park Aleksandria")} />
-          {live ? (
-            <Row
-              href={`/app/wyzwania/${live.slug}`}
-              icon={<Trophy className="size-4" />}
-              title={live.title}
-              sub={`${formatDate(live.starts_on, "d.MM")} – ${formatDate(live.ends_on, "d.MM")}`}
-              right={<Chip tone={challengeState(live) === "live" ? "good" : "quiet"}>{challengeState(live) === "live" ? t("trwa", "live") : t("wkrótce", "soon")}</Chip>}
-            />
-          ) : todayISO() <= "2027-05-22" ? (
-            <Row href="/app/nocna" icon={<Moon className="size-4" />} title="Nocna Ekipa" sub={t("Darmowy plan na Nocną Dychę", "Free plan for the night 10K")} />
-          ) : null}
-          {!paid ? <Row href="/app/sklep" icon={<CalendarDays className="size-4" />} title="VYRA Method" sub={t("Plan dopasowany do Ciebie · 14 dni za darmo", "A plan fitted to you · 14 days free")} /> : null}
-        </Group>
-      </div>
+      <TodayRoutine
+        hard={todays.some((x) => x.status === "planned" && ["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"].includes(todayCats[x.id] ?? ""))}
+        strength={todays.some((x) => x.status === "planned" && x.kind === "strength")}
+        run={todays.some((x) => x.kind === "running")}
+      />
     </div>
   );
 }
