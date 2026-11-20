@@ -4,7 +4,8 @@ import { GoalPlanView } from "@/components/app/goal-plan";
 import { MonthCalendar } from "@/components/app/month-calendar";
 import { plannedDays } from "@/lib/app/planned-days";
 import { MyWeek, type WeekSession } from "@/components/app/my-week";
-import { Group, PhotoHead, Row, SectionHead } from "@/components/app/ui";
+import { Group, PageHead, Row, SectionHead } from "@/components/app/ui";
+import { PlanGoalCard } from "@/components/app/plan-goal-card";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -47,16 +48,16 @@ export default async function AppPlan() {
     const shown = weeks.filter((w, i) => i === 0 || w.list.length);
     return (
       <div className="app-rise grid grid-cols-1">
-        <PhotoHead photo="track" title="Twój plan" sub={method ? "VYRA Method · plan dopasowuje się co tydzień" : "Od Twojego trenera"} />
-        <div className="mt-2">
-          <MonthCalendar planned={await plannedDays().catch(() => [])} />
-        </div>
+        <PageHead title="Plan" sub={method ? "VYRA Method · dopasowuje się co tydzień" : "Od Twojego trenera"} />
+        <PlanGoalCard />
         {shown.map((w, i) => (
           <div key={w.start}>
             <SectionHead title={i === 0 ? "Ten tydzień" : `${fmt(w.days[0])} – ${fmt(w.days[6])}`} />
             <MyWeek days={w.days} sessions={w.list} today={today} />
           </div>
         ))}
+        <SectionHead title="Miesiąc" />
+        <MonthCalendar planned={await plannedDays().catch(() => [])} />
         <Group className="mt-5">
           <Row href="/athlete/calendar" icon={<CalendarDays className="size-4" />} title="Kalendarz treningów" />
           {method ? <Row href="/athlete/metoda" icon={<Sparkles className="size-4" />} title="VYRA Method: ankieta i podsumowania" /> : null}
@@ -70,7 +71,8 @@ export default async function AppPlan() {
 
   return (
     <div className="app-rise grid grid-cols-1">
-      <PhotoHead photo="blur" title="Plan pod start" sub={method ? "Tydzień po tygodniu aż do startu. Tempa z Twojej formy." : "Ustaw start i zobacz podgląd planu. Cały plan z tempami jest w VYRA Method."} />
+      <PageHead title="Plan" sub={method ? "Tydzień po tygodniu aż do startu. Tempa z Twojej formy." : "Ustaw start i zobacz podgląd planu. Cały plan z tempami: 14 dni za darmo w VYRA Method."} />
+      <PlanGoalCard />
       <GoalPlanView />
     </div>
   );
