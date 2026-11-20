@@ -4,7 +4,8 @@ import { Today } from "@/components/app/today";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { OsToday } from "@/components/app/athlete-os";
 import { SessionHero, TodayTop } from "@/components/app/today-hero";
-import { GoalProgress, RunInsights } from "@/components/app/coach-cards";
+import { RunInsights } from "@/components/app/coach-cards";
+import { GoalRoad, RunnerLevel, WeekRing } from "@/components/app/viz";
 import { GuardBanner } from "@/components/app/guard";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -80,7 +81,9 @@ export default async function AppHome() {
 
       <GuardBanner />
       <SessionHero hasPlan={paid && week.length > 0} sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
-      <GoalProgress />
+      <WeekRing planned={week} />
+      <GoalRoad />
+      <RunnerLevel />
 
       {/* Readiness: the call for today (do it / lighter / rest) and the morning check-in. */}
       <OsToday plan={plan} sessions={[]} />
