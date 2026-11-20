@@ -44,6 +44,7 @@ export function AppTabBar() {
               <Link
                 href={tab.href}
                 onClick={tap}
+                data-tour={`tab-${i}`}
                 aria-label={t(tab.pl, tab.en)}
                 aria-current={active ? "page" : undefined}
                 className={cn("grid h-11 w-[54px] place-items-center rounded-full transition-colors duration-200 active:scale-90", active ? "text-white" : "text-white/45")}

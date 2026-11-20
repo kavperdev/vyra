@@ -5,7 +5,6 @@ import { SignOutButton } from "@/components/app/sign-out";
 import { DeleteAccount } from "@/components/app/delete-account";
 import { storeApp } from "@/lib/app/platform";
 import { ReopenOnboarding } from "@/components/app/onboarding";
-import { AppGuide, GuideButton } from "@/components/app/guide";
 import { Group, PhotoHead, Row, SectionHead } from "@/components/app/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -55,8 +54,9 @@ export default async function AppYou() {
       )}
       {user ? (
         <>
-          <AppGuide variant="runner" userId={user.id} auto={false} />
-          <GuideButton className="mt-3 w-full rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-left text-[15px] font-medium active:scale-[0.985]" label="Przewodnik: jak działa aplikacja" />
+          <Link href="/app?tour=1" className="mt-3 block w-full rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-left text-[15px] font-medium active:scale-[0.985]">
+            Samouczek: co jest gdzie i jak to działa →
+          </Link>
         </>
       ) : null}
       <ReopenOnboarding className="mt-2 w-full rounded-[20px] border border-white/[0.06] bg-[#111113] px-4 py-3.5 text-left text-[14px] text-white/75 active:scale-[0.985]" />
