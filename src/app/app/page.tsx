@@ -7,6 +7,7 @@ import { Today } from "@/components/app/today";
 import { Chip, Group, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { TodayRings } from "@/components/app/rings";
+import { AthleteBoard } from "@/components/app/athlete-os";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -87,6 +88,9 @@ export default async function AppHome() {
       <div className="mt-4 lg:col-span-2">
         <TodayRings />
       </div>
+
+      {/* Athlete OS: today's call, goal, form, health, strength, records, season. */}
+      {user ? <AthleteBoard /> : null}
 
       <div className="grid min-w-0 grid-cols-1 content-start">
         <div className="mt-3">

@@ -155,14 +155,17 @@ export const monthName = (ym: string) => MONTHS[Number(ym.slice(5, 7)) - 1] ?? y
 export type DayScore = { score: number; label: string; advice: string; tone: "good" | "warn" | "info" };
 
 /** 0–100 from form balance and overload risk, blended with the morning check-in when there is one. */
-export function dayScore(f: Form, readiness: number | null): DayScore | null {
-  if (f.days.every((d) => !d.load) && readiness == null) return null;
+export function dayScore(f: Form, readiness: number | null, health: "none" | "ok" | "watch" | "warn" = "none"): DayScore | null {
+  if (f.days.every((d) => !d.load) && readiness == null && (health === "none" || health === "ok")) return null;
   const fresh = f.balance / Math.max(5, f.fitness); // −0.5 tired … +0.3 fresh
   let s = Math.max(15, Math.min(95, 65 + fresh * 80));
   if (f.ratioZone === "risk") s = Math.min(s, 40);
   else if (f.ratioZone === "watch") s -= 10;
   if (readiness != null) s = readiness <= 25 ? Math.min(35, (s + readiness) / 2) : (s + readiness) / 2;
-  const score = Math.round(s);
+  // morning numbers from the watch (resting HR, HRV, sleep) against the runner's own normal
+  if (health === "warn") s = Math.min(s, 34);
+  else if (health === "watch") s -= 10;
+  const score = Math.round(Math.max(10, s));
   if (score >= 75) return { score, tone: "good", label: "Gotowy na mocny trening", advice: "Dobry dzień na akcent albo test. Rozgrzej się porządnie." };
   if (score >= 55) return { score, tone: "good", label: "Normalny dzień treningowy", advice: "Trenuj według planu. Spokojne biegi naprawdę spokojnie." };
   if (score >= 35) return { score, tone: "info", label: "Dziś raczej spokojnie", advice: "Lekki bieg albo krótszy trening. Mocny akcent przesuń o dzień lub dwa." };

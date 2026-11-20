@@ -3,8 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUp, X } from "lucide-react";
-import { readLog } from "@/lib/app/log";
+import { ArrowUp, Brain, X } from "lucide-react";
+import { readAll, readLog } from "@/lib/app/log";
+import { analyse } from "@/lib/app/form";
+import { HEALTH_KEY, healthLines, healthSignal, validHealth } from "@/lib/app/health";
+import { addFacts, MEMORY_KEY, validMemory } from "@/lib/app/memory";
+import { blockNow, blockWeek, daysTo, nextRace, SEASON_KEY, validSeason } from "@/lib/app/season";
+import { todayCall } from "@/lib/app/today-call";
 import { load, save, todayWaw } from "@/lib/app/store";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +17,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 const KEY = "vyra-puls";
 const SEEN = "vyra-puls-seen";
 const HIDE_ON = ["/app/zestaw", "/app/timer", "/app/bieg", "/app/start", "/app/witaj"];
-const ASK = ["Jak szybko biegać spokojnie?", "Co daje VYRA Method?", "Jak połączyć Stravę?", "Boli mnie kolano, co robić?", "Kiedy jest Run Club?"];
+const ASK = ["Jak mi idzie w tym tygodniu?", "Jak szybko biegać spokojnie?", "Co daje VYRA Method?", "Jak połączyć Stravę?", "Boli mnie kolano, co robić?", "Kiedy jest Run Club?"];
 
 /** The avatar: a pulse line in a dark circle, with a slow ring around it. */
 function Avatar({ size = 52, ping = false }: { size?: number; ping?: boolean }) {
@@ -48,23 +53,56 @@ function Linked({ text }: { text: string }) {
   );
 }
 
-/** What Puls should know about this runner, from this phone (no names, no e-mail). */
+/**
+ * What Puls should know about this runner (no names, no e-mail): form, the last weeks, morning numbers,
+ * the season, the goal, today's call and everything it was asked to remember. Built on the phone from
+ * the account's synced data, so it is the same on every device.
+ */
 function context(path: string) {
-  const since = new Date(Date.parse(`${todayWaw()}T12:00:00Z`) - 14 * 864e5).toISOString().slice(0, 10);
-  const runs = readLog().filter((r) => r.day >= since);
-  const km = runs.reduce((a, r) => a + r.km, 0);
+  const today = todayWaw();
+  const ago = (n: number) => new Date(Date.parse(`${today}T12:00:00Z`) - n * 864e5).toISOString().slice(0, 10);
+  const runs = readLog();
+  const all = readAll();
+  const f = analyse(runs, today, null);
+  const health = validHealth(load<unknown>(HEALTH_KEY, []));
+  const hs = healthSignal(health, today);
+  const season = validSeason(load<unknown>(SEASON_KEY, null));
+  const block = blockNow(season, today);
+  const race = nextRace(season, today);
   const res = load<{ dist: string; time: string } | null>("vyra-result", null);
   const goal = load<{ dist: string; race: string; name?: string } | null>("vyra-goal-plan", null);
   const lvl = load<string | null>("vyra-nocna-level", null);
+  const ready = load<{ sleep: number; energy: number; soreness: number; pain: boolean; painArea?: string } | null>(`vyra-ready-${today}`, null);
+  const memory = validMemory(load<unknown>(MEMORY_KEY, []));
+  const weeks = [0, 1, 2, 3, 4, 5].map((w) => {
+    const from = ago(7 * w + 6);
+    const to = ago(7 * w);
+    const rs = runs.filter((r) => r.day >= from && r.day <= to);
+    return `${rs.reduce((a, r) => a + r.km, 0).toFixed(0)} km/${rs.length}`;
+  });
+  const last = all
+    .filter((r) => r.day >= ago(10))
+    .slice(0, 8)
+    .map((r) => `${r.day} ${r.sport && r.sport !== "run" ? r.sport : "bieg"} ${r.km ? `${r.km.toFixed(1)} km` : ""} ${r.sec ? `${Math.round(r.sec / 60)} min` : ""}${r.rpe ? ` RPE ${r.rpe}` : ""}${r.note ? ` "${r.note.slice(0, 60)}"` : ""}`.replace(/\s+/g, " "));
+  const gym = all.filter((r) => r.sport === "gym" && r.day >= ago(13)).length;
+  const call = todayCall(f, hs, !!ready?.pain);
   return [
     `ekran: ${path}`,
-    `ostatnie 14 dni: ${runs.length} biegów, ${km.toFixed(1)} km`,
+    memory.length ? `PAMIĘĆ (zawodnik sam to powiedział): ${memory.map((m) => m.text).join(" | ")}` : null,
+    `forma: kondycja ${f.fitness}, zmęczenie ${f.fatigue}, balans ${f.balance}, stan "${f.state.label}"${f.ratio ? `, stosunek obciążeń ${f.ratio.toFixed(2)}` : ""}${f.p5k ? `, 5 km teraz ok. ${Math.floor(f.p5k / 60)}:${String(f.p5k % 60).padStart(2, "0")}` : ""}`,
+    `kilometry tygodniowo (od tego tygodnia wstecz): ${weeks.join(", ")}; siłownia w 2 tyg.: ${gym}`,
+    last.length ? `ostatnie treningi: ${last.join("; ")}` : "brak treningów w dzienniku z ostatnich 10 dni",
+    health.length ? `zdrowie: ${healthLines(health, today, 5).join("; ")}` : "zdrowie: nie wpisuje porannych liczb",
+    ready ? `samopoczucie dziś: sen ${ready.sleep}/5, energia ${ready.energy}/5, zakwasy ${ready.soreness}/5${ready.pain ? `, BÓL${ready.painArea ? ` (${ready.painArea})` : ""}` : ""}` : null,
+    block ? `blok teraz: ${block.name}, tydzień ${blockWeek(block, today).n} z ${blockWeek(block, today).of}` : null,
+    race ? `najbliższy start: ${race.name} ${race.date} (za ${daysTo(today, race.date)} dni)${race.goal ? `, cel ${race.goal}` : ""}` : null,
     res ? `wynik: ${res.dist} w ${res.time}` : null,
-    goal ? `cel: ${goal.name || goal.dist} ${goal.race}` : null,
+    goal ? `plan pod start: ${goal.name || goal.dist} ${goal.race}` : null,
     lvl ? `Nocna Ekipa poziom: ${lvl}` : null,
+    `decyzja aplikacji na dziś: ${call.title}. ${call.action}`,
   ]
     .filter(Boolean)
-    .join("; ");
+    .join("\n");
 }
 
 /**
@@ -79,7 +117,9 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [fresh, setFresh] = useState(false);
+  const [saved, setSaved] = useState<string[]>([]);
   const end = useRef<HTMLDivElement>(null);
+  const askRef = useRef<(q: string) => void>(() => {});
 
   useEffect(() => {
     setMsgs(load<Msg[]>(KEY, []));
@@ -88,6 +128,16 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs, busy, open]);
+  // "Zapytaj Pulsa o tydzień" and similar buttons elsewhere in the app open the chat with a question.
+  useEffect(() => {
+    const on = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail;
+      setOpen(true);
+      if (typeof q === "string" && q.trim()) askRef.current(q);
+    };
+    window.addEventListener("vyra:ask-puls", on);
+    return () => window.removeEventListener("vyra:ask-puls", on);
+  }, []);
 
   if (HIDE_ON.some((p) => path.startsWith(p))) return null;
 
@@ -98,20 +148,29 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
     setMsgs(next);
     setText("");
     setErr(null);
+    setSaved([]);
     setBusy(true);
     try {
       const res = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages: next.slice(-10), ctx: context(path) }) });
-      const j = (await res.json()) as { answer?: string; error?: string };
+      const j = (await res.json()) as { answer?: string; error?: string; remember?: string[] };
       if (!res.ok || !j.answer) throw new Error(j.error ?? "Puls nie odpowiedział.");
       const all: Msg[] = [...next, { role: "assistant", content: j.answer }];
       setMsgs(all);
       save(KEY, all.slice(-30));
+      if (j.remember?.length) {
+        const { next: facts, added } = addFacts(validMemory(load<unknown>(MEMORY_KEY, [])), j.remember, todayWaw());
+        if (added.length) {
+          save(MEMORY_KEY, facts);
+          setSaved(added);
+        }
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Puls nie odpowiedział.");
     } finally {
       setBusy(false);
     }
   };
+  askRef.current = ask;
   const openIt = () => {
     setOpen(true);
     if (fresh) {
@@ -147,8 +206,11 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
               <Avatar size={40} />
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-semibold leading-tight">Puls</p>
-                <p className="text-[12px] text-white/45">Asystent AI VYRA · trening i aplikacja</p>
+                <p className="text-[12px] text-white/45">Asystent AI VYRA · zna Twoje dane</p>
               </div>
+              <Link href="/app/pamiec" onClick={() => setOpen(false)} aria-label="Co pamięta Puls" className="grid size-9 place-items-center rounded-full bg-white/[0.06] text-white/70 active:scale-90">
+                <Brain className="size-4" />
+              </Link>
               {msgs.length ? (
                 <button type="button" onClick={() => { setMsgs([]); save(KEY, []); }} className="rounded-full px-3 py-1.5 text-[12px] text-white/50 active:bg-white/10">
                   Wyczyść
@@ -161,7 +223,7 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <div className="max-w-[88%] rounded-2xl rounded-bl-md bg-white/[0.06] px-3.5 py-2.5 text-[14px] leading-relaxed text-white/85">
-                Cześć, tu Puls. Pytaj o trening: tempo, tętno, ból, start. Albo o to, gdzie co jest w aplikacji. Jestem asystentem AI, nie lekarzem: przy bólu, który nie mija, idź do specjalisty.
+                Cześć, tu Puls. Widzę Twój dziennik, formę, poranne liczby i sezon, więc pytaj o swój trening: jak Ci idzie, co zmienić, jak rozegrać start. Albo o to, gdzie co jest w aplikacji. Jestem asystentem AI, nie lekarzem: przy bólu, który nie mija, idź do specjalisty.
               </div>
               {!signedIn ? (
                 <div className="mt-3 rounded-2xl border border-white/10 p-3.5 text-[13.5px] text-white/70">
@@ -183,6 +245,14 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
                     </p>
                   ),
                 )}
+                {saved.length ? (
+                  <Link href="/app/pamiec" onClick={() => setOpen(false)} className="flex w-fit max-w-[88%] items-start gap-2 rounded-2xl border border-white/10 px-3 py-2 text-[12.5px] leading-snug text-white/60">
+                    <Brain className="mt-0.5 size-3.5 shrink-0 text-[#ff8a8f]" />
+                    <span>
+                      Zapamiętałem: {saved.join("; ")}. <span className="text-white/40 underline underline-offset-2">Zobacz pamięć</span>
+                    </span>
+                  </Link>
+                ) : null}
                 {busy ? (
                   <p className="flex w-fit gap-1 rounded-2xl rounded-bl-md bg-white/[0.06] px-4 py-3.5">
                     {[0, 1, 2].map((d) => (

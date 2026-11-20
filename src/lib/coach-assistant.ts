@@ -1,4 +1,6 @@
 import "server-only";
+import { healthLines } from "@/lib/app/health";
+import { loadHealth, withHealth } from "@/lib/data/health";
 import { addDaysISO, weekStartISO } from "@/lib/dates";
 import { getAthleteProfile, listCoachNotes, listGoals, listPlans, listRecords } from "@/lib/data/people";
 import { listInjuries, painHistory } from "@/lib/data/injuries";
@@ -80,6 +82,7 @@ export async function coachMethod(supabase: ServerSupabase, coachId: string): Pr
 /** Plain-text summary of everything relevant about the athlete, without e-mail or surname. */
 export async function buildContext(supabase: ServerSupabase, athleteId: string, firstName: string, today: string, coachId?: string): Promise<string> {
   const from = addDaysISO(today, -42);
+  const healthP = loadHealth(supabase, athleteId).catch(() => []);
   const [long, year, profile, goals, records, notes, readiness, plans, injuries, pain, comments, previous, feedback] = await Promise.all([
     listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -140), to: addDaysISO(today, 120) }),
     listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
@@ -115,6 +118,7 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
       .limit(60)
       .then((r) => (r.error ? [] : ((r.data ?? []) as unknown as Feedback[]))),
   ]);
+  const health = await healthP;
   const past = long.filter((x) => x.scheduled_date <= today);
   const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
   const recent = past.filter((x) => x.scheduled_date >= from);
@@ -217,7 +221,7 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
     profile: profile ? { lthr: profile.lthr, max_hr: profile.max_hr, resting_hr: profile.resting_hr } : null,
     intake: profile?.intake as Record<string, string | string[]> | null | undefined,
     injuries,
-    readiness,
+    readiness: withHealth(readiness, health, addDaysISO(today, -21)),
     mainGoal: race?.goal ?? null,
   });
   lines.push(`Poziom: ${LEVEL_LABEL[m.level.level]} (${m.level.reasons.join("; ")})${m.level.minor ? ". NIEPEŁNOLETNI: bez podwójnego progu i bloków maratońskich, nacisk na różnorodność, technikę i siłę" : ""}.`);
@@ -314,6 +318,10 @@ export async function buildContext(supabase: ServerSupabase, athleteId: string, 
   if (readiness.length) {
     for (const r of readiness) lines.push(`${r.day}: ${r.sleep}/${r.energy}/${r.soreness}${r.pain ? `, BÓL${r.pain_area ? ` (${clip(r.pain_area, 60)})` : ""}` : ""}${r.note ? `, ${clip(r.note, 140)}` : ""}`);
   } else lines.push("Brak wpisów.");
+  if (health.length) {
+    section("PORANNE LICZBY Z ZEGARKA (tętno spoczynkowe, HRV, sen; porównuj z normą zawodnika)");
+    lines.push(...healthLines(health, today, 14));
+  }
 
   if (notes.length) {
     section("NOTATKI ZESPOŁU (trener, trener siłowy, fizjoterapeuta)");

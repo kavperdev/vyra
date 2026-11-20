@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, FileText, Gift, LayoutDashboard, Mail, Medal, Settings, Shield, Trophy, Users } from "lucide-react";
+import { Bell, Brain, CalendarDays, FileText, Gift, LayoutDashboard, Mail, Medal, Settings, Shield, Trophy, Users } from "lucide-react";
 import { InstallRow } from "@/components/app/install-row";
 import { SignOutButton } from "@/components/app/sign-out";
 import { DeleteAccount } from "@/components/app/delete-account";
@@ -63,6 +63,8 @@ export default async function AppYou() {
       <SectionHead title={t("Więcej", "More")} />
       <Group>
         <InstallRow />
+        <Row href="/app/sezon" icon={<CalendarDays className="size-4" />} title={t("Sezon", "Season")} sub={t("Starty i bloki treningowe na jednej osi", "Races and training blocks on one line")} />
+        <Row href="/app/pamiec" icon={<Brain className="size-4" />} title={t("Pamięć Pulsa", "Puls memory")} sub={t("Co asystent wie o Tobie między rozmowami", "What the assistant remembers about you")} />
         <Row href="/app/forma?t=historia" icon={<Medal className="size-4" />} title={t("Postępy i odznaki", "Progress and badges")} />
         <Row href="/app/znajomi" icon={<Users className="size-4" />} title={t("Znajomi i ranking", "Friends and ranking")} sub={t("Porównujcie kilometry z tygodnia", "Compare weekly kilometres")} />
         {user?.profile.role === "athlete" ? <Row href="/athlete/settings" icon={<Bell className="size-4" />} title={t("Przypomnienia o treningu", "Training reminders")} sub={t("Włącz powiadomienia: rano dostaniesz trening na dziś", "Turn notifications on: get today's session every morning")} /> : null}
