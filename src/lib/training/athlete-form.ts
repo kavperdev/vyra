@@ -1,6 +1,7 @@
 import "server-only";
 import { addDaysISO } from "@/lib/dates";
 import { listInjuries } from "@/lib/data/injuries";
+import { loadHealth, withHealth } from "@/lib/data/health";
 import { getAthleteProfile, listGoals, listRecords } from "@/lib/data/people";
 import { listSessions } from "@/lib/data/sessions";
 import type { ServerSupabase } from "@/lib/supabase/server";
@@ -14,7 +15,7 @@ import { raceCountdown } from "@/lib/training/race";
  * method snapshot (level, zones, HR, period, signals). Used by the athlete's progress page and the coach.
  */
 export async function athleteForm(supabase: ServerSupabase, athleteId: string, today: string): Promise<{ prediction: Prediction | null; method: MethodSnapshot }> {
-  const [year, records, goals, injuries, profile, readiness] = await Promise.all([
+  const [year, records, goals, injuries, profile, checkins, health] = await Promise.all([
     listSessions(supabase, { athleteIds: [athleteId], from: addDaysISO(today, -365), to: today, kinds: ["running"] }),
     listRecords(supabase, athleteId).catch(() => []),
     listGoals(supabase, athleteId).catch(() => []),
@@ -26,7 +27,9 @@ export async function athleteForm(supabase: ServerSupabase, athleteId: string, t
       .eq("athlete_id", athleteId)
       .gte("day", addDaysISO(today, -21))
       .then((r) => (r.data ?? []) as { day: string; sleep: number; energy: number; pain: boolean; pain_area: string | null }[]),
+    loadHealth(supabase, athleteId).catch(() => []),
   ]);
+  const readiness = withHealth(checkins, health, addDaysISO(today, -21));
   const reps = await loadThresholdReps(supabase, year, addDaysISO(today, -84)).catch(() => []);
   const prediction = predictRaces(year, records, today, reps);
   const method = methodSnapshot({

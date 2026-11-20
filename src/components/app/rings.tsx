@@ -7,6 +7,7 @@ import { dayScore } from "@/lib/app/form";
 import { readinessToday } from "@/lib/app/plans";
 import { buildPlan, GOAL_KEY, type GoalInput } from "@/lib/app/goal-plan";
 import { load, todayWaw, useStoreTick } from "@/lib/app/store";
+import { useHealthSignal } from "@/components/app/health-entry";
 import { useLog } from "@/lib/app/log";
 
 /** One ring: value 0–1, a number in the middle, a short word under it. */
@@ -45,6 +46,7 @@ export function TodayRings() {
   const f = useForm();
   const log = useLog();
   const tick = useStoreTick();
+  const health = useHealthSignal();
   const [ready, setReady] = useState<number | null>(null);
   const [target, setTarget] = useState<number | null>(null);
   useEffect(() => {
@@ -56,8 +58,8 @@ export function TodayRings() {
       setTarget(w ? w.km : null);
     } else setTarget(null);
   }, [tick]);
-  if (f.days.every((d) => !d.load) && ready == null) return null;
-  const s = dayScore(f, ready);
+  if (f.days.every((d) => !d.load) && ready == null && health.level === "none") return null;
+  const s = dayScore(f, ready, health.level);
   // the usual week: average of the last 4 full weeks in the log
   const since = addDays(todayWaw(), -28);
   const usual = Math.max(10, log.filter((r) => r.day >= since).reduce((a, r) => a + r.km, 0) / 4);

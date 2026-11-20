@@ -8,6 +8,7 @@ import { readinessToday } from "@/lib/app/plans";
 import { useLog } from "@/lib/app/log";
 import { todayWaw } from "@/lib/app/store";
 import { useResult } from "@/components/app/tools";
+import { useHealthSignal } from "@/components/app/health-entry";
 import { CountUp } from "@/components/app/motion";
 import { Card, SectionHead } from "@/components/app/ui";
 import { fmtPace, timeFor } from "@/lib/method/engine";
@@ -22,8 +23,9 @@ export function useForm(): Form {
 /** Wynik dnia with the morning check-in (read after mount: it lives on the phone). */
 function useDayScore(f: Form) {
   const [ready, setReady] = useState<number | null>(null);
+  const health = useHealthSignal().level;
   useEffect(() => setReady(readinessToday()), []);
-  return useMemo(() => dayScore(f, ready), [f, ready]);
+  return useMemo(() => dayScore(f, ready, health), [f, ready, health]);
 }
 
 function ScoreRing({ score, size = 58 }: { score: number; size?: number }) {

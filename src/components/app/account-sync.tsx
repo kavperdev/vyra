@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { pullAppState, pushAppState, type StateRow } from "@/lib/actions/app-state";
 import { mergeLogs } from "@/lib/app/log";
+import { HEALTH_KEY, validHealth } from "@/lib/app/health";
 import { STORE_EVENT, SYNCED, claimDevice, load, save, stamps } from "@/lib/app/store";
 
 const UNION = ["vyra-start-plan", "vyra-course-done", "vyra-log-del", "vyra-badges-seen"];
@@ -72,8 +73,16 @@ export function AccountSync({ userId }: { userId: string | null }) {
       if (!same(log, load<unknown>("vyra-log", []))) take("vyra-log", log, now);
       if (!same(log, server.get("vyra-log")?.value) && (log.length || server.has("vyra-log"))) pending.add("vyra-log");
 
+      // Morning numbers: days from both sides, this phone wins a day entered on both.
+      const hMine = validHealth(load<unknown>(HEALTH_KEY, []));
+      const hSrv = validHealth(server.get(HEALTH_KEY)?.value);
+      const hDays = new Map([...hSrv, ...hMine].map((d) => [d.day, d]));
+      const health = validHealth([...hDays.values()]).slice(-400);
+      if (!same(health, hMine) && health.length) take(HEALTH_KEY, health, now);
+      if (!same(health, hSrv) && health.length) pending.add(HEALTH_KEY);
+
       for (const key of SYNCED) {
-        if (UNION.includes(key) || key === "vyra-log") continue;
+        if (UNION.includes(key) || key === "vyra-log" || key === HEALTH_KEY) continue;
         const srv = server.get(key);
         const mine = s[key] ?? 0;
         if (srv && srv.ts > mine) {
