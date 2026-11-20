@@ -187,7 +187,7 @@ export function Assistant({ signedIn }: { signedIn: boolean }) {
           onClick={openIt}
           aria-label="Zapytaj Pulsa, asystenta VYRA"
           data-tour="puls"
-          className="fixed right-4 z-40 flex items-center gap-2 transition active:scale-90 lg:bottom-6 lg:right-6"
+          className="fixed right-4 z-40 hidden items-center gap-2 transition active:scale-90 lg:bottom-6 lg:right-6 lg:flex"
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 96px)" }}
         >
           {fresh ? <span className="rounded-full bg-white px-3 py-1.5 text-[12.5px] font-semibold text-black shadow-lg">Zapytaj Pulsa</span> : null}

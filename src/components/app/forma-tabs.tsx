@@ -5,6 +5,7 @@ import { FormView } from "@/components/app/form-hub";
 import { ProgressView } from "@/components/app/progress";
 import { Seg } from "@/components/app/tools";
 import { GuardBody } from "@/components/app/guard";
+import { RunInsights } from "@/components/app/coach-cards";
 
 /** One tab for "how am I doing": now (form, fatigue, paces) and history (kilometres, records, badges). */
 export function FormaTabs() {
@@ -27,7 +28,12 @@ export function FormaTabs() {
           { k: "historia", label: "Historia" },
         ]}
       />
-      {tab === "teraz" ? <FormView /> : tab === "cialo" ? <GuardBody /> : <ProgressView />}
+      {tab === "teraz" ? (
+        <div className="grid gap-3">
+          <RunInsights />
+          <FormView />
+        </div>
+      ) : tab === "cialo" ? <GuardBody /> : <ProgressView />}
     </div>
   );
 }

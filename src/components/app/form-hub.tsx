@@ -13,6 +13,7 @@ import { CountUp } from "@/components/app/motion";
 import { Card, SectionHead } from "@/components/app/ui";
 import { fmtPace, timeFor } from "@/lib/method/engine";
 import { cn } from "@/lib/utils";
+import { lowBase } from "@/lib/app/today-call";
 
 export function useForm(): Form {
   const log = useLog();
@@ -164,7 +165,9 @@ function FormCardBody({ f, top }: { f: Form; top: Insight | undefined }) {
 export function FormView() {
   const f = useForm();
   const [win, setWin] = useState(90);
-  const zone = f.ratioZone;
+  // After a break the ratio jumps on any run: the same rule as Dziś, so the two screens never disagree.
+  const comeback = lowBase(f) && (f.ratioZone === "risk" || f.ratioZone === "watch");
+  const zone = comeback ? "comeback" : f.ratioZone;
   const ratioPos = f.ratio == null ? null : Math.min(1, Math.max(0, (f.ratio - 0.5) / 1.3));
   const ds = useDayScore(f);
   const zones = paceZones(f.p5k);
@@ -187,7 +190,7 @@ export function FormView() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[12px] text-white/45">Stan</p>
-            <p className={cn("text-[24px] font-semibold", toneText[f.state.tone])}>{f.state.label}</p>
+            <p className={cn("text-[24px] font-semibold", comeback ? "text-white/85" : toneText[f.state.tone])}>{comeback ? "Powrót po przerwie" : f.state.label}</p>
           </div>
           <div className="flex gap-1 rounded-full bg-white/[0.05] p-1 text-[12px]">
             {[42, 90, 180].map((n) => (
@@ -207,36 +210,20 @@ export function FormView() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          ["Kondycja", f.fitness, "ile treningu organizm już znosi"],
-          ["Zmęczenie", f.fatigue, "co zostało z ostatniego tygodnia"],
-          ["Balans", f.balance, "plus: świeżość, minus: zmęczenie"],
-        ].map(([k, v, s]) => (
-          <div key={k as string} className="rounded-[16px] border border-white/[0.06] bg-[#111113] p-3">
-            <p className="text-[11px] text-white/45">{k}</p>
-            <p className="mt-1 text-[24px] font-medium tabular-nums leading-none">
-              <CountUp value={v as number} comma={false} />
-            </p>
-            <p className="mt-1.5 text-[10.5px] leading-snug text-white/40">{s}</p>
-          </div>
-        ))}
-      </div>
-
       <Card className="p-4">
         <p className="text-[12px] text-white/45">Ryzyko przeciążenia</p>
         <p className={cn("mt-0.5 text-[17px] font-semibold", zone === "risk" ? "text-[#ff6a6f]" : zone === "watch" ? "text-amber-300" : zone === "safe" ? "text-emerald-300" : "text-white/70")}>
-          {zone === "risk" ? "Wysokie" : zone === "watch" ? "Podwyższone" : zone === "safe" ? "Bezpieczne" : zone === "low" ? "Obciążenie poniżej nawyku" : "Za mało danych"}
+          {zone === "comeback" ? "Po przerwie: wskaźnik chwilowo zawyżony" : zone === "risk" ? "Wysokie" : zone === "watch" ? "Podwyższone" : zone === "safe" ? "Bezpieczne" : zone === "low" ? "Obciążenie poniżej nawyku" : "Za mało danych"}
         </p>
         <div className="relative mt-3 h-2.5 rounded-full bg-[linear-gradient(90deg,#5a6b8c_0%,#4fd08b_23%,#4fd08b_62%,#f0c869_77%,#ff6a6f_100%)]">
-          {ratioPos != null ? <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white shadow" style={{ left: `${ratioPos * 100}%` }} /> : null}
+          {ratioPos != null && zone !== "comeback" ? <span className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white shadow" style={{ left: `${ratioPos * 100}%` }} /> : null}
         </div>
         <div className="mt-1.5 flex justify-between text-[10.5px] text-white/35">
           <span>za mało</span>
           <span>bezpiecznie</span>
           <span>ryzyko</span>
         </div>
-        <p className="mt-3 text-[12.5px] leading-relaxed text-white/50">Porównujemy ostatni tydzień z tym, do czego jesteś przyzwyczajony przez 6 tygodni. Skok powyżej 1,5× to najczęstsza droga do kontuzji.</p>
+        <p className="mt-3 text-[12.5px] leading-relaxed text-white/50">{zone === "comeback" ? "Po przerwie każdy bieg wygląda jak duży skok, bo baza jest jeszcze mała. Trzymaj się planu, nie dokładaj kilometrów: za 2–3 tygodnie wskaźnik się uspokoi." : "Porównujemy ostatni tydzień z tym, do czego jesteś przyzwyczajony przez 6 tygodni. Skok powyżej 1,5× to najczęstsza droga do kontuzji."}</p>
       </Card>
 
       {f.p5k ? (

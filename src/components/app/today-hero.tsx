@@ -77,7 +77,7 @@ const photoFor = (kind: string, category?: string | null): PhotoKey =>
  * Today's session as a black-and-white photo with its name and three numbers. A rest day gets a calm
  * empty state with the week in numbers and one button to log something.
  */
-export function SessionHero({ sessions = [] }: { sessions?: PlanSession[] }) {
+export function SessionHero({ sessions = [], hasPlan = false }: { sessions?: PlanSession[]; hasPlan?: boolean }) {
   const log = useLog();
   const { plan } = useGoalPlan();
   const today = todayWaw();
@@ -120,19 +120,24 @@ export function SessionHero({ sessions = [] }: { sessions?: PlanSession[] }) {
     }
   }
 
+  // A rest day in a plan: the readiness card below already says so, once is enough.
+  if (!hero && (hasPlan || plan)) return null;
   if (!hero) {
     const km = week.reduce((a, r) => a + r.km, 0);
     const hours = week.reduce((a, r) => a + r.sec, 0) / 3600;
     return (
       <section className="flex min-h-[300px] flex-col items-center justify-center rounded-[26px] bg-[radial-gradient(120%_80%_at_50%_0%,#1c1c1f_0%,#0a0a0b_70%)] px-6 py-10 text-center">
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">Dziś</p>
-        <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em]">{ranToday.length ? "Zrobione" : "Dziś wolne"}</p>
-        <p className="mt-1.5 max-w-[30ch] text-[13.5px] leading-snug text-white/45">
-          {ranToday.length ? "Trening jest w dzienniku. Odpocznij dobrze." : "Odpoczynek też buduje formę. Biegłeś coś? Dodaj to jednym dotknięciem."}
+        <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em]">{ranToday.length ? "Zrobione" : "Nie masz jeszcze planu"}</p>
+        <p className="mt-1.5 max-w-[32ch] text-[13.5px] leading-snug text-white/45">
+          {ranToday.length ? "Trening jest w dzienniku. Odpocznij dobrze." : "Ułóż plan pod swój start, a tu codziennie zobaczysz, co masz zrobić. Pierwsze 14 dni za darmo."}
         </p>
         <Stats stats={[{ v: String(week.length), l: "Treningi" }, { v: kmFmt(km), l: "Km w tyg." }, { v: kmFmt(hours), l: "Godziny" }]} />
-        <Link href="/app/dziennik?add=1" className="mt-7 inline-flex h-12 w-full max-w-[320px] items-center justify-center gap-2 rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
-          <Plus className="size-4" /> Dodaj trening
+        <Link href="/app/cel" className="mt-7 inline-flex h-12 w-full max-w-[320px] items-center justify-center rounded-full bg-white text-[15px] font-semibold text-black active:scale-[0.98]">
+          Ułóż plan pod start
+        </Link>
+        <Link href="/app/dziennik?add=1" className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] text-white/60">
+          <Plus className="size-3.5" /> Dodaj trening
         </Link>
       </section>
     );

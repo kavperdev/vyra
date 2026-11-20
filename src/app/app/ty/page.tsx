@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
 import { premiumStatus } from "@/lib/app/premium";
+import { PulsRow } from "@/components/app/puls-row";
 
 export const metadata = { title: "Ty" };
 
@@ -40,6 +41,7 @@ export default async function AppYou() {
           <>
             <SectionHead title={t("Ty i bieganie", "You and running")} />
             <Group>
+              <PulsRow />
               <Row href="/app/cel" icon={<Flag className="size-4" />} title={t("Cel i start", "Goal and race")} />
               <Row href="/app/dziennik" icon={<NotebookPen className="size-4" />} title={t("Dziennik i Strava", "Log and Strava")} sub={t("Biegi ze Stravy wpadają same", "Strava runs come in by themselves")} />
               <Row href="/athlete/records" icon={<Medal className="size-4" />} title={t("Rekordy i cele", "Records and goals")} />

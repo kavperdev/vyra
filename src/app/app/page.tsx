@@ -4,6 +4,7 @@ import { Today } from "@/components/app/today";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { OsToday } from "@/components/app/athlete-os";
 import { SessionHero, TodayTop } from "@/components/app/today-hero";
+import { GoalProgress, RunInsights } from "@/components/app/coach-cards";
 import { GuardBanner } from "@/components/app/guard";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -78,7 +79,8 @@ export default async function AppHome() {
       {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
 
       <GuardBanner />
-      <SessionHero sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
+      <SessionHero hasPlan={paid && week.length > 0} sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
+      <GoalProgress />
 
       {/* Readiness: the call for today (do it / lighter / rest) and the morning check-in. */}
       <OsToday plan={plan} sessions={[]} />
@@ -86,6 +88,8 @@ export default async function AppHome() {
       <div className="hidden">
         <Today synced={synced} athlete={athlete} part="sheet" />
       </div>
+
+      <RunInsights limit={1} />
 
       <TodayRoutine
         hard={todays.some((x) => x.status === "planned" && ["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"].includes(todayCats[x.id] ?? ""))}
