@@ -4,6 +4,7 @@ import { Today } from "@/components/app/today";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { OsToday } from "@/components/app/athlete-os";
 import { WeekStrip } from "@/components/app/week-strip";
+import { GuardBanner } from "@/components/app/guard";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
@@ -46,11 +47,11 @@ export default async function AppHome() {
   }
   const athlete = user?.profile.role === "athlete";
   const paid = athlete && user ? await athleteHasAccess(supabase, user.id).catch(() => false) : !!user;
-  type Synced = { sleep: number; energy: number; soreness: number; pain: boolean };
+  type Synced = { sleep: number; energy: number; soreness: number; pain: boolean; pain_area?: string };
   let synced: Synced | null = null;
   if (athlete && user) {
-    const { data, error } = await supabase.from("readiness").select("sleep, energy, soreness, pain").eq("athlete_id", user.id).eq("day", todayISO(user.profile.timezone)).maybeSingle();
-    if (!error && data) synced = data as Synced;
+    const { data, error } = await supabase.from("readiness").select("sleep, energy, soreness, pain, pain_area").eq("athlete_id", user.id).eq("day", todayISO(user.profile.timezone)).maybeSingle();
+    if (!error && data) synced = { ...(data as Synced), pain_area: (data as { pain_area?: string | null }).pain_area ?? undefined };
   }
   const todo = athlete && user ? await blockingStep(supabase, user.id).catch(() => null) : null;
 
@@ -78,6 +79,8 @@ export default async function AppHome() {
         </Link>
       ) : null}
       {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
+
+      <GuardBanner />
 
       {/* One card for today: readiness, the call (do it / lighter / rest), today's session, the morning check-in. */}
       <OsToday plan={plan} sessions={paid ? todays : []} />

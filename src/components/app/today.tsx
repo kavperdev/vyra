@@ -18,7 +18,16 @@ type Conditions = {
   sun: { today: { sunrise: string | null; sunset: string | null }; tomorrow: { sunrise: string | null; sunset: string | null } };
 };
 export type Place = { lat: number; lon: number; label: string };
-type Check = { sleep: number; energy: number; soreness: number; pain: boolean };
+type Check = { sleep: number; energy: number; soreness: number; pain: boolean; pain_area?: string; pain_score?: number };
+
+/** Body parts the guard knows, in the runner's words. */
+const PAIN_AREAS = ["Stopa", "Pięta / Achilles", "Łydka", "Piszczel", "Kolano", "Udo przód", "Udo tył", "Biodro / pachwina", "Plecy", "Inne"];
+const SIDES = ["lewa", "prawa", "obie"];
+const splitArea = (v?: string) => {
+  const side = SIDES.find((x) => v?.endsWith(` (${x})`)) ?? "";
+  return { part: side ? v!.slice(0, -side.length - 3) : (v ?? ""), side };
+};
+const joinArea = (part: string, side: string) => (part && side && part !== "Plecy" && part !== "Inne" ? `${part} (${side})` : part);
 
 export const CITIES: Place[] = [
   { label: "Warszawa", lat: 52.23, lon: 21.01 },
@@ -90,6 +99,61 @@ function outfit(t: number, rain: boolean, wind: boolean, dark: boolean) {
   else if (wind && t < 12) L.push("Wiatrówka na wierzch");
   if (dark) L.push("Odblask albo czołówka");
   return L;
+}
+
+/** Where it hurts and how much: what the guard (Strażnik) needs to set the light. */
+function PainPicker({ draft, onChange }: { draft: Check; onChange: (c: Check) => void }) {
+  const { part, side } = splitArea(draft.pain_area);
+  const set = (p: string, sd: string) => onChange({ ...draft, pain_area: joinArea(p, sd) || undefined });
+  const score = draft.pain_score ?? null;
+  const tone = (n: number) => (n >= 6 ? "bg-[#ff4d55] text-white" : n >= 4 ? "bg-[#facc15] text-black" : "bg-[#4ade80] text-black");
+  return (
+    <div className="grid gap-4 rounded-2xl bg-white/[0.04] p-4">
+      <div>
+        <p className="text-[13px] text-white/70">Gdzie?</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {PAIN_AREAS.map((a) => (
+            <button key={a} type="button" onClick={() => set(a, side)} className={cn("h-9 rounded-full px-3.5 text-[13px] transition active:scale-95", part === a ? "bg-white font-semibold text-black" : "bg-white/[0.07] text-white/75")}>
+              {a}
+            </button>
+          ))}
+        </div>
+        {part && part !== "Plecy" && part !== "Inne" ? (
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
+            {SIDES.map((sd) => (
+              <button key={sd} type="button" onClick={() => set(part, sd)} className={cn("h-9 rounded-xl text-[13px] transition active:scale-95", side === sd ? "bg-white font-semibold text-black" : "bg-white/[0.07] text-white/75")}>
+                {sd}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      <div>
+        <p className="flex justify-between text-[13px] text-white/70">
+          <span>Jak mocno, teraz?</span>
+          <span className="font-semibold text-white">{score != null ? `${score} / 10` : "–"}</span>
+        </p>
+        <div className="mt-2 grid grid-cols-11 gap-1">
+          {Array.from({ length: 11 }, (_, n) => (
+            <button
+              key={n}
+              type="button"
+              aria-label={`${n} na 10`}
+              aria-pressed={score === n}
+              onClick={() => onChange({ ...draft, pain_score: n })}
+              className={cn("h-9 rounded-lg text-[12px] font-medium transition active:scale-95", score != null && n <= score ? tone(score) : "bg-white/[0.07] text-white/60", score === n && "ring-2 ring-white")}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        <div className="mt-1 flex justify-between text-[11px] text-white/35">
+          <span>ledwo czuć</span>
+          <span>nie da się biec</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Scale({ label, value, onChange, low, high }: { label: string; value: number; onChange: (v: number) => void; low: string; high: string }) {
@@ -175,10 +239,11 @@ export function Today({ synced = null, athlete = false, part = "ready" }: { sync
     );
   };
   const save = () => {
-    store.set(dayKey(), draft);
-    setCheck(draft);
+    const v: Check = draft.pain ? draft : { sleep: draft.sleep, energy: draft.energy, soreness: draft.soreness, pain: false };
+    store.set(dayKey(), v);
+    setCheck(v);
     setSheet(null);
-    if (athlete) saveReadiness(draft).catch(() => undefined);
+    if (athlete) saveReadiness(v).catch(() => undefined);
     try {
       navigator.vibrate?.([10, 40, 10]);
     } catch {
@@ -329,10 +394,11 @@ export function Today({ synced = null, athlete = false, part = "ready" }: { sync
                     <span className={cn("block size-5 rounded-full bg-white transition", draft.pain && "translate-x-4")} />
                   </span>
                 </button>
+                {draft.pain ? <PainPicker draft={draft} onChange={setDraft} /> : null}
                 <button type="button" onClick={save} className="rounded-full bg-white py-3.5 text-[15px] font-semibold text-black active:scale-[0.98]">
                   Zapisz
                 </button>
-                <p className="text-center text-[11px] text-white/35">Odpowiedzi zostają na Twoim telefonie.</p>
+                <p className="text-center text-[11px] text-white/35">Na tej podstawie Strażnik ustawi dzisiejszy trening.</p>
               </div>
             ) : (
               <div className="grid gap-2">

@@ -13,6 +13,7 @@ const schema = z.object({
   soreness: scale,
   pain: z.boolean(),
   pain_area: z.string().trim().max(80).optional(),
+  pain_score: z.number().int().min(0).max(10).optional(),
   note: z.string().trim().max(500).optional(),
 });
 
@@ -23,19 +24,19 @@ export async function saveReadiness(input: ReadinessInput): Promise<ActionResult
     const parsed = schema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
     const v = parsed.data;
-    const { error } = await supabase.from("readiness").upsert(
-      {
-        athlete_id: user.id,
-        day: todayISO(user.profile.timezone),
-        sleep: v.sleep,
-        energy: v.energy,
-        soreness: v.soreness,
-        pain: v.pain,
-        pain_area: v.pain ? v.pain_area || null : null,
-        note: v.note || null,
-      },
-      { onConflict: "athlete_id,day" },
-    );
+    const row = {
+      athlete_id: user.id,
+      day: todayISO(user.profile.timezone),
+      sleep: v.sleep,
+      energy: v.energy,
+      soreness: v.soreness,
+      pain: v.pain,
+      pain_area: v.pain ? v.pain_area || null : null,
+      note: v.note || null,
+    };
+    let { error } = await supabase.from("readiness").upsert({ ...row, pain_score: v.pain ? (v.pain_score ?? null) : null }, { onConflict: "athlete_id,day" });
+    // Before migration 20261120000100 the table has no pain_score: save the rest.
+    if (error && /pain_score/.test(error.message)) ({ error } = await supabase.from("readiness").upsert(row, { onConflict: "athlete_id,day" }));
     if (error) return dbError(error);
     revalidatePath("/athlete");
     revalidatePath("/coach", "layout");
