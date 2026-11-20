@@ -17,7 +17,7 @@ import { athleteHasAccess } from "@/lib/data/access";
 
 export const metadata = { title: "Dziś" };
 
-import { AppGuide } from "@/components/app/guide";
+import { AppTour } from "@/components/app/tour";
 import { blockingStep, guideNext } from "@/lib/data/first-step";
 
 export default async function AppHome() {
@@ -82,7 +82,7 @@ export default async function AppHome() {
           <span className="mt-4 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[15px] font-semibold text-black">{todo.cta} →</span>
         </Link>
       ) : null}
-      {athlete && user ? <AppGuide variant="runner" userId={user.id} next={guideNext(todo)} /> : null}
+      {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
 
       {/* Athlete OS: one card for today (score, verdict, today's session, morning actions), three numbers, the grid. */}
       <OsToday plan={plan} sessions={paid ? todays : []} />
@@ -99,7 +99,11 @@ export default async function AppHome() {
       <OsBento />
 
       <div className="grid min-w-0 grid-cols-1 content-start">
-        <TodayRoutine />
+        <TodayRoutine
+          hard={todays.some((x) => x.status === "planned" && ["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"].includes(todayCats[x.id] ?? ""))}
+          strength={todays.some((x) => x.status === "planned" && x.kind === "strength")}
+          run={todays.some((x) => x.kind === "running")}
+        />
         <div className="mt-3">
           <Today part="weather" />
         </div>

@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, HeartPulse, ListChecks, Sparkles } from "lucide-react";
+import { HeartPulse, ListChecks, Sparkles } from "lucide-react";
 import { useForm } from "@/components/app/form-hub";
 import { HealthSheet, useHealth, useHealthSignal } from "@/components/app/health-entry";
 import { PlanToday, type PlanSession } from "@/components/app/plan-today";
 import { PHOTOS, photoOfDay } from "@/components/app/ui";
+import { Sheet } from "@/components/app/sheet";
+import { STRENGTH_DAYS } from "@/components/app/today-routine";
 import { CountUp, ParticleRing } from "@/components/charts/particle-ring";
 import { planSeason } from "@/lib/actions/season";
 import { dayScore, mmss } from "@/lib/app/form";
@@ -30,6 +32,145 @@ const mondayOf = (iso: string) => addD(iso, -((new Date(`${iso}T12:00:00Z`).getU
 const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
 const hms = (s: number) => (s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : mmss(s));
 const comma = (n: number, d = 1) => n.toFixed(d).replace(".", ",");
+
+/* ---------- plain-language explanations (every tile has a "?") ---------- */
+
+export const EXPLAIN = {
+  gotowosc: {
+    title: "Gotowość",
+    body: [
+      "Liczba od 0 do 100: na ile Twój organizm jest dziś gotowy na mocny trening.",
+      "Liczymy ją ze zmęczenia po ostatnich treningach, z porannego samopoczucia i, jeśli je wpisujesz, z tętna spoczynkowego, HRV i snu.",
+      "Powyżej 70 to dobry dzień na mocniejszy trening. Od 40 do 70: trenuj według planu, spokojne biegi naprawdę spokojnie. Poniżej 40: odpuść albo zrób coś lekkiego.",
+      "Nie musisz nic liczyć: decyzja obok wyniku mówi, co dziś zrobić i dlaczego.",
+    ],
+  },
+  obciazenie: {
+    title: "Obciążenie",
+    body: [
+      "Ile trenowałeś w ostatnim tygodniu w porównaniu z tym, do czego Twój organizm jest przyzwyczajony przez ostatnie 6 tygodni.",
+      "100% to górna bezpieczna granica. Krótko powyżej nic się nie dzieje, ale gdy jesteś wyżej przez kilka dni, rośnie ryzyko kontuzji.",
+      "Po przerwie ta liczba skacze nawet przy spokojnym bieganiu. Wtedy po prostu trzymaj się planu i nie dokładaj.",
+    ],
+  },
+  tydzien: {
+    title: "Tydzień",
+    body: [
+      "Kilometry z tego tygodnia, od poniedziałku. Liczą się wszystkie aktywności z dystansem: bieg, rower, marsz.",
+      "Cel to kilometry z Twojego planu albo Twoja zwykła średnia z 4 tygodni.",
+      "Słupki to kolejne dni. Jaśniejszy pusty słupek to dzień, w którym masz trening w planie.",
+    ],
+  },
+  sen: {
+    title: "Sen",
+    body: [
+      "Ile spałeś według zegarka. Większość biegaczy potrzebuje od 7 do 9 godzin.",
+      "Po krótkiej nocy mocny trening daje mniej, a obciąża bardziej, dlatego krótki sen obniża gotowość.",
+      "Wpisz sen rano razem z tętnem i HRV (dotknij kafelka). Wystarczy sam sen, jeśli nie masz zegarka z HRV.",
+    ],
+  },
+  forma: {
+    title: "Forma",
+    body: [
+      "„5 km teraz” to czas, jaki prawdopodobnie pobiegłbyś dziś na 5 km. Liczymy go z Twoich szybszych biegów z ostatnich 6 tygodni, więc nie musisz startować, żeby wiedzieć, gdzie jesteś.",
+      "Kropki pokazują kondycję z ostatnich 8 tygodni: każda kolumna to 2 dni, wyżej znaczy lepiej wytrenowany. Czerwona kolumna to dziś.",
+      "Gdy kropki rosną, trening działa. Gdy spadają przez kilka tygodni, czas na rozmowę z Pulsem albo zmianę planu.",
+    ],
+  },
+  zdrowie: {
+    title: "Zdrowie",
+    body: [
+      "Trzy liczby z zegarka, wpisywane rano: tętno spoczynkowe (niższe znaczy lepiej zregenerowany), HRV, czyli zmienność rytmu serca (wyższe niż zwykle znaczy dobrze) i sen.",
+      "Kreska na środku to Twoja własna norma z ostatniego miesiąca, a nie norma z internetu. Kropka pokazuje, czy dziś odstajesz.",
+      "Gdy liczby odstają, decyzja na dziś i plan robią się lżejsze. To nie jest diagnoza: przy niepokojących objawach idź do lekarza.",
+    ],
+  },
+  sila: {
+    title: "Siła",
+    body: [
+      "Ile razy w ostatnich 2 tygodniach zrobiłeś siłownię albo zestaw siłowy.",
+      "Dla biegaczy na każdym poziomie 2 razy w tygodniu chroni przed kontuzjami i sprawia, że biegniesz lżej przy tym samym tempie.",
+      "Wybierz dni siły, a w te dni ekran Dziś pokaże zestaw z ćwiczeniami i odliczaniem.",
+    ],
+  },
+  rekordy: {
+    title: "Rekordy",
+    body: [
+      "Twoje najlepsze czasy na 5 km, 10 km i półmaraton ze wszystkich biegów w dzienniku, także treningowych, oraz najdłuższy bieg.",
+      "Kreska znaczy, że jeszcze nie przebiegłeś tego dystansu w jednym biegu.",
+    ],
+  },
+  sezon: {
+    title: "Sezon",
+    body: [
+      "Twój sezon na 12 tygodni do przodu. Kolory to fazy treningu, na przykład baza, siła czy szybkość. Biały kwadrat to start albo test, obramowany to dziś.",
+      "Fazy biorą się z Twojego planu albo dodajesz je sam w Sezonie.",
+      "Dzięki temu wiesz, po co robisz dzisiejszy trening i co Cię czeka.",
+    ],
+  },
+  cel: {
+    title: "Cel",
+    body: ["Twój najbliższy główny start i liczba dni do niego. Pod spodem faza, w której jesteś, i który to jej tydzień.", "Start ustawiasz w Sezonie. Może być z planu albo dodany przez Ciebie."],
+  },
+} as const;
+export type ExplainKey = keyof typeof EXPLAIN;
+
+/** The "?" on a tile: what the number means, where it comes from, what to do with it. */
+export function Info({ k, className }: { k: ExplainKey; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const e = EXPLAIN[k];
+  return (
+    <>
+      <button type="button" aria-label={`Co znaczy: ${e.title}`} onClick={() => setOpen(true)} className={cn("grid size-6 place-items-center rounded-full bg-white/[0.08] text-[12px] font-semibold text-white/60 active:scale-90", className)}>
+        ?
+      </button>
+      <Sheet open={open} onClose={() => setOpen(false)} title={e.title}>
+        <div className="grid gap-3 pb-2 text-[15px] leading-relaxed text-white/75">
+          {e.body.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+/** A grid cell: the card itself plus its "?" (kept outside the card's link, so tapping it does not navigate). */
+function Box({ span = false, info, tour, className, children }: { span?: boolean; info: ExplainKey; tour?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <div data-tour={tour} className={cn("relative min-w-0", span && "col-span-2", className)}>
+      {children}
+      <Info k={info} className="absolute right-3 top-3 z-10" />
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
+/** Strength: the count, why it matters and which days the Dziś screen shows a strength set. */
+function StrengthSheet({ open, onClose, count }: { open: boolean; onClose: () => void; count: number }) {
+  const [days, setDays] = useStore<number[]>(STRENGTH_DAYS, []);
+  const list = Array.isArray(days) ? days : [];
+  return (
+    <Sheet open={open} onClose={onClose} title="Siła" sub={`${count} z 4 treningów siłowych w ostatnich 2 tygodniach`}>
+      <p className="text-[15px] leading-relaxed text-white/75">Dwa razy w tygodniu po 20–30 minut wystarczy na każdym poziomie. Chroni przed kontuzjami i sprawia, że biegniesz lżej.</p>
+      <p className="mt-5 text-[14px] text-white/70">W które dni pokazać zestaw siłowy na ekranie Dziś?</p>
+      <div className="mt-2 grid grid-cols-7 gap-1.5">
+        {WEEKDAYS.map((d, i) => {
+          const on = list.includes(i);
+          return (
+            <button key={d} type="button" onClick={() => setDays(on ? list.filter((x) => x !== i) : [...list, i].sort())} className={cn("h-11 rounded-xl text-[13.5px] font-semibold transition active:scale-95", on ? "bg-white text-black" : "bg-white/[0.07] text-white/70")}>
+              {d}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[12.5px] text-white/45">{list.length ? `Wybrane: ${list.map((i) => WEEKDAYS[i]).join(", ")}. Siłownia z planu pokaże się też sama.` : "Nic nie wybrane: zestaw pokaże się tylko wtedy, gdy siłownia jest w Twoim planie."}</p>
+      <Link href="/app/cwiczenia" onClick={onClose} className="mt-5 flex h-12 items-center justify-center rounded-full bg-white/[0.08] text-[15px] font-semibold">
+        Wszystkie zestawy ćwiczeń →
+      </Link>
+    </Sheet>
+  );
+}
 
 /** Opens Puls with a question already asked (the assistant listens for this event). */
 export const askPuls = (q: string) => window.dispatchEvent(new CustomEvent("vyra:ask-puls", { detail: q }));
@@ -91,10 +232,13 @@ export function OsToday({ plan, sessions = [] }: { plan?: TodayPlan; sessions?: 
   const date = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
   return (
-    <section className={cn(card, "p-5 lg:col-span-2")}>
+    <section data-tour="today" className={cn(card, "p-5 lg:col-span-2")}>
       <span aria-hidden className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full opacity-30 blur-3xl" style={{ background: tone }} />
       <div className="relative flex items-center justify-between">
-        <p className={mono}>Dziś · {date}</p>
+        <p className="flex items-center gap-2">
+          <span className={mono}>Dziś · {date}</span>
+          <Info k="gotowosc" className="size-5 text-[11px]" />
+        </p>
         <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: `${tone}1f`, color: tone }}>
           <span className="size-1.5 rounded-full" style={{ background: tone, boxShadow: `0 0 8px ${tone}` }} />
           {call.tone === "good" ? "Zielone" : call.tone === "info" ? "Uważaj" : "Lżej"}
@@ -128,12 +272,12 @@ export function OsToday({ plan, sessions = [] }: { plan?: TodayPlan; sessions?: 
       ) : null}
 
       {sessions.length ? (
-        <div className="relative mt-4">
+        <div data-tour="today-session" className="relative mt-4">
           <PlanToday sessions={sessions} variant="hero" />
         </div>
       ) : null}
 
-      <div className="relative mt-4 grid grid-cols-3 gap-2">
+      <div data-tour="today-actions" className="relative mt-4 grid grid-cols-3 gap-2">
         <button type="button" onClick={() => window.dispatchEvent(new Event("vyra:open-check"))} className={cn("flex flex-col items-center gap-1 rounded-2xl py-2.5 text-[12px] font-medium active:scale-95", check ? "bg-white/[0.05] text-white/70" : "bg-white text-black")}>
           <ListChecks className="size-[18px]" />
           {check ? "Samopoczucie ✓" : "Samopoczucie"}
@@ -154,11 +298,20 @@ export function OsToday({ plan, sessions = [] }: { plan?: TodayPlan; sessions?: 
 
 /* ---------- three numbers ---------- */
 
-function Tile({ href, label, children, onClick }: { href?: string; label: string; children: React.ReactNode; onClick?: () => void }) {
-  const cls = cn(card, "flex min-h-[132px] flex-col p-3.5 text-left transition active:scale-[0.98]");
+function Tile({ href, label, children, onClick, info }: { href?: string; label: string; children: React.ReactNode; onClick?: () => void; info: ExplainKey }) {
+  return (
+    <Box info={info}>
+      <TileInner href={href} label={label} onClick={onClick}>
+        {children}
+      </TileInner>
+    </Box>
+  );
+}
+function TileInner({ href, label, children, onClick }: { href?: string; label: string; children: React.ReactNode; onClick?: () => void }) {
+  const cls = cn(card, "flex h-full min-h-[136px] w-full flex-col p-3.5 text-left transition active:scale-[0.98]");
   const body = (
     <>
-      <p className={cn(mono, "text-[9.5px]")}>{label}</p>
+      <p className={cn(mono, "truncate pr-6 text-[9.5px] tracking-[0.12em]")}>{label}</p>
       {children}
     </>
   );
@@ -208,19 +361,24 @@ export function OsTiles({ planned = [] }: { planned?: { date: string; done: bool
   const last: HealthDay | undefined = [...health].reverse().find((x) => x.sleep != null);
 
   return (
-    <div className="mt-3 grid grid-cols-3 gap-2.5 lg:col-span-2">
-      <Tile href="/app/forma" label="Obciążenie">
+    <>
+    <p className="mt-6 px-1 text-[13px] leading-snug text-white/45 lg:col-span-2">
+      <span className="font-semibold text-white/80">Twoje liczby.</span> Dotknij <span className="inline-grid size-4 place-items-center rounded-full bg-white/[0.1] align-[-2px] text-[10px] font-semibold text-white/70">?</span>, żeby zobaczyć, co znaczy każda z nich.
+    </p>
+    <div data-tour="tiles" className="mt-2.5 grid grid-cols-3 gap-2.5 lg:col-span-2">
+      <Tile href="/app/forma" label="Obciążenie" info="obciazenie">
         <p className="mt-auto text-[28px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{f.ratio ? `${Math.round(strain * 100)}%` : "–"}</p>
-        <p className="mt-1 text-[11.5px]" style={{ color: loadColor }}>
+        <p className="mt-1 text-[11.5px] leading-tight text-white/45">{f.ratio ? "bezpiecznego limitu" : "za mało treningów"}</p>
+        <p className="text-[11.5px] font-medium leading-tight" style={{ color: loadColor }}>
           {loadLabel}
         </p>
         <span className="mt-2.5 block h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
           <span className="block h-full rounded-full" style={{ width: `${Math.max(4, strain * 100)}%`, background: loadColor }} />
         </span>
       </Tile>
-      <Tile href="/app/dziennik" label="Tydzień">
+      <Tile href="/app/dziennik" label="Tydzień" info="tydzien">
         <p className="mt-auto text-[28px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{weekKm < 10 ? comma(weekKm) : Math.round(weekKm)}</p>
-        <p className="mt-1 text-[11.5px] text-white/45">z {Math.round(goal)} km</p>
+        <p className="mt-1 text-[11.5px] leading-tight text-white/45">km z {Math.round(goal)} {target ? "w planie" : "zwykle"}</p>
         <div className="mt-2.5 flex h-6 items-end gap-[3px]">
           {perDay.map((km, i) => (
             <span
@@ -231,9 +389,9 @@ export function OsTiles({ planned = [] }: { planned?: { date: string; done: bool
           ))}
         </div>
       </Tile>
-      <Tile label="Sen" onClick={() => setSheet(true)}>
+      <Tile label="Sen" onClick={() => setSheet(true)} info="sen">
         <p className="mt-auto text-[28px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{last?.sleep != null ? hm(last.sleep) : "–"}</p>
-        <p className="mt-1 text-[11.5px] text-white/45">{last ? (last.day === today ? "ostatnia noc" : "ostatni wpis") : "wpisz rano"}</p>
+        <p className="mt-1 text-[11.5px] leading-tight text-white/45">{last ? (last.day === today ? "ostatnia noc" : "ostatni wpis") : "dotknij i wpisz"}</p>
         <div className="mt-2.5 flex h-6 items-end gap-[3px]">
           {nights.map((n, i) => (
             <span key={days[i]} className="flex-1 rounded-[2px]" style={{ height: `${n ? Math.max(18, Math.min(100, (n / 9) * 100)) : 14}%`, background: n == null ? "rgba(255,255,255,0.08)" : n < 6 ? "#fbbf24" : "#7c8cff" }} />
@@ -242,6 +400,7 @@ export function OsTiles({ planned = [] }: { planned?: { date: string; done: bool
       </Tile>
       <HealthSheet key={sheet ? health.length : "closed"} open={sheet} onClose={() => setSheet(false)} />
     </div>
+    </>
   );
 }
 
@@ -341,156 +500,191 @@ export function OsBento() {
     { k: "Sen", v: t?.sleep, base: h.base.sleep, unit: "", upGood: true, tol: 0.5, fmt: hm },
   ];
 
+  const trend = f.fitnessChange == null ? null : f.fitnessChange > 0.03 ? "rośnie" : f.fitnessChange < -0.05 ? "spada" : "stoi";
+  const [strength, setStrength] = useState(false);
+
   return (
     <section className="mt-3 grid grid-cols-2 gap-2.5 lg:col-span-2 lg:grid-cols-4">
       {/* Goal: the countdown on a photo */}
-      <Link href="/app/sezon" className={cn(card, "col-span-2 flex min-h-[168px] flex-col justify-end p-4 transition active:scale-[0.99]")}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photo} alt="" aria-hidden className="absolute inset-0 size-full object-cover opacity-70 grayscale contrast-[1.15]" loading="lazy" />
-        <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
-        <span aria-hidden className="absolute -bottom-20 -left-10 size-60 rounded-full bg-[radial-gradient(closest-side,rgba(229,52,59,0.5),transparent)]" />
-        <div className="relative flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className={cn(mono, "text-white/60")}>Cel</p>
-            {race ? (
-              <>
-                <p className="mt-1 truncate text-[17px] font-semibold">{race.name}</p>
-                <p className="mt-0.5 text-[12.5px] text-white/60">
-                  {new Date(`${race.date}T12:00:00Z`).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}
-                  {race.goal ? ` · cel ${race.goal}` : ""}
-                </p>
-                {block && bw ? (
-                  <p className="mt-2 flex max-w-full items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 text-[11.5px] font-medium backdrop-blur" style={{ color: focusOf(block.focus).color }}>
-                    <span className="size-1.5 shrink-0 rounded-full" style={{ background: focusOf(block.focus).color }} />
-                    <span className="truncate">{block.name.replace(/^[0-9A-Z] · /, "")}</span>
-                    <span className="shrink-0 text-white/60">· {bw.n}/{bw.of} tydz.</span>
+      <Box span info="cel" tour="goal">
+        <Link href="/app/sezon" className={cn(card, "flex h-full min-h-[168px] flex-col justify-end p-4 transition active:scale-[0.99]")}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt="" aria-hidden className="absolute inset-0 size-full object-cover opacity-70 grayscale contrast-[1.15]" loading="lazy" />
+          <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
+          <span aria-hidden className="absolute -bottom-20 -left-10 size-60 rounded-full bg-[radial-gradient(closest-side,rgba(229,52,59,0.5),transparent)]" />
+          <div className="relative flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className={cn(mono, "text-white/60")}>Cel</p>
+              {race ? (
+                <>
+                  <p className="mt-1 truncate text-[17px] font-semibold">{race.name}</p>
+                  <p className="mt-0.5 text-[12.5px] text-white/60">
+                    {new Date(`${race.date}T12:00:00Z`).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}
+                    {race.goal ? ` · cel ${race.goal}` : ""}
                   </p>
-                ) : null}
-              </>
-            ) : (
-              <p className="mt-1 text-[17px] font-semibold">Ustaw start i sezon →</p>
-            )}
-          </div>
-          {race ? (
-            <div className="shrink-0 text-right">
-              <p className="text-[58px] font-black leading-[0.85] tracking-[-0.06em] tabular-nums">{daysTo(today, race.date)}</p>
-              <p className="mt-1.5 text-[11px] text-white/60">dni do startu</p>
+                  {block && bw ? (
+                    <p className="mt-2 flex max-w-full items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 text-[11.5px] font-medium backdrop-blur" style={{ color: focusOf(block.focus).color }}>
+                      <span className="size-1.5 shrink-0 rounded-full" style={{ background: focusOf(block.focus).color }} />
+                      <span className="truncate">{block.name.replace(/^[0-9A-Z] · /, "")}</span>
+                      <span className="shrink-0 text-white/60">· tydz. {bw.n} z {bw.of}</span>
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-[17px] font-semibold">Dodaj swój start</p>
+                  <p className="mt-0.5 text-[12.5px] leading-snug text-white/60">Zawody, na które się szykujesz. Zobaczysz odliczanie i fazy treningu.</p>
+                </>
+              )}
             </div>
-          ) : null}
-        </div>
-      </Link>
-
-      {/* Form: dots */}
-      <Link href="/app/forma" className={cn(card, "col-span-2 p-4 transition active:scale-[0.99]")}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className={mono}>Forma · 8 tygodni</p>
-            <p className="mt-1.5 flex items-baseline gap-2">
-              <span className="text-[30px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{f.fitness || "–"}</span>
-              {f.fitnessChange != null ? (
-                <span className={cn("text-[12.5px] font-semibold tabular-nums", f.fitnessChange >= 0 ? "text-[#34d399]" : "text-[#ff8a8f]")}>
-                  {f.fitnessChange >= 0 ? "▲" : "▼"} {Math.abs(Math.round(f.fitnessChange * 100))}% w 4 tyg.
-                </span>
-              ) : null}
-            </p>
-            <p className="mt-1 text-[12px] text-white/50">{lowBase(f) && f.state.label === "Przeciążenie" ? "Powrót po przerwie" : f.state.label}</p>
-          </div>
-          {f.p5k ? (
-            <div className="text-right">
-              <p className={cn(mono, "text-[9.5px]")}>5 km teraz</p>
-              <p className="mt-1 text-[20px] font-semibold tabular-nums">{mmss(f.p5k)}</p>
-            </div>
-          ) : null}
-        </div>
-        <DotMatrix ys={fit} />
-      </Link>
-
-      {/* Health against the normal */}
-      <button type="button" onClick={() => setSheet(true)} className={cn(card, "p-4 text-left transition active:scale-[0.98]")}>
-        <div className="flex items-center justify-between">
-          <p className={mono}>Zdrowie</p>
-          <span className="size-2 rounded-full" style={{ background: h.level === "warn" ? TONE.warn : h.level === "watch" ? TONE.info : h.level === "ok" ? TONE.good : "#3a3a3f" }} />
-        </div>
-        {t ? (
-          <div className="mt-3 grid gap-2.5">
-            {rows.map((r) => {
-              const d = r.v != null && r.base != null ? r.v - r.base : null;
-              const bad = d != null && (r.upGood ? d < -r.tol : d > r.tol);
-              const pos = d == null ? 50 : Math.max(6, Math.min(94, 50 + (d / (r.tol * 3)) * 44));
-              return (
-                <div key={r.k}>
-                  <div className="flex items-baseline justify-between text-[11.5px] text-white/50">
-                    <span>{r.k}</span>
-                    <span className={cn("text-[15px] font-semibold tabular-nums", r.v == null ? "text-white/25" : bad ? "text-[#ff8a8f]" : "text-white")}>
-                      {r.v != null ? r.fmt(r.v) : "–"}
-                      {r.unit && r.v != null ? <span className="ml-0.5 text-[10px] font-normal text-white/40">{r.unit}</span> : null}
-                    </span>
-                  </div>
-                  <span className="relative mt-1 block h-1 rounded-full bg-white/[0.07]">
-                    <span className="absolute inset-y-[-2px] left-1/2 w-px bg-white/25" />
-                    {r.v != null && r.base != null ? <span className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${pos}%`, background: bad ? "#ff4d55" : "#34d399" }} /> : null}
-                  </span>
-                </div>
-              );
-            })}
-            {h.days < 4 ? <p className="text-[10.5px] text-white/35">Norma po 4 porankach</p> : null}
-          </div>
-        ) : (
-          <>
-            <p className="mt-3 text-[15px] font-semibold leading-snug">Wpisz poranne liczby</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-white/50">Tętno, HRV i sen z zegarka. Kreska to Twoja norma.</p>
-          </>
-        )}
-      </button>
-
-      {/* Strength */}
-      <Link href="/app/cwiczenia" className={cn(card, "flex flex-col p-4 transition active:scale-[0.98]")}>
-        <p className={mono}>Siła · 14 dni</p>
-        <p className="mt-3 flex items-baseline gap-1">
-          <span className="text-[34px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{gym.length}</span>
-          <span className="text-[13px] text-white/40">/ 4</span>
-        </p>
-        <div className="mt-3 grid grid-cols-4 gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} className={cn("h-8 rounded-lg", i < gym.length ? "bg-[#34d399]" : "bg-white/[0.07]")} />
-          ))}
-        </div>
-        <p className="mt-auto pt-3 text-[11.5px] leading-snug text-white/50">{gym.length >= 4 ? "Tak trzymaj" : `Jeszcze ${4 - gym.length} do normy`}</p>
-      </Link>
-
-      {/* Records */}
-      <Link href="/app/postepy" className={cn(card, "col-span-2 grid grid-cols-4 gap-2 p-4 transition active:scale-[0.99]")}>
-        {[...recs.map((r) => ({ k: r.k, v: r.v ? hms(r.v) : null })), { k: "Najdłuższy", v: longest ? `${comma(longest)} km` : null }].map((r) => (
-          <div key={r.k} className="min-w-0">
-            <p className={cn(mono, "truncate text-[9.5px] tracking-[0.08em]")}>{r.k}</p>
-            <p className={cn("mt-1.5 truncate text-[16px] font-semibold tabular-nums", !r.v && "text-white/25")}>{r.v ?? "–"}</p>
-          </div>
-        ))}
-      </Link>
-
-      {/* Season */}
-      {season.blocks.length || season.races.length ? (
-        <Link href="/app/sezon" className={cn(card, "col-span-2 p-4 transition active:scale-[0.99]")}>
-          <div className="flex items-center justify-between">
-            <p className={mono}>Sezon · 12 tygodni</p>
-            <ChevronRight className="size-4 text-white/35" />
-          </div>
-          <SeasonGrid season={season} today={today} />
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/50">
-            {[...new Set(season.blocks.filter((b) => b.to >= addD(today, -14) && b.from <= addD(today, 70)).map((b) => b.focus))].map((k) => (
-              <span key={k} className="flex items-center gap-1.5">
-                <span className="size-2 rounded-[2px]" style={{ background: focusOf(k).color }} />
-                {focusOf(k).name}
-              </span>
-            ))}
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-[2px] bg-white" />
-              start
-            </span>
+            {race ? (
+              <div className="shrink-0 text-right">
+                <p className="text-[58px] font-black leading-[0.85] tracking-[-0.06em] tabular-nums">{daysTo(today, race.date)}</p>
+                <p className="mt-1.5 text-[11px] text-white/60">dni do startu</p>
+              </div>
+            ) : null}
           </div>
         </Link>
-      ) : null}
+      </Box>
+
+      {/* Form: race time now + dots */}
+      <Box span info="forma" tour="form">
+        <Link href="/app/forma" className={cn(card, "block h-full p-4 transition active:scale-[0.99]")}>
+          <p className={mono}>Forma</p>
+          {f.p5k ? (
+            <div className="mt-1.5 flex items-end justify-between gap-3 pr-6">
+              <div>
+                <p className="text-[32px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{mmss(f.p5k)}</p>
+                <p className="mt-1 text-[12px] text-white/50">tyle pobiegłbyś dziś 5 km</p>
+              </div>
+              {trend ? (
+                <p className={cn("text-right text-[12.5px] font-medium leading-snug", trend === "rośnie" ? "text-[#34d399]" : trend === "spada" ? "text-[#ff8a8f]" : "text-white/60")}>
+                  Kondycja {trend}
+                  <span className="block text-[11.5px] font-normal text-white/45">
+                    {f.fitnessChange! >= 0 ? "+" : "−"}
+                    {Math.abs(Math.round(f.fitnessChange! * 100))}% w 4 tygodnie
+                  </span>
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <p className="mt-1.5 text-[17px] font-semibold">{fit.some((x) => x > 0) ? `Kondycja ${trend ?? "się buduje"}` : "Tu zobaczysz swoją formę"}</p>
+              <p className="mt-0.5 text-[12px] leading-snug text-white/50">{fit.some((x) => x > 0) ? "Czas na 5 km pojawi się po pierwszym szybszym biegu." : "Połącz Stravę albo zapisuj biegi w dzienniku. Policzymy kondycję i czas na 5 km."}</p>
+            </>
+          )}
+          <DotMatrix ys={fit} />
+          <p className="mt-2 flex justify-between text-[10.5px] text-white/35">
+            <span>8 tygodni temu</span>
+            <span className="text-[#ff8a8f]">dziś</span>
+          </p>
+        </Link>
+      </Box>
+
+      {/* Health against the normal */}
+      <Box info="zdrowie" tour="health">
+        <button type="button" onClick={() => setSheet(true)} className={cn(card, "h-full w-full p-4 text-left transition active:scale-[0.98]")}>
+          <p className={mono}>Zdrowie</p>
+          {t ? (
+            <div className="mt-3 grid gap-2.5">
+              {rows.map((r) => {
+                const d = r.v != null && r.base != null ? r.v - r.base : null;
+                const bad = d != null && (r.upGood ? d < -r.tol : d > r.tol);
+                const pos = d == null ? 50 : Math.max(6, Math.min(94, 50 + (d / (r.tol * 3)) * 44));
+                return (
+                  <div key={r.k}>
+                    <div className="flex items-baseline justify-between text-[11.5px] text-white/50">
+                      <span>{r.k}</span>
+                      <span className={cn("text-[15px] font-semibold tabular-nums", r.v == null ? "text-white/25" : bad ? "text-[#ff8a8f]" : "text-white")}>
+                        {r.v != null ? r.fmt(r.v) : "–"}
+                        {r.unit && r.v != null ? <span className="ml-0.5 text-[10px] font-normal text-white/40">{r.unit}</span> : null}
+                      </span>
+                    </div>
+                    <span className="relative mt-1 block h-1 rounded-full bg-white/[0.07]">
+                      <span className="absolute inset-y-[-2px] left-1/2 w-px bg-white/25" />
+                      {r.v != null && r.base != null ? <span className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${pos}%`, background: bad ? "#ff4d55" : "#34d399" }} /> : null}
+                    </span>
+                  </div>
+                );
+              })}
+              <p className="text-[10.5px] leading-snug text-white/40">{h.days < 4 ? `Norma po 4 porankach (masz ${h.days})` : h.level === "ok" ? "W normie" : h.level === "watch" ? "Trochę odstaje" : "Odstaje od normy"}</p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-3 text-[15px] font-semibold leading-snug">Wpisz poranne liczby</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-white/50">Tętno, HRV i sen z zegarka. 10 sekund, a decyzja na dziś będzie trafniejsza.</p>
+            </>
+          )}
+        </button>
+      </Box>
+
+      {/* Strength */}
+      <Box info="sila" tour="strength">
+        <button type="button" onClick={() => setStrength(true)} className={cn(card, "flex h-full w-full flex-col p-4 text-left transition active:scale-[0.98]")}>
+          <p className={mono}>Siła</p>
+          <p className="mt-3 flex items-baseline gap-1">
+            <span className="text-[34px] font-semibold leading-none tracking-[-0.04em] tabular-nums">{gym.length}</span>
+            <span className="text-[13px] text-white/40">z 4</span>
+          </p>
+          <p className="mt-0.5 text-[11.5px] text-white/45">w ostatnich 2 tygodniach</p>
+          <div className="mt-3 grid grid-cols-4 gap-1.5">
+            {[0, 1, 2, 3].map((i) => (
+              <span key={i} className={cn("h-7 rounded-lg", i < gym.length ? "bg-[#34d399]" : "bg-white/[0.07]")} />
+            ))}
+          </div>
+          <p className="mt-auto pt-3 text-[11.5px] font-medium leading-snug text-white/60">{gym.length >= 4 ? "Tak trzymaj" : "Ustaw dni siły →"}</p>
+        </button>
+      </Box>
+
+      {/* Records */}
+      <Box span info="rekordy">
+        <Link href="/app/postepy" className={cn(card, "block h-full p-4 transition active:scale-[0.99]")}>
+          <p className={mono}>Rekordy</p>
+          <div className="mt-2.5 grid grid-cols-4 gap-2">
+            {[...recs.map((r) => ({ k: r.k, v: r.v ? hms(r.v) : null })), { k: "Najdłuższy", v: longest ? `${comma(longest)} km` : null }].map((r) => (
+              <div key={r.k} className="min-w-0">
+                <p className="truncate text-[11px] text-white/45">{r.k}</p>
+                <p className={cn("mt-1 truncate text-[16px] font-semibold tabular-nums", !r.v && "text-white/25")}>{r.v ?? "–"}</p>
+              </div>
+            ))}
+          </div>
+          {!log.length ? <p className="mt-2 text-[11.5px] text-white/40">Pojawią się same, gdy zapiszesz pierwsze biegi.</p> : null}
+        </Link>
+      </Box>
+
+      {/* Season */}
+      <Box span info="sezon" tour="season">
+        <Link href="/app/sezon" className={cn(card, "block h-full p-4 transition active:scale-[0.99]")}>
+          <p className={mono}>Sezon · najbliższe 12 tygodni</p>
+          {season.blocks.length || season.races.length ? (
+            <>
+              <SeasonGrid season={season} today={today} />
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-white/50">
+                {[...new Set(season.blocks.filter((b) => b.to >= addD(today, -14) && b.from <= addD(today, 70)).map((b) => b.focus))].map((k) => (
+                  <span key={k} className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-[2px]" style={{ background: focusOf(k).color }} />
+                    {focusOf(k).name}
+                  </span>
+                ))}
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-[2px] bg-white" />
+                  start
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-[2px] ring-1 ring-white" />
+                  dziś
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-[13px] leading-snug text-white/55">
+              Ułóż fazy treningu i starty na jednej osi, a zawsze będziesz wiedzieć, po co jest dzisiejszy trening. <span className="font-semibold text-white">Ułóż sezon →</span>
+            </p>
+          )}
+        </Link>
+      </Box>
       <HealthSheet key={sheet ? health.length : "closed"} open={sheet} onClose={() => setSheet(false)} />
+      <StrengthSheet open={strength} onClose={() => setStrength(false)} count={gym.length} />
     </section>
   );
 }

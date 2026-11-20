@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * for the account sync, so a signed-in runner sees the same data on every phone.
  */
 
-export const SYNCED = ["vyra-log", "vyra-log-del", "vyra-result", "vyra-start-plan", "vyra-start-on", "vyra-goal-plan", "vyra-me", "vyra-onboarded", "vyra-course-done", "vyra-swaps", "vyra-badges-seen", "vyra-week-goal", "vyra-nocna-level", "vyra-routines", "vyra-health", "vyra-season", "vyra-puls-memory"] as const;
+export const SYNCED = ["vyra-log", "vyra-log-del", "vyra-result", "vyra-start-plan", "vyra-start-on", "vyra-goal-plan", "vyra-me", "vyra-onboarded", "vyra-course-done", "vyra-swaps", "vyra-badges-seen", "vyra-week-goal", "vyra-nocna-level", "vyra-routines", "vyra-health", "vyra-season", "vyra-puls-memory", "vyra-strength-days"] as const;
 export type SyncedKey = (typeof SYNCED)[number];
 const TS = "vyra-ts"; // when each key last changed on this phone
 export const STORE_EVENT = "vyra:store";
