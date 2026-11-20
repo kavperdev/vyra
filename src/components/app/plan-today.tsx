@@ -10,13 +10,15 @@ import { todayWaw } from "@/lib/app/store";
 import { celebrate } from "@/components/app/motion";
 import { SectionHead } from "@/components/app/ui";
 import { cn } from "@/lib/utils";
+import { ShapeBars } from "@/components/app/shape-bars";
+import { instrShape } from "@/lib/app/instr-shape";
 
-export type PlanSession = { id: string; title: string; planned_duration_s: number | null; goal: string | null; status: string; kind: string; km?: number | null };
+export type PlanSession = { id: string; title: string; planned_duration_s: number | null; goal: string | null; status: string; kind: string; km?: number | null; category?: string | null; instructions?: string | null };
 const SPORT: Record<string, Sport> = { running: "run", strength: "gym", mobility: "mobility" };
 const DONE = ["completed", "partial"];
 
 /** Coach / VYRA Method sessions for today: one tap marks them done, and a run in the log ticks them by itself. */
-export function PlanToday({ sessions }: { sessions: PlanSession[] }) {
+export function PlanToday({ sessions, variant = "full" }: { sessions: PlanSession[]; variant?: "full" | "hero" }) {
   const router = useRouter();
   const log = useLog();
   const [done, setDone] = useState<Record<string, boolean>>({});
@@ -55,6 +57,50 @@ export function PlanToday({ sessions }: { sessions: PlanSession[] }) {
     finish(s, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ranToday.length]);
+
+  if (variant === "hero") {
+    return (
+      <div className="grid gap-2">
+        {sessions.map((s) =>
+          isDone(s) ? (
+            <div key={s.id} className="flex items-center gap-3 rounded-[18px] border border-emerald-400/20 bg-emerald-400/[0.07] px-3.5 py-3">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-emerald-400 text-black">
+                <Check className="size-4" strokeWidth={3} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{s.title}</span>
+              <Link href={`/athlete/sessions/${s.id}`} className="text-[12.5px] text-white/50">
+                Szczegóły
+              </Link>
+            </div>
+          ) : (
+            <div key={s.id} className="rounded-[20px] bg-white p-4 text-black">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-black/45">{s.kind === "running" ? "Bieg" : s.kind === "strength" ? "Siła" : "Sprawność"} · z planu</p>
+                  <p className="mt-1 text-[18px] font-semibold leading-snug tracking-[-0.01em]">{s.title}</p>
+                </div>
+                <div className="shrink-0 text-right text-[12.5px] font-semibold tabular-nums text-black/60">
+                  {s.km && s.kind === "running" ? <p>{String(s.km).replace(".", ",")} km</p> : null}
+                  {s.planned_duration_s ? <p>{Math.round(s.planned_duration_s / 60)} min</p> : null}
+                </div>
+              </div>
+              {s.instructions ? <p className="mt-1.5 line-clamp-2 text-[13px] leading-snug text-black/55">{s.instructions}</p> : null}
+              <ShapeBars segs={instrShape(s.instructions, s.kind, s.category ?? null, s.km ?? null)} className="mt-3" />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link href={`/athlete/sessions/${s.id}`} className="flex items-center justify-center gap-2 rounded-full bg-black/[0.07] py-2.5 text-[14px] font-semibold active:scale-[0.97]">
+                  <Play className="size-4" /> Otwórz
+                </Link>
+                <button type="button" disabled={pending} onClick={() => finish(s)} className="flex items-center justify-center gap-2 rounded-full bg-black py-2.5 text-[14px] font-semibold text-white active:scale-[0.97] disabled:opacity-60">
+                  <Check className="size-4" /> Zrobione
+                </button>
+              </div>
+            </div>
+          ),
+        )}
+        {err ? <p className="text-[12.5px] text-red-300">{err}</p> : null}
+      </div>
+    );
+  }
 
   if (!sessions.length)
     return (

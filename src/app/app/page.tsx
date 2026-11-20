@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { CalendarDays, Flame, Moon, Trophy, Users, MapPin } from "lucide-react";
 import { TodayPlan } from "@/components/app/today-plan";
-import { PlanToday, type PlanSession } from "@/components/app/plan-today";
-import { WeekStrip } from "@/components/app/week-strip";
+import type { PlanSession } from "@/components/app/plan-today";
 import { Today } from "@/components/app/today";
-import { Chip, Group, PhotoCard, Row, SectionHead, photoOfDay } from "@/components/app/ui";
+import { Chip, Group, Row, SectionHead } from "@/components/app/ui";
 import { TodayRoutine } from "@/components/app/today-routine";
-import { TodayRings } from "@/components/app/rings";
-import { AthleteBoard } from "@/components/app/athlete-os";
+import { OsBento, OsTiles, OsToday } from "@/components/app/athlete-os";
 import { getCurrentUser } from "@/lib/auth";
 import { challengeState, listChallenges } from "@/lib/data/challenges";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -36,7 +34,7 @@ export default async function AppHome() {
     const shift = (n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("training_sessions")
-      .select("id, title, planned_duration_s, goal, status, kind, category, scheduled_date, running_workouts(planned_distance_m)")
+      .select("id, title, planned_duration_s, goal, status, kind, category, instructions, scheduled_date, running_workouts(planned_distance_m)")
       .eq("athlete_id", user.id)
       .gte("scheduled_date", shift(-dow))
       .lte("scheduled_date", shift(6 - dow))
@@ -60,24 +58,24 @@ export default async function AppHome() {
   }
   const todo = athlete && user ? await blockingStep(supabase, user.id).catch(() => null) : null;
   const live = challenges.find((c) => c.visible && challengeState(c) !== "ended");
-  const today = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
 
   const first = (user?.profile.full_name ?? "").trim().split(/\s+/)[0];
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
   const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
+  const plan = paid && user ? { hasPlan: week.length > 0, sessions: todays.map((s) => ({ title: s.title, kind: s.kind, category: todayCats[s.id] ?? null, km: s.km ?? null, status: s.status })) } : undefined;
   return (
     <div className="app-rise app-wide grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-x-10">
-      <PhotoCard photo={photoOfDay(todayISO())} minH={130} pos="center 40%" className="lg:col-span-2">
-        <p className="text-[12px] font-medium capitalize tracking-wide text-white/65">{today}</p>
-        <h1 className="mt-1 text-[28px] font-semibold leading-[1.05] tracking-[-0.025em]">
+      <header className="px-1 pb-4 pt-1 lg:col-span-2">
+        <p className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.2em] text-white/40">VYRA · Athlete OS</p>
+        <h1 className="mt-1.5 text-[30px] font-semibold leading-[1.02] tracking-[-0.035em]">
           {hello}
           {first ? `, ${first}` : ""}
           <span className="text-[var(--accent)]">.</span>
         </h1>
-      </PhotoCard>
+      </header>
 
       {todo ? (
-        <Link href={todo.href} className="mt-4 block rounded-[24px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99] lg:col-span-2">
+        <Link href={todo.href} className="mb-3 block rounded-[24px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99] lg:col-span-2">
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#ff8a8f]">{t("Zrób to najpierw", "Do this first")}</p>
           <p className="mt-1.5 text-[20px] font-semibold leading-tight tracking-[-0.01em]">{todo.title}</p>
           <p className="mt-2 text-[15px] leading-relaxed text-white/75">{todo.text}</p>
@@ -86,32 +84,28 @@ export default async function AppHome() {
       ) : null}
       {athlete && user ? <AppGuide variant="runner" userId={user.id} next={guideNext(todo)} /> : null}
 
-      {/* Dziś = three questions only: how am I, what do I do today, how is the week. The rest lives in the tabs. */}
-      <div className="mt-4 lg:col-span-2">
-        <TodayRings />
+      {/* Athlete OS: one card for today (score, verdict, today's session, morning actions), three numbers, the grid. */}
+      <OsToday plan={plan} sessions={paid ? todays : []} />
+      {/* the morning check-in sheet and its sync live here; the card above opens it */}
+      <div className="hidden">
+        <Today synced={synced} athlete={athlete} part="sheet" />
       </div>
-
-      {/* Athlete OS: today's call, goal, form, health, strength, records, season. */}
-      {user ? (
-        <AthleteBoard
-          plan={paid ? { hasPlan: week.length > 0, sessions: todays.map((s) => ({ title: s.title, kind: s.kind, category: todayCats[s.id] ?? null, km: s.km ?? null, status: s.status })) } : undefined}
-        />
+      {!paid ? (
+        <div className="lg:col-span-2">
+          <TodayPlan />
+        </div>
       ) : null}
+      <OsTiles planned={week} />
+      <OsBento />
 
       <div className="grid min-w-0 grid-cols-1 content-start">
-        <div className="mt-3">
-          <Today synced={synced} athlete={athlete} part="ready" />
-        </div>
-        {!paid ? <TodayPlan /> : user ? <PlanToday sessions={todays} /> : null}
         <TodayRoutine />
-        <WeekStrip planned={week} />
-      </div>
-
-      <div className="grid min-w-0 grid-cols-1 content-start lg:pt-2">
         <div className="mt-3">
           <Today part="weather" />
         </div>
+      </div>
 
+      <div className="grid min-w-0 grid-cols-1 content-start lg:pt-2">
         <SectionHead title={t("W VYRA", "At VYRA")} />
         <Group>
           <Row href="/app/znajomi" icon={<Flame className="size-4" />} title={t("Ekipa", "Crew")} sub={t("Treningi znajomych, 🔥 i komentarze", "Friends' sessions, 🔥 and comments")} />

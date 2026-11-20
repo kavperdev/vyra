@@ -120,7 +120,7 @@ function Scale({ label, value, onChange, low, high }: { label: string; value: nu
  * Home screen pieces. part="ready": the morning check as one compact card. part="weather": running conditions in one card
  * with details on tap. Both read the same saved answers and place, so they can sit apart on the screen.
  */
-export function Today({ synced = null, athlete = false, part = "ready" }: { synced?: Check | null; athlete?: boolean; part?: "ready" | "weather" }) {
+export function Today({ synced = null, athlete = false, part = "ready" }: { synced?: Check | null; athlete?: boolean; part?: "ready" | "weather" | "sheet" }) {
   const [more, setMore] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [cond, setCond] = useState<Conditions | null>(null);
@@ -140,6 +140,17 @@ export function Today({ synced = null, athlete = false, part = "ready" }: { sync
     setCheck(local ?? synced);
     setReady(true);
   }, [synced, athlete]);
+
+  // The Dziś card opens the morning check-in from its own button.
+  useEffect(() => {
+    if (part === "weather") return;
+    const on = () => {
+      setDraft((d) => store.get<Check>(dayKey()) ?? d);
+      setSheet("check");
+    };
+    window.addEventListener("vyra:open-check", on);
+    return () => window.removeEventListener("vyra:open-check", on);
+  }, [part]);
 
   useEffect(() => {
     if (!place || part !== "weather") return;
