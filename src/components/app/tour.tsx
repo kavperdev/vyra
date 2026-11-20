@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import type { GuideNext } from "@/components/app/guide";
-import { cn } from "@/lib/utils";
 
 /**
  * The walkthrough of the real app: everything else dims, one element lights up, and a card next to it
