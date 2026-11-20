@@ -33,7 +33,7 @@ function Timeline({ s, today }: { s: Season; today: string }) {
   const pos = (d: string) => (daysTo(start, d) / total) * 100;
   const months = monthsBetween(start, end);
   return (
-    <div className={cn(card, "p-4")}>
+    <div className={cn(card, "min-w-0 p-4")}>
       <div className="app-scroll overflow-x-auto">
         <div className="relative" style={{ minWidth: Math.max(320, months.length * 70) }}>
           <div className="relative h-5 text-[11px] text-white/40">
@@ -191,10 +191,10 @@ export function SeasonView() {
   const lastEnd = s.blocks.length ? addD(s.blocks[s.blocks.length - 1].to, 1) : today;
 
   return (
-    <div className="mt-4 grid gap-3">
+    <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
       {s.blocks.length || s.races.length ? (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
             <div className={cn(card, "p-4")}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Teraz</p>
               {now ? (
@@ -235,7 +235,7 @@ export function SeasonView() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex min-w-0 flex-wrap gap-2">
         <button type="button" onClick={() => setRace(true)} className="flex h-11 items-center gap-1.5 rounded-full bg-white px-4 text-[14px] font-semibold text-black active:scale-95">
           <Flag className="size-4" /> Start
         </button>
