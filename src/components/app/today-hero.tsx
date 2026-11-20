@@ -68,7 +68,7 @@ export function TodayTop({ planned = [], hasPlan }: { planned?: { date: string; 
   );
 }
 
-type Hero = { title: string; sub: string; photo: PhotoKey; stats: { v: string; l: string }[]; href: string; done: boolean };
+type Hero = { title: string; sub: string; photo: PhotoKey; stats: { v: string; l: string }[]; href: string; done: boolean; locked?: boolean };
 
 const photoFor = (kind: string, category?: string | null): PhotoKey =>
   kind === "strength" ? "legs" : kind === "long" || category === "long" ? "road" : kind === "quality" || ["tempo", "threshold", "intervals", "fartlek", "hills", "race_pace", "test", "race"].includes(category ?? "") ? "track" : "night";
@@ -77,7 +77,7 @@ const photoFor = (kind: string, category?: string | null): PhotoKey =>
  * Today's session as a black-and-white photo with its name and three numbers. A rest day gets a calm
  * empty state with the week in numbers and one button to log something.
  */
-export function SessionHero({ sessions = [], hasPlan = false }: { sessions?: PlanSession[]; hasPlan?: boolean }) {
+export function SessionHero({ sessions = [], hasPlan = false, method = false }: { sessions?: PlanSession[]; hasPlan?: boolean; method?: boolean }) {
   const log = useLog();
   const { plan } = useGoalPlan();
   const today = todayWaw();
@@ -109,12 +109,14 @@ export function SessionHero({ sessions = [], hasPlan = false }: { sessions?: Pla
         title: g.title,
         sub: `Tydzień ${w + 1}/${plan.weeks.length} · ${plan.weeks[w]?.phase ?? ""}`,
         photo: photoFor(g.kind),
+        // Free: the shape of the plan, not the numbers (those are VYRA Method).
+        locked: !method,
         stats: [
-          { v: `${kmFmt(g.km)} km`, l: "Dystans" },
-          { v: g.pace ? fmtPace(g.pace[0]) : "–", l: "Tempo /km" },
+          { v: method ? `${kmFmt(g.km)} km` : "•••", l: "Dystans" },
+          { v: method && g.pace ? fmtPace(g.pace[0]) : "•••", l: "Tempo /km" },
           { v: g.kind === "quality" ? "Akcent" : g.kind === "long" ? "Długi" : g.kind === "race" ? "Start" : "Spokojnie", l: "Typ" },
         ],
-        href: "/app/cel",
+        href: method ? "/app/cel" : "/app/sklep",
         done: ranToday.length > 0,
       };
     }
@@ -154,6 +156,9 @@ export function SessionHero({ sessions = [], hasPlan = false }: { sessions?: Pla
         <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-white/60">{hero.sub}</p>
         <p className="mt-1.5 text-[30px] font-semibold leading-[1.05] tracking-[-0.025em]">{hero.title}</p>
         <Stats stats={hero.stats} />
+        {hero.locked ? (
+          <span className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-white text-[14.5px] font-semibold text-black">Odblokuj tempa: 14 dni za darmo</span>
+        ) : null}
       </div>
     </Link>
   );

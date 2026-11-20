@@ -49,6 +49,8 @@ export default async function AppHome() {
   }
   const athlete = user?.profile.role === "athlete";
   const paid = athlete && user ? await athleteHasAccess(supabase, user.id).catch(() => false) : !!user;
+  // VYRA Method (trial or paid): the personal race plan with paces. Without it the plan is a preview only.
+  const method = user ? await supabase.rpc("has_method_access", { p_user: user.id }).then((r) => (r.error ? false : !!r.data), () => false) : false;
   type Synced = { sleep: number; energy: number; soreness: number; pain: boolean; pain_area?: string };
   let synced: Synced | null = null;
   if (athlete && user) {
@@ -80,7 +82,7 @@ export default async function AppHome() {
       {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
 
       <GuardBanner />
-      <SessionHero hasPlan={paid && week.length > 0} sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
+      <SessionHero method={method} hasPlan={paid && week.length > 0} sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
       <WeekRing planned={week} />
       <GoalRoad />
       <RunnerLevel />
