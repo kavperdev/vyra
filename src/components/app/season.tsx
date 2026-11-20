@@ -180,7 +180,9 @@ function AddBlock({ open, onClose, onAdd, from }: { open: boolean; onClose: () =
 }
 
 export function SeasonView() {
-  const [s, setS] = useSeason();
+  const [s, setOwn, own] = useSeason();
+  // Editing blocks that came from the plan: the plan's phases become the runner's own copy first.
+  const baseBlocks = s.blocksFrom === "plan" ? s.blocks : own.blocks;
   const [goal, setGoal] = useState<GoalStore | null>(null);
   const [race, setRace] = useState(false);
   const [block, setBlock] = useState(false);
@@ -242,12 +244,22 @@ export function SeasonView() {
         <button type="button" onClick={() => setBlock(true)} className="flex h-11 items-center gap-1.5 rounded-full bg-white/[0.08] px-4 text-[14px] font-medium active:scale-95">
           <Plus className="size-4" /> Blok
         </button>
+        {s.blocksFrom === "own" && own.blocks.length ? (
+          <button
+            type="button"
+            onClick={() => window.confirm("Usunąć Twoje bloki i wrócić do faz z planu?") && setOwn({ ...own, blocks: [] })}
+            className="flex h-11 items-center gap-1.5 rounded-full bg-white/[0.08] px-4 text-[14px] font-medium active:scale-95"
+          >
+            <Wand2 className="size-4 text-[#ff8a8f]" /> Fazy z planu
+          </button>
+        ) : null}
         {goal && goal.race >= today ? (
           <button
             type="button"
             onClick={() => {
-              if (s.blocks.length && !window.confirm("Zastąpić obecny sezon blokami z planu pod start?")) return;
-              setS(seasonFromGoal(goal));
+              if (own.blocks.length && !window.confirm("Zastąpić Twoje bloki blokami z planu pod start?")) return;
+              const g = seasonFromGoal(goal);
+              setOwn({ blocks: g.blocks, races: [...own.races.filter((r) => r.date !== goal.race), ...g.races] });
             }}
             className="flex h-11 items-center gap-1.5 rounded-full bg-white/[0.08] px-4 text-[14px] font-medium active:scale-95"
           >
@@ -269,14 +281,21 @@ export function SeasonView() {
                   {r.date >= today ? ` · za ${daysTo(today, r.date)} dni` : ""}
                 </p>
               </div>
-              <button type="button" aria-label={`Usuń ${r.name}`} onClick={() => setS({ ...s, races: s.races.filter((x) => x.id !== r.id) })} className="grid size-9 place-items-center rounded-full text-white/40 active:bg-white/10">
-                <Trash2 className="size-4" />
-              </button>
+              {s.planIds.has(r.id) ? (
+                <span className="shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] text-white/45">z planu</span>
+              ) : (
+                <button type="button" aria-label={`Usuń ${r.name}`} onClick={() => setOwn({ ...own, races: own.races.filter((x) => x.id !== r.id) })} className="grid size-9 place-items-center rounded-full text-white/40 active:bg-white/10">
+                  <Trash2 className="size-4" />
+                </button>
+              )}
             </div>
           ))}
         </div>
       ) : null}
 
+      {s.blocksFrom === "plan" ? (
+        <p className="px-1 text-[13px] leading-relaxed text-white/50">Fazy biorą się same z Twojego planu w VYRA. Gdy zmienisz albo usuniesz blok, zapiszemy Twoją wersję.</p>
+      ) : null}
       {s.blocks.length ? (
         <div className={cn(card, "divide-y divide-white/[0.05]")}>
           {s.blocks.map((b) => (
@@ -288,7 +307,7 @@ export function SeasonView() {
                   {fmt(b.from)} – {fmt(b.to)} · {Math.ceil((daysTo(b.from, b.to) + 1) / 7)} tyg.
                 </p>
               </div>
-              <button type="button" aria-label={`Usuń ${b.name}`} onClick={() => setS({ ...s, blocks: s.blocks.filter((x) => x.id !== b.id) })} className="grid size-9 place-items-center rounded-full text-white/40 active:bg-white/10">
+              <button type="button" aria-label={`Usuń ${b.name}`} onClick={() => setOwn({ ...own, blocks: baseBlocks.filter((x) => x.id !== b.id) })} className="grid size-9 place-items-center rounded-full text-white/40 active:bg-white/10">
                 <Trash2 className="size-4" />
               </button>
             </div>
@@ -300,8 +319,8 @@ export function SeasonView() {
         open={race}
         onClose={() => setRace(false)}
         onAdd={(r) => {
-          const races = r.main ? s.races.map((x) => ({ ...x, main: false })) : s.races;
-          setS({ ...s, races: [...races, { id: rid(), ...r }].sort((a, b) => (a.date < b.date ? -1 : 1)) });
+          const races = r.main ? own.races.map((x) => ({ ...x, main: false })) : own.races;
+          setOwn({ ...own, races: [...races, { id: rid(), ...r }].sort((a, b) => (a.date < b.date ? -1 : 1)) });
           setRace(false);
         }}
       />
@@ -311,7 +330,7 @@ export function SeasonView() {
           from={lastEnd < today ? today : lastEnd}
           onClose={() => setBlock(false)}
           onAdd={(b) => {
-            setS({ ...s, blocks: [...s.blocks, { id: rid(), ...b }].sort((a, c) => (a.from < c.from ? -1 : 1)) });
+            setOwn({ ...own, blocks: [...baseBlocks, { id: rid(), ...b }].sort((a, c) => (a.from < c.from ? -1 : 1)) });
             setBlock(false);
           }}
         />

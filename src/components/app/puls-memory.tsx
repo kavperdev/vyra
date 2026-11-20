@@ -44,7 +44,7 @@ export function PulsMemory() {
         }}
       >
         <input value={text} onChange={(e) => setText(e.target.value)} maxLength={200} placeholder="np. basen w poniedziałki i czwartki" className="h-12 w-full min-w-0 flex-1 rounded-full border border-white/10 bg-white/[0.04] px-4 text-[16px] outline-none placeholder:text-white/30" />
-        <button type="submit" aria-label="Dodaj" disabled={!text.trim()} className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-black disabled:opacity-30">
+        <button type="button" onClick={() => text.trim() && add()} aria-label="Dodaj" disabled={!text.trim()} className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-black disabled:opacity-30">
           <Plus className="size-5" />
         </button>
       </form>

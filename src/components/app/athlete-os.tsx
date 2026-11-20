@@ -9,9 +9,10 @@ import { mmss } from "@/lib/app/form";
 import type { HealthSignal } from "@/lib/app/health";
 import { useActivities, useLog, type Run } from "@/lib/app/log";
 import { GOAL_DISTS, GOAL_KEY, type GoalStore } from "@/lib/app/goal-plan";
-import { blockNow, blockWeek, daysTo, focusOf, nextRace, SEASON_KEY, validSeason, type Season } from "@/lib/app/season";
+import { blockNow, blockWeek, daysTo, focusOf, mergeSeason, nextRace, SEASON_KEY, validSeason, type Season } from "@/lib/app/season";
+import { planSeason } from "@/lib/actions/season";
 import { load, todayWaw, useStore, useStoreTick } from "@/lib/app/store";
-import { todayCall } from "@/lib/app/today-call";
+import { todayCall, type TodayPlan } from "@/lib/app/today-call";
 import { cn } from "@/lib/utils";
 
 const card = "rounded-[22px] border border-white/[0.06] bg-[#111113] p-4";
@@ -21,9 +22,28 @@ const TONE = { good: "#34d399", info: "#fbbf24", warn: "#ff5a60" } as const;
 /** Opens Puls with a question already asked (the assistant listens for this event). */
 export const askPuls = (q: string) => window.dispatchEvent(new CustomEvent("vyra:ask-puls", { detail: q }));
 
-export function useSeason(): [Season, (s: Season) => void] {
+let planCache: Promise<Season | null> | null = null;
+/** Phases and races from the runner's plan in VYRA (read once per app start). */
+export function usePlanSeason(): Season | null {
+  const [p, setP] = useState<Season | null>(null);
+  useEffect(() => {
+    let on = true;
+    planCache ??= planSeason().catch(() => null);
+    planCache.then((v) => on && setP(v ? validSeason(v) : null));
+    return () => {
+      on = false;
+    };
+  }, []);
+  return p;
+}
+
+/** The season as shown: the runner's own blocks or the plan's phases, races from both. Writes go to the runner's own copy. */
+export function useSeason(): [ReturnType<typeof mergeSeason>, (s: Season) => void, Season] {
   const [raw, setRaw] = useStore<unknown>(SEASON_KEY, null);
-  return [useMemo(() => validSeason(raw), [raw]), (s) => setRaw(s)];
+  const own = useMemo(() => validSeason(raw), [raw]);
+  const plan = usePlanSeason();
+  const merged = useMemo(() => mergeSeason(own, plan), [own, plan]);
+  return [merged, (s) => setRaw(s), own];
 }
 
 /** Best time over a distance from real runs that covered it (scaled to the exact distance). */
@@ -107,7 +127,7 @@ function HealthCard({ h, onOpen }: { h: HealthSignal; onOpen: () => void }) {
  * Ty jako zawodnik: the athlete's operating system on one screen. Today's call (pain, morning numbers,
  * load), the goal with its countdown, form, health, strength, records and where the season is now.
  */
-export function AthleteBoard() {
+export function AthleteBoard({ plan }: { plan?: TodayPlan }) {
   const f = useForm();
   const log = useLog();
   const all = useActivities();
@@ -124,7 +144,7 @@ export function AthleteBoard() {
     setGoal(load<GoalStore | null>(GOAL_KEY, null));
   }, [tick, today]);
 
-  const call = todayCall(f, h, pain);
+  const call = todayCall(f, h, pain, plan);
   const race = nextRace(season, today) ?? (goal && goal.race >= today ? { name: goal.name || `Start ${GOAL_DISTS.find((d) => d.k === goal.dist)?.label ?? ""}`, date: goal.race, goal: GOAL_DISTS.find((d) => d.k === goal.dist)?.label } : null);
   const block = blockNow(season, today);
   const bw = block ? blockWeek(block, today) : null;
@@ -141,7 +161,9 @@ export function AthleteBoard() {
   return (
     <section className="mt-4 lg:col-span-2">
       <div className="mb-2.5 flex items-center justify-between px-1">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Ty jako zawodnik</p>
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
+          Athlete OS <span className="text-white/30">· Ty jako zawodnik</span>
+        </p>
         <Link href="/app/sezon" className="flex items-center gap-0.5 text-[12.5px] text-white/50">
           Sezon <ChevronRight className="size-3.5" />
         </Link>

@@ -159,8 +159,10 @@ export function dayScore(f: Form, readiness: number | null, health: "none" | "ok
   if (f.days.every((d) => !d.load) && readiness == null && (health === "none" || health === "ok")) return null;
   const fresh = f.balance / Math.max(5, f.fitness); // −0.5 tired … +0.3 fresh
   let s = Math.max(15, Math.min(95, 65 + fresh * 80));
-  if (f.ratioZone === "risk") s = Math.min(s, 40);
-  else if (f.ratioZone === "watch") s -= 10;
+  // after a break fitness is tiny and the load ratio jumps on any run: it says nothing then
+  const lowBase = f.fitness < 8;
+  if (f.ratioZone === "risk" && !lowBase) s = Math.min(s, 40);
+  else if (f.ratioZone === "watch" && !lowBase) s -= 10;
   if (readiness != null) s = readiness <= 25 ? Math.min(35, (s + readiness) / 2) : (s + readiness) / 2;
   // morning numbers from the watch (resting HR, HRV, sleep) against the runner's own normal
   if (health === "warn") s = Math.min(s, 34);

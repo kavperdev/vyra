@@ -52,13 +52,14 @@ export function blockWeek(b: Block, today: string) {
 }
 
 const PHASE: [RegExp, Focus][] = [
-  [/taper|odpocz|przed start|lżej/i, "taper"],
-  [/start|specyf|tempo startowe|race|szczyt/i, "race"],
-  [/szybk|speed/i, "speed"],
-  [/sił|podbieg|strength|rozw/i, "strength"],
+  [/taper|odpocz|przed start|lżej|regener/i, "taper"],
+  [/przełaj|blok \d|start|specyf|tempo startowe|race|szczyt/i, "race"],
+  [/vo2|szybk|speed/i, "speed"],
+  [/sił|podbieg|strength|rozw|próg|progu/i, "strength"],
   [/baz|base|wprowadz|ogóln/i, "base"],
+  [/powrót|recovery/i, "recovery"],
 ];
-const phaseFocus = (p: string): Focus => PHASE.find(([re]) => re.test(p))?.[1] ?? "base";
+export const phaseFocus = (p: string): Focus => PHASE.find(([re]) => re.test(p))?.[1] ?? "base";
 
 /** The race-goal plan's weeks, grouped into blocks, plus its race. */
 export function seasonFromGoal(g: GoalInput): Season {
@@ -75,4 +76,19 @@ export function seasonFromGoal(g: GoalInput): Season {
   }
   const dist = GOAL_DISTS.find((d) => d.k === g.dist)?.label ?? "";
   return { blocks, races: [{ id: rid(), name: g.name || `Start ${dist}`, date: g.race, goal: dist, main: true }] };
+}
+
+/** Season shown to the runner: their own blocks if they drew any, else the plan's; races from both. */
+export type SeasonSource = "own" | "plan" | "none";
+export function mergeSeason(own: Season, plan: Season | null): Season & { blocksFrom: SeasonSource; planIds: Set<string> } {
+  const fromPlan = !own.blocks.length && !!plan?.blocks.length;
+  const blocks = own.blocks.length ? own.blocks : (plan?.blocks ?? []);
+  const key = (r: Race) => `${r.date}|${r.name.toLowerCase()}`;
+  const ownKeys = new Set(own.races.map(key));
+  const ownDates = new Set(own.races.map((r) => r.date));
+  const planRaces = (plan?.races ?? []).filter((r) => !ownKeys.has(key(r)) && !ownDates.has(r.date));
+  // a main race the runner set themselves wins over the plan's main race
+  const ownMain = own.races.some((r) => r.main);
+  const races = [...own.races, ...planRaces.map((r) => (ownMain ? { ...r, main: false } : r))].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return { blocks, races, blocksFrom: own.blocks.length ? "own" : fromPlan ? "plan" : "none", planIds: new Set([...(fromPlan ? blocks.map((b) => b.id) : []), ...planRaces.map((r) => r.id)]) };
 }

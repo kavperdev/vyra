@@ -29,23 +29,25 @@ export default async function AppHome() {
   // Signed in: today's sessions straight from the plan (VYRA Method or the coach).
   let todays: PlanSession[] = [];
   let week: { date: string; done: boolean }[] = [];
+  let todayCats: Record<string, string | null> = {};
   if (user) {
     const day = todayISO();
     const dow = (new Date(`${day}T12:00:00Z`).getUTCDay() || 7) - 1;
     const shift = (n: number) => new Date(Date.parse(`${day}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("training_sessions")
-      .select("id, title, planned_duration_s, goal, status, kind, scheduled_date, running_workouts(planned_distance_m)")
+      .select("id, title, planned_duration_s, goal, status, kind, category, scheduled_date, running_workouts(planned_distance_m)")
       .eq("athlete_id", user.id)
       .gte("scheduled_date", shift(-dow))
       .lte("scheduled_date", shift(6 - dow))
       .limit(40);
-    type Row = PlanSession & { scheduled_date: string; running_workouts?: { planned_distance_m: number | null } | { planned_distance_m: number | null }[] | null };
+    type Row = PlanSession & { scheduled_date: string; category?: string | null; running_workouts?: { planned_distance_m: number | null } | { planned_distance_m: number | null }[] | null };
     const rows = ((data ?? []) as Row[]).map(({ running_workouts: rw, ...r }) => {
       const m = (Array.isArray(rw) ? rw[0] : rw)?.planned_distance_m;
       return { ...r, km: m ? Math.round(m / 100) / 10 : null };
     });
     todays = rows.filter((r) => r.scheduled_date === day).slice(0, 3);
+    todayCats = Object.fromEntries(todays.map((r) => [r.id, (r as Row).category ?? null]));
     week = rows.map((r) => ({ date: r.scheduled_date, done: r.status === "completed" || r.status === "partial" }));
   }
   const athlete = user?.profile.role === "athlete";
@@ -90,7 +92,11 @@ export default async function AppHome() {
       </div>
 
       {/* Athlete OS: today's call, goal, form, health, strength, records, season. */}
-      {user ? <AthleteBoard /> : null}
+      {user ? (
+        <AthleteBoard
+          plan={paid ? { hasPlan: week.length > 0, sessions: todays.map((s) => ({ title: s.title, kind: s.kind, category: todayCats[s.id] ?? null, km: s.km ?? null, status: s.status })) } : undefined}
+        />
+      ) : null}
 
       <div className="grid min-w-0 grid-cols-1 content-start">
         <div className="mt-3">
