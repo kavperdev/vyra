@@ -6,7 +6,7 @@ import { ArrowDownRight, ArrowUpRight, ChevronRight, HeartPulse, Sparkles } from
 import { useForm } from "@/components/app/form-hub";
 import { HealthSheet, useHealth, useHealthSignal } from "@/components/app/health-entry";
 import { mmss } from "@/lib/app/form";
-import { fmtH, type HealthSignal } from "@/lib/app/health";
+import type { HealthSignal } from "@/lib/app/health";
 import { useActivities, useLog, type Run } from "@/lib/app/log";
 import { GOAL_DISTS, GOAL_KEY, type GoalStore } from "@/lib/app/goal-plan";
 import { blockNow, blockWeek, daysTo, focusOf, nextRace, SEASON_KEY, validSeason, type Season } from "@/lib/app/season";
@@ -31,6 +31,7 @@ function best(log: Run[], km: number): number | null {
   const xs = log.filter((r) => !r.auto && r.sec > 0 && r.km >= km && r.km <= km * 1.06).map((r) => Math.round((r.sec * km) / r.km));
   return xs.length ? Math.min(...xs) : null;
 }
+const hm = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
 const hms = (s: number) => (s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : mmss(s));
 
 function Spark({ ys, color }: { ys: number[]; color: string }) {
@@ -53,12 +54,12 @@ function Delta({ now, base, unit, goodUp }: { now?: number; base: number | null;
   const bad = base != null && (goodUp ? d < 0 : d > 0) && Math.abs(d) >= (unit === "ms" ? 5 : unit === "h" ? 0.5 : 3);
   return (
     <span className="flex items-baseline gap-1">
-      <span className="text-[17px] font-semibold tabular-nums">{unit === "h" ? fmtH(now) : now}</span>
+      <span className="text-[17px] font-semibold tabular-nums">{unit === "h" ? hm(now) : now}</span>
       {unit !== "h" ? <span className="text-[11px] text-white/40">{unit}</span> : null}
       {base != null && d !== 0 ? (
         <span className={cn("flex items-center text-[11.5px] tabular-nums", bad ? "text-[#ff8a8f]" : "text-white/45")}>
           {d > 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-          {unit === "h" ? fmtH(Math.abs(d)) : Math.abs(d)}
+          {unit === "h" ? hm(Math.abs(d)) : Math.abs(d)}
         </span>
       ) : null}
     </span>
@@ -76,7 +77,7 @@ function HealthCard({ h, onOpen }: { h: HealthSignal; onOpen: () => void }) {
       {t ? (
         <div className="mt-2.5 grid gap-1.5 text-[12.5px] text-white/55">
           <div className="flex items-center justify-between gap-2">
-            <span>Tętno spocz.</span>
+            <span>Tętno</span>
             <Delta now={t.rhr} base={h.base.rhr} unit="ud" goodUp={false} />
           </div>
           <div className="flex items-center justify-between gap-2">
