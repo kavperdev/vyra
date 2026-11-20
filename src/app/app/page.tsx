@@ -3,7 +3,7 @@ import type { PlanSession } from "@/components/app/plan-today";
 import { Today } from "@/components/app/today";
 import { TodayRoutine } from "@/components/app/today-routine";
 import { OsToday } from "@/components/app/athlete-os";
-import { WeekStrip } from "@/components/app/week-strip";
+import { SessionHero, TodayTop } from "@/components/app/today-hero";
 import { GuardBanner } from "@/components/app/guard";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -59,16 +59,13 @@ export default async function AppHome() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Europe/Warsaw" }).format(new Date()));
   const hello = hour < 11 ? t("Dzień dobry", "Good morning") : hour < 18 ? t("Cześć", "Hi") : t("Dobry wieczór", "Good evening");
   const plan = paid && user ? { hasPlan: week.length > 0, sessions: todays.map((s) => ({ title: s.title, kind: s.kind, category: todayCats[s.id] ?? null, km: s.km ?? null, status: s.status })) } : undefined;
-  const date = new Intl.DateTimeFormat("pl-PL", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Warsaw" }).format(new Date());
   return (
-    <div className="app-rise mx-auto grid w-full max-w-xl grid-cols-1 gap-3">
-      <header className="flex items-end justify-between px-1 pb-1 pt-1">
-        <h1 className="text-[28px] font-semibold leading-[1.05] tracking-[-0.03em]">
-          {hello}
-          {first ? `, ${first}` : ""}
-        </h1>
-        <p className="pb-1 text-[13px] capitalize text-white/50">{date}</p>
-      </header>
+    <div className="app-rise mx-auto grid w-full max-w-xl grid-cols-1 gap-4">
+      <h1 className="sr-only">
+        {hello}
+        {first ? `, ${first}` : ""}
+      </h1>
+      <TodayTop planned={week} hasPlan={paid && week.length > 0} />
 
       {todo ? (
         <Link href={todo.href} className="block rounded-[22px] border border-[#e5343b]/40 bg-[#e5343b]/10 p-5 active:scale-[0.99]">
@@ -81,27 +78,14 @@ export default async function AppHome() {
       {athlete && user ? <AppTour userId={user.id} next={guideNext(todo)} /> : null}
 
       <GuardBanner />
+      <SessionHero sessions={paid ? todays.map((x) => ({ ...x, category: todayCats[x.id] ?? null })) : []} />
 
-      {/* One card for today: readiness, the call (do it / lighter / rest), today's session, the morning check-in. */}
-      <OsToday plan={plan} sessions={paid ? todays : []} />
+      {/* Readiness: the call for today (do it / lighter / rest) and the morning check-in. */}
+      <OsToday plan={plan} sessions={[]} />
       {/* the morning check-in sheet and its sync live here; the card above opens it */}
       <div className="hidden">
         <Today synced={synced} athlete={athlete} part="sheet" />
       </div>
-
-      {!paid || !week.length ? (
-        <Link href="/app/cel" className="block rounded-[22px] border border-white/[0.07] bg-[#111113] p-5 active:scale-[0.99]">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/45">{t("Plan", "Plan")}</p>
-          <p className="mt-1.5 text-[19px] font-semibold leading-tight tracking-[-0.01em]">{t("Ułóż plan pod swój start", "Build a plan for your race")}</p>
-          <p className="mt-1.5 text-[14px] leading-relaxed text-white/60">{t("5 km, 10 km, półmaraton albo maraton. Pierwsze 14 dni za darmo, bez karty.", "5K, 10K, half or full marathon. The first 14 days are free, no card.")}</p>
-          <span className="mt-4 inline-flex h-11 items-center rounded-full bg-white px-5 text-[15px] font-semibold text-black">{t("Zaczynam", "Start")} →</span>
-        </Link>
-      ) : null}
-
-      <section className="rounded-[22px] border border-white/[0.07] bg-[#0d0d0e] p-4">
-        <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/45">{t("Ten tydzień", "This week")}</p>
-        <WeekStrip planned={week} />
-      </section>
 
       <TodayRoutine
         hard={todays.some((x) => x.status === "planned" && ["tempo", "threshold", "intervals", "fartlek", "hills", "progression", "race_pace", "test", "race"].includes(todayCats[x.id] ?? ""))}
